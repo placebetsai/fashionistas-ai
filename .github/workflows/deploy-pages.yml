@@ -2,18 +2,20 @@ name: Deploy to Cloudflare Pages
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: 20
           cache: npm
-      - run: npm install
-      - run: npm run build
+      - run: npm ci
+      - run: npx @cloudflare/next-on-pages
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: pages deploy .next --project-name=fashionistas-ai
+          command: pages deploy .vercel/output/static --project-name=fashionistas-ai --commit-dirty=true
