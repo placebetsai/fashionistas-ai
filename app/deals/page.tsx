@@ -2,58 +2,56 @@ import { articles } from '@/lib/articles-data';
 import EmailCapture from '@/components/EmailCapture';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'Blog — Fashion Tips, Reviews & Style Guides | Fashionistas.ai',
-  description: 'Expert fashion advice, product reviews, style guides, and trend reports. Your go-to resource for looking your best.',
-  openGraph: {
-    title: 'Blog — Fashionistas.ai',
-    description: 'Expert fashion advice, product reviews, style guides, and trend reports.',
-    siteName: 'Fashionistas.ai',
-    type: 'website',
+const categoryMap: Record<string, { title: string; description: string; filter: (a: any) => boolean }> = {
+  shoes: {
+    title: 'Shoes',
+    description: 'Comfort, style, and performance — the best shoes for every occasion and need.',
+    filter: (a: any) => a.category === 'Shoes',
   },
-  robots: { index: true, follow: true },
+  beauty: {
+    title: 'Beauty',
+    description: 'Skincare routines, makeup picks, hair care, and beauty tools reviewed by experts.',
+    filter: (a: any) => a.category === 'Beauty',
+  },
+  fashion: {
+    title: 'Fashion',
+    description: 'Outfit ideas, style guides, trend reports, and wardrobe building advice.',
+    filter: (a: any) => a.category === 'Fashion',
+  },
+  deals: {
+    title: 'Deals & Sales',
+    description: 'The best fashion and beauty deals, updated regularly.',
+    filter: (a: any) => a.subcategory === 'Deals' || a.subcategory === 'Shopping',
+  },
 };
 
-const categories = ['All', 'Shoes', 'Beauty', 'Fashion'];
+export async function generateMetadata(): Promise<Metadata> {
+  const cat = categoryMap['deals'];
+  return {
+    title: cat ? cat.title + ' | Fashionistas.ai' : 'Fashionistas.ai',
+    description: cat?.description || '',
+    robots: { index: true, follow: true },
+  };
+}
 
-export default function BlogPage() {
+export default function CategoryPage() {
+  const cat = categoryMap['deals'];
+  if (!cat) return null;
+  const filtered = articles.filter(cat.filter);
+
   return (
     <div style={{ paddingTop: 100, minHeight: '100vh' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px 80px' }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <p style={{ color: '#E91E63', fontSize: 12, textTransform: 'uppercase', letterSpacing: 3, marginBottom: 8, fontFamily: 'system-ui, sans-serif' }}>
-            Style Journal
+            Category
           </p>
           <h1 style={{ fontSize: 'clamp(28px, 5vw, 48px)', fontFamily: 'Georgia, serif', fontWeight: 700, marginBottom: 12 }}>
-            Blog
+            {cat.title}
           </h1>
           <p style={{ color: '#666', fontSize: 16, maxWidth: 500, margin: '0 auto', lineHeight: 1.6 }}>
-            Fashion guides, trend reports, product reviews, and outfit inspiration.
+            {cat.description}
           </p>
-        </div>
-
-        <div style={{
-          display: 'flex',
-          gap: 8,
-          overflowX: 'auto',
-          paddingBottom: 8,
-          marginBottom: 40,
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-        }}>
-          {categories.map((cat) => (
-            <span key={cat} style={{
-              backgroundColor: cat === 'All' ? '#E91E63' : 'white',
-              color: cat === 'All' ? 'white' : '#666',
-              border: `1px solid ${cat === 'All' ? '#E91E63' : '#eee'}`,
-              borderRadius: 20,
-              padding: '6px 16px',
-              fontSize: 12,
-              fontWeight: 600,
-              fontFamily: 'system-ui, sans-serif',
-              whiteSpace: 'nowrap' as const,
-            }}>{cat}</span>
-          ))}
         </div>
 
         <div style={{
@@ -61,7 +59,7 @@ export default function BlogPage() {
           gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
           gap: 24,
         }}>
-          {articles.map((article) => (
+          {filtered.map((article) => (
             <a
               key={article.slug}
               href={`/blog/${article.slug}`}
@@ -98,19 +96,17 @@ export default function BlogPage() {
                   fontWeight: 600,
                   fontFamily: 'system-ui, sans-serif',
                   textTransform: 'uppercase' as const,
-                  letterSpacing: 1,
-                }}>{article.category}</span>
+                }}>{article.subcategory}</span>
                 <span style={{ color: '#ccc', fontSize: 24 }}>📰</span>
               </div>
               <div style={{ padding: '18px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <h2 style={{ fontSize: 17, lineHeight: 1.4, marginBottom: 8, fontWeight: 600 }}>{article.title}</h2>
-                <p style={{ color: '#666', fontSize: 13, lineHeight: 1.6, marginBottom: 14, flex: 1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                <p style={{ color: '#666', fontSize: 13, lineHeight: 1.6, flex: 1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                   {article.excerpt}
                 </p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 }}>
                   <span style={{ color: '#999', fontSize: 11, fontFamily: 'system-ui, sans-serif' }}>{article.readTime}</span>
-                  <span style={{ color: '#999', fontSize: 11, fontFamily: 'system-ui, sans-serif' }}>{article.date}</span>
-                  <span style={{ color: '#E91E63', fontSize: 12, fontWeight: 600, fontFamily: 'system-ui, sans-serif' }}>Read More →</span>
+                  <span style={{ color: '#E91E63', fontSize: 12, fontWeight: 600, fontFamily: 'system-ui, sans-serif' }}>Read →</span>
                 </div>
               </div>
             </a>

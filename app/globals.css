@@ -7,17 +7,16 @@
 }
 
 :root {
-  --bg-primary: #0a0a0a;
-  --bg-card: #1a1a1a;
-  --bg-card-hover: #252525;
-  --accent-gold: #d4a574;
-  --accent-blush: #e8c4c4;
-  --accent-cream: #f5f0eb;
-  --text-primary: #f5f0eb;
-  --text-secondary: #8a8580;
-  --text-muted: #5a5550;
-  --border-subtle: #2a2a2a;
-  --border-accent: #d4a574;
+  --bg-primary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8f8f8;
+  --accent-pink: #E91E63;
+  --accent-rose: #FF6B9D;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --border-subtle: #eeeeee;
+  --border-accent: #E91E63;
 }
 
 html {
@@ -34,8 +33,8 @@ body {
 }
 
 ::selection {
-  background-color: var(--accent-gold);
-  color: var(--bg-primary);
+  background-color: var(--accent-pink);
+  color: white;
 }
 
 ::-webkit-scrollbar {
@@ -59,52 +58,81 @@ img {
   height: auto;
 }
 
-.sans {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+/* Blog content styles */
+.blog-content h2 {
+  font-size: 24px;
+  font-family: Georgia, serif;
+  font-weight: 700;
+  margin-top: 40px;
+  margin-bottom: 16px;
+  color: var(--text-primary);
 }
 
-.editorial-font {
-  font-family: 'Georgia', 'Times New Roman', serif;
+.blog-content h3 {
+  font-size: 20px;
+  font-family: Georgia, serif;
+  font-weight: 600;
+  margin-top: 28px;
+  margin-bottom: 12px;
+  color: var(--text-primary);
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, var(--accent-gold), var(--accent-blush));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.blog-content p {
+  margin-bottom: 16px;
+  line-height: 1.8;
 }
 
-.glow-gold {
-  box-shadow: 0 0 20px rgba(212, 165, 116, 0.3), 0 0 60px rgba(212, 165, 116, 0.1);
+.blog-content ul,
+.blog-content ol {
+  margin-bottom: 16px;
+  padding-left: 24px;
 }
 
-.glow-blush {
-  box-shadow: 0 0 20px rgba(232, 196, 196, 0.3), 0 0 60px rgba(232, 196, 196, 0.1);
+.blog-content li {
+  margin-bottom: 8px;
+  line-height: 1.7;
 }
 
-.card-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+.blog-content strong {
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
-.shimmer {
-  background: linear-gradient(
-    110deg,
-    var(--bg-card) 8%,
-    var(--bg-card-hover) 18%,
-    var(--bg-card) 33%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s linear infinite;
+.blog-content a {
+  color: var(--accent-pink);
+  text-decoration: underline;
 }
 
-@keyframes shimmer {
-  to { background-position-x: -200%; }
+.blog-content a:hover {
+  color: var(--accent-rose);
 }
 
+.blog-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+}
+
+.blog-content thead th {
+  background-color: #f8f8f8;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-subtle);
+}
+
+.blog-content tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.blog-content tbody tr:hover {
+  background-color: #fafafa;
+}
+
+/* Animations */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -121,27 +149,6 @@ img {
   to { opacity: 1; }
 }
 
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(40px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 20px rgba(212, 165, 116, 0.3); }
-  50% { box-shadow: 0 0 30px rgba(212, 165, 116, 0.5); }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-
 .animate-fadeInUp {
   animation: fadeInUp 0.6s ease-out forwards;
 }
@@ -150,34 +157,13 @@ img {
   animation: fadeIn 0.8s ease-out forwards;
 }
 
-.animate-slideInRight {
-  animation: slideInRight 0.5s ease-out forwards;
-}
-
-.pinterest-grid {
-  columns: 2 280px;
-  column-gap: 16px;
-}
-
-@media (min-width: 768px) {
-  .pinterest-grid {
-    columns: 3 280px;
+/* Responsive */
+@media (max-width: 768px) {
+  .blog-content table {
+    font-size: 12px;
   }
-}
-
-@media (min-width: 1024px) {
-  .pinterest-grid {
-    columns: 4 280px;
+  .blog-content thead th,
+  .blog-content tbody td {
+    padding: 8px 10px;
   }
-}
-
-.pinterest-item {
-  break-inside: avoid;
-  margin-bottom: 16px;
-}
-
-.progress-ring {
-  transition: stroke-dashoffset 0.35s;
-  transform: rotate(-90deg);
-  transform-origin: 50% 50%;
 }
