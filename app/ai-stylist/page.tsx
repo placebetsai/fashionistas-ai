@@ -128,9 +128,23 @@ export default function AIStylistPage() {
   const handleGenerate = async () => {
     if (!occasion) return;
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
-    const outfit = generateOutfit(occasion, weather, budget, style);
-    setResult(outfit);
+    try {
+      const resp = await fetch('/api/stylist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ occasion, weather, budget, style }),
+      });
+      const data = await resp.json();
+      if (data.outfit) {
+        setResult({ occasion, ...data.outfit });
+      } else {
+        const outfit = generateOutfit(occasion, weather, budget, style);
+        setResult(outfit);
+      }
+    } catch {
+      const outfit = generateOutfit(occasion, weather, budget, style);
+      setResult(outfit);
+    }
     setLoading(false);
   };
 

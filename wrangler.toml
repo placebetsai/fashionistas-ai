@@ -1,0 +1,9 @@
+name = "fashionistas"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+SITE_URL = "https://fashionistas.ai"
+
+[env.production.vars]
+SITE_URL = "https://fashionistas.ai"
