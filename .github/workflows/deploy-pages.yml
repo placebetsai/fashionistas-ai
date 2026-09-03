@@ -13,7 +13,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      - run: npm install --legacy-peer-deps
       - run: npm run pages:build
       - uses: cloudflare/wrangler-action@v3
         with:
