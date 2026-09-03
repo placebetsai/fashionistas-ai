@@ -359,3 +359,15 @@ img {
 .stat-number:hover {
   animation: countPulse 0.6s ease;
 }
+
+/* Fashion news ticker */
+@keyframes tickerScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fashion-ticker-track {
+    animation: none !important;
+  }
+}

@@ -1,6 +1,7 @@
 import { articles } from '@/lib/articles-data';
 import EmailCapture from '@/components/EmailCapture';
 import AdUnit from '@/components/AdUnit';
+import FashionTicker from '@/components/FashionTicker';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -163,6 +164,8 @@ export default function Home() {
       </section>
 
       <AdUnit slot="hero" />
+
+      <FashionTicker />
 
       {/* Trending Categories */}
       <section style={{ padding: '60px 20px', maxWidth: 1200, margin: '0 auto' }}>

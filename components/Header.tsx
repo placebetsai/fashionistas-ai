@@ -7,7 +7,8 @@ const navLinks = [
   { href: '/beauty', label: 'Beauty' },
   { href: '/fashion', label: 'Fashion' },
   { href: '/blog', label: 'Blog' },
-  { href: '/quiz', label: 'Quiz' },
+  { href: '/trends', label: 'Trends' },
+  { href: '/contact', label: 'Contact' },
 ];
 
 export default function Header() {
