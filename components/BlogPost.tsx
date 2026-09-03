@@ -17,13 +17,13 @@ export default function BlogPost({ article }: { article: Article }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <article style={{ maxWidth: 780, margin: '0 auto' }}>
         <header style={{ marginBottom: 40 }}>
-          <p style={{ color: '#E91E63', fontSize: 12, textTransform: 'uppercase', letterSpacing: 3, marginBottom: 8, fontFamily: 'system-ui, sans-serif' }}>
+          <p style={{ color: '#E91E63', fontSize: 12, textTransform: 'uppercase', letterSpacing: 3, marginBottom: 8, fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 700 }}>
             {article.category}
           </p>
-          <h1 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontFamily: 'Georgia, serif', fontWeight: 700, lineHeight: 1.2, marginBottom: 16 }}>
+          <h1 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.2, marginBottom: 16 }}>
             {article.title}
           </h1>
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center', color: '#666', fontSize: 13, fontFamily: 'system-ui, sans-serif' }}>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', color: '#666', fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif', flexWrap: 'wrap' }}>
             <span>{article.author}</span>
             <span>·</span>
             <span>{article.date}</span>
@@ -40,13 +40,13 @@ export default function BlogPost({ article }: { article: Article }) {
             padding: 20,
             marginBottom: 32,
           }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: '#E91E63', fontFamily: 'system-ui, sans-serif' }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: '#E91E63', fontFamily: 'Inter, system-ui, sans-serif' }}>
               Quick Picks
             </h2>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
               {article.quickPicks.map((pick, i) => (
                 <li key={i} style={{ marginBottom: 8 }}>
-                  <a href={pick.affiliateUrl} rel="nofollow sponsored" style={{ color: '#333', fontSize: 14, textDecoration: 'underline' }}>
+                  <a href={pick.affiliateUrl} rel="nofollow sponsored" style={{ color: '#333', fontSize: 14, textDecoration: 'underline', fontFamily: 'Inter, system-ui, sans-serif' }}>
                     {pick.label}
                   </a>
                 </li>
@@ -66,7 +66,7 @@ export default function BlogPost({ article }: { article: Article }) {
         />
 
         <div style={{ marginTop: 40, padding: '24px 0', borderTop: '1px solid #eee' }}>
-          <p style={{ color: '#999', fontSize: 12, fontFamily: 'system-ui, sans-serif' }}>
+          <p style={{ color: '#999', fontSize: 12, fontFamily: 'Inter, system-ui, sans-serif' }}>
             <strong>Affiliate Disclosure:</strong> Fashionistas.ai is reader-supported. When you buy through links on our site, we may earn an affiliate commission at no extra cost to you.
           </p>
         </div>

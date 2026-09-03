@@ -32,13 +32,13 @@ export default function BestOfPage({ params }: { params: { slug: string } }) {
   return (
     <div style={{ paddingTop: 100, minHeight: '100vh', padding: '100px 20px 80px' }}>
       <div style={{ maxWidth: 780, margin: '0 auto' }}>
-        <div style={{ backgroundColor: '#E91E63', color: 'white', padding: '12px 20px', borderRadius: 8, fontSize: 13, fontWeight: 700, fontFamily: 'system-ui, sans-serif', display: 'inline-block', marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 }}>
+        <div style={{ backgroundColor: '#E91E63', color: 'white', padding: '12px 20px', borderRadius: 8, fontSize: 13, fontWeight: 700, fontFamily: 'Inter, system-ui, sans-serif', display: 'inline-block', marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 }}>
           Our Top Picks
         </div>
-        <h1 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontFamily: 'Georgia, serif', fontWeight: 700, lineHeight: 1.2, marginBottom: 16 }}>
+        <h1 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.2, marginBottom: 16 }}>
           {data.title}
         </h1>
-        <p style={{ color: '#666', fontSize: 16, lineHeight: 1.6, marginBottom: 32 }}>
+        <p style={{ color: '#666', fontSize: 16, lineHeight: 1.6, marginBottom: 32, fontFamily: 'Inter, system-ui, sans-serif' }}>
           {data.description}
         </p>
 
