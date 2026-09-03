@@ -1,5 +1,6 @@
 import { articles } from '@/lib/articles-data';
 import EmailCapture from '@/components/EmailCapture';
+import AdUnit from '@/components/AdUnit';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -79,7 +80,65 @@ export default function BlogPage() {
           gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
           gap: 24,
         }}>
-          {articles.map((article) => (
+          {articles.slice(0, 3).map((article) => (
+            <a key={article.slug} href={`/blog/${article.slug}`} className="category-card" style={{
+              backgroundColor: 'white',
+              borderRadius: 16,
+              overflow: 'hidden',
+              border: '1px solid rgba(0,0,0,0.06)',
+              display: 'flex',
+              flexDirection: 'column',
+              textDecoration: 'none',
+              color: 'inherit',
+            }}>
+              <div className={getPattern(article.category)} style={{
+                width: '100%',
+                height: 180,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+              }}>
+                <span style={{
+                  position: 'absolute',
+                  top: 12,
+                  left: 12,
+                  backgroundColor: 'rgba(255,255,255,0.9)',
+                  color: '#E91E63',
+                  padding: '4px 12px',
+                  borderRadius: 8,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  textTransform: 'uppercase',
+                  letterSpacing: 1,
+                }}>{article.category}</span>
+                <span className="article-icon">{getIcon(article.category)}</span>
+              </div>
+              <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <h2 style={{ fontSize: 17, lineHeight: 1.4, marginBottom: 8, fontWeight: 700, fontFamily: "'Playfair Display', Georgia, serif" }}>{article.title}</h2>
+                <p style={{ color: '#666', fontSize: 13, lineHeight: 1.6, marginBottom: 14, flex: 1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontFamily: 'Inter, system-ui, sans-serif' }}>
+                  {article.excerpt}
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#999', fontSize: 11, fontFamily: 'Inter, system-ui, sans-serif' }}>{article.readTime}</span>
+                  <span style={{ color: '#999', fontSize: 11, fontFamily: 'Inter, system-ui, sans-serif' }}>{article.date}</span>
+                  <span style={{ color: '#E91E63', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, system-ui, sans-serif' }}>Read More →</span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+
+        <AdUnit slot="inContent" />
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gap: 24,
+          marginTop: 24,
+        }}>
+          {articles.slice(3).map((article) => (
             <a key={article.slug} href={`/blog/${article.slug}`} className="category-card" style={{
               backgroundColor: 'white',
               borderRadius: 16,

@@ -5,68 +5,68 @@ import ProductCard from '@/components/ProductCard';
 const trends = [
   {
     season: 'Fall 2026',
-    title: 'Quiet Luxury',
-    description: 'The "stealth wealth" trend continues with elevated basics, tonal dressing, and logo-free elegance.',
+    title: 'Gothic Romance',
+    description: 'The biggest mood of the season — moody lace, velvet, corsetry, and asymmetric hems. Saint Laurent, McQueen, and Ann Demeulemeester led the charge with dark, poetic silhouettes.',
     pieces: [
-      { name: 'Cashmere Crewneck', brand: 'Everlane', price: '$100', affiliateUrl: '#', tag: 'Essential' },
-      { name: 'Tailored Wool Trousers', brand: 'COS', price: '$135', affiliateUrl: '#', tag: 'Must-Have' },
-      { name: 'Leather Tote Bag', brand: 'Reformation', price: '$278', affiliateUrl: '#', tag: 'Invest' },
-      { name: 'Cashmere Scarf', brand: 'Arket', price: '$69', affiliateUrl: '#', tag: 'Add On' },
+      { name: 'Lace Midi Dress', brand: 'Reformation', price: '$278', affiliateUrl: '#', tag: 'Statement' },
+      { name: 'Velvet Blazer', brand: 'AllSaints', price: '$329', affiliateUrl: '#', tag: 'Invest' },
+      { name: 'Corset Top', brand: 'COS', price: '$89', affiliateUrl: '#', tag: 'Trending' },
+      { name: 'Asymmetric Skirt', brand: 'ASOS', price: '$42', affiliateUrl: '#', tag: 'Budget' },
     ],
   },
   {
     season: 'Fall 2026',
-    title: 'Cherry Red',
-    description: 'Bold cherry red is the color of the season — from accessories to head-to-toe monochrome looks.',
+    title: 'Tartan Revival',
+    description: 'Plaid and tartan dominated every runway this season. Chloé built an entire collection around checks, while Burberry brought the British heritage angle. The new tartan reads darker — forest green, burgundy, navy.',
     pieces: [
-      { name: 'Red Wool Coat', brand: 'Zara', price: '$129', affiliateUrl: '#', tag: 'Statement' },
-      { name: 'Cherry Leather Bag', brand: 'ASOS', price: '$48', affiliateUrl: '#', tag: 'Trending' },
-      { name: 'Red Lipstick Dress', brand: 'Reformation', price: '$198', affiliateUrl: '#', tag: 'Splurge' },
-      { name: 'Ruby Pointed Flats', brand: 'ASOS', price: '$34', affiliateUrl: '#', tag: 'Budget' },
+      { name: 'Tartan Midi Skirt', brand: 'Chloé', price: '$1,250', affiliateUrl: '#', tag: 'Runway' },
+      { name: 'Check Overshirt', brand: 'Burberry', price: '$890', affiliateUrl: '#', tag: 'Heritage' },
+      { name: 'Plaid Wool Trousers', brand: 'COS', price: '$125', affiliateUrl: '#', tag: 'Essential' },
+      { name: 'Gingham Blazer', brand: 'Zara', price: '$89', affiliateUrl: '#', tag: 'Budget' },
     ],
   },
   {
     season: 'Fall 2026',
-    title: 'Boho Revival',
-    description: '70s-inspired bohemian pieces come back with modern proportions and luxe fabrics.',
+    title: 'Color Blocking',
+    description: 'Bold two-tone combinations are everywhere — purple meets red, chartreuse meets blue, forest green meets pink. At Mugler, Akris, and Valentino, the idea of a color "clash" has been entirely forgotten.',
     pieces: [
-      { name: 'Suede Fringe Jacket', brand: 'Free People', price: '$298', affiliateUrl: '#', tag: 'Iconic' },
-      { name: 'Embroidered Maxi', brand: 'Anthropologie', price: '$168', affiliateUrl: '#', tag: 'Romance' },
-      { name: 'Woven Leather Belt', brand: 'Free People', price: '$58', affiliateUrl: '#', tag: 'Accent' },
-      { name: 'Suede Ankle Boots', brand: 'Free People', price: '$248', affiliateUrl: '#', tag: 'Staple' },
+      { name: 'Purple Wool Coat', brand: 'Mango', price: '$159', affiliateUrl: '#', tag: 'Statement' },
+      { name: 'Two-Tone Knit', brand: '& Other Stories', price: '$79', affiliateUrl: '#', tag: 'Trending' },
+      { name: 'Colorblock Dress', brand: 'Zara', price: '$69', affiliateUrl: '#', tag: 'Fun' },
+      { name: 'Cobalt Blue Bag', brand: 'DeMellier', price: '$395', affiliateUrl: '#', tag: 'Invest' },
     ],
   },
   {
     season: 'Fall 2026',
-    title: 'Prep School',
-    description: 'Varsity-inspired layers, pleated skirts, and collegiate knuckles get a sophisticated update.',
+    title: 'Tactile Textures',
+    description: 'From shearling coats to faux fur, brocade, and velvet — texture did the heavy lifting this season. Bottega Veneta, Dior, and Louis Vuitton made fashion that begs to be touched.',
     pieces: [
-      { name: 'Cable Knit Vest', brand: 'COS', price: '$89', affiliateUrl: '#', tag: 'Layer' },
-      { name: 'Pleated Midi Skirt', brand: 'ASOS', price: '$38', affiliateUrl: '#', tag: 'Classic' },
-      { name: 'Oxford Shirt', brand: 'Everlane', price: '$58', affiliateUrl: '#', tag: 'Essential' },
-      { name: 'Loafers', brand: 'Reformation', price: '$168', affiliateUrl: '#', tag: 'Finish' },
+      { name: 'Shearling Coat', brand: 'Bottega Veneta', price: '$4,200', affiliateUrl: '#', tag: 'Luxe' },
+      { name: 'Faux Fur Jacket', brand: 'Free People', price: '$298', affiliateUrl: '#', tag: 'Cruelty-Free' },
+      { name: 'Brocade Blazer', brand: 'Dior', price: '$3,800', affiliateUrl: '#', tag: 'Runway' },
+      { name: 'Velvet Trousers', brand: 'Mango', price: '$59', affiliateUrl: '#', tag: 'Budget' },
     ],
   },
   {
     season: 'Fall 2026',
-    title: 'Metallics',
-    description: 'Liquid silver, gold lamé, and chrome accessories bring futuristic glamour to everyday wear.',
+    title: 'The Updated Lady',
+    description: 'Power dressing gets softened — sculpted jackets, sloping waists, and rich textures that balance strength with ease. Chanel, Givenchy, and Balenciaga redefined the skirt suit for 2026.',
     pieces: [
-      { name: 'Silver Mini Bag', brand: 'Zara', price: '$39', affiliateUrl: '#', tag: 'Fun' },
-      { name: 'Metallic Pleated Skirt', brand: 'ASOS', price: '$42', affiliateUrl: '#', tag: 'Party' },
-      { name: 'Chrome Chain Necklace', brand: 'Zara', price: '$22', affiliateUrl: '#', tag: 'Accent' },
-      { name: 'Gold Loafers', brand: 'COS', price: '$145', affiliateUrl: '#', tag: 'Statement' },
+      { name: 'Sculpted Blazer', brand: 'Chanel', price: '$5,800', affiliateUrl: '#', tag: 'Iconic' },
+      { name: 'Pencil Skirt Suit', brand: 'COS', price: '$199', affiliateUrl: '#', tag: 'Essential' },
+      { name: 'Peplum Cardigan', brand: 'Reformation', price: '$148', affiliateUrl: '#', tag: 'Trending' },
+      { name: 'Pointed-Toe Pumps', brand: 'Jil Sander', price: '$890', affiliateUrl: '#', tag: 'Finish' },
     ],
   },
   {
     season: 'Fall 2026',
-    title: 'Leather Everything',
-    description: 'From butter-soft blazers to wide-leg trousers — leather is having its biggest moment yet.',
+    title: 'Art Deco Evening',
+    description: 'The roaring \'20s return with dropped waists, intricate beading, fringe, and velvet. Khaite, Fendi, and Rabanne channeled Gatsby-era opulence for modern eveningwear.',
     pieces: [
-      { name: 'Leather Blazer', brand: 'AllSaints', price: '$349', affiliateUrl: '#', tag: 'Invest' },
-      { name: 'Leather Trousers', brand: 'ASOS', price: '$58', affiliateUrl: '#', tag: 'Budget' },
-      { name: 'Leather Skirt', brand: 'Reformation', price: '$178', affiliateUrl: '#', tag: 'Feminine' },
-      { name: 'Leather Crossbody', brand: 'Everlane', price: '$128', affiliateUrl: '#', tag: 'Daily' },
+      { name: 'Beaded Slip Dress', brand: 'Khaite', price: '$2,400', affiliateUrl: '#', tag: 'Evening' },
+      { name: 'Fringe Jacket', brand: 'Rabanne', price: '$1,650', affiliateUrl: '#', tag: 'Statement' },
+      { name: 'Drop-Waist Skirt', brand: 'Zara', price: '$49', affiliateUrl: '#', tag: 'Budget' },
+      { name: 'Velvet Clutch', brand: 'Chloé', price: '$1,100', affiliateUrl: '#', tag: 'Invest' },
     ],
   },
 ];
@@ -97,7 +97,7 @@ export default function TrendsPage() {
             margin: '0 auto',
             lineHeight: 1.6,
           }}>
-            The trends defining this season — with shoppable picks at every price point.
+            The trends defining this season — from gothic romance to tartan revival, with shoppable picks at every price point.
           </p>
         </div>
 

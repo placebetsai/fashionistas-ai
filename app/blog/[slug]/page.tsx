@@ -1,6 +1,7 @@
 import { articles } from '@/lib/articles-data';
 import { notFound } from 'next/navigation';
 import BlogPost from '@/components/BlogPost';
+import AdUnit from '@/components/AdUnit';
 import type { Metadata } from 'next';
 
 export async function generateStaticParams() {
@@ -34,6 +35,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
 
   return (
     <div style={{ paddingTop: 100, minHeight: '100vh', padding: '100px 20px 80px' }}>
+      <AdUnit slot="inContent" />
       <BlogPost article={article} />
     </div>
   );

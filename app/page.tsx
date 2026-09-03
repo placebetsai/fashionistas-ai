@@ -1,5 +1,6 @@
 import { articles } from '@/lib/articles-data';
 import EmailCapture from '@/components/EmailCapture';
+import AdUnit from '@/components/AdUnit';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -161,6 +162,8 @@ export default function Home() {
         </div>
       </section>
 
+      <AdUnit slot="hero" />
+
       {/* Trending Categories */}
       <section style={{ padding: '60px 20px', maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
@@ -311,12 +314,12 @@ export default function Home() {
             <div style={{ color: '#666', fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif', marginTop: 4 }}>Expert Articles</div>
           </div>
           <div>
-            <div className="stat-number" style={{ fontSize: 40, fontWeight: 800, color: '#E91E63', fontFamily: "'Playfair Display', Georgia, serif" }}>12K+</div>
-            <div style={{ color: '#666', fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif', marginTop: 4 }}>Newsletter Subscribers</div>
+            <div className="stat-number" style={{ fontSize: 40, fontWeight: 800, color: '#E91E63', fontFamily: "'Playfair Display', Georgia, serif" }}>Growing</div>
+            <div style={{ color: '#666', fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif', marginTop: 4 }}>Reader Community</div>
           </div>
           <div>
-            <div className="stat-number" style={{ fontSize: 40, fontWeight: 800, color: '#E91E63', fontFamily: "'Playfair Display', Georgia, serif" }}>500+</div>
-            <div style={{ color: '#666', fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif', marginTop: 4 }}>Products Reviewed</div>
+            <div className="stat-number" style={{ fontSize: 40, fontWeight: 800, color: '#E91E63', fontFamily: "'Playfair Display', Georgia, serif" }}>New</div>
+            <div style={{ color: '#666', fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif', marginTop: 4 }}>Products Tested</div>
           </div>
         </div>
       </section>

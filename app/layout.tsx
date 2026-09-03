@@ -99,10 +99,10 @@ function Footer() {
           <div>
             <h4 style={{ color: '#E91E63', fontSize: 12, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 700 }}>Connect</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <span style={{ color: '#666', fontSize: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>Pinterest</span>
-              <span style={{ color: '#666', fontSize: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>Instagram</span>
-              <span style={{ color: '#666', fontSize: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>Newsletter</span>
-              <span style={{ color: '#666', fontSize: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>Contact</span>
+              <a href="/about" style={{ color: '#666', fontSize: 14, fontFamily: 'Inter, system-ui, sans-serif', textDecoration: 'none' }}>About</a>
+              <a href="/contact" style={{ color: '#666', fontSize: 14, fontFamily: 'Inter, system-ui, sans-serif', textDecoration: 'none' }}>Contact</a>
+              <a href="/privacy" style={{ color: '#666', fontSize: 14, fontFamily: 'Inter, system-ui, sans-serif', textDecoration: 'none' }}>Privacy Policy</a>
+              <a href="/terms" style={{ color: '#666', fontSize: 14, fontFamily: 'Inter, system-ui, sans-serif', textDecoration: 'none' }}>Terms of Service</a>
             </div>
           </div>
         </div>
