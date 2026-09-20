@@ -1,0 +1,12 @@
+{
+  "name": "fashionistas-ai",
+  "version": "1.0.0",
+  "description": "AI-Powered Fashion Reselling - AR Try-On, Closet Listing, Auto-Marketplace",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "deploy": "npx wrangler pages deploy . --project-name=fashionistas-ai"
+  },
+  "author": "Israel Joffe",
+  "license": "MIT"
+}
