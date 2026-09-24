@@ -1,0 +1,18 @@
+{
+  "name": "Fashionistas",
+  "short_name": "Fashionistas",
+  "description": "Snap a photo. AI sells your closet on 24 marketplaces.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#b3471f",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
