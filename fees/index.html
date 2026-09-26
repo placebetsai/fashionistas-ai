@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marketplace fee take-home calculator — Depop vs Poshmark vs eBay | fashionistas.ai</title>
+<meta name="description" content="Compare seller fee take-home across Depop, eBay, Poshmark, Mercari, Vinted and Grailed. Same fee concept fashionistas.ai uses before you paste listing drafts yourself.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://fashionistas.ai/fees/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="fashionistas.ai">
+<meta property="og:title" content="Marketplace fee take-home calculator — Depop vs Poshmark vs eBay">
+<meta property="og:description" content="See what you keep after seller fees on Depop, eBay, Poshmark, Mercari, Vinted and Grailed. Powered by the same fee take-home idea as fashionistas.ai.">
+<meta property="og:url" content="https://fashionistas.ai/fees/">
+<meta property="og:image" content="https://fashionistas.ai/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Marketplace fee take-home calculator | fashionistas.ai">
+<meta name="twitter:description" content="Compare Depop, eBay, Poshmark, Mercari, Vinted and Grailed seller fees before you list.">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/site.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"fashionistas.ai marketplace fee take-home calculator","url":"https://fashionistas.ai/fees/","applicationCategory":"FinanceApplication","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Compare approximate seller fee take-home across Depop, eBay, Poshmark, Mercari, Vinted and Grailed."}</script>
+</head>
+<body>
+<div class="wrap">
+<header class="topnav">
+<a class="brand" href="/">fashionistas<span>.ai</span></a>
+<nav aria-label="Main">
+<a href="/fees/" aria-current="page">Fees</a>
+<a href="/about/">About</a>
+<a href="/privacy/">Privacy</a>
+<a href="/contact/">Contact</a>
+<a href="/">App</a>
+</nav>
+</header>
+<span class="badge">Fee take-home</span>
+<h1>What you keep after marketplace fees</h1>
+<p class="lede">Before you paste a fashionistas.ai draft into Depop, eBay, Poshmark, Mercari, Vinted or Grailed, check approximate seller take-home. Rates below mirror the fee concept in the app (platform % of sale price). Shipping and payment nuances vary by country — confirm on each shop before you price.</p>
+
+<div class="card">
+<div class="grid-2">
+<div>
+<label for="price">Sale price (USD)</label>
+<input class="input" id="price" type="number" min="1" step="0.01" value="45" inputmode="decimal">
+</div>
+<div>
+<label for="ship">Shipping you pay (USD, optional)</label>
+<input class="input" id="ship" type="number" min="0" step="0.01" value="0" inputmode="decimal">
+</div>
+</div>
+<div class="calc-out" id="out" aria-live="polite"></div>
+<p class="note" style="margin-bottom:0">Vinted is modeled at <strong>0% seller fee</strong> in most regions (buyers pay protection). Poshmark uses a flat <strong>$2.95</strong> under $15 and <strong>20%</strong> at $15+. Other % values are common US seller approximations used for take-home comparison — the live app refreshes platform fee % from its marketplace list after you sign in.</p>
+</div>
+
+<div class="card" style="margin-top:18px">
+<h2 style="font-size:1.15rem;margin-top:0">Why this page exists</h2>
+<p>fashionistas.ai prepares <strong>text drafts you post yourself</strong>. Fee clarity is part of that workflow: know net take-home before you paste. This calculator is static HTML for search and for sellers who want the comparison without opening the app shell.</p>
+<p style="margin-bottom:0"><a class="btn btn-accent" href="/">Open fashionistas.ai</a> &nbsp; <a href="/contact/">Questions? Contact us</a></p>
+</div>
+
+<footer class="site-footer">
+<nav aria-label="Footer">
+<a href="/">Home</a>
+<a href="/fees/">Fee take-home</a>
+<a href="/contact/">Contact</a>
+<a href="/about/">About</a>
+<a href="/privacy/">Privacy</a>
+<a href="/">Open app</a>
+</nav>
+<p>fashionistas.ai — AI listing drafts you post yourself. Email: <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a></p>
+</footer>
+</div>
+<script>
+// Approximate seller fee model aligned with fashionistas multilist fee take-home.
+const MARKETS = [
+  { id:"depop", name:"Depop", feePct:10, note:"~10% seller fee (US typical)" },
+  { id:"ebay", name:"eBay", feePct:13.25, note:"~13.25% managed payments (varies by category)" },
+  { id:"poshmark", name:"Poshmark", feePct:20, note:"20% at $15+; $2.95 under $15", special:"posh" },
+  { id:"mercari", name:"Mercari", feePct:10, note:"~10% selling fee (processing extra on some sales)" },
+  { id:"vinted", name:"Vinted", feePct:0, note:"0% seller fee in most countries" },
+  { id:"grailed", name:"Grailed", feePct:9, note:"~9% commission" }
+];
+function money(n){ return "$" + (Math.round(n*100)/100).toFixed(2); }
+function feeFor(m, price){
+  if (m.special === "posh") return price < 15 ? 2.95 : price * 0.20;
+  return price * (m.feePct/100);
+}
+function render(){
+  const price = Math.max(0, parseFloat(document.getElementById("price").value)||0);
+  const ship = Math.max(0, parseFloat(document.getElementById("ship").value)||0);
+  const rows = MARKETS.map(m => {
+    const fee = feeFor(m, price);
+    const keep = price - fee - ship;
+    return { m, fee, keep };
+  }).sort((a,b)=> b.keep - a.keep);
+  document.getElementById("out").innerHTML = `
+    <table class="table">
+      <thead><tr><th>Marketplace</th><th>Est. fee</th><th>You keep</th><th></th></tr></thead>
+      <tbody>
+        ${rows.map(({m,fee,keep}) => `
+          <tr>
+            <td><b>${m.name}</b><div class="muted" style="font-size:12px">${m.note}</div></td>
+            <td>${money(fee)}</td>
+            <td class="keep">${money(keep)}</td>
+            <td class="muted" style="font-size:12px">${m.feePct}%</td>
+          </tr>`).join("")}
+      </tbody>
+    </table>`;
+}
+["price","ship"].forEach(id => document.getElementById(id).addEventListener("input", render));
+render();
+</script>
+</body>
+</html>
