@@ -1,0 +1,5 @@
+# fashionistas.ai ads.txt
+# No Google AdSense publisher ID is configured for this site yet.
+# When a ca-pub / pub-id is issued for fashionistas.ai, replace this file with lines like:
+# google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
+# Do not serve SPA HTML at /ads.txt.
