@@ -717,6 +717,22 @@ nav.tabbar a.on{color:var(--accent)}
 .xl-item-p{font-weight:800;color:var(--accent);flex:none}
 .xl-admin{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 @media (max-width:520px){.xl-admin{grid-template-columns:1fr}}
+
+/* ---- multilist connect shops ---- */
+.xl-connect-note{font-size:13.5px;line-height:1.55;margin:0 0 12px;color:var(--mut)}
+.xl-connect-note b{color:var(--ink)}
+.xl-connect-grid{display:flex;flex-direction:column;gap:0}
+.xl-connect-row{display:flex;align-items:center;gap:11px;padding:12px 0;border-bottom:1px solid var(--line)}
+.xl-connect-row:last-child{border-bottom:0}
+.xl-connect-name{flex:1;min-width:0}
+.xl-connect-name b{display:block;font-size:14.5px}
+.xl-connect-name span{font-size:12px;color:var(--mut);line-height:1.4}
+.xl-connect-status{flex:none}
+.xl-connect-actions{display:flex;gap:7px;flex-wrap:wrap;flex:none}
+.tag.needs{background:var(--soft);color:var(--mut)}
+.tag.connected{background:var(--good-soft);color:var(--good)}
+.tag.soon{background:rgba(124,92,255,.12);color:var(--accent2)}
+.xl-connect-foot{margin:12px 0 0;font-size:12.5px;color:var(--mut);line-height:1.5}
 @media (prefers-reduced-motion:reduce){#guide-panel,.g-msg,.g-mode{animation:none;transition:none}}
 @media (min-width:900px){
   #guide-fab,#hc-fab{bottom:20px}
@@ -2362,6 +2378,125 @@ async function toggleOnsale(id, btn){
 }
 
 /* ================= HOME ================= */
+
+/* ================= SHOP CONNECT (multilist) =================
+   UI + eBay OAuth stubs. Connection state is local-only until the
+   API worker stores real tokens. Paste multilist is unchanged. */
+const XL_CONNECT_KEY = "fash_connect_v1";
+const XL_CONNECT_SHOPS = [
+  { id: "depop", name: "Depop", oauth: false, signup: "https://www.depop.com/register", guide: "Depop" },
+  { id: "ebay", name: "eBay", oauth: true, signup: "https://signup.ebay.com/", guide: "eBay" },
+  { id: "poshmark", name: "Poshmark", oauth: false, signup: "https://poshmark.com/signup", guide: "Poshmark" },
+  { id: "mercari", name: "Mercari", oauth: false, signup: "https://www.mercari.com/", guide: "Mercari" },
+  { id: "vinted", name: "Vinted", oauth: false, signup: "https://www.vinted.com/", guide: "Vinted" },
+  { id: "grailed", name: "Grailed", oauth: false, signup: "https://www.grailed.com/", guide: "Grailed" }
+];
+
+function xlConnectLoad(){
+  try {
+    const raw = localStorage.getItem(XL_CONNECT_KEY);
+    const o = raw ? JSON.parse(raw) : {};
+    return (o && typeof o === "object") ? o : {};
+  } catch { return {}; }
+}
+function xlConnectSave(state){
+  try { localStorage.setItem(XL_CONNECT_KEY, JSON.stringify(state || {})); } catch {}
+}
+function xlConnectStatus(id){
+  const s = xlConnectLoad()[id];
+  return (s && s.status === "connected") ? "connected" : "needs";
+}
+function xlConnectRowsHtml(){
+  return XL_CONNECT_SHOPS.map(shop => {
+    const st = xlConnectStatus(shop.id);
+    const connected = st === "connected";
+    const statusTag = connected
+      ? `<span class="tag connected">Connected</span>`
+      : `<span class="tag needs">Needs account</span>`;
+    let actions = "";
+    if (connected) {
+      actions = `<button type="button" class="btn btn-soft btn-sm" onclick="xlConnectDisconnect('${shop.id}')" data-tip="Clears the local Connected flag for this shop.">Disconnect</button>`;
+    } else if (shop.oauth) {
+      actions = `<button type="button" class="btn btn-accent btn-sm" onclick="xlEbayConnectStart()" data-tip="Starts the eBay OAuth stub (needs Cloudflare secrets).">Connect eBay</button>`
+        + `<button type="button" class="btn btn-soft btn-sm" onclick="xlConnectOpenGuide('${shop.guide}')" data-tip="Opens Guide A to Z for eBay account setup.">Guide</button>`;
+    } else {
+      actions = `<button type="button" class="btn btn-soft btn-sm" onclick="xlConnectOpenGuide('${shop.guide}')" data-tip="Opens Guide A to Z — how to open a ${escapeHtml(shop.name)} seller account.">Guide A to Z</button>`
+        + `<a class="btn btn-soft btn-sm" href="${escapeHtml(shop.signup)}" target="_blank" rel="noopener noreferrer" data-tip="Opens ${escapeHtml(shop.name)} signup.">Open signup</a>`
+        + `<button type="button" class="btn btn-ghost btn-sm" onclick="xlConnectMarkLocal('${shop.id}')" data-tip="Marks Connected locally only — does not grant API post access.">Mark connected</button>`;
+    }
+    const detail = connected
+      ? (shop.oauth ? "OAuth linked (local flag) · auto-post when worker tokens land" : "Local Connected flag · still paste until API post ships")
+      : (shop.oauth ? "OAuth scaffold · paste drafts until Connected" : "No OAuth yet · paste drafts or follow the guide");
+    return `<div class="xl-connect-row" data-shop="${shop.id}">
+      <div class="xl-connect-name"><b>${escapeHtml(shop.name)}</b><span>${detail}</span></div>
+      <div class="xl-connect-status">${statusTag}</div>
+      <div class="xl-connect-actions">${actions}</div>
+    </div>`;
+  }).join("");
+}
+function xlConnectRefresh(){
+  const grid = document.querySelector("#xl-connect .xl-connect-grid");
+  if (grid) grid.innerHTML = xlConnectRowsHtml();
+  refreshTips();
+}
+function xlConnectMarkLocal(id){
+  const state = xlConnectLoad();
+  state[id] = { status: "connected", via: "local", at: new Date().toISOString() };
+  xlConnectSave(state);
+  toast(id + " marked Connected locally — paste still works; API post needs a real link");
+  xlConnectRefresh();
+}
+function xlConnectDisconnect(id){
+  const state = xlConnectLoad();
+  delete state[id];
+  xlConnectSave(state);
+  toast(id + " set back to Needs account");
+  xlConnectRefresh();
+}
+function xlConnectOpenGuide(mktName){
+  try { hcToggle(); } catch {}
+  toast("Guide A to Z — follow the " + mktName + " account steps, then paste your draft");
+}
+async function xlEbayConnectStart(){
+  // Stub: hits Pages Function /api/ebay/oauth/start which returns not-configured
+  // until EBAY_CLIENT_ID / EBAY_CLIENT_SECRET are set on Cloudflare.
+  toast("Starting eBay connect…");
+  try {
+    const r = await fetch("/api/ebay/oauth/start", { credentials: "same-origin" });
+    const data = await r.json().catch(() => ({}));
+    if (data && data.authorizeUrl) {
+      window.location.href = data.authorizeUrl;
+      return;
+    }
+    const msg = (data && (data.message || data.error)) || ("eBay OAuth not configured (" + r.status + ")");
+    toast(msg);
+    console.info("[ebay-oauth]", data || r.status);
+  } catch (e) {
+    toast("eBay OAuth stub unreachable — add secrets per docs/EBAY_OAUTH.md");
+    console.info("[ebay-oauth]", e);
+  }
+}
+function xlEbayHandleCallbackParams(){
+  try {
+    const u = new URL(location.href);
+    const ebay = u.searchParams.get("ebay_oauth");
+    if (!ebay) return;
+    if (ebay === "ok") {
+      const state = xlConnectLoad();
+      state.ebay = { status: "connected", via: "oauth-stub", at: new Date().toISOString() };
+      xlConnectSave(state);
+      toast("eBay Connected (callback stub)");
+    } else {
+      toast("eBay connect failed: " + (u.searchParams.get("ebay_error") || ebay));
+    }
+    u.searchParams.delete("ebay_oauth");
+    u.searchParams.delete("ebay_error");
+    history.replaceState({}, "", u.pathname + u.search + u.hash);
+    if (typeof go === "function") setTimeout(() => go("xl"), 50);
+  } catch {}
+}
+document.addEventListener("DOMContentLoaded", () => { try { xlEbayHandleCallbackParams(); } catch {} });
+
 /* ================= MULTILIST HUB (marketplace lister + admin) ================= */
 async function renderXL(el){
   if (!TOKEN || !USER) {
@@ -2398,6 +2533,13 @@ async function renderXL(el){
         <span><b>${items.length}</b> items</span>
         <span><b>${live.length}</b> live</span>
       </div>
+    </div>
+
+    <div class="card" id="xl-connect">
+      <h3 style="margin-top:0">Connect your shops</h3>
+      <p class="xl-connect-note"><b>Honest status:</b> fashionistas.ai only posts when a shop shows <b>Connected</b>. Until then you copy the draft and paste it yourself — or open <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="hcToggle()" data-tip="Opens Guide A to Z for account setup.">Guide A to Z</button> for step-by-step account setup. Paste multilist still works either way.</p>
+      <div class="xl-connect-grid">${xlConnectRowsHtml()}</div>
+      <p class="xl-connect-foot">eBay OAuth is scaffolded and needs your developer Client ID / Secret in Cloudflare (see <code>docs/EBAY_OAUTH.md</code>). Other shops stay paste-only until each has a real connect path.</p>
     </div>
 
     <div class="card">
