@@ -8,7 +8,7 @@ fashionistas.ai Multilist → **Connect your shops** opens a **guidance panel pe
 |--------|---------|
 | **Needs account** | No local progress yet |
 | **Ready to guide** | Connect guide opened (or eBay BYO keys saved) |
-| **Connected** | Local flag (or eBay OAuth callback stub) — paste still works until real worker tokens exist |
+| **Connected** | Local flag; eBay after successful OAuth token exchange (HttpOnly cookie). Paste still works. Listing create is a follow-up. |
 
 Stored in `localStorage` key `fash_connect_v1`.
 
