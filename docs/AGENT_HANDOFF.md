@@ -93,9 +93,10 @@ Package script: `"deploy": "npx wrangler pages deploy . --project-name=fashionis
 
 | Deployment | Source | Notes |
 |------------|--------|--------|
-| **`421a5d5a-…`** (see deployment list) | `d2d606d` | Latest: https://421a5d5a.fashionistas-ai.pages.dev — handoff stamp + PR #6 code |
-| `3d00b6ca-5a08-46ed-846c-fffa4d8ddfbf` | `54a6d28` (PR #6 merge) | eBay listing + per-shop kits |
-| `16dc126f-…` | `0c4dd7b` (PR #5) | Prior trust sprint |
+| **`075ef679`** | `125816d` (feat/ebay-multilist-ux-walkthrough) | UX walkthrough → https://075ef679.fashionistas-ai.pages.dev · live https://fashionistas.ai |
+| `f84cf3d4` | same SHA (preview alias) | https://f84cf3d4.fashionistas-ai.pages.dev |
+| `421a5d5a-…` | `d2d606d` | Prior handoff stamp |
+| `3d00b6ca-…` | `54a6d28` (PR #6) | eBay listing + per-shop kits |
 
 - **Source of truth for live HTML:** Cloudflare Pages deployment list, **not** GitHub alone.
 - Pages **Git Provider: No** — pushes to `main` do **not** auto-deploy.
