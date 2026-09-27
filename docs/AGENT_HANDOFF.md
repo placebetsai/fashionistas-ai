@@ -195,7 +195,7 @@ git cat-file -t <source_sha>   # fatal = not in this clone / laptop-only
 | eBay OAuth authorize + token exchange | **YES** (BYO or CF env keys) |
 | eBay Create / `POST /api/ebay/listing` | **YES path** — needs token + sell scopes + **business policies** |
 | Durable refresh on fashionistas-api KV | **NOT yet** (cookie best-effort) |
-| Equal Multilist UX (all shops first-class) | **IN FLIGHT** — see §6 |
+| Equal Multilist UX (all shops first-class) | **SHIPPED** `c9490e3` — wrangler deploy this session; see §6 |
 | Browser extension guided paste | **NOT yet** |
 | Real AdSense | **NO** until real pub-id |
 | Fake accounts / invented pub-ids / invented shop keys | **Must never** |
