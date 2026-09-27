@@ -1,11 +1,11 @@
 # Agent handoff — fashionistas.ai
 
-**Audience:** Other agents continuing product / deploy / Connect / UX work  
-**Session covered:** 2026-09-26 → 2026-09-26 late ET (America/New_York)  
+**Audience:** Other agents continuing product / deploy / Connect / Multilist UX work  
+**Session covered:** 2026-09-26 full day → **night ET** (through ~23:42 EDT / early 2026-09-27 UTC)  
 **Repo:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
-**Handoff written:** after feat/ebay-multilist-ux-walkthrough (seller UX walk to first eBay listing)
+**Handoff refreshed:** 2026-09-26 night ET — complete record through PR #7 (open) + equal-UX demand in flight  
 
-Read this before changing live Pages, inventing marketplace credentials, or assuming GitHub `main` equals production.
+Read this before changing live Pages, inventing marketplace credentials, merging eBay-centric UX, or assuming GitHub `main` equals production.
 
 ---
 
@@ -15,11 +15,11 @@ Read this before changing live Pages, inventing marketplace credentials, or assu
 |------|--------|
 | **Product** | Multilist **AI listing drafts** — photo → ID / price / fee take-home → **paste-ready per-shop kits** |
 | **Shops (6)** | Depop, eBay, Poshmark, Mercari, Vinted, Grailed |
-| **Auto-post** | **Mostly no.** Paste kits for all six. **eBay only:** optional API create when OAuth Connected + sell scopes + business policies |
-| **API** | `https://fashionistas-api.fashionistas1979.workers.dev` (health ≈ `{"ok":true,"version":"3.1.0"}`) |
+| **Auto-post** | **Mostly no.** Paste kits for **all six**. **eBay only:** optional API create when OAuth Connected + sell scopes + business policies |
+| **API host** | `https://fashionistas-api.fashionistas1979.workers.dev` (health ≈ `{"ok":true,"version":"3.1.0"}`) |
 | **Pages project** | `fashionistas-ai` |
 | **Domain** | `https://fashionistas.ai` |
-| **Deploy** | **`npx wrangler pages deploy . --project-name=fashionistas-ai`** — **not** GitHub Actions. Cloudflare Pages **Git Provider: No**. |
+| **Deploy** | **`npx wrangler pages deploy . --project-name=fashionistas-ai` only** — **not** GitHub Actions. Cloudflare Pages **Git Provider: No**. Push to `main` ≠ deploy. |
 
 ```bash
 # From repo root (static site + functions/)
@@ -31,95 +31,77 @@ Package script: `"deploy": "npx wrangler pages deploy . --project-name=fashionis
 
 ---
 
-## 2. UX Research audit → P0 ship (PASS 29/29)
+## 2. UX Research P0 + PASS; app audit Mixed
+
+### Marketing / trust / AdSense plumbing — **PASS 29/29**
 
 **Audit (box):** `/workspace/tnr/audits/FASHIONISTAS-UX-AUDIT-2026-09-26.md`  
-**Re-verify:** ~19:31 ET 2026-09-26 — **PASS 29/29**
+**Re-verify:** ~19:31 ET 2026-09-26 — **PASS 29/29** against main `a3c6832` / Pages `fashionistas-ai`
 
-### Shipped (PR #1 → merge `a3c6832` / commit `89d1bd7`)
+| P0 | Live result | PR |
+|----|-------------|-----|
+| **Contact** | Static `/contact/` — FormSubmit → `fashionistas1979@gmail.com`, honeypot `_honey`, unique title (not SPA) | #1 |
+| **About / Privacy** | Static `/about/`, `/privacy/` + footer links | #1 |
+| **ads.txt** | Plain-text **comment-only** placeholder — **no invented** AdSense pub-id; `_headers` forces text/plain | #1 |
+| **Fees calculator** | Indexable `/fees/` take-home for all 6 marketplaces | #1 |
+| **Sitemap** | In: `/`, `/fees/`, `/contact/`, `/about/`, `/privacy/`, `/app/`. Out: thin `/blog`, `/ar-tryon` | #1 |
 
-| P0 | Live result |
-|----|-------------|
-| **Contact** | Static `/contact/` — FormSubmit → `fashionistas1979@gmail.com` |
-| **About / Privacy** | Static `/about/`, `/privacy/` |
-| **ads.txt** | Comment-only placeholder — **no invented** AdSense pub-id |
-| **Fees calculator** | Indexable `/fees/` for all 6 marketplaces |
-| **Sitemap** | `/`, `/fees/`, `/contact/`, `/about/`, `/privacy/`, `/app/` |
+**Follow (not fail):** FormSubmit activation on first real submit; real AdSense `google.com, pub-…` lines **only after** a real pub-id exists. **Do not** invent a pub-id or ship `adsbygoogle` without it.
 
-**Follow:** FormSubmit activation on first real submit; real AdSense lines **only after** a real pub-id exists.
+### App product UX audit — **Mixed** (then many P0s fixed night-of)
 
----
+**Audit (box):** `/workspace/tnr/audits/FASHIONISTAS-APP-UX-AUDIT-2026-09-26.md`  
+**Verdict at audit time:** **Mixed** — fee take-home + paste-honest multilist strong; honesty/manifest/Shop junk/generic kits/sample JPG/Multilist-not-a-tab weak.
 
-## 3. App UX + Connect + this batch
-
-### P0 trust sprint (PR #5 → `0c4dd7b`)
-
-| Issue | Status |
-|-------|--------|
-| Honesty drift / manifest | **Fixed** — paste / 6 shops / you post yourself |
-| Shop QA junk | **Client filter** |
-| Sample jacket | **Fixed** — `sample-jacket.jpg` |
-| Multilist tab | **Fixed** — primary tabbar |
-| Vinted fee drift | **Fixed** — FEE_TABLE |
-| eBay token exchange | **Fixed** — Connected + HttpOnly `ebay_oauth_tok` |
-
-### This batch (feat/ebay-listing-per-shop-kits)
-
-| Item | Status |
-|------|--------|
-| **Per-shop kits** | **Shipped** — `XL_KIT_RULES` / `xlKit(l, shopId)` for Depop, eBay, Poshmark, Mercari, Vinted, Grailed (title max, tags/hashtags, tone, field hints aligned with `MKT_CARD`) |
-| **eBay listing create** | **Shipped path** — `POST /api/ebay/listing` → Sell Inventory `createOrReplaceInventoryItem` → business policies → `createOffer` → optional `publishOffer` |
-| **OAuth scopes** | Expanded: `sell.inventory` + `sell.account` (+ readonly). Users who connected earlier **must re-consent** |
-| **Refresh token store** | **Best-effort cookie** (`ebay_oauth_tok`, Max-Age ~90d when refresh present). Optional KV put if Pages binding `EBAY_TOKENS` / `FASHIONISTAS_KV` / `TOKENS` exists. **Still need durable store on fashionistas-api KV** |
-| **Status probe** | `GET /api/ebay/status` — connected / hasRefresh / env / expired (no secrets) |
-
-### UX walkthrough batch (feat/ebay-multilist-ux-walkthrough)
-
-| Item | Status |
-|------|--------|
-| **Connect eBay progress** | **Shipped** — Needs keys → Connect OAuth → Connected → Ready to post stepper; probes `/api/ebay/status` |
-| **Reconnect eBay** | **Shipped** — one primary button restarts OAuth with sell.inventory scopes when scopes stale / create returns scope errors |
-| **Create on eBay sheet** | **Shipped** — primary CTA + inline creating… / needs business policies / success (+ listing or Seller Hub link); action buttons (Open Seller Hub policies, Reconnect) |
-| **First-run Multilist** | **Shipped** — Snap → kit → Create on eBay path card when closet empty |
-| **Coach copy** | Short in-panel coach (not docs dump); advanced RuName tucked under details |
-| **Backends** | Unchanged — still `/api/ebay/oauth/*`, `/api/ebay/listing`, `/api/ebay/status` |
-
+| App-audit P0 | Status after night ET ship |
+|--------------|----------------------------|
+| Honesty drift (“Publish everywhere”) | **Fixed** PR #5 — paste / 6 shops / you post yourself |
+| Manifest “24 marketplaces” / “AI sells” | **Fixed** PR #5 |
+| Shop QA junk / platform bloat | **Client filter** PR #5 — **API-side Shop cleanup still TODO** |
+| Generic `xlKit` | **Fixed** PR #6 — `xlKit(l, shopId)` / `XL_KIT_RULES` per shop |
+| `sample-jacket.jpg` → SPA HTML | **Fixed** PR #5 — real image asset |
+| Multilist not in tabbar | **Fixed** PR #5 — Multilist primary; Map under More |
+| Deep routes `/guide/` `/pricing/` `/marketplaces/` | **Still SPA shell** (no pathname router) |
+| Demo credentials in client JS | **Still present** (abuse risk) |
+| Equal Multilist UX (not eBay-centric) | **User demand night ET — in flight** (see §6) |
 
 ---
 
-## 4. Deploy truth (critical)
+## 3. Contact / fees / ads.txt / about / privacy
 
-### Latest known CF Production (this batch)
+All live on fashionistas.ai (wrangler → `fashionistas-ai`):
 
-| Deployment | Source | Notes |
-|------------|--------|--------|
-| **`075ef679`** | `125816d` (feat/ebay-multilist-ux-walkthrough) | UX walkthrough → https://075ef679.fashionistas-ai.pages.dev · live https://fashionistas.ai |
-| `f84cf3d4` | same SHA (preview alias) | https://f84cf3d4.fashionistas-ai.pages.dev |
-| `421a5d5a-…` | `d2d606d` | Prior handoff stamp |
-| `3d00b6ca-…` | `54a6d28` (PR #6) | eBay listing + per-shop kits |
-
-- **Source of truth for live HTML:** Cloudflare Pages deployment list, **not** GitHub alone.
-- Pages **Git Provider: No** — pushes to `main` do **not** auto-deploy.
-- Prefer merge + explicit `wrangler pages deploy` of a known Git SHA.
-- Historical laptop-only Sources (`60f5501`, etc.) may appear in CF history — don't clobber blindly.
-
-```bash
-npx wrangler pages deployment list --project-name=fashionistas-ai
-git cat-file -t <source_sha>
-```
+| URL | Notes |
+|-----|--------|
+| https://fashionistas.ai/contact/ | FormSubmit → `fashionistas1979@gmail.com` |
+| https://fashionistas.ai/fees/ | 6-shop take-home calculator |
+| https://fashionistas.ai/ads.txt | Comment-only; no pub-id |
+| https://fashionistas.ai/about/ | Honest product (not auto-poster) |
+| https://fashionistas.ai/privacy/ | Privacy |
 
 ---
 
-## 5. Connect / OAuth / listing routes
+## 4. Connect all 6 shops; eBay BYO + OAuth + token + listing API; guide-only others
 
-| PR | What |
-|----|------|
-| #1 | UX P0 static pages |
-| #2 | Multilist Connect UI + eBay OAuth stubs |
-| #3 | eBay BYO keys + guidance |
-| #4 | Connect guidance all six shops |
-| #5 | Trust prime-time (honesty, fees, token exchange, Multilist nav) |
-| **this** | eBay listing create + per-shop kits + handoff |
+| Shop | Mode | Status |
+|------|------|--------|
+| **Depop** | Guide + paste kit | Needs account / Ready to guide / Connected (local) |
+| **eBay** | **BYO Client ID/Secret + OAuth + token exchange + optional listing API** | Full path shipped |
+| **Poshmark** | Guide + paste kit | Guide-only (no public seller OAuth in app) |
+| **Mercari** | Guide + paste kit | Guide-only |
+| **Vinted** | Guide + paste kit | Guide-only |
+| **Grailed** | Guide + paste kit | Guide-only |
+
+### eBay path (honest)
+
+1. Paste **your** Client ID + Secret (BYO) → `localStorage` `fash_ebay_keys_v1` (base64 stub — not strong encryption), **or** CF Pages secrets  
+2. **Connect OAuth** → `GET|POST /api/ebay/oauth/start` → eBay authorize  
+3. Callback → **real token exchange** when keys present → HttpOnly `ebay_oauth_tok` (+ Connected in `fash_connect_v1`)  
+4. Multilist → **Create on eBay** → `POST /api/ebay/listing` → Sell Inventory `createOrReplaceInventoryItem` → business policies → `createOffer` → optional `publishOffer`  
+5. Scopes: `sell.inventory` + `sell.account` (+ readonly). Earlier connects **must re-consent**.  
+6. Refresh: cookie Max-Age ~90d best-effort; optional Pages KV if `EBAY_TOKENS` / `FASHIONISTAS_KV` / `TOKENS` bound. **Durable store on fashionistas-api KV/D1 still needed.**
+
+**Redirect / RuName:** `https://fashionistas.ai/api/ebay/oauth/callback`
 
 ### Routes
 
@@ -130,55 +112,116 @@ git cat-file -t <source_sha>
 | `POST /api/ebay/listing` | `functions/api/ebay/listing.js` |
 | `GET /api/ebay/status` | `functions/api/ebay/status.js` |
 
-**Redirect / RuName:** `https://fashionistas.ai/api/ebay/oauth/callback`
-
-### Cookies / storage
-
-| Key | Where | Purpose |
-|-----|--------|---------|
-| `fash_ebay_keys_v1` | localStorage | BYO Client ID/Secret (base64 stub — not strong encryption) |
-| `fash_connect_v1` | localStorage | Connect status per shop |
-| `ebay_byo_sess` | HttpOnly cookie Path=/api/ebay/oauth | Short-lived BYO for callback (~10 min) |
-| `ebay_oauth_tok` | HttpOnly cookie Path=/api/ebay | access + refresh for listing create |
-
 Docs: [`EBAY_OAUTH.md`](./EBAY_OAUTH.md) · [`MULTILIST_CONNECT.md`](./MULTILIST_CONNECT.md)
+
+**Never:** fake auto-signup, password collection, invented shop API keys, invented AdSense pub-id.
 
 ---
 
-## 6. What works live vs still blocked
+## 5. PR timeline (night ET)
+
+| PR | Title | State | Merge / tip | What |
+|----|-------|-------|-------------|------|
+| [#1](https://github.com/placebetsai/fashionistas-ai/pull/1) | UX P0 contact/ads/fees | **MERGED** | `a3c6832` ← `89d1bd7` | Static trust + SEO pages |
+| [#2](https://github.com/placebetsai/fashionistas-ai/pull/2) | Multilist Connect UI + eBay OAuth stubs | **MERGED** | `9ff0a63` ← `c8f84da` | Connect card; Pages Function stubs |
+| [#3](https://github.com/placebetsai/fashionistas-ai/pull/3) | eBay guidance + BYO OAuth keys | **MERGED** | `01a11be` ← `9db613d` | Guidance panel; BYO; start accepts body/headers |
+| [#4](https://github.com/placebetsai/fashionistas-ai/pull/4) | Connect guidance all six shops | **MERGED** | `ddbec4a` ← `a79d7f0` | Depop/Poshmark/Mercari/Vinted/Grailed panels |
+| [#5](https://github.com/placebetsai/fashionistas-ai/pull/5) | P0 honesty / Shop filter / Multilist nav / fees / eBay token | **MERGED** | `0c4dd7b` ← `d783384` | Trust prime-time |
+| [#6](https://github.com/placebetsai/fashionistas-ai/pull/6) | eBay listing create + per-shop Multilist kits | **MERGED** | `54a6d28` ← `37bb5b3` | Inventory/Offer API + `xlKit` per shop |
+| [#7](https://github.com/placebetsai/fashionistas-ai/pull/7) | Multilist eBay UX walkthrough | **OPEN** (clean) | tip `1eb12ea` / feat `125816d` | Connect stepper, Create CTA, first-run Snap→kit→Create — **eBay-centric polish** |
+
+GitHub `main` after this handoff refresh is the commit that updated this file (see raw URL / SHA returned to parent).
+
+---
+
+## 6. User demand: equal UX all marketplaces (not eBay-centric) — STATUS
+
+**Demand (2026-09-26 night ET):** Multilist / Connect / kit CTAs must feel **equal across all six shops**. eBay API create is an **optional extra**, not the product spine. Paste kits + guide-open are first-class for Depop, Poshmark, Mercari, Vinted, Grailed **and** eBay.
+
+| Artifact | Status |
+|----------|--------|
+| **PR #7** `feat/ebay-multilist-ux-walkthrough` | **OPEN, not merged** — eBay walkthrough (stepper, Create on eBay CTA, first-path card). Tip `1eb12ea`. |
+| **Live CF Production** | **Already deployed** PR #7 code: deployment `075ef679-…`, Source **`125816d`**, preview https://075ef679.fashionistas-ai.pages.dev — **ahead of GitHub `main`** |
+| **Branch `feat/multilist-all-shops-first-class`** | **Local only** (not on `origin`). Tip currently same as PR #7 tip. |
+| **Equal-UX WIP** | **In flight, uncommitted** — agent stash `equal-ux WIP index.html` de-centers eBay (neutral Create chrome, “paste kit · optional API”, coach copy aligned to all shops). **No remote branch / no PR yet.** |
+| **Merged equal-UX PR** | **None** |
+
+**Agent action:** Prefer finishing equal Multilist UX (neutral first-path, per-shop kit CTAs Copy/Open for all six, eBay Create secondary) → PR → merge → wrangler deploy. Do **not** deepen eBay-only coach copy without matching non-eBay paths. If merging #7 first, immediately follow with equal-UX so live doesn’t stay eBay-centric.
+
+---
+
+## 7. Deploy truth + laptop CF SHAs vs git (critical)
+
+### Model
+
+- **Source of truth for live HTML:** Cloudflare Pages **deployment list**, not GitHub alone.  
+- Pages **Git Provider: No** — `git push` does **not** auto-deploy.  
+- Prefer merge + explicit `wrangler pages deploy` of a **known Git SHA**.  
+- Laptop (and agents) sometimes deploy Sources **missing from GitHub**.
+
+### Latest CF Production (night ET, wrangler list)
+
+| Deployment | Source | In GitHub? | Notes |
+|------------|--------|------------|--------|
+| **`075ef679-…`** (latest) | `125816d` | Yes on **feat branch** (PR #7); **not on `main`** | eBay Multilist UX walkthrough **live** |
+| `5c4311cb-…` | `36f2979` | Yes (`main` lineage) | Handoff stamp deploy |
+| `421a5d5a-…` | `d2d606d` | Yes | Prior handoff stamp |
+| `3d00b6ca-…` | `54a6d28` | Yes | PR #6 merge |
+| `16dc126f-…` | `0c4dd7b` | Yes | PR #5 merge |
+| `e70a332e-…` | `ddbec4a` | Yes | PR #4 merge |
+| `6e701489-…` | **`60f5501`** | **MISSING** | Laptop-only historical |
+| older | **`0584633`**, `0b186a6`, `f2c02fa`, … | **MISSING** | Laptop-only historical |
+
+```bash
+npx wrangler pages deployment list --project-name=fashionistas-ai
+git cat-file -t <source_sha>   # fatal = not in this clone / laptop-only
+```
+
+**Warning:** Live site can be **newer than `main`** (as with `125816d` / PR #7). Before redeploying from `main`, compare live Source SHA. Do not clobber unknown laptop-only builds blindly.
+
+---
+
+## 8. What works / what doesn’t
 
 | Capability | Status |
 |------------|--------|
-| Paste multilist drafts (6 shops) | **YES** — now **per-shop kits** |
-| Fee estimate / `/fees/` | **YES** |
+| Paste multilist drafts (6 shops) | **YES** — **per-shop kits** |
+| Fee estimate / compare / `/fees/` | **YES** |
 | Photo → AI analyze → listing form | **YES** (API live) |
+| Contact / about / privacy / ads.txt placeholder | **YES** |
+| Honesty copy + Multilist tab + sample jacket | **YES** (PR #5) |
+| Shop client hide QA/no-photo | **YES** (client); API feed still dirty |
 | Auto-post Depop / Poshmark / Mercari / Vinted / Grailed | **NO** (guide + paste only) |
 | eBay OAuth authorize + token exchange | **YES** (BYO or CF env keys) |
-| eBay **Create on eBay** UI + `POST /api/ebay/listing` | **YES path** — succeeds only when token + **sell.inventory** (+ account) scopes + **business policies** exist |
-| Sandbox vs production | Prefer **sandbox**; production app scopes or missing policies → clear JSON/UI errors |
-| Durable refresh token on fashionistas-api KV | **NOT yet** — cookie best-effort + optional Pages KV binding |
-| Fake accounts / invented AdSense | **Must never** |
+| eBay Create / `POST /api/ebay/listing` | **YES path** — needs token + sell scopes + **business policies** |
+| Durable refresh on fashionistas-api KV | **NOT yet** (cookie best-effort) |
+| Equal Multilist UX (all shops first-class) | **IN FLIGHT** — see §6 |
+| Browser extension guided paste | **NOT yet** |
+| Real AdSense | **NO** until real pub-id |
+| Fake accounts / invented pub-ids / invented shop keys | **Must never** |
 
-### Typical listing-create blockers (expected, not bugs)
+### Typical eBay listing blockers (expected, not bugs)
 
-1. **No token cookie** → `ebay_not_connected` — Connect OAuth first  
-2. **Old token without sell scopes** → `insufficient_scope_or_auth` — re-Connect OAuth  
-3. **No business policies** → `missing_business_policies` (inventory SKU may still be created) — Seller Hub → enable Business Policies  
-4. **Expired access + no Client Secret for refresh** → paste BYO keys again  
-5. **Production scope not granted on app** → use Sandbox or enable scopes in developer portal  
+1. No token cookie → `ebay_not_connected`  
+2. Old token without sell scopes → `insufficient_scope_or_auth` — Reconnect OAuth  
+3. No business policies → `missing_business_policies` — Seller Hub  
+4. Expired access + no Client Secret for refresh → paste BYO keys again  
+5. Production scopes not granted → Sandbox or enable in developer portal  
 
 ---
 
-## 7. Secrets
+## 9. Secrets
 
 | Secret / var | Where | Notes |
 |--------------|--------|--------|
-| `EBAY_CLIENT_ID` | CF secret or BYO | Prefer BYO v1 |
-| `EBAY_CLIENT_SECRET` | CF secret or BYO | Needed for exchange + refresh |
-| `EBAY_RU_NAME` / `EBAY_REDIRECT_URI` | CF | Must match RuName |
+| `EBAY_CLIENT_ID` | CF Pages secret **or** BYO UI | Prefer BYO v1 |
+| `EBAY_CLIENT_SECRET` | CF secret **or** BYO | Needed for exchange + refresh; never commit |
+| `EBAY_RU_NAME` / `EBAY_REDIRECT_URI` | CF | Must match RuName / callback |
 | `EBAY_ENV` | CF var | `sandbox` \| `production` |
-| Optional KV binding | Pages | `EBAY_TOKENS` / `FASHIONISTAS_KV` / `TOKENS` — best-effort refresh store |
-| Contact | FormSubmit → `fashionistas1979@gmail.com` | |
+| Optional KV binding | Pages | `EBAY_TOKENS` / `FASHIONISTAS_KV` / `TOKENS` |
+| Contact | FormSubmit → `fashionistas1979@gmail.com` | Activate on first real submit |
+
+Checklist only: [`.env.example`](../.env.example).
 
 ```bash
 npx wrangler pages secret put EBAY_CLIENT_ID --project-name=fashionistas-ai
@@ -188,30 +231,31 @@ npx wrangler pages secret put EBAY_RU_NAME --project-name=fashionistas-ai
 
 ---
 
-## 8. Next recommended
+## 10. Next recommended (priority)
 
-1. **Durable tokens on fashionistas-api** (KV/D1) keyed by user — replace cookie-only refresh  
-2. Wire Pages KV binding if API store not ready  
-3. Browser extension for guided paste on non-eBay shops  
-4. API-side Shop feed QA filter  
-5. Hive LLM coach (today: static checklist)  
-6. eBay category taxonomy lookup (replace rough leaf map) + default ingest policies helper  
+1. **Equal Multilist UX** — finish/push `feat/multilist-all-shops-first-class` (or successor): first-path + kit CTAs equal for all six; eBay Create secondary; merge + wrangler deploy. Resolve PR #7 (merge then equalize, or fold equal UX into one PR).  
+2. **Browser extension** (or equivalent) for guided paste on non-eBay shops — no password harvesting / fake auto-accounts.  
+3. **API Shop cleanup** — hide QA/bulk/no-photo server-side; normalize platforms to the six (client filter is only a bandage).  
+4. **Durable tokens on fashionistas-api** (KV/D1) keyed by user — replace cookie-only refresh.  
+5. **AdSense only with real pub-id** — then update `ads.txt`; never invent.  
+6. Hive LLM coach (today: static checklist); eBay category taxonomy + default policies helper.  
 
 ---
 
-## 9. Rules for agents
+## 11. Rules for agents
 
 1. **No fake auto-signup accounts.** Guide + real vendor URLs only.  
-2. **No invented AdSense pub-ids** or shop API keys.  
-3. **Deploy with wrangler** to `fashionistas-ai`. Git push ≠ deploy.  
-4. Before overwriting production: compare `deployment list` Source SHAs to git.  
+2. **No invented AdSense pub-ids** or shop API keys / passwords.  
+3. **Deploy with wrangler** to project **`fashionistas-ai`**. Git push ≠ deploy.  
+4. Before overwriting production: compare `deployment list` Source SHAs to `git cat-file`. Live may be ahead of `main`.  
 5. **Paste multilist must keep working** while Connect/API is partial.  
-6. **Honest copy:** never claim auto-post beyond eBay Connected+API path.  
-7. Prefer PRs for non-trivial Connect/API work.  
+6. **Honest copy:** never claim auto-post beyond eBay Connected+API path; prefer **equal UX** language for all six shops.  
+7. Prefer PRs for non-trivial Connect/API/UX work.  
+8. User demand night ET: **do not leave the product eBay-centric.**  
 
 ---
 
-## Quick start
+## 12. Quick start
 
 ```bash
 git clone https://github.com/placebetsai/fashionistas-ai.git
@@ -219,7 +263,22 @@ cd fashionistas-ai
 git pull origin main
 # Read this file + docs/EBAY_OAUTH.md + docs/MULTILIST_CONNECT.md
 npx wrangler pages deployment list --project-name=fashionistas-ai
-npx wrangler pages deploy . --project-name=fashionistas-ai
+# Equal-UX WIP may exist as local stash/branch on shared box — check before starting fresh
+# Deploy only when intentional:
+# npx wrangler pages deploy . --project-name=fashionistas-ai
 ```
 
-**End of handoff (2026-09-26 late ET: Multilist eBay UX walkthrough — Connect progress, Create CTA, first-run Snap path).**
+### Key live URLs
+
+| URL | Purpose |
+|-----|---------|
+| https://fashionistas.ai/ | Marketing + SPA |
+| https://fashionistas.ai/fees/ | Fee take-home |
+| https://fashionistas.ai/contact/ | FormSubmit contact |
+| https://fashionistas.ai/about/ | Ownership / honesty |
+| https://fashionistas.ai/privacy/ | Privacy |
+| https://fashionistas.ai/ads.txt | Placeholder ads.txt |
+| https://fashionistas-api.fashionistas1979.workers.dev/api/health | API health |
+| https://075ef679.fashionistas-ai.pages.dev | Latest known CF prod (PR #7 source `125816d`) |
+
+**End of handoff — 2026-09-26 night ET (complete through Connect #1–#4, P0 #5, kits+listing #6, eBay walkthrough #7 open+live, equal-UX in flight).**
