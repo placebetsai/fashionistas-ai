@@ -81,4 +81,4 @@ Flow:
 - No invented eBay credentials or authorize URLs.
 - No auto-post to eBay (or other shops) from this change.
 - No full LLM coach (static hive checklist only).
-- Depop / Poshmark / Mercari / Vinted / Grailed stay guide + paste (+ optional local “Mark connected”).
+- Depop / Poshmark / Mercari / Vinted / Grailed each have a Multilist **Connect** guidance panel (guide + paste + optional local “I've connected”). See [MULTILIST_CONNECT.md](./MULTILIST_CONNECT.md).

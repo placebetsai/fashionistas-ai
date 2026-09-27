@@ -733,38 +733,38 @@ nav.tabbar a.on{color:var(--accent)}
 .tag.connected{background:var(--good-soft);color:var(--good)}
 .tag.soon{background:rgba(124,92,255,.12);color:var(--accent2)}
 .xl-connect-foot{margin:12px 0 0;font-size:12.5px;color:var(--mut);line-height:1.5}
-/* ---- eBay connect guidance panel ---- */
-#ebay-connect-overlay{position:fixed;inset:0;z-index:97;background:rgba(20,12,6,.58);backdrop-filter:blur(3px);display:flex;align-items:flex-end;justify-content:center;padding:12px;animation:fadeUp .2s ease}
-#ebay-connect-overlay.hidden{display:none!important}
-#ebay-connect-panel{width:min(560px,100%);max-height:min(88vh,720px);overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:18px 18px 14px 14px;box-shadow:0 -16px 48px rgba(0,0,0,.35);padding:0 0 14px;overscroll-behavior:contain}
-.ebay-cg-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 16px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:1}
-.ebay-cg-top h3{margin:0;font-size:18px;letter-spacing:-.01em}
-.ebay-cg-top p{margin:4px 0 0;font-size:12.8px;color:var(--mut);line-height:1.45}
-.ebay-cg-body{padding:12px 16px 0}
-.ebay-cg-honest{font-size:13.2px;line-height:1.55;margin:0 0 12px;padding:10px 12px;border-radius:12px;background:var(--soft);border:1px solid var(--line);color:var(--ink)}
-.ebay-cg-honest b{color:var(--accent)}
-.ebay-cg-hive{margin:0 0 14px;padding:11px 12px;border-radius:12px;border:1px dashed var(--line-2);background:var(--card)}
-.ebay-cg-hive .kicker{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent2);margin:0 0 6px}
-.ebay-cg-hive ol{margin:0;padding-left:18px;font-size:13px;line-height:1.55;color:var(--ink)}
-.ebay-cg-hive li{margin:3px 0}
-.ebay-cg-steps{margin:0 0 14px;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
-.ebay-cg-steps li{display:flex;gap:10px;align-items:flex-start;font-size:13.2px;line-height:1.5;color:var(--ink)}
-.ebay-cg-steps .n{flex:none;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
-.ebay-cg-runame{margin:0 0 12px;padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
-.ebay-cg-runame label{display:block;font-size:11.5px;font-weight:700;color:var(--mut);margin-bottom:4px}
-.ebay-cg-runame code{font-size:12.5px;word-break:break-all;color:var(--ink)}
-.ebay-cg-runame .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
-.ebay-cg-form{display:flex;flex-direction:column;gap:9px;margin-bottom:12px}
-.ebay-cg-form label{font-size:12.5px;font-weight:700;color:var(--ink)}
-.ebay-cg-form input,.ebay-cg-form select{width:100%;padding:10px 11px;border-radius:11px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:14px}
-.ebay-cg-form .hint{font-size:11.8px;color:var(--mut);margin-top:-2px}
-.ebay-cg-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
-.ebay-cg-foot{margin:10px 0 0;font-size:12px;color:var(--mut);line-height:1.45}
+/* ---- multilist shop connect guidance panel (all shops) ---- */
+.tag.ready{background:rgba(124,92,255,.12);color:var(--accent2)}
+#shop-connect-overlay{position:fixed;inset:0;z-index:97;background:rgba(20,12,6,.58);backdrop-filter:blur(3px);display:flex;align-items:flex-end;justify-content:center;padding:12px;animation:fadeUp .2s ease}
+#shop-connect-overlay.hidden{display:none!important}
+#shop-connect-panel{width:min(560px,100%);max-height:min(88vh,720px);overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:18px 18px 14px 14px;box-shadow:0 -16px 48px rgba(0,0,0,.35);padding:0 0 14px;overscroll-behavior:contain}
+.shop-cg-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 16px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:1}
+.shop-cg-top h3{margin:0;font-size:18px;letter-spacing:-.01em}
+.shop-cg-top p{margin:4px 0 0;font-size:12.8px;color:var(--mut);line-height:1.45}
+.shop-cg-status-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 0}
+.shop-cg-body{padding:12px 16px 0}
+.shop-cg-honest{font-size:13.2px;line-height:1.55;margin:0 0 12px;padding:10px 12px;border-radius:12px;background:var(--soft);border:1px solid var(--line);color:var(--ink)}
+.shop-cg-honest b{color:var(--accent)}
+.shop-cg-hive{margin:0 0 14px;padding:11px 12px;border-radius:12px;border:1px dashed var(--line-2);background:var(--card)}
+.shop-cg-hive .kicker{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent2);margin:0 0 6px}
+.shop-cg-hive ol{margin:0;padding-left:18px;font-size:13px;line-height:1.55;color:var(--ink)}
+.shop-cg-hive li{margin:3px 0}
+.shop-cg-links{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.shop-cg-runame{margin:0 0 12px;padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
+.shop-cg-runame label{display:block;font-size:11.5px;font-weight:700;color:var(--mut);margin-bottom:4px}
+.shop-cg-runame code{font-size:12.5px;word-break:break-all;color:var(--ink)}
+.shop-cg-runame .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.shop-cg-form{display:flex;flex-direction:column;gap:9px;margin-bottom:12px}
+.shop-cg-form label{font-size:12.5px;font-weight:700;color:var(--ink)}
+.shop-cg-form input,.shop-cg-form select{width:100%;padding:10px 11px;border-radius:11px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:14px}
+.shop-cg-form .hint{font-size:11.8px;color:var(--mut);margin-top:-2px}
+.shop-cg-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.shop-cg-foot{margin:10px 0 0;font-size:12px;color:var(--mut);line-height:1.45}
 @media (min-width:720px){
-  #ebay-connect-overlay{align-items:center}
-  #ebay-connect-panel{border-radius:18px;max-height:min(84vh,700px)}
+  #shop-connect-overlay{align-items:center}
+  #shop-connect-panel{border-radius:18px;max-height:min(84vh,700px)}
 }
-@media (prefers-reduced-motion:reduce){#ebay-connect-overlay{animation:none}}
+@media (prefers-reduced-motion:reduce){#shop-connect-overlay{animation:none}}
 
 @media (prefers-reduced-motion:reduce){#guide-panel,.g-msg,.g-mode{animation:none;transition:none}}
 @media (min-width:900px){
@@ -1352,59 +1352,18 @@ textarea.input{font-family:inherit}
 <div class="guide-overlay hidden" id="guide-overlay"><div class="guide-card" id="guide-card"></div></div>
 
 <!-- eBay Connect guidance + BYO keys -->
-<div id="ebay-connect-overlay" class="hidden" role="dialog" aria-modal="true" aria-labelledby="ebay-cg-title">
- <div id="ebay-connect-panel">
-  <div class="ebay-cg-top">
+<div id="shop-connect-overlay" class="hidden" role="dialog" aria-modal="true" aria-labelledby="shop-cg-title">
+ <div id="shop-connect-panel">
+  <div class="shop-cg-top">
    <div>
-    <h3 id="ebay-cg-title">Connect eBay</h3>
-    <p>Free guide · your developer keys · OAuth opens on eBay</p>
+    <h3 id="shop-cg-title">Connect shop</h3>
+    <p id="shop-cg-sub">Free guide · open the shop · paste your draft</p>
+    <div class="shop-cg-status-row" id="shop-cg-status-row" aria-live="polite"></div>
    </div>
-   <button type="button" class="btn btn-soft btn-sm" onclick="xlEbayCloseGuide()" aria-label="Close" data-tip="Close this guide without connecting.">✕</button>
+   <button type="button" class="btn btn-soft btn-sm" onclick="xlShopCloseGuide()" aria-label="Close" data-tip="Close this guide without connecting.">✕</button>
   </div>
-  <div class="ebay-cg-body">
-   <p class="ebay-cg-honest"><b>Honest:</b> We do <b>not</b> create eBay seller or developer accounts for you. This is a free checklist. After you paste your own Client ID + Secret, <b>Connect OAuth</b> opens eBay’s login — fashionistas.ai never invents credentials. Paste multilist still works without connecting.</p>
-   <div class="ebay-cg-hive" aria-label="Hive coach checklist">
-    <p class="kicker">Hive coach · checklist</p>
-    <ol>
-     <li>Open developer.ebay.com and create (or pick) an app.</li>
-     <li>Turn on OAuth — Sandbox first is fine.</li>
-     <li>Register the RuName / redirect URI we show below — must match exactly.</li>
-     <li>Copy Client ID + Client Secret into the form → Save keys.</li>
-     <li>Hit Connect OAuth → finish login on eBay’s site.</li>
-    </ol>
-   </div>
-   <ol class="ebay-cg-steps">
-    <li><span class="n">1</span><span>Create an eBay <b>developer app</b> (not just a seller account).</span></li>
-    <li><span class="n">2</span><span>Set RuName / redirect URI to the URL below.</span></li>
-    <li><span class="n">3</span><span>Paste Client ID + Secret → <b>Save keys</b> (this browser).</span></li>
-    <li><span class="n">4</span><span><b>Connect OAuth</b> — eBay’s login opens next.</span></li>
-   </ol>
-   <div class="ebay-cg-runame">
-    <label>RuName / redirect URI (register exactly)</label>
-    <code id="ebay-cg-redirect">https://fashionistas.ai/api/ebay/oauth/callback</code>
-    <div class="row">
-     <button type="button" class="btn btn-soft btn-sm" onclick="xlEbayCopyRedirect()" data-tip="Copies the redirect URI to your clipboard.">Copy URI</button>
-     <a class="btn btn-soft btn-sm" href="https://developer.ebay.com/" target="_blank" rel="noopener noreferrer" data-tip="Opens the eBay developer portal.">Open developer portal</a>
-    </div>
-   </div>
-   <div class="ebay-cg-form">
-    <label for="ebay-cg-client-id">Client ID (App ID)</label>
-    <input id="ebay-cg-client-id" type="text" autocomplete="off" spellcheck="false" placeholder="Your eBay App ID / Client ID" />
-    <label for="ebay-cg-client-secret">Client Secret (Cert ID)</label>
-    <input id="ebay-cg-client-secret" type="password" autocomplete="off" spellcheck="false" placeholder="Your eBay Cert ID / Client Secret" />
-    <label for="ebay-cg-env">Environment</label>
-    <select id="ebay-cg-env">
-     <option value="sandbox">Sandbox (recommended first)</option>
-     <option value="production">Production</option>
-    </select>
-    <p class="hint">Keys stay in this browser (<code>localStorage</code> base64 stub — not strong encryption). Prefer a private device. Cloudflare env secrets still work as a fallback when set.</p>
-   </div>
-   <div class="ebay-cg-actions">
-    <button type="button" class="btn btn-soft" onclick="xlEbaySaveKeys()" data-tip="Saves Client ID + Secret in this browser only.">Save keys</button>
-    <button type="button" class="btn btn-accent" onclick="xlEbayConnectStart()" data-tip="Starts eBay OAuth using saved or typed keys (or Cloudflare env).">Connect OAuth</button>
-    <button type="button" class="btn btn-ghost btn-sm" onclick="xlEbayClearKeys()" data-tip="Removes saved keys from this browser.">Clear saved keys</button>
-   </div>
-   <p class="ebay-cg-foot" id="ebay-cg-status">No keys saved yet in this browser.</p>
+  <div class="shop-cg-body" id="shop-cg-body">
+   <!-- filled by xlShopOpenGuide(id) -->
   </div>
  </div>
 </div>
@@ -2472,18 +2431,92 @@ async function toggleOnsale(id, btn){
 /* ================= HOME ================= */
 
 /* ================= SHOP CONNECT (multilist) =================
-   UI + eBay OAuth stubs. Connection state is local-only until the
-   API worker stores real tokens. Paste multilist is unchanged. */
+   Guidance panel for every Multilist shop. eBay keeps real BYO OAuth;
+   other shops are honest guide + paste (no public seller OAuth).
+   Connection state is local-only until the API worker stores real tokens. */
 const XL_CONNECT_KEY = "fash_connect_v1";
+const XL_EBAY_KEYS_KEY = "fash_ebay_keys_v1";
+const XL_EBAY_REDIRECT = "https://fashionistas.ai/api/ebay/oauth/callback";
+let XL_SHOP_GUIDE_ID = null;
+
 const XL_CONNECT_SHOPS = [
-  { id: "depop", name: "Depop", oauth: false, signup: "https://www.depop.com/register", guide: "Depop" },
-  { id: "ebay", name: "eBay", oauth: true, signup: "https://signup.ebay.com/", guide: "eBay" },
-  { id: "poshmark", name: "Poshmark", oauth: false, signup: "https://poshmark.com/signup", guide: "Poshmark" },
-  { id: "mercari", name: "Mercari", oauth: false, signup: "https://www.mercari.com/", guide: "Mercari" },
-  { id: "vinted", name: "Vinted", oauth: false, signup: "https://www.vinted.com/", guide: "Vinted" },
-  { id: "grailed", name: "Grailed", oauth: false, signup: "https://www.grailed.com/", guide: "Grailed" }
+  {
+    id: "depop", name: "Depop", oauth: false,
+    signup: "https://www.depop.com/signup/",
+    createListing: "https://www.depop.com/sell/",
+    hive: [
+      "Create a free Depop seller account (email or app signup).",
+      "Verify email / phone if Depop asks — finish profile basics.",
+      "Open Sell / new listing on Depop (deep link below).",
+      "Paste your fashionistas.ai title, price, tags and description, then post on Depop."
+    ],
+    honest: "Depop has <b>no public seller OAuth</b> for fashionistas.ai. We never invent API keys or take your password. Use the free guide: open Depop yourself → paste the draft kit. Optional <b>I've connected</b> is a local flag only."
+  },
+  {
+    id: "ebay", name: "eBay", oauth: true,
+    signup: "https://signup.ebay.com/",
+    createListing: "https://www.ebay.com/sl/sell",
+    hive: [
+      "Create an eBay seller account (and a developer app if you want OAuth).",
+      "Verify identity / payouts on eBay as required.",
+      "Open List an item — or Connect OAuth after pasting your own Client ID + Secret.",
+      "Paste your draft kit, or finish eBay login if you started OAuth."
+    ],
+    honest: "We do <b>not</b> create eBay seller or developer accounts for you. Paste your own Client ID + Secret (BYO), then <b>Connect OAuth</b> opens eBay's login. fashionistas.ai never invents credentials. Paste multilist still works without connecting."
+  },
+  {
+    id: "poshmark", name: "Poshmark", oauth: false,
+    signup: "https://poshmark.com/signup",
+    createListing: "https://poshmark.com/create-listing",
+    hive: [
+      "Create a free Poshmark closet (signup link below).",
+      "Verify email / complete closet basics if prompted.",
+      "Open Sell / create-listing on Poshmark.",
+      "Paste your fashionistas.ai draft kit into the listing form, then List."
+    ],
+    honest: "Poshmark has <b>no public seller OAuth</b> for fashionistas.ai. No fake API credentials. Guided open + paste only; <b>I've connected</b> is local and does not grant auto-post."
+  },
+  {
+    id: "mercari", name: "Mercari", oauth: false,
+    signup: "https://www.mercari.com/signup/",
+    createListing: "https://www.mercari.com/sell/",
+    hive: [
+      "Create a Mercari account and set a payout method.",
+      "Verify phone / identity if Mercari asks.",
+      "Open Sell / new listing on Mercari.",
+      "Paste title, price and description from your kit, then list."
+    ],
+    honest: "Mercari has <b>no public seller OAuth</b> for fashionistas.ai. We do not create accounts or store Mercari passwords. Use guided open + paste; mark Connected locally when you are set up."
+  },
+  {
+    id: "vinted", name: "Vinted", oauth: false,
+    signup: "https://www.vinted.com/member/register/select_type",
+    createListing: "https://www.vinted.com/items/new",
+    hive: [
+      "Register on Vinted (select account type).",
+      "Verify email / complete seller basics.",
+      "Open Items → new listing (deep link below).",
+      "Paste your draft kit and publish on Vinted."
+    ],
+    honest: "Vinted has <b>no public seller OAuth</b> for fashionistas.ai. Honest guide only — open Vinted yourself, paste the kit. Optional local Connected flag; no auto-post."
+  },
+  {
+    id: "grailed", name: "Grailed", oauth: false,
+    signup: "https://www.grailed.com/signup",
+    createListing: "https://www.grailed.com/sell",
+    hive: [
+      "Sign up at Grailed.",
+      "Verify email / seller profile as needed.",
+      "Open Sell / new listing on Grailed.",
+      "Paste title, measurements and description from your kit, then list."
+    ],
+    honest: "Grailed has <b>no public seller OAuth</b> for fashionistas.ai. No invented API keys. Guided open + paste; <b>I've connected</b> is browser-local only."
+  }
 ];
 
+function xlConnectShopById(id){
+  return XL_CONNECT_SHOPS.find(s => s.id === id) || null;
+}
 function xlConnectLoad(){
   try {
     const raw = localStorage.getItem(XL_CONNECT_KEY);
@@ -2494,37 +2527,83 @@ function xlConnectLoad(){
 function xlConnectSave(state){
   try { localStorage.setItem(XL_CONNECT_KEY, JSON.stringify(state || {})); } catch {}
 }
+/** Status: needs | ready | connected (local OK). eBay with saved keys upgrades needs→ready. */
 function xlConnectStatus(id){
   const s = xlConnectLoad()[id];
-  return (s && s.status === "connected") ? "connected" : "needs";
+  if (s && s.status === "connected") return "connected";
+  if (s && s.status === "ready") return "ready";
+  if (id === "ebay") {
+    const keys = xlEbayKeysLoad();
+    if (keys && keys.clientId) return "ready";
+  }
+  return "needs";
+}
+function xlConnectStatusTag(st){
+  if (st === "connected") return `<span class="tag connected">Connected</span>`;
+  if (st === "ready") return `<span class="tag ready">Ready to guide</span>`;
+  return `<span class="tag needs">Needs account</span>`;
+}
+function xlConnectMarkReady(id){
+  const state = xlConnectLoad();
+  const cur = state[id];
+  if (cur && cur.status === "connected") return;
+  state[id] = { status: "ready", via: "guide", at: new Date().toISOString() };
+  xlConnectSave(state);
 }
 function xlConnectRowsHtml(){
-  return XL_CONNECT_SHOPS.map(shop => {
+  const shops = xlConnectShopsMerged();
+  return shops.map(shop => {
     const st = xlConnectStatus(shop.id);
     const connected = st === "connected";
-    const statusTag = connected
-      ? `<span class="tag connected">Connected</span>`
-      : `<span class="tag needs">Needs account</span>`;
+    const statusTag = xlConnectStatusTag(st);
     let actions = "";
     if (connected) {
-      actions = `<button type="button" class="btn btn-soft btn-sm" onclick="xlConnectDisconnect('${shop.id}')" data-tip="Clears the local Connected flag for this shop.">Disconnect</button>`;
-    } else if (shop.oauth) {
-      actions = `<button type="button" class="btn btn-accent btn-sm" onclick="xlEbayOpenGuide()" data-tip="Opens the eBay connect guide — paste your developer keys, then OAuth.">Connect eBay</button>`
-        + `<button type="button" class="btn btn-soft btn-sm" onclick="xlConnectOpenGuide('${shop.guide}')" data-tip="Opens Guide A to Z for eBay account setup.">Guide</button>`;
+      actions = `<button type="button" class="btn btn-soft btn-sm" onclick="xlShopOpenGuide('${shop.id}')" data-tip="Re-open the ${escapeHtml(shop.name)} connect guide.">Guide</button>`
+        + `<button type="button" class="btn btn-ghost btn-sm" onclick="xlConnectDisconnect('${shop.id}')" data-tip="Clears the local Connected flag for this shop.">Disconnect</button>`;
     } else {
-      actions = `<button type="button" class="btn btn-soft btn-sm" onclick="xlConnectOpenGuide('${shop.guide}')" data-tip="Opens Guide A to Z — how to open a ${escapeHtml(shop.name)} seller account.">Guide A to Z</button>`
-        + `<a class="btn btn-soft btn-sm" href="${escapeHtml(shop.signup)}" target="_blank" rel="noopener noreferrer" data-tip="Opens ${escapeHtml(shop.name)} signup.">Open signup</a>`
-        + `<button type="button" class="btn btn-ghost btn-sm" onclick="xlConnectMarkLocal('${shop.id}')" data-tip="Marks Connected locally only — does not grant API post access.">Mark connected</button>`;
+      const connectLabel = shop.oauth ? ("Connect " + shop.name) : ("Connect " + shop.name);
+      actions = `<button type="button" class="btn btn-accent btn-sm" onclick="xlShopOpenGuide('${shop.id}')" data-tip="Opens the ${escapeHtml(shop.name)} connect guidance panel.">${escapeHtml(connectLabel)}</button>`
+        + `<a class="btn btn-soft btn-sm" href="${escapeHtml(shop.signup)}" target="_blank" rel="noopener noreferrer" data-tip="Opens ${escapeHtml(shop.name)} signup.">Signup</a>`
+        + `<button type="button" class="btn btn-ghost btn-sm" onclick="xlConnectMarkLocal('${shop.id}')" data-tip="Marks Connected locally only — does not grant API post access.">I've connected</button>`;
     }
     const detail = connected
-      ? (shop.oauth ? "OAuth linked (local flag) · auto-post when worker tokens land" : "Local Connected flag · still paste until API post ships")
-      : (shop.oauth ? "BYO keys + OAuth guide · paste drafts until Connected" : "No OAuth yet · paste drafts or follow the guide");
+      ? (shop.oauth ? "OAuth / local Connected · paste until worker tokens land" : "Local Connected · still paste until API post ships")
+      : (shop.oauth
+          ? (st === "ready" ? "Keys ready · finish OAuth or paste drafts" : "BYO keys + OAuth guide · or paste drafts")
+          : (st === "ready" ? "Guide open · signup → verify → list → paste" : "No public seller OAuth · guide + paste"));
     return `<div class="xl-connect-row" data-shop="${shop.id}">
       <div class="xl-connect-name"><b>${escapeHtml(shop.name)}</b><span>${detail}</span></div>
       <div class="xl-connect-status">${statusTag}</div>
       <div class="xl-connect-actions">${actions}</div>
     </div>`;
   }).join("");
+}
+/** Merge API marketplaces (extra shops) onto the six with the same guide pattern when easy. */
+function xlConnectShopsMerged(){
+  const base = XL_CONNECT_SHOPS.slice();
+  const seen = new Set(base.map(s => s.id));
+  const extras = (S && S.markets) ? S.markets : [];
+  extras.forEach(m => {
+    const id = String(m.id || "").toLowerCase();
+    if (!id || seen.has(id)) return;
+    if (id === "fashionistas" || id === "fashionistas.ai") return;
+    seen.add(id);
+    const name = m.name || id;
+    const signup = m.signup || m.url || ("https://www.google.com/search?q=" + encodeURIComponent(name + " seller signup"));
+    const createListing = m.createListing || m.sellUrl || signup;
+    base.push({
+      id, name, oauth: false,
+      signup, createListing,
+      hive: [
+        "Create a seller account on " + name + ".",
+        "Verify email / identity if the shop asks.",
+        "Open a new listing on " + name + ".",
+        "Paste your fashionistas.ai draft kit, then post on " + name + "."
+      ],
+      honest: escapeHtml(name) + " has <b>no public seller OAuth</b> wired here. Guided open + paste only — we never invent API credentials or take passwords. <b>I've connected</b> is local."
+    });
+  });
+  return base;
 }
 function xlConnectRefresh(){
   const grid = document.querySelector("#xl-connect .xl-connect-grid");
@@ -2537,26 +2616,27 @@ function xlConnectMarkLocal(id){
   xlConnectSave(state);
   toast(id + " marked Connected locally — paste still works; API post needs a real link");
   xlConnectRefresh();
+  try { xlShopPaintStatus(id); } catch {}
 }
 function xlConnectDisconnect(id){
   const state = xlConnectLoad();
   delete state[id];
   xlConnectSave(state);
-  toast(id + " set back to Needs account");
+  if (id === "ebay") { /* keep BYO keys; status falls back to ready if keys exist */ }
+  toast(id + " set back to Needs account / Ready to guide");
   xlConnectRefresh();
+  try { xlShopPaintStatus(id); } catch {}
 }
 function xlConnectOpenGuide(mktName){
+  // Opens the global Guide A to Z coach (not the per-shop Connect panel).
   try { hcToggle(); } catch {}
   toast("Guide A to Z — follow the " + mktName + " account steps, then paste your draft");
 }
-const XL_EBAY_KEYS_KEY = "fash_ebay_keys_v1";
-const XL_EBAY_REDIRECT = "https://fashionistas.ai/api/ebay/oauth/callback";
 
 function xlEbayKeysLoad(){
   try {
     const raw = localStorage.getItem(XL_EBAY_KEYS_KEY);
     if (!raw) return null;
-    // base64 stub (not strong encryption) — document honestly in the panel
     const jsonStr = decodeURIComponent(escape(atob(raw)));
     const o = JSON.parse(jsonStr);
     if (!o || typeof o !== "object") return null;
@@ -2582,39 +2662,115 @@ function xlEbayKeysSave(obj){
 function xlEbayKeysClear(){
   try { localStorage.removeItem(XL_EBAY_KEYS_KEY); } catch {}
 }
-function xlEbayOpenGuide(){
-  const ov = document.getElementById("ebay-connect-overlay");
-  if (!ov) { toast("eBay connect panel missing"); return; }
-  const saved = xlEbayKeysLoad();
-  const idEl = document.getElementById("ebay-cg-client-id");
-  const secEl = document.getElementById("ebay-cg-client-secret");
-  const envEl = document.getElementById("ebay-cg-env");
-  const st = document.getElementById("ebay-cg-status");
-  if (idEl) idEl.value = saved ? saved.clientId : "";
-  if (secEl) secEl.value = saved ? saved.clientSecret : "";
-  if (envEl) envEl.value = saved ? saved.env : "sandbox";
-  if (st) {
-    st.textContent = saved && saved.clientId
+
+function xlShopPaintStatus(id){
+  const row = document.getElementById("shop-cg-status-row");
+  if (!row) return;
+  const st = xlConnectStatus(id || XL_SHOP_GUIDE_ID);
+  row.innerHTML = xlConnectStatusTag(st) + `<span class="mut" style="font-size:12px">Local status · not a password vault</span>`;
+}
+function xlShopCloseGuide(){
+  const ov = document.getElementById("shop-connect-overlay");
+  if (ov) ov.classList.add("hidden");
+  XL_SHOP_GUIDE_ID = null;
+}
+function xlShopOpenGuide(id){
+  const shop = xlConnectShopById(id) || xlConnectShopsMerged().find(s => s.id === id);
+  const ov = document.getElementById("shop-connect-overlay");
+  const body = document.getElementById("shop-cg-body");
+  const title = document.getElementById("shop-cg-title");
+  const sub = document.getElementById("shop-cg-sub");
+  if (!shop || !ov || !body) { toast("Connect panel missing for " + id); return; }
+  XL_SHOP_GUIDE_ID = shop.id;
+  xlConnectMarkReady(shop.id);
+  xlConnectRefresh();
+  if (title) title.textContent = "Connect " + shop.name;
+  if (sub) sub.textContent = shop.oauth
+    ? "Free guide · your developer keys · OAuth opens on eBay"
+    : "Free guide · no public seller OAuth · open + paste";
+  xlShopPaintStatus(shop.id);
+
+  const hiveLis = (shop.hive || []).map(s => `<li>${s}</li>`).join("");
+  let oauthBlock = "";
+  if (shop.oauth) {
+    const saved = xlEbayKeysLoad();
+    const statusTxt = saved && saved.clientId
       ? ("Keys saved in this browser · Client ID ends …" + saved.clientId.slice(-6) + " · " + (saved.env || "sandbox"))
       : "No keys saved yet in this browser.";
+    oauthBlock = `
+   <div class="shop-cg-runame">
+    <label>RuName / redirect URI (register exactly)</label>
+    <code id="ebay-cg-redirect">${escapeHtml(XL_EBAY_REDIRECT)}</code>
+    <div class="row">
+     <button type="button" class="btn btn-soft btn-sm" onclick="xlEbayCopyRedirect()" data-tip="Copies the redirect URI to your clipboard.">Copy URI</button>
+     <a class="btn btn-soft btn-sm" href="https://developer.ebay.com/" target="_blank" rel="noopener noreferrer" data-tip="Opens the eBay developer portal.">Open developer portal</a>
+    </div>
+   </div>
+   <div class="shop-cg-form">
+    <label for="ebay-cg-client-id">Client ID (App ID)</label>
+    <input id="ebay-cg-client-id" type="text" autocomplete="off" spellcheck="false" placeholder="Your eBay App ID / Client ID" />
+    <label for="ebay-cg-client-secret">Client Secret (Cert ID)</label>
+    <input id="ebay-cg-client-secret" type="password" autocomplete="off" spellcheck="false" placeholder="Your eBay Cert ID / Client Secret" />
+    <label for="ebay-cg-env">Environment</label>
+    <select id="ebay-cg-env">
+     <option value="sandbox"${(!saved || saved.env !== "production") ? " selected" : ""}>Sandbox (recommended first)</option>
+     <option value="production"${(saved && saved.env === "production") ? " selected" : ""}>Production</option>
+    </select>
+    <p class="hint">Keys stay in this browser (<code>localStorage</code> base64 stub — not strong encryption). Prefer a private device. Cloudflare env secrets still work as a fallback when set.</p>
+   </div>
+   <div class="shop-cg-actions">
+    <button type="button" class="btn btn-soft" onclick="xlEbaySaveKeys()" data-tip="Saves Client ID + Secret in this browser only.">Save keys</button>
+    <button type="button" class="btn btn-accent" onclick="xlEbayConnectStart()" data-tip="Starts eBay OAuth using saved or typed keys (or Cloudflare env).">Connect OAuth</button>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="xlEbayClearKeys()" data-tip="Removes saved keys from this browser.">Clear saved keys</button>
+    <button type="button" class="btn btn-soft btn-sm" onclick="xlConnectMarkLocal('ebay')" data-tip="Marks Connected locally only.">I've connected</button>
+   </div>
+   <p class="shop-cg-foot" id="ebay-cg-status">${escapeHtml(statusTxt)}</p>`;
+  } else {
+    oauthBlock = `
+   <div class="shop-cg-actions">
+    <a class="btn btn-accent" href="${escapeHtml(shop.createListing)}" target="_blank" rel="noopener noreferrer" data-tip="Opens ${escapeHtml(shop.name)} create-listing.">Open create listing</a>
+    <a class="btn btn-soft" href="${escapeHtml(shop.signup)}" target="_blank" rel="noopener noreferrer" data-tip="Opens ${escapeHtml(shop.name)} signup.">Open signup</a>
+    <button type="button" class="btn btn-soft" onclick="xlConnectMarkLocal('${shop.id}')" data-tip="Marks Connected locally — does not grant API post.">I've connected</button>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="xlShopCloseGuide();xlConnectOpenGuide('${escapeHtml(shop.name)}')" data-tip="Also opens Guide A to Z for ${escapeHtml(shop.name)}.">Guide A to Z</button>
+   </div>
+   <p class="shop-cg-foot" id="shop-cg-foot">No API credentials to paste — ${escapeHtml(shop.name)} connect is guide + paste only.</p>`;
   }
-  const re = document.getElementById("ebay-cg-redirect");
-  if (re) re.textContent = XL_EBAY_REDIRECT;
+
+  body.innerHTML = `
+   <p class="shop-cg-honest"><b>Honest:</b> ${shop.honest}</p>
+   <div class="shop-cg-hive" aria-label="Hive coach checklist">
+    <p class="kicker">Hive coach · checklist</p>
+    <ol>${hiveLis}</ol>
+   </div>
+   <div class="shop-cg-links">
+    <a class="btn btn-soft btn-sm" href="${escapeHtml(shop.signup)}" target="_blank" rel="noopener noreferrer" data-tip="Public signup URL for ${escapeHtml(shop.name)}.">Signup deep link</a>
+    <a class="btn btn-soft btn-sm" href="${escapeHtml(shop.createListing)}" target="_blank" rel="noopener noreferrer" data-tip="Public create-listing URL for ${escapeHtml(shop.name)}.">Create-listing deep link</a>
+   </div>
+   ${oauthBlock}`;
+
   ov.classList.remove("hidden");
-  try { idEl && idEl.focus(); } catch {}
+  if (shop.oauth) {
+    const saved = xlEbayKeysLoad();
+    const idEl = document.getElementById("ebay-cg-client-id");
+    const secEl = document.getElementById("ebay-cg-client-secret");
+    if (idEl) idEl.value = saved ? saved.clientId : "";
+    if (secEl) secEl.value = saved ? saved.clientSecret : "";
+  }
   refreshTips();
+  try {
+    const focusEl = document.getElementById("ebay-cg-client-id") || body.querySelector("a.btn");
+    focusEl && focusEl.focus();
+  } catch {}
 }
-function xlEbayCloseGuide(){
-  const ov = document.getElementById("ebay-connect-overlay");
-  if (ov) ov.classList.add("hidden");
-}
+
+function xlEbayOpenGuide(){ xlShopOpenGuide("ebay"); }
+function xlEbayCloseGuide(){ xlShopCloseGuide(); }
+
 function xlEbayCopyRedirect(){
   const v = XL_EBAY_REDIRECT;
   const done = () => toast("Redirect URI copied");
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(v).then(done).catch(() => {
-      prompt("Copy this redirect URI:", v);
-    });
+    navigator.clipboard.writeText(v).then(done).catch(() => { prompt("Copy this redirect URI:", v); });
   } else {
     prompt("Copy this redirect URI:", v);
   }
@@ -2628,6 +2784,9 @@ function xlEbaySaveKeys(){
     return;
   }
   const saved = xlEbayKeysSave({ clientId, clientSecret, redirectUri: XL_EBAY_REDIRECT, env });
+  xlConnectMarkReady("ebay");
+  xlConnectRefresh();
+  xlShopPaintStatus("ebay");
   const st = document.getElementById("ebay-cg-status");
   if (st) st.textContent = "Saved in this browser · Client ID ends …" + saved.clientId.slice(-6) + " · " + saved.env;
   toast("eBay keys saved in this browser (not uploaded to a key vault yet)");
@@ -2640,6 +2799,8 @@ function xlEbayClearKeys(){
   if (secEl) secEl.value = "";
   const st = document.getElementById("ebay-cg-status");
   if (st) st.textContent = "No keys saved yet in this browser.";
+  xlConnectRefresh();
+  xlShopPaintStatus("ebay");
   toast("Cleared saved eBay keys from this browser");
 }
 function xlEbayReadFormOrStorage(){
@@ -2656,8 +2817,6 @@ function xlEbayReadFormOrStorage(){
   return xlEbayKeysLoad();
 }
 async function xlEbayConnectStart(){
-  // POST BYO keys when present; Pages Function falls back to Cloudflare env.
-  // Never console.log secrets.
   toast("Starting eBay OAuth…");
   const keys = xlEbayReadFormOrStorage();
   try {
@@ -2669,7 +2828,6 @@ async function xlEbayConnectStart(){
         redirectUri: keys.redirectUri || XL_EBAY_REDIRECT,
         env: keys.env || "sandbox"
       });
-      // Also send Authorization EbayKeys for proxies that strip bodies oddly
       try {
         opts.headers["Authorization"] = "EbayKeys " + btoa(unescape(encodeURIComponent(JSON.stringify({
           clientId: keys.clientId,
@@ -2679,13 +2837,12 @@ async function xlEbayConnectStart(){
         })))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
       } catch {}
     } else {
-      // No BYO — still POST empty so server can use env; clear message if 501
       opts.body = JSON.stringify({});
     }
     const r = await fetch("/api/ebay/oauth/start", opts);
     const data = await r.json().catch(() => ({}));
     if (data && data.authorizeUrl) {
-      xlEbayCloseGuide();
+      xlShopCloseGuide();
       window.location.href = data.authorizeUrl;
       return;
     }
@@ -2694,7 +2851,6 @@ async function xlEbayConnectStart(){
     toast(msg);
     const st = document.getElementById("ebay-cg-status");
     if (st) st.textContent = msg + next;
-    // Safe debug: status + missing keys only (never secrets)
     try { console.info("[ebay-oauth]", { status: r.status, error: data && data.error, missing: data && data.missing }); } catch {}
   } catch (e) {
     toast("eBay OAuth unreachable — paste keys in the guide or set Cloudflare secrets");
@@ -2724,10 +2880,10 @@ document.addEventListener("DOMContentLoaded", () => {
   try { xlEbayHandleCallbackParams(); } catch {}
   try {
     document.addEventListener("keydown", (ev) => {
-      if (ev.key === "Escape") xlEbayCloseGuide();
+      if (ev.key === "Escape") xlShopCloseGuide();
     });
-    const ov = document.getElementById("ebay-connect-overlay");
-    if (ov) ov.addEventListener("click", (ev) => { if (ev.target === ov) xlEbayCloseGuide(); });
+    const ov = document.getElementById("shop-connect-overlay");
+    if (ov) ov.addEventListener("click", (ev) => { if (ev.target === ov) xlShopCloseGuide(); });
   } catch {}
 });
 
@@ -2771,9 +2927,9 @@ async function renderXL(el){
 
     <div class="card" id="xl-connect">
       <h3 style="margin-top:0">Connect your shops</h3>
-      <p class="xl-connect-note"><b>Honest status:</b> fashionistas.ai only posts when a shop shows <b>Connected</b>. Until then you copy the draft and paste it yourself — or open <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="hcToggle()" data-tip="Opens Guide A to Z for account setup.">Guide A to Z</button> for step-by-step account setup. Paste multilist still works either way.</p>
+      <p class="xl-connect-note"><b>Honest status:</b> fashionistas.ai only posts when a shop shows <b>Connected</b> with a real API link. Until then tap <b>Connect</b> on each shop for a free guide (signup → verify → create listing → paste kit). We never invent API credentials or take marketplace passwords. Paste multilist still works either way — or open <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="hcToggle()" data-tip="Opens Guide A to Z for account setup.">Guide A to Z</button>.</p>
       <div class="xl-connect-grid">${xlConnectRowsHtml()}</div>
-      <p class="xl-connect-foot">eBay: paste your own developer Client ID / Secret in the Connect guide (or set Cloudflare env). Other shops stay paste-only until each has a real connect path. See <code>docs/EBAY_OAUTH.md</code>.</p>
+      <p class="xl-connect-foot">Every shop has a <b>Connect</b> guidance panel (status: Needs account · Ready to guide · Connected). <b>eBay</b> supports BYO Client ID/Secret + OAuth. Depop, Poshmark, Mercari, Vinted, Grailed: no public seller OAuth — guided open + paste, optional local I've connected. See <code>docs/EBAY_OAUTH.md</code>.</p>
     </div>
 
     <div class="card">
