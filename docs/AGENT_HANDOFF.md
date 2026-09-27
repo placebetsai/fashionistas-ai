@@ -1,9 +1,9 @@
 # Agent handoff — fashionistas.ai
 
 **Audience:** Other agents continuing product / deploy / Connect / UX work  
-**Session covered:** 2026-09-26 → 2026-09-27 early ET (America/New_York)  
+**Session covered:** 2026-09-26 → 2026-09-26 late ET (America/New_York)  
 **Repo:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
-**Handoff written:** after feat/ebay-listing-per-shop-kits (eBay listing create + per-shop kits)
+**Handoff written:** after feat/ebay-multilist-ux-walkthrough (seller UX walk to first eBay listing)
 
 Read this before changing live Pages, inventing marketplace credentials, or assuming GitHub `main` equals production.
 
@@ -73,6 +73,18 @@ Package script: `"deploy": "npx wrangler pages deploy . --project-name=fashionis
 | **Refresh token store** | **Best-effort cookie** (`ebay_oauth_tok`, Max-Age ~90d when refresh present). Optional KV put if Pages binding `EBAY_TOKENS` / `FASHIONISTAS_KV` / `TOKENS` exists. **Still need durable store on fashionistas-api KV** |
 | **Status probe** | `GET /api/ebay/status` — connected / hasRefresh / env / expired (no secrets) |
 
+### UX walkthrough batch (feat/ebay-multilist-ux-walkthrough)
+
+| Item | Status |
+|------|--------|
+| **Connect eBay progress** | **Shipped** — Needs keys → Connect OAuth → Connected → Ready to post stepper; probes `/api/ebay/status` |
+| **Reconnect eBay** | **Shipped** — one primary button restarts OAuth with sell.inventory scopes when scopes stale / create returns scope errors |
+| **Create on eBay sheet** | **Shipped** — primary CTA + inline creating… / needs business policies / success (+ listing or Seller Hub link); action buttons (Open Seller Hub policies, Reconnect) |
+| **First-run Multilist** | **Shipped** — Snap → kit → Create on eBay path card when closet empty |
+| **Coach copy** | Short in-panel coach (not docs dump); advanced RuName tucked under details |
+| **Backends** | Unchanged — still `/api/ebay/oauth/*`, `/api/ebay/listing`, `/api/ebay/status` |
+
+
 ---
 
 ## 4. Deploy truth (critical)
@@ -81,9 +93,10 @@ Package script: `"deploy": "npx wrangler pages deploy . --project-name=fashionis
 
 | Deployment | Source | Notes |
 |------------|--------|--------|
-| **`421a5d5a-…`** (see deployment list) | `d2d606d` | Latest: https://421a5d5a.fashionistas-ai.pages.dev — handoff stamp + PR #6 code |
-| `3d00b6ca-5a08-46ed-846c-fffa4d8ddfbf` | `54a6d28` (PR #6 merge) | eBay listing + per-shop kits |
-| `16dc126f-…` | `0c4dd7b` (PR #5) | Prior trust sprint |
+| **`075ef679`** | `125816d` (feat/ebay-multilist-ux-walkthrough) | UX walkthrough → https://075ef679.fashionistas-ai.pages.dev · live https://fashionistas.ai |
+| `f84cf3d4` | same SHA (preview alias) | https://f84cf3d4.fashionistas-ai.pages.dev |
+| `421a5d5a-…` | `d2d606d` | Prior handoff stamp |
+| `3d00b6ca-…` | `54a6d28` (PR #6) | eBay listing + per-shop kits |
 
 - **Source of truth for live HTML:** Cloudflare Pages deployment list, **not** GitHub alone.
 - Pages **Git Provider: No** — pushes to `main` do **not** auto-deploy.
@@ -209,4 +222,4 @@ npx wrangler pages deployment list --project-name=fashionistas-ai
 npx wrangler pages deploy . --project-name=fashionistas-ai
 ```
 
-**End of handoff (2026-09-27 ET batch: listing create + per-shop kits).**
+**End of handoff (2026-09-26 late ET: Multilist eBay UX walkthrough — Connect progress, Create CTA, first-run Snap path).**
