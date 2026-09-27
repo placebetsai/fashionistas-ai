@@ -966,9 +966,39 @@ textarea.input{font-family:inherit}
 .xl-kit-head b{font-size:13.5px}
 .xl-kit-hint{font-size:11.5px;color:var(--mut);line-height:1.45;margin:0 0 6px}
 .xl-kit-block .xl-kit{max-height:16vh;margin:6px 0}
-.xl-ebay-create{margin:10px 0;padding:10px 12px;border-radius:12px;border:1px solid rgba(0,100,210,.28);background:rgba(0,100,210,.06)}
-.xl-ebay-create p{margin:0 0 8px;font-size:12.5px;line-height:1.5;color:var(--ink)}
+.xl-ebay-create{margin:10px 0;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--soft)}
+.xl-ebay-create p{margin:0 0 8px;font-size:13px;line-height:1.5;color:var(--ink)}
 .xl-ebay-create .err{color:var(--bad);font-size:12.5px;margin:6px 0 0}
+.xl-ebay-create .ok{color:var(--good);font-size:12.5px;margin:6px 0 0}
+.xl-ebay-create .xl-ebay-status{min-height:1.4em;margin-top:8px;font-size:13px;line-height:1.5}
+.xl-ebay-create .xl-ebay-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.xl-ebay-cta-wrap{margin:10px 0 6px;display:flex;flex-direction:column;gap:8px}
+.xl-ebay-cta-wrap .btn[disabled]{opacity:.55;cursor:wait}
+.xl-kit-ctas{display:flex;gap:6px;flex-wrap:wrap}
+.xl-kit-ctas .btn{font-weight:700}
+.xl-first-path{margin:0 0 14px;padding:14px 14px 12px;border-radius:16px;border:1.5px solid var(--line);
+  background:linear-gradient(135deg,rgba(255,78,58,.08),rgba(192,92,255,.08))}
+.xl-first-path h3{margin:0 0 6px;font-size:16px}
+.xl-first-path p{margin:0 0 12px;font-size:13.5px;line-height:1.5;color:var(--ink)}
+.xl-first-steps{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.xl-first-step{display:flex;align-items:center;gap:8px;padding:8px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:12.5px;font-weight:700}
+.xl-first-step .n{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;font-size:11px;font-weight:800}
+.xl-first-step.on{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 18%,transparent)}
+.ebay-progress{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.ebay-progress .ep{flex:1;min-width:110px;padding:9px 10px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-size:11.5px;line-height:1.35;color:var(--mut)}
+.ebay-progress .ep b{display:block;font-size:12.5px;color:var(--ink);margin-bottom:2px}
+.ebay-progress .ep.done{border-color:rgba(34,160,90,.35);background:var(--good-soft);color:var(--good)}
+.ebay-progress .ep.done b{color:var(--good)}
+.ebay-progress .ep.now{border-color:rgba(0,100,210,.45);background:rgba(0,100,210,.08);color:var(--ink);box-shadow:0 0 0 2px rgba(0,100,210,.12)}
+.ebay-progress .ep.now b{color:#0064d2}
+.shop-cg-coach{margin:0 0 12px;padding:11px 12px;border-radius:12px;background:var(--soft);border:1px solid var(--line);font-size:13.2px;line-height:1.55}
+.shop-cg-coach b{color:var(--accent)}
+.shop-cg-reconnect{margin:0 0 12px;padding:12px;border-radius:14px;border:1.5px solid rgba(229,50,45,.4);background:rgba(229,50,45,.08)}
+.shop-cg-reconnect p{margin:0 0 10px;font-size:13.5px;line-height:1.5}
+.shop-cg-reconnect .btn-accent{width:100%;font-weight:800;font-size:15px;padding:12px 14px}
+.shop-cg-details{margin:8px 0 0;font-size:12px;color:var(--mut)}
+.shop-cg-details summary{cursor:pointer;font-weight:700;color:var(--ink)}
+.tag.post-ready{background:rgba(0,100,210,.12);color:#0064d2}
 @media (prefers-reduced-motion:reduce){.chip{transition:none}}
 
 /* ================= bulk select ================= */
@@ -2497,6 +2527,64 @@ const XL_CONNECT_KEY = "fash_connect_v1";
 const XL_EBAY_KEYS_KEY = "fash_ebay_keys_v1";
 const XL_EBAY_REDIRECT = "https://fashionistas.ai/api/ebay/oauth/callback";
 let XL_SHOP_GUIDE_ID = null;
+let XL_EBAY_LIVE = { probed: false, connected: false, expired: false, hasRefresh: false, env: "sandbox", needsReconnect: false };
+const XL_EBAY_SELLER_HUB = {
+  sandbox: "https://www.sandbox.ebay.com/bp/manage",
+  production: "https://www.ebay.com/bp/manage"
+};
+const XL_EBAY_SELLER_HUB_LIST = {
+  sandbox: "https://www.sandbox.ebay.com/sh/lst/active",
+  production: "https://www.ebay.com/sh/lst/active"
+};
+function xlEbayEnv(){
+  const keys = xlEbayKeysLoad();
+  if (keys && keys.env) return keys.env;
+  return (XL_EBAY_LIVE && XL_EBAY_LIVE.env) || "sandbox";
+}
+function xlEbaySellerHubPoliciesUrl(){
+  return XL_EBAY_SELLER_HUB[xlEbayEnv()] || XL_EBAY_SELLER_HUB.sandbox;
+}
+function xlEbaySellerHubListUrl(){
+  return XL_EBAY_SELLER_HUB_LIST[xlEbayEnv()] || XL_EBAY_SELLER_HUB_LIST.sandbox;
+}
+function xlEbayListingUrl(listingId){
+  if (!listingId) return "";
+  const host = xlEbayEnv() === "production" ? "https://www.ebay.com" : "https://www.sandbox.ebay.com";
+  return host + "/itm/" + encodeURIComponent(String(listingId));
+}
+function xlEbayMarkNeedsReconnect(on){
+  XL_EBAY_LIVE.needsReconnect = !!on;
+  try { localStorage.setItem("fash_ebay_needs_reconnect", on ? "1" : "0"); } catch {}
+}
+function xlEbayNeedsReconnect(){
+  if (XL_EBAY_LIVE.needsReconnect) return true;
+  try { return localStorage.getItem("fash_ebay_needs_reconnect") === "1"; } catch { return false; }
+}
+async function xlEbayProbeStatus(){
+  try {
+    const r = await fetch("/api/ebay/status", { credentials: "same-origin", headers: { "cache-control": "no-store" } });
+    const data = await r.json().catch(() => ({}));
+    XL_EBAY_LIVE = {
+      probed: true,
+      connected: !!(data && data.connected),
+      expired: !!(data && data.expired),
+      hasRefresh: !!(data && data.hasRefreshToken),
+      env: (data && data.env) || xlEbayEnv(),
+      needsReconnect: xlEbayNeedsReconnect() || !!(data && data.expired)
+    };
+    if (data && data.connected && !data.expired) {
+      const state = xlConnectLoad();
+      if (!state.ebay || state.ebay.status !== "connected") {
+        state.ebay = { status: "connected", via: "oauth-status", at: new Date().toISOString() };
+        xlConnectSave(state);
+      }
+    }
+    return XL_EBAY_LIVE;
+  } catch {
+    XL_EBAY_LIVE.probed = true;
+    return XL_EBAY_LIVE;
+  }
+}
 
 const XL_CONNECT_SHOPS = [
   {
@@ -2516,12 +2604,12 @@ const XL_CONNECT_SHOPS = [
     signup: "https://signup.ebay.com/",
     createListing: "https://www.ebay.com/sl/sell",
     hive: [
-      "Create an eBay seller account (and a developer app if you want OAuth).",
-      "Verify identity / payouts on eBay as required.",
-      "Open List an item — or Connect OAuth after pasting your own Client ID + Secret.",
-      "Paste your draft kit, or finish eBay login if you started OAuth."
+      "Save your eBay app keys (Client ID + Secret) — Sandbox first.",
+      "Tap Connect OAuth and approve sell access on eBay.",
+      "Snap an item → Multilist kit → paste on eBay (or optional Create when Connected).",
+      "If eBay asks for business policies, open Seller Hub once, then retry Create."
     ],
-    honest: "We do <b>not</b> create eBay seller or developer accounts for you. Paste your own Client ID + Secret (BYO), then <b>Connect OAuth</b> opens eBay's login (requests <b>sell.inventory</b> + <b>sell.account</b> scopes). After Connected, Multilist can <b>Create on eBay</b> via Inventory/Offer APIs (sandbox recommended). Re-connect if you connected before scopes were added. Paste kits always work. fashionistas.ai never invents credentials."
+    honest: "We never invent eBay keys or take your password. Paste <b>your</b> Client ID + Secret, then <b>Connect OAuth</b>. Paste kits always work for every marketplace; Create via API is optional after Connected."
   },
   {
     id: "poshmark", name: "Poshmark", oauth: false,
@@ -2586,21 +2674,46 @@ function xlConnectLoad(){
 function xlConnectSave(state){
   try { localStorage.setItem(XL_CONNECT_KEY, JSON.stringify(state || {})); } catch {}
 }
-/** Status: needs | ready | connected (local OK). eBay with saved keys upgrades needs→ready. */
+/** Status: needs | ready | connected | post-ready. eBay keys → ready; OAuth live → connected/post-ready. */
 function xlConnectStatus(id){
+  if (id === "ebay") {
+    if (XL_EBAY_LIVE.connected && !XL_EBAY_LIVE.expired && !xlEbayNeedsReconnect()) {
+      const s = xlConnectLoad().ebay;
+      if (s && s.status === "connected") return "post-ready";
+      return "connected";
+    }
+    const s = xlConnectLoad().ebay;
+    if (s && s.status === "connected") {
+      if (xlEbayNeedsReconnect() || (XL_EBAY_LIVE.probed && (!XL_EBAY_LIVE.connected || XL_EBAY_LIVE.expired)))
+        return "connected"; /* show Connected but Reconnect CTA */
+      return XL_EBAY_LIVE.probed && XL_EBAY_LIVE.connected ? "post-ready" : "connected";
+    }
+    const keys = xlEbayKeysLoad();
+    if (keys && keys.clientId) return "ready";
+    if (s && s.status === "ready") return "ready";
+    return "needs";
+  }
   const s = xlConnectLoad()[id];
   if (s && s.status === "connected") return "connected";
   if (s && s.status === "ready") return "ready";
-  if (id === "ebay") {
-    const keys = xlEbayKeysLoad();
-    if (keys && keys.clientId) return "ready";
-  }
   return "needs";
 }
 function xlConnectStatusTag(st){
+  if (st === "post-ready") return `<span class="tag post-ready">Ready to post</span>`;
   if (st === "connected") return `<span class="tag connected">Connected</span>`;
-  if (st === "ready") return `<span class="tag ready">Ready to guide</span>`;
-  return `<span class="tag needs">Needs account</span>`;
+  if (st === "ready") return `<span class="tag ready">Keys saved</span>`;
+  return `<span class="tag needs">Needs keys</span>`;
+}
+function xlConnectStatusTagForShop(id){
+  const st = xlConnectStatus(id);
+  if (id !== "ebay") {
+    if (st === "connected") return `<span class="tag connected">Connected</span>`;
+    if (st === "ready") return `<span class="tag ready">Ready to guide</span>`;
+    return `<span class="tag needs">Needs account</span>`;
+  }
+  if (xlEbayNeedsReconnect() && (st === "connected" || st === "post-ready"))
+    return `<span class="tag needs">Reconnect needed</span>`;
+  return xlConnectStatusTag(st === "ready" ? "ready" : st);
 }
 function xlConnectMarkReady(id){
   const state = xlConnectLoad();
@@ -2613,23 +2726,35 @@ function xlConnectRowsHtml(){
   const shops = xlConnectShopsMerged();
   return shops.map(shop => {
     const st = xlConnectStatus(shop.id);
-    const connected = st === "connected";
-    const statusTag = xlConnectStatusTag(st);
+    const connected = st === "connected" || st === "post-ready";
+    const statusTag = xlConnectStatusTagForShop(shop.id);
     let actions = "";
-    if (connected) {
+    if (shop.id === "ebay" && xlEbayNeedsReconnect() && connected) {
+      actions = `<button type="button" class="btn btn-soft btn-sm" onclick="xlEbayReconnect()" data-tip="Restarts eBay OAuth with sell.inventory scopes.">Reconnect</button>`
+        + `<button type="button" class="btn btn-soft btn-sm" onclick="xlShopOpenGuide('ebay')" data-tip="Open the eBay connect panel.">Guide</button>`;
+    } else if (connected) {
       actions = `<button type="button" class="btn btn-soft btn-sm" onclick="xlShopOpenGuide('${shop.id}')" data-tip="Re-open the ${escapeHtml(shop.name)} connect guide.">Guide</button>`
-        + `<button type="button" class="btn btn-ghost btn-sm" onclick="xlConnectDisconnect('${shop.id}')" data-tip="Clears the local Connected flag for this shop.">Disconnect</button>`;
+        + (shop.id === "ebay"
+          ? `<button type="button" class="btn btn-ghost btn-sm" onclick="xlEbayReconnect()" data-tip="Re-run OAuth if scopes are stale.">Reconnect</button>`
+          : `<button type="button" class="btn btn-ghost btn-sm" onclick="xlConnectDisconnect('${shop.id}')" data-tip="Clears the local Connected flag for this shop.">Disconnect</button>`);
     } else {
-      const connectLabel = shop.oauth ? ("Connect " + shop.name) : ("Connect " + shop.name);
+      const connectLabel = "Connect " + shop.name;
       actions = `<button type="button" class="btn btn-accent btn-sm" onclick="xlShopOpenGuide('${shop.id}')" data-tip="Opens the ${escapeHtml(shop.name)} connect guidance panel.">${escapeHtml(connectLabel)}</button>`
         + `<a class="btn btn-soft btn-sm" href="${escapeHtml(shop.signup)}" target="_blank" rel="noopener noreferrer" data-tip="Opens ${escapeHtml(shop.name)} signup.">Signup</a>`
-        + `<button type="button" class="btn btn-ghost btn-sm" onclick="xlConnectMarkLocal('${shop.id}')" data-tip="Marks Connected locally only — does not grant API post access.">I've connected</button>`;
+        + (shop.oauth ? "" : `<button type="button" class="btn btn-ghost btn-sm" onclick="xlConnectMarkLocal('${shop.id}')" data-tip="Marks Connected locally only — does not grant API post access.">I've connected</button>`);
     }
-    const detail = connected
-      ? (shop.oauth ? "OAuth / local Connected · paste until worker tokens land" : "Local Connected · still paste until API post ships")
-      : (shop.oauth
-          ? (st === "ready" ? "Keys ready · finish OAuth or paste drafts" : "BYO keys + OAuth guide · or paste drafts")
-          : (st === "ready" ? "Guide open · signup → verify → list → paste" : "No public seller OAuth · guide + paste"));
+    let detail;
+    if (shop.id === "ebay") {
+      if (xlEbayNeedsReconnect() && connected) detail = "Scopes expired — tap Reconnect (one step)";
+      else if (st === "post-ready") detail = "Connected · paste kit · optional API create";
+      else if (st === "connected") detail = "Connected · paste kit or optional Create";
+      else if (st === "ready") detail = "Keys saved · next: Connect OAuth";
+      else detail = "Guide + keys → Connect OAuth (optional API)";
+    } else {
+      detail = connected
+        ? "Local Connected · paste kit on the shop"
+        : (st === "ready" ? "Guide open · signup → paste" : "Guide + paste (no public seller OAuth)");
+    }
     return `<div class="xl-connect-row" data-shop="${shop.id}">
       <div class="xl-connect-name"><b>${escapeHtml(shop.name)}</b><span>${detail}</span></div>
       <div class="xl-connect-status">${statusTag}</div>
@@ -2725,8 +2850,31 @@ function xlEbayKeysClear(){
 function xlShopPaintStatus(id){
   const row = document.getElementById("shop-cg-status-row");
   if (!row) return;
-  const st = xlConnectStatus(id || XL_SHOP_GUIDE_ID);
-  row.innerHTML = xlConnectStatusTag(st) + `<span class="mut" style="font-size:12px">Local status · not a password vault</span>`;
+  const sid = id || XL_SHOP_GUIDE_ID;
+  const st = xlConnectStatus(sid);
+  const tag = xlConnectStatusTagForShop(sid);
+  const hint = sid === "ebay"
+    ? (xlEbayNeedsReconnect() ? "Reconnect to refresh sell scopes" : (st === "post-ready" || st === "connected" ? "OAuth ready · paste kit or optional Create" : "Progress below · no password vault"))
+    : "Local status · not a password vault";
+  row.innerHTML = tag + `<span class="mut" style="font-size:12px">${hint}</span>`;
+}
+function xlEbayProgressHtml(){
+  const keys = xlEbayKeysLoad();
+  const hasKeys = !!(keys && keys.clientId);
+  const st = xlConnectStatus("ebay");
+  const connected = st === "connected" || st === "post-ready";
+  const liveOk = !!(XL_EBAY_LIVE.connected && !XL_EBAY_LIVE.expired && !xlEbayNeedsReconnect());
+  const step1 = hasKeys || connected;
+  const step2 = connected;
+  const step3 = connected && !xlEbayNeedsReconnect();
+  const step4 = liveOk || st === "post-ready";
+  const cls = (done, now) => "ep" + (done ? " done" : "") + (now && !done ? " now" : "");
+  return `<div class="ebay-progress" aria-label="eBay connect progress">
+    <div class="${cls(step1, !step1)}"><b>1 · Keys</b>${step1 ? "Saved" : "Paste Client ID + Secret"}</div>
+    <div class="${cls(step2, step1 && !step2)}"><b>2 · OAuth</b>${step2 ? "Connected" : "Connect OAuth"}</div>
+    <div class="${cls(step3, step2 && !step3)}"><b>3 · Connected</b>${xlEbayNeedsReconnect() ? "Scopes stale" : (step3 ? "Token OK" : "Waiting")}</div>
+    <div class="${cls(step4, step3 && !step4)}"><b>4 · Ready</b>${step4 ? "Paste or optional Create" : "Almost there"}</div>
+  </div>`;
 }
 function xlShopCloseGuide(){
   const ov = document.getElementById("shop-connect-overlay");
@@ -2745,26 +2893,36 @@ function xlShopOpenGuide(id){
   xlConnectRefresh();
   if (title) title.textContent = "Connect " + shop.name;
   if (sub) sub.textContent = shop.oauth
-    ? "Free guide · your developer keys · OAuth opens on eBay"
-    : "Free guide · no public seller OAuth · open + paste";
+    ? "Keys → Connect OAuth → paste kit (optional Create)"
+    : "Free guide · open the shop · paste your draft";
   xlShopPaintStatus(shop.id);
 
-  const hiveLis = (shop.hive || []).map(s => `<li>${s}</li>`).join("");
-  let oauthBlock = "";
-  if (shop.oauth) {
-    const saved = xlEbayKeysLoad();
-    const statusTxt = saved && saved.clientId
-      ? ("Keys saved in this browser · Client ID ends …" + saved.clientId.slice(-6) + " · " + (saved.env || "sandbox"))
-      : "No keys saved yet in this browser.";
-    oauthBlock = `
-   <div class="shop-cg-runame">
-    <label>RuName / redirect URI (register exactly)</label>
-    <code id="ebay-cg-redirect">${escapeHtml(XL_EBAY_REDIRECT)}</code>
-    <div class="row">
-     <button type="button" class="btn btn-soft btn-sm" onclick="xlEbayCopyRedirect()" data-tip="Copies the redirect URI to your clipboard.">Copy URI</button>
-     <a class="btn btn-soft btn-sm" href="https://developer.ebay.com/" target="_blank" rel="noopener noreferrer" data-tip="Opens the eBay developer portal.">Open developer portal</a>
-    </div>
-   </div>
+  const finishOpen = () => {
+    xlConnectRefresh();
+    xlShopPaintStatus(shop.id);
+    const hiveLis = (shop.hive || []).map(s => `<li>${s}</li>`).join("");
+    let oauthBlock = "";
+    if (shop.oauth) {
+      const saved = xlEbayKeysLoad();
+      const statusTxt = saved && saved.clientId
+        ? ("Keys in this browser · …" + saved.clientId.slice(-6) + " · " + (saved.env || "sandbox"))
+        : "No keys yet — paste Client ID + Secret, then Connect OAuth.";
+      const needReconnect = xlEbayNeedsReconnect() || (XL_EBAY_LIVE.probed && XL_EBAY_LIVE.expired);
+      const stEbay = xlConnectStatus("ebay");
+      const connected = stEbay === "connected" || stEbay === "post-ready";
+      const reconnectBanner = (needReconnect || (connected && XL_EBAY_LIVE.probed && !XL_EBAY_LIVE.connected))
+        ? `<div class="shop-cg-reconnect">
+            <p><b>Reconnect eBay</b> — token missing sell scopes or expired. One tap restarts OAuth with inventory access.</p>
+            <button type="button" class="btn btn-accent" onclick="xlEbayReconnect()" data-tip="Restarts eBay OAuth with sell.inventory scopes.">Reconnect eBay</button>
+          </div>`
+        : "";
+      const primaryOAuth = connected && !needReconnect
+        ? `<button type="button" class="btn btn-soft" onclick="xlEbayConnectStart()" data-tip="Optional: re-run OAuth.">Re-run OAuth</button>`
+        : `<button type="button" class="btn btn-accent" onclick="xlEbayConnectStart()" data-tip="Starts eBay OAuth using saved or typed keys.">Connect OAuth</button>`;
+      oauthBlock = `
+   ${xlEbayProgressHtml()}
+   ${reconnectBanner}
+   <p class="shop-cg-coach"><b>Coach:</b> Save keys → <b>Connect OAuth</b> → Multilist → paste the kit (optional <b>Create</b>). Sandbox first. Same paste path as every marketplace.</p>
    <div class="shop-cg-form">
     <label for="ebay-cg-client-id">Client ID (App ID)</label>
     <input id="ebay-cg-client-id" type="text" autocomplete="off" spellcheck="false" placeholder="Your eBay App ID / Client ID" />
@@ -2775,53 +2933,63 @@ function xlShopOpenGuide(id){
      <option value="sandbox"${(!saved || saved.env !== "production") ? " selected" : ""}>Sandbox (recommended first)</option>
      <option value="production"${(saved && saved.env === "production") ? " selected" : ""}>Production</option>
     </select>
-    <p class="hint">Keys stay in this browser (<code>localStorage</code> base64 stub — not strong encryption). Prefer a private device. Cloudflare env secrets still work as a fallback when set.</p>
    </div>
    <div class="shop-cg-actions">
     <button type="button" class="btn btn-soft" onclick="xlEbaySaveKeys()" data-tip="Saves Client ID + Secret in this browser only.">Save keys</button>
-    <button type="button" class="btn btn-accent" onclick="xlEbayConnectStart()" data-tip="Starts eBay OAuth using saved or typed keys (or Cloudflare env).">Connect OAuth</button>
-    <button type="button" class="btn btn-ghost btn-sm" onclick="xlEbayClearKeys()" data-tip="Removes saved keys from this browser.">Clear saved keys</button>
-    <button type="button" class="btn btn-soft btn-sm" onclick="xlConnectMarkLocal('ebay')" data-tip="Marks Connected locally only.">I've connected</button>
+    ${primaryOAuth}
+    <button type="button" class="btn btn-ghost btn-sm" onclick="xlEbayClearKeys()" data-tip="Removes saved keys from this browser.">Clear keys</button>
    </div>
-   <p class="shop-cg-foot" id="ebay-cg-status">${escapeHtml(statusTxt)}</p>`;
-  } else {
-    oauthBlock = `
+   <p class="shop-cg-foot" id="ebay-cg-status">${escapeHtml(statusTxt)}</p>
+   <details class="shop-cg-details">
+    <summary>Advanced · redirect URI</summary>
+    <div class="shop-cg-runame" style="margin-top:8px">
+     <label>RuName / redirect URI</label>
+     <code id="ebay-cg-redirect">${escapeHtml(XL_EBAY_REDIRECT)}</code>
+     <div class="row">
+      <button type="button" class="btn btn-soft btn-sm" onclick="xlEbayCopyRedirect()">Copy URI</button>
+      <a class="btn btn-soft btn-sm" href="https://developer.ebay.com/" target="_blank" rel="noopener noreferrer">Developer portal</a>
+     </div>
+    </div>
+   </details>`;
+    } else {
+      oauthBlock = `
+   <div class="shop-cg-hive" aria-label="Coach checklist">
+    <p class="kicker">Coach · checklist</p>
+    <ol>${hiveLis}</ol>
+   </div>
    <div class="shop-cg-actions">
     <a class="btn btn-accent" href="${escapeHtml(shop.createListing)}" target="_blank" rel="noopener noreferrer" data-tip="Opens ${escapeHtml(shop.name)} create-listing.">Open create listing</a>
     <a class="btn btn-soft" href="${escapeHtml(shop.signup)}" target="_blank" rel="noopener noreferrer" data-tip="Opens ${escapeHtml(shop.name)} signup.">Open signup</a>
     <button type="button" class="btn btn-soft" onclick="xlConnectMarkLocal('${shop.id}')" data-tip="Marks Connected locally — does not grant API post.">I've connected</button>
-    <button type="button" class="btn btn-ghost btn-sm" onclick="xlShopCloseGuide();xlConnectOpenGuide('${escapeHtml(shop.name)}')" data-tip="Also opens Guide A to Z for ${escapeHtml(shop.name)}.">Guide A to Z</button>
    </div>
-   <p class="shop-cg-foot" id="shop-cg-foot">No API credentials to paste — ${escapeHtml(shop.name)} connect is guide + paste only.</p>`;
-  }
+   <p class="shop-cg-foot">No API keys here — ${escapeHtml(shop.name)} is guide + paste only.</p>`;
+    }
 
-  body.innerHTML = `
+    body.innerHTML = `
    <p class="shop-cg-honest"><b>Honest:</b> ${shop.honest}</p>
-   <div class="shop-cg-hive" aria-label="Hive coach checklist">
-    <p class="kicker">Hive coach · checklist</p>
-    <ol>${hiveLis}</ol>
-   </div>
-   <div class="shop-cg-links">
-    <a class="btn btn-soft btn-sm" href="${escapeHtml(shop.signup)}" target="_blank" rel="noopener noreferrer" data-tip="Public signup URL for ${escapeHtml(shop.name)}.">Signup deep link</a>
-    <a class="btn btn-soft btn-sm" href="${escapeHtml(shop.createListing)}" target="_blank" rel="noopener noreferrer" data-tip="Public create-listing URL for ${escapeHtml(shop.name)}.">Create-listing deep link</a>
-   </div>
    ${oauthBlock}`;
 
-  ov.classList.remove("hidden");
-  if (shop.oauth) {
-    const saved = xlEbayKeysLoad();
-    const idEl = document.getElementById("ebay-cg-client-id");
-    const secEl = document.getElementById("ebay-cg-client-secret");
-    if (idEl) idEl.value = saved ? saved.clientId : "";
-    if (secEl) secEl.value = saved ? saved.clientSecret : "";
-  }
-  refreshTips();
-  try {
-    const focusEl = document.getElementById("ebay-cg-client-id") || body.querySelector("a.btn");
-    focusEl && focusEl.focus();
-  } catch {}
-}
+    ov.classList.remove("hidden");
+    if (shop.oauth) {
+      const saved = xlEbayKeysLoad();
+      const idEl = document.getElementById("ebay-cg-client-id");
+      const secEl = document.getElementById("ebay-cg-client-secret");
+      if (idEl) idEl.value = saved ? saved.clientId : "";
+      if (secEl) secEl.value = saved ? saved.clientSecret : "";
+    }
+    refreshTips();
+    try {
+      const focusEl = document.getElementById("ebay-cg-client-id") || body.querySelector("a.btn,button.btn-accent");
+      focusEl && focusEl.focus();
+    } catch {}
+  };
 
+  if (shop.oauth) {
+    xlEbayProbeStatus().then(finishOpen).catch(finishOpen);
+  } else {
+    finishOpen();
+  }
+}
 function xlEbayOpenGuide(){ xlShopOpenGuide("ebay"); }
 function xlEbayCloseGuide(){ xlShopCloseGuide(); }
 
@@ -2875,6 +3043,18 @@ function xlEbayReadFormOrStorage(){
   if (fromForm.clientId && fromForm.clientSecret) return fromForm;
   return xlEbayKeysLoad();
 }
+function xlEbayReconnect(){
+  xlEbayMarkNeedsReconnect(true);
+  toast("Reconnecting eBay — approve sell.inventory on the next screen");
+  // Ensure panel fields exist; if closed, start OAuth from saved keys directly
+  const ov = document.getElementById("shop-connect-overlay");
+  if (!ov || ov.classList.contains("hidden") || XL_SHOP_GUIDE_ID !== "ebay") {
+    xlShopOpenGuide("ebay");
+    setTimeout(() => { try { xlEbayConnectStart(); } catch {} }, 120);
+    return;
+  }
+  xlEbayConnectStart();
+}
 async function xlEbayConnectStart(){
   toast("Starting eBay OAuth…");
   const keys = xlEbayReadFormOrStorage();
@@ -2925,7 +3105,11 @@ function xlEbayHandleCallbackParams(){
       const state = xlConnectLoad();
       state.ebay = { status: "connected", via: "oauth", at: new Date().toISOString() };
       xlConnectSave(state);
-      toast("eBay Connected — OAuth token saved (listing create is a follow-up)");
+      xlEbayMarkNeedsReconnect(false);
+      XL_EBAY_LIVE.connected = true;
+      XL_EBAY_LIVE.expired = false;
+      XL_EBAY_LIVE.probed = true;
+      toast("eBay Connected — paste kits anytime; optional Create when ready");
     } else {
       toast("eBay connect failed: " + (u.searchParams.get("ebay_error") || ebay));
     }
@@ -3007,14 +3191,18 @@ async function renderXL(el){
       p.forEach(pid => { prepared[pid] = (prepared[pid] || 0) + 1; });
     });
     const EXAMPLE = 50;
+    const firstRun = !items.length;
     el.innerHTML = `
     <div class="xl-hero">
       <div class="xl-hero-tag">Marketplace lister &amp; admin</div>
-      <h2>Write it once. Paste to every shop.</h2>
-      <p>Pick one item, tick the shops, and you get paste-ready title, description and tags for each one — with every shop's fee and title length already worked out. You post yourself. Connect + paste stays front and centre below.</p>
+      <h2>Write it once. Post to every shop.</h2>
+      <p>Snap an item, select the marketplaces, get paste-ready kits — fees and title length already worked out. You post yourself on every shop. Optional API create is available on eBay when Connected.</p>
       <div class="xl-hero-actions">
-        <button class="btn btn-accent" onclick="xlPickItem()" data-tip="Pick an item below, choose the shops, and we'll hand you the copy for each.">Start multilisting →</button>
-        <button class="btn btn-soft" onclick="go('closet')" data-tip="Open everything you're selling.">See my items</button>
+        ${firstRun
+          ? `<button class="btn btn-accent" onclick="go('snap')" data-tip="Snap your first item, then Multilist builds kits for every shop.">Snap first item →</button>
+             <button class="btn btn-soft" onclick="xlOpenGuides()" data-tip="Open Connect guides for all marketplaces.">Open guides</button>`
+          : `<button class="btn btn-accent" onclick="xlPickItem()" data-tip="Pick an item, select shops, then Get ready to post.">Select shops →</button>
+             <button class="btn btn-soft" onclick="xlOpenGuides()" data-tip="Open Connect guides for all marketplaces.">Open guides</button>`}
       </div>
       <div class="xl-hero-stats">
         <span><b>${six.length}</b> shops</span>
@@ -3023,11 +3211,27 @@ async function renderXL(el){
       </div>
     </div>
 
+    ${firstRun ? `
+    <div class="xl-first-path" id="xl-first-path">
+      <h3>First listing — Snap → kit → post to shops</h3>
+      <p>Snap a photo → Multilist builds a kit per marketplace → select shops and <b>Get ready</b>. Paste on each shop yourself. Guides for every marketplace are below.</p>
+      <div class="xl-first-steps">
+        <span class="xl-first-step on"><span class="n">1</span> Snap item</span>
+        <span class="xl-first-step"><span class="n">2</span> Get kit</span>
+        <span class="xl-first-step"><span class="n">3</span> Post to shops</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button type="button" class="btn btn-accent" onclick="go('snap')" data-tip="Open the camera / photo flow.">Snap →</button>
+        <button type="button" class="btn btn-soft" onclick="xlOpenGuides()" data-tip="Scroll to Connect guides for all shops.">Open guides</button>
+        <button type="button" class="btn btn-soft" onclick="xlPickItem()" data-tip="Jump to pick an item once you have one.">Get ready</button>
+      </div>
+    </div>` : ""}
+
     <div class="card" id="xl-connect">
       <h3 style="margin-top:0">Connect + paste</h3>
-      <p class="xl-connect-note"><b>Honest status:</b> You post yourself. Tap <b>Connect</b> on each shop for a free guide (signup → verify → create listing → <b>paste kit</b>). fashionistas.ai only API-creates when <b>eBay</b> shows <b>Connected</b> with a valid OAuth token + sell scopes (sandbox recommended). We never invent API credentials or take marketplace passwords. Paste multilist always works — or open <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="hcToggle()" data-tip="Opens Guide A to Z for account setup.">Guide A to Z</button>.</p>
+      <p class="xl-connect-note"><b>Coach:</b> Tap any marketplace → short guide → paste the kit. All six shops are first-class. Optional API create exists for eBay after OAuth — paste kits always work everywhere. We never invent credentials or take passwords.</p>
       <div class="xl-connect-grid">${xlConnectRowsHtml()}</div>
-      <p class="xl-connect-foot">Every shop has a <b>Connect</b> guidance panel (status: Needs account · Ready to guide · Connected). <b>eBay</b>: BYO keys + OAuth + optional <b>Create on eBay</b> (Inventory/Offer; needs business policies + sell scopes). Other shops: guide + paste only. See <code>docs/EBAY_OAUTH.md</code>.</p>
+      <p class="xl-connect-foot">Every shop: <b>guide → paste kit → you post</b>. eBay optionally adds API create after keys → OAuth → Connected.</p>
     </div>
 
     <div class="card">
@@ -3053,7 +3257,7 @@ async function renderXL(el){
         <button class="xl-item" onclick="xlOpen(${x.id})" data-tip="Opens this item with the shop picker ready to tick.">
           <span class="xl-item-t">${escapeHtml(x.title || "Untitled")}</span>
           <span class="xl-item-p">${money(x.price)}</span>
-        </button>`).join("") : `<div class="empty">Nothing to send yet — add an item first, then it can go to every shop at once.</div>`}
+        </button>`).join("") : `<div class="empty">Nothing to send yet.<br><br><button class="btn btn-accent" onclick="go('snap')" data-tip="Snap your first item.">Snap an item →</button> <button class="btn btn-soft" onclick="xlOpenGuides()" data-tip="Open Connect guides for all marketplaces.">Open guides</button></div>`}
     </div>
 
     <div class="card">
@@ -3068,6 +3272,7 @@ async function renderXL(el){
       </div>
     </div>`;
     refreshTips();
+    xlEbayProbeStatus().then(() => { try { xlConnectRefresh(); } catch {} }).catch(() => {});
   } catch(e){
     if (e.message === "unauthorized") {
       el.innerHTML = renderAuthPrompt("Session expired — please log in", "Your session has ended. Sign in to use the multilister.");
@@ -3076,6 +3281,11 @@ async function renderXL(el){
     }
     el.innerHTML = `<div class="empty">${escapeHtml(e.message)}</div>`;
   }
+}
+function xlOpenGuides(){
+  const t = document.getElementById("xl-connect");
+  if (t) t.scrollIntoView({ behavior:"smooth", block:"start" });
+  else toast("Open Multilist → Connect + paste for every shop");
 }
 function xlPickItem(){
   const t = document.getElementById("xl-hub-items");
@@ -4094,42 +4304,62 @@ function xlTitleFor(m, title){
 }
 function xlSheet(l, picks, copied, kits, allKit){
  kits = kits || {};
- const ebayConnected = xlConnectStatus("ebay") === "connected";
+ const ebayConnected = (() => {
+   const st = xlConnectStatus("ebay");
+   return st === "connected" || st === "post-ready";
+ })();
+ const needReconnect = xlEbayNeedsReconnect();
+ const listingId = Number(l.id) || 0;
  const rows = picks.map(pid=>{
  const m=(S.markets||[]).find(x=>x.id===pid)||{};
  const rules = xlKitRules(pid);
  const label=platformName(pid);
  const t=xlKitTitle(rules, l);
  const kit = kits[pid] || xlKit(l, pid);
- const ebayBtn = (pid === "ebay" && ebayConnected)
-  ? `<button type="button" class="btn btn-accent btn-sm" onclick="xlEbayCreateListingFromId(${Number(l.id)||0})" data-tip="Uses your eBay OAuth cookie to create inventory + offer (sandbox/production per Connect).">Create on eBay</button>`
-  : (pid === "ebay"
-    ? `<button type="button" class="btn btn-soft btn-sm" onclick="xlShopOpenGuide('ebay')" data-tip="Connect eBay OAuth first for API create.">Connect for API</button>`
-    : "");
+ const shopMeta = xlConnectShopById(pid) || {};
+ const openUrl = shopMeta.createListing || m.signup || "#";
+ let optionalEbay = "";
+ if (pid === "ebay" && ebayConnected && !needReconnect) {
+   optionalEbay = `<button type="button" class="btn btn-soft btn-sm" id="xl-ebay-create-btn" onclick="xlEbayCreateListingFromId(${listingId})" data-tip="Optional: create inventory + offer on eBay when Connected.">Create on eBay</button>`;
+ } else if (pid === "ebay" && needReconnect) {
+   optionalEbay = `<button type="button" class="btn btn-soft btn-sm" onclick="xlEbayReconnect()" data-tip="Restarts eBay OAuth with sell.inventory scopes.">Reconnect</button>`;
+ }
  return `<div class="xl-kit-block" data-shop="${escapeHtml(pid)}">
  <div class="xl-kit-head"><b>${escapeHtml(label)}</b>
- <div style="display:flex;gap:6px;flex-wrap:wrap">
-  <button class="btn btn-soft btn-sm" onclick="xlCopy(this)" data-kit="${escapeHtml(kit).replace(/"/g,"&quot;")}" data-tip="Copy this shop's kit.">Copy ${escapeHtml(label)}</button>
-  <a class="btn btn-soft btn-sm" href="${escapeHtml((xlConnectShopById(pid)||{}).createListing || m.signup || "#")}" target="_blank" rel="noopener noreferrer">Open ${escapeHtml(label)}</a>
-  ${ebayBtn}
+ <div class="xl-kit-ctas">
+  <button class="btn btn-soft btn-sm" onclick="xlCopy(this)" data-kit="${escapeHtml(kit).replace(/"/g,"&quot;")}" data-tip="Copy this shop's kit.">Copy kit</button>
+  <a class="btn btn-soft btn-sm" href="${escapeHtml(openUrl)}" target="_blank" rel="noopener noreferrer" data-tip="Opens ${escapeHtml(label)} listing page.">Open listing page</a>
+  <button type="button" class="btn btn-soft btn-sm" onclick="xlShopOpenGuide('${escapeHtml(pid)}')" data-tip="Opens the ${escapeHtml(label)} Connect / Guide panel.">Connect / Guide</button>
+  ${optionalEbay}
  </div></div>
  <p class="xl-kit-hint">${escapeHtml(rules.fieldHints||"")} · title ≤ ${rules.titleMax||"\u221e"} · fee ~${m.feePct!=null?m.feePct:(feeTableById(pid)||{}).feePct||"?"}%</p>
  <div class="xl-title">${escapeHtml(t)}</div>
  <pre class="xl-kit">${escapeHtml(kit)}</pre>
+ ${pid === "ebay" ? `<div class="xl-ebay-cta-wrap" id="xl-ebay-inline"><div class="xl-ebay-status mut" id="xl-ebay-create-msg" aria-live="polite">${ebayConnected && !needReconnect ? "Optional Create available — paste kit still works anytime." : ""}</div></div>` : ""}
 </div>`;
  }).join("");
 
- const ebayBanner = picks.includes("ebay") ? (
-  ebayConnected
-   ? `<div class="xl-ebay-create" id="xl-ebay-create-box"><p><b>eBay API:</b> Connected locally. <b>Create on eBay</b> calls Sell Inventory / Offer with your OAuth cookie (sandbox unless you chose production). Needs sell.inventory + business policies. Refresh token is cookie best-effort — durable KV on fashionistas-api still needed.</p><div id="xl-ebay-create-msg" class="mut" style="font-size:12px"></div></div>`
-   : `<div class="xl-ebay-create"><p><b>eBay API:</b> Not connected. Paste the eBay kit, or <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="xlShopOpenGuide('ebay')">Connect OAuth</button> then retry Create. Production scopes may block — use Sandbox first.</p></div>`
+ const ebayNote = picks.includes("ebay") ? (
+  needReconnect
+   ? `<div class="xl-ebay-create" id="xl-ebay-create-box"><p><b>Coach:</b> eBay scopes look stale — Reconnect once if you want optional API create. Paste kit works either way.</p>
+      <div class="xl-ebay-actions"><button type="button" class="btn btn-soft btn-sm" onclick="xlEbayReconnect()">Reconnect</button>
+      <button type="button" class="btn btn-soft btn-sm" onclick="xlShopOpenGuide('ebay')">Guide</button></div>
+      <div id="xl-ebay-create-msg" class="xl-ebay-status mut"></div></div>`
+   : ebayConnected
+     ? `<div class="xl-ebay-create" id="xl-ebay-create-box"><p><b>Coach:</b> eBay is Connected. Optional <b>Create on eBay</b> sits beside Copy kit on the eBay row — paste works for every marketplace.</p>
+        <div class="xl-ebay-actions">
+          <button type="button" class="btn btn-soft btn-sm" onclick="xlEbayCreateListingFromId(${listingId})">Create on eBay</button>
+          <a class="btn btn-soft btn-sm" href="${escapeHtml(xlEbaySellerHubPoliciesUrl())}" target="_blank" rel="noopener noreferrer">Seller Hub policies</a>
+        </div>
+        <div id="xl-ebay-create-msg" class="xl-ebay-status mut">Idle</div></div>`
+     : ""
  ) : "";
 
  openSheet(`
  <h3 style="margin:0 0 4px">Ready to post \u2014 ${picks.length} shop${picks.length===1?"":"s"}</h3>
- <p class="mut" style="margin-top:0">${copied?"All shop kits are on the clipboard. ":""}Each shop has its own title rules, tags and tone below.</p>
- <div class="xl-note"><b>What actually happens:</b> kits are paste-ready drafts. Only <b>eBay</b> can auto-create via API when Connected with a valid OAuth token + scopes. Other shops stay copy/paste. We never invent accounts or passwords.</div>
- ${ebayBanner}
+ <p class="mut" style="margin-top:0">${copied?"Kits on the clipboard. ":""}Each marketplace has the same CTAs: Copy kit, Open listing page, Connect / Guide.</p>
+ <div class="xl-note"><b>Coach:</b> Paste kits on every marketplace. You post yourself. Optional API create exists for eBay when Connected — never required. We never invent accounts.</div>
+ ${ebayNote}
  <div style="max-height:48vh;overflow:auto;margin-top:10px">${rows}</div>
  <div class="xl-row" style="border-top:1px solid var(--line);margin-top:6px;padding-top:10px">
  <div class="mut" style="font-size:12px">All kits combined</div>
@@ -4153,12 +4383,31 @@ function xlEbayCreateListingFromId(id){
   });
 }
 async function xlEbayCreateListing(item){
-  const msg = document.getElementById("xl-ebay-create-msg");
-  const setMsg = (html, isErr) => {
-    if (msg){ msg.innerHTML = html; msg.className = isErr ? "err" : "mut"; msg.style.fontSize = "12.5px"; }
+  const msgEls = [
+    document.getElementById("xl-ebay-create-msg"),
+    ...Array.from(document.querySelectorAll("#xl-ebay-inline #xl-ebay-create-msg"))
+  ].filter(Boolean);
+  // dedupe
+  const seen = new Set();
+  const targets = msgEls.filter(el => { if (seen.has(el)) return false; seen.add(el); return true; });
+  const setMsg = (html, kind) => {
+    targets.forEach(msg => {
+      msg.innerHTML = html;
+      msg.className = "xl-ebay-status " + (kind === "err" ? "err" : kind === "ok" ? "ok" : "mut");
+    });
   };
-  setMsg("Creating on eBay\u2026", false);
-  toast("Creating eBay inventory / offer\u2026");
+  const setBusy = (busy) => {
+    ["xl-ebay-create-btn", "xl-ebay-create-btn-main"].forEach(id => {
+      const b = document.getElementById(id);
+      if (b) { b.disabled = !!busy; b.textContent = busy ? "Creating…" : "Create on eBay"; }
+    });
+  };
+  const actionRow = (buttonsHtml) =>
+    `<div class="xl-ebay-actions" style="margin-top:8px">${buttonsHtml}</div>`;
+
+  setBusy(true);
+  setMsg("Creating on eBay…", "mut");
+  toast("Creating on eBay…");
   const keys = xlEbayKeysLoad() || {};
   const payload = {
     id: item && item.id,
@@ -4184,24 +4433,59 @@ async function xlEbayCreateListing(item){
     });
     let data = null;
     try { data = await r.json(); } catch { data = null; }
+    setBusy(false);
+
     if (r.ok && data && data.ok){
+      xlEbayMarkNeedsReconnect(false);
+      const listingUrl = data.listingId ? xlEbayListingUrl(data.listingId) : "";
+      const hub = xlEbaySellerHubListUrl();
       const bits = [
         data.published ? "Published" : "Draft offer ready",
-        data.sku ? ("SKU "+data.sku) : "",
-        data.offerId ? ("offer "+data.offerId) : "",
-        data.env ? ("env "+data.env) : ""
+        data.sku ? ("SKU " + data.sku) : "",
+        data.offerId ? ("offer " + data.offerId) : "",
+        data.env ? data.env : ""
       ].filter(Boolean).join(" · ");
-      setMsg("<b>Success:</b> "+escapeHtml(bits)+(data.note ? "<br>"+escapeHtml(data.note) : ""), false);
-      toast("eBay listing created ✓");
+      let linkHtml = "";
+      if (listingUrl) {
+        linkHtml = actionRow(`<a class="btn btn-accent btn-sm" href="${escapeHtml(listingUrl)}" target="_blank" rel="noopener noreferrer">Open listing</a>
+          <a class="btn btn-soft btn-sm" href="${escapeHtml(hub)}" target="_blank" rel="noopener noreferrer">Seller Hub</a>`);
+      } else {
+        linkHtml = actionRow(`<a class="btn btn-accent btn-sm" href="${escapeHtml(hub)}" target="_blank" rel="noopener noreferrer">Open in Seller Hub</a>
+          <button type="button" class="btn btn-soft btn-sm" onclick="xlEbayCreateListingFromId(${Number(item && item.id)||0})">Create again</button>`);
+      }
+      setMsg("<b>Success:</b> " + escapeHtml(bits) + (data.note ? "<br>" + escapeHtml(data.note) : "") + linkHtml, "ok");
+      toast(data.published ? "eBay listing live ✓" : "eBay draft offer ready ✓");
       return;
     }
-    const err = (data && data.error) || ("http_"+r.status);
+
+    const err = (data && data.error) || ("http_" + r.status);
     const message = (data && data.message) || "Create failed";
     const next = (data && data.nextStep) || "";
-    setMsg("<b>"+escapeHtml(err)+":</b> "+escapeHtml(message)+(next ? "<br><b>Next:</b> "+escapeHtml(next) : "")+(data && data.sku ? "<br>SKU: "+escapeHtml(data.sku) : ""), true);
-    toast("eBay create blocked — see panel");
+    const scopeErr = err === "insufficient_scope_or_auth" || err === "insufficient_account_scope" || err === "ebay_not_connected" || err === "token_expired_missing_secret" || err === "token_refresh_failed";
+    const policyErr = err === "missing_business_policies";
+
+    if (scopeErr) xlEbayMarkNeedsReconnect(true);
+
+    let actions = "";
+    if (scopeErr) {
+      actions = actionRow(`<button type="button" class="btn btn-accent btn-sm" onclick="xlEbayReconnect()">Reconnect eBay</button>
+        <button type="button" class="btn btn-soft btn-sm" onclick="xlShopOpenGuide('ebay')">Open Connect</button>`);
+    } else if (policyErr) {
+      actions = actionRow(`<a class="btn btn-accent btn-sm" href="${escapeHtml(xlEbaySellerHubPoliciesUrl())}" target="_blank" rel="noopener noreferrer">Open Seller Hub policies</a>
+        <button type="button" class="btn btn-soft btn-sm" onclick="xlEbayCreateListingFromId(${Number(item && item.id)||0})">Retry Create</button>`);
+    } else {
+      actions = actionRow(`<a class="btn btn-soft btn-sm" href="${escapeHtml(xlEbaySellerHubPoliciesUrl())}" target="_blank" rel="noopener noreferrer">Seller Hub policies</a>
+        <button type="button" class="btn btn-soft btn-sm" onclick="xlEbayReconnect()">Reconnect</button>`);
+    }
+
+    const friendly = policyErr
+      ? "Needs business policies"
+      : (scopeErr ? "Needs Reconnect" : escapeHtml(err));
+    setMsg("<b>" + friendly + ":</b> " + escapeHtml(message) + (next ? "<br>" + escapeHtml(next) : "") + (data && data.sku ? "<br>SKU: " + escapeHtml(data.sku) : "") + actions, "err");
+    toast(policyErr ? "Add eBay business policies, then retry" : (scopeErr ? "Reconnect eBay, then retry" : "eBay create blocked — see panel"));
   } catch(e){
-    setMsg("<b>network_error:</b> Could not reach /api/ebay/listing. Paste kit instead.", true);
+    setBusy(false);
+    setMsg("<b>Network:</b> Could not reach Create. Paste the kit instead." + actionRow(`<button type="button" class="btn btn-soft btn-sm" onclick="xlEbayCreateListingFromId(${Number(item && item.id)||0})">Retry</button>`), "err");
     toast("eBay create network error");
   }
 }
