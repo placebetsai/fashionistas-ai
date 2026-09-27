@@ -63,7 +63,7 @@ Package script: `"deploy": "npx wrangler pages deploy . --project-name=fashionis
 | Multilist not in tabbar | **Fixed** PR #5 — Multilist primary; Map under More |
 | Deep routes `/guide/` `/pricing/` `/marketplaces/` | **Still SPA shell** (no pathname router) |
 | Demo credentials in client JS | **Still present** (abuse risk) |
-| Equal Multilist UX (not eBay-centric) | **User demand night ET — in flight** (see §6) |
+| Equal Multilist UX (not eBay-centric) | **Shipped** Multilist UX (see §6) — deploy this session |
 
 ---
 
@@ -142,9 +142,9 @@ GitHub `main` after this handoff refresh is the commit that updated this file (s
 |----------|--------|
 | **PR #7** `feat/ebay-multilist-ux-walkthrough` | **OPEN, not merged** — eBay walkthrough (stepper, Create on eBay CTA, first-path card). Tip `1eb12ea`. |
 | **Live CF Production** | **Already deployed** PR #7 code: deployment `075ef679-…`, Source **`125816d`**, preview https://075ef679.fashionistas-ai.pages.dev — **ahead of GitHub `main`** |
-| **Branch `feat/multilist-all-shops-first-class`** | **Local only** (not on `origin`). Tip currently same as PR #7 tip. |
-| **Equal-UX WIP** | **In flight, uncommitted** — agent stash `equal-ux WIP index.html` de-centers eBay (neutral Create chrome, “paste kit · optional API”, coach copy aligned to all shops). **No remote branch / no PR yet.** |
-| **Merged equal-UX PR** | **None** |
+| **Branch `feat/multilist-all-shops-first-class`** | **Shipped locally + wrangler deploy** — Snap→kit→post; equal Copy/Open/Guide CTAs; eBay Create optional soft only. |
+| **Equal-UX WIP** | **Done this session** — Multilist empty path + Connect card + coach plural marketplaces; eBay not product hero. |
+| **Merged equal-UX PR** | **Pending push/PR** after deploy verify |
 
 **Agent action:** Prefer finishing equal Multilist UX (neutral first-path, per-shop kit CTAs Copy/Open for all six, eBay Create secondary) → PR → merge → wrangler deploy. Do **not** deepen eBay-only coach copy without matching non-eBay paths. If merging #7 first, immediately follow with equal-UX so live doesn’t stay eBay-centric.
 
@@ -233,7 +233,7 @@ npx wrangler pages secret put EBAY_RU_NAME --project-name=fashionistas-ai
 
 ## 10. Next recommended (priority)
 
-1. **Equal Multilist UX** — finish/push `feat/multilist-all-shops-first-class` (or successor): first-path + kit CTAs equal for all six; eBay Create secondary; merge + wrangler deploy. Resolve PR #7 (merge then equalize, or fold equal UX into one PR).  
+1. **Push/PR equal Multilist UX** — `feat/multilist-all-shops-first-class` deployed; open PR, merge, keep wrangler as source of truth. Close or supersede PR #7 eBay-centric walkthrough.  
 2. **Browser extension** (or equivalent) for guided paste on non-eBay shops — no password harvesting / fake auto-accounts.  
 3. **API Shop cleanup** — hide QA/bulk/no-photo server-side; normalize platforms to the six (client filter is only a bandage).  
 4. **Durable tokens on fashionistas-api** (KV/D1) keyed by user — replace cookie-only refresh.  
@@ -281,4 +281,4 @@ npx wrangler pages deployment list --project-name=fashionistas-ai
 | https://fashionistas-api.fashionistas1979.workers.dev/api/health | API health |
 | https://075ef679.fashionistas-ai.pages.dev | Latest known CF prod (PR #7 source `125816d`) |
 
-**End of handoff — 2026-09-26 night ET (complete through Connect #1–#4, P0 #5, kits+listing #6, eBay walkthrough #7 open+live, equal-UX in flight).**
+**End of handoff — 2026-09-26 night ET (equal Multilist UX shipped: all shops first-class; eBay Create optional).**
