@@ -166,7 +166,7 @@ async function handleStart(context) {
       env: creds.ebayEnv || "sandbox-default",
       source: creds.source,
       note:
-        "Token exchange on /api/ebay/oauth/callback still scaffolds storage — OAuth login opens on eBay. Secrets were not logged.",
+        "Authorize on eBay; callback exchanges the code for tokens when BYO/env secrets are present. Listing create is a follow-up. Secrets were not logged.",
     },
     200,
     extraHeaders

@@ -57,18 +57,20 @@ Package script: `"deploy": "npx wrangler pages deploy . --project-name=fashionis
 **Audit (box):** `/workspace/tnr/audits/FASHIONISTAS-APP-UX-AUDIT-2026-09-26.md`  
 **Verdict:** **Mixed** — fee take-home + paste-honest multilist sheets are strong; trust/path issues remain.
 
-### Critical findings (still open unless later fixed)
+### Critical findings (P0 trust sprint — see PR after this handoff)
 
-| Issue | Detail |
+| Issue | Status after prime-time sprint |
 |-------|--------|
-| **Honesty drift** | Landing still sounds like “Publish everywhere / Send it everywhere” while product is paste-only |
-| **Manifest** | Claims **24 marketplaces** + “AI sells” — product is **6** draft targets + you post yourself |
-| **Shop QA junk** | Public `/api/market` ~74 items, many QA/test titles, most without photos, platform id bloat |
-| **Generic `xlKit`** | One shared title/bits/price/description block; not truly per-shop tuned |
-| **Sample jacket broken** | `sample-jacket.jpg` returns SPA HTML, not an image |
-| **Multilist not a tab** | Tabbar: Home · Shop · My clothes · Photo · Sell · Map · More — Multilist (`xl`) only via Home CTA / listing flow |
+| **Honesty drift** | **Fixed** — landing / Multilist / Home CTA: paste / 6 shops / you post yourself |
+| **Manifest** | **Fixed** — 6 shops + paste-ready / you post yourself |
+| **Shop QA junk** | **Client filter** — hide QA/test/bulk + no-photo; normalize platforms to 6. API still returns full set |
+| **Generic `xlKit`** | Still open — one shared kit block |
+| **Sample jacket broken** | **Fixed** — real `sample-jacket.jpg` shipped |
+| **Multilist not a tab** | **Fixed** — Multilist in primary tabbar (Map moved under More) |
+| **Vinted fee drift** | **Fixed** — Multilist uses same FEE_TABLE as `/fees/` (Vinted 0%) |
+| **eBay token exchange** | **Fixed** — callback exchanges code when BYO/env keys present; Connected + HttpOnly tok cookie. **Listing create still follow-up** |
 
-Top recs from that audit: fix honesty/manifest; put Multilist on primary nav; real per-shop kits; clean Shop; own `/fees/` as acquisition wedge + fix sample image.
+Top remaining for true prime time: durable token store on API; eBay listing-create; per-shop kits; API-side Shop feed filter; browser extension for guided post.
 
 ---
 
@@ -126,7 +128,7 @@ git cat-file -t <source_sha>   # fatal = laptop-only / not in this clone
 | **Redirect / RuName** | `https://fashionistas.ai/api/ebay/oauth/callback` |
 | **BYO storage** | Browser `localStorage` key **`fash_ebay_keys_v1`** (base64 JSON stub — not strong encryption) |
 | **Connect status (local)** | `localStorage` key **`fash_connect_v1`** |
-| **Callback stub** | Redirects with `ebay_error=token_exchange_not_implemented_see_docs_EBAY_OAUTH` until token exchange + durable storage on API/KV/D1 |
+| **Callback** | Exchanges code → tokens; sets `ebay_oauth_tok` HttpOnly cookie; redirects `?ebay_oauth=ok`. Durable API/KV storage + listing create still follow-up |
 | **Depop / Poshmark / Mercari / Vinted / Grailed** | **Guide-only** panels (signup + create-listing deep links + optional “I've connected”). No invented API keys/passwords. |
 
 Docs in-repo:
@@ -145,7 +147,8 @@ Docs in-repo:
 | Photo → AI analyze → listing form | **YES** (API live) |
 | Auto-post to marketplaces | **NO** |
 | eBay OAuth authorize URL with BYO (or CF) keys | **Opens** (when keys present) |
-| eBay **token exchange** + stored tokens + listing create | **Incomplete** (`token_exchange_not_implemented…`) |
+| eBay **token exchange** + Connected + HttpOnly token cookie | **YES** (when BYO or env keys present) |
+| eBay **listing create** API path | **Incomplete** (follow-up) |
 | Fake auto-signup / invented pub-ids / invented shop API keys | **Must never** |
 
 ---

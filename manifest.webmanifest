@@ -1,7 +1,7 @@
 {
   "name": "Fashionistas",
   "short_name": "Fashionistas",
-  "description": "Snap a photo. AI sells your closet on 24 marketplaces.",
+  "description": "Snap a photo. AI drafts paste-ready listings for 6 shops — you post yourself.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
