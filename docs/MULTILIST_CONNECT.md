@@ -8,7 +8,7 @@ fashionistas.ai Multilist → **Connect your shops** opens a **guidance panel pe
 |--------|---------|
 | **Needs account** | No local progress yet |
 | **Ready to guide** | Connect guide opened (or eBay BYO keys saved) |
-| **Connected** | Local flag; eBay after successful OAuth token exchange (HttpOnly cookie). Paste still works. Listing create is a follow-up. |
+| **Connected** | Local flag; eBay after successful OAuth token exchange (HttpOnly cookie). Paste always works. eBay may additionally **Create on eBay** via API. |
 
 Stored in `localStorage` key `fash_connect_v1`.
 
@@ -16,28 +16,31 @@ Stored in `localStorage` key `fash_connect_v1`.
 
 | Shop | Connect mode | Signup | Create listing |
 |------|----------------|--------|----------------|
-| **Depop** | Guide + paste only | https://www.depop.com/signup/ | https://www.depop.com/sell/ |
-| **eBay** | BYO Client ID/Secret + OAuth | https://signup.ebay.com/ | https://www.ebay.com/sl/sell |
-| **Poshmark** | Guide + paste only | https://poshmark.com/signup | https://poshmark.com/create-listing |
-| **Mercari** | Guide + paste only | https://www.mercari.com/signup/ | https://www.mercari.com/sell/ |
-| **Vinted** | Guide + paste only | https://www.vinted.com/member/register/select_type | https://www.vinted.com/items/new |
-| **Grailed** | Guide + paste only | https://www.grailed.com/signup | https://www.grailed.com/sell |
+| **Depop** | Guide + paste kit | https://www.depop.com/signup/ | https://www.depop.com/sell/ |
+| **eBay** | BYO + OAuth + optional API create | https://signup.ebay.com/ | https://www.ebay.com/sl/sell |
+| **Poshmark** | Guide + paste kit | https://poshmark.com/signup | https://poshmark.com/create-listing |
+| **Mercari** | Guide + paste kit | https://www.mercari.com/signup/ | https://www.mercari.com/sell/ |
+| **Vinted** | Guide + paste kit | https://www.vinted.com/member/register/select_type | https://www.vinted.com/items/new |
+| **Grailed** | Guide + paste kit | https://www.grailed.com/signup | https://www.grailed.com/sell |
 
-Extra marketplaces returned by `/api/marketplaces` (except Fashionistas) get the same guide-only pattern when present.
+## Per-shop kits
 
-## Hive checklist (every panel)
+`xlKit(listing, shopId)` / `XL_KIT_RULES` produce shop-specific:
 
-1. Create account  
-2. Verify  
-3. Open new listing (deep link)  
-4. Paste kit / post (eBay may use OAuth instead of paste-only)
+- Title rules / max length  
+- Tags or hashtags (Depop #tags; eBay comma keywords in description)  
+- Description tone  
+- Field hints aligned with `MKT_CARD`  
 
-## eBay OAuth
+Multilist sheet shows **one kit block per picked shop** (Copy / Open / eBay Create).
 
-See [EBAY_OAUTH.md](./EBAY_OAUTH.md). Only eBay has a real public developer OAuth path in this app.
+## eBay OAuth + listing
+
+See [EBAY_OAUTH.md](./EBAY_OAUTH.md). Only eBay has a real public developer OAuth + Sell Inventory path in this app.
 
 ## What we refuse
 
 - Fake “auto create account” flows  
 - Collecting marketplace passwords  
 - Invented Client ID / Secret / API keys for Depop, Poshmark, Mercari, Vinted, Grailed  
+- Invented AdSense pub-ids  

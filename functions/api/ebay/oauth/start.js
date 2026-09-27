@@ -140,7 +140,15 @@ async function handleStart(context) {
   url.searchParams.set("response_type", "code");
   url.searchParams.set("redirect_uri", creds.redirectUri);
   url.searchParams.set("state", state);
-  url.searchParams.set("scope", "https://api.ebay.com/oauth/api_scope");
+  // sell.inventory + sell.account needed for listing create; users must re-consent after scope change.
+  const scopes = [
+    "https://api.ebay.com/oauth/api_scope",
+    "https://api.ebay.com/oauth/api_scope/sell.inventory",
+    "https://api.ebay.com/oauth/api_scope/sell.inventory.readonly",
+    "https://api.ebay.com/oauth/api_scope/sell.account",
+    "https://api.ebay.com/oauth/api_scope/sell.account.readonly",
+  ].join(" ");
+  url.searchParams.set("scope", scopes);
 
   const extraHeaders = {};
   // Round-trip BYO secret to callback via HttpOnly cookie (10 min). Never log.
@@ -166,7 +174,7 @@ async function handleStart(context) {
       env: creds.ebayEnv || "sandbox-default",
       source: creds.source,
       note:
-        "Authorize on eBay; callback exchanges the code for tokens when BYO/env secrets are present. Listing create is a follow-up. Secrets were not logged.",
+        "Authorize on eBay with sell.inventory + sell.account scopes; callback exchanges the code. Then Multilist can POST /api/ebay/listing. Secrets were not logged.",
     },
     200,
     extraHeaders

@@ -960,6 +960,15 @@ textarea.input{font-family:inherit}
 .xl-row .btn{margin:0;flex:none}
 .xl-note{background:rgba(255,78,58,.08);border:1px solid rgba(255,78,58,.28);border-radius:12px;padding:10px 12px;font-size:12.5px;line-height:1.5;margin-top:8px}
 .xl-kit{white-space:pre-wrap;word-break:break-word;font-size:12px;line-height:1.5;background:var(--code-bg);border:1px solid var(--line);border-radius:var(--r-2);padding:11px;max-height:20vh;overflow:auto;margin:10px 0;color:var(--ink)}
+.xl-kit-block{margin:10px 0 14px;padding:10px 0 0;border-top:1px dashed var(--line)}
+.xl-kit-block:first-of-type{border-top:0;padding-top:0}
+.xl-kit-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.xl-kit-head b{font-size:13.5px}
+.xl-kit-hint{font-size:11.5px;color:var(--mut);line-height:1.45;margin:0 0 6px}
+.xl-kit-block .xl-kit{max-height:16vh;margin:6px 0}
+.xl-ebay-create{margin:10px 0;padding:10px 12px;border-radius:12px;border:1px solid rgba(0,100,210,.28);background:rgba(0,100,210,.06)}
+.xl-ebay-create p{margin:0 0 8px;font-size:12.5px;line-height:1.5;color:var(--ink)}
+.xl-ebay-create .err{color:var(--bad);font-size:12.5px;margin:6px 0 0}
 @media (prefers-reduced-motion:reduce){.chip{transition:none}}
 
 /* ================= bulk select ================= */
@@ -2512,7 +2521,7 @@ const XL_CONNECT_SHOPS = [
       "Open List an item — or Connect OAuth after pasting your own Client ID + Secret.",
       "Paste your draft kit, or finish eBay login if you started OAuth."
     ],
-    honest: "We do <b>not</b> create eBay seller or developer accounts for you. Paste your own Client ID + Secret (BYO), then <b>Connect OAuth</b> opens eBay's login. fashionistas.ai never invents credentials. Paste multilist still works without connecting."
+    honest: "We do <b>not</b> create eBay seller or developer accounts for you. Paste your own Client ID + Secret (BYO), then <b>Connect OAuth</b> opens eBay's login (requests <b>sell.inventory</b> + <b>sell.account</b> scopes). After Connected, Multilist can <b>Create on eBay</b> via Inventory/Offer APIs (sandbox recommended). Re-connect if you connected before scopes were added. Paste kits always work. fashionistas.ai never invents credentials."
   },
   {
     id: "poshmark", name: "Poshmark", oauth: false,
@@ -2969,7 +2978,7 @@ function marketsForSixDisplay(apiMarkets){
       feePct: ft.feePct,
       special: ft.special || null,
       note: ft.note,
-      maxChar: api.maxChar,
+      maxChar: api.maxChar || ({depop:80,ebay:80,poshmark:80,mercari:80,vinted:100,grailed:80}[ft.id]) || null,
       signup: api.signup || (XL_CONNECT_SHOPS.find(s=>s.id===ft.id)||{}).signup || "#"
     };
   });
@@ -3016,9 +3025,9 @@ async function renderXL(el){
 
     <div class="card" id="xl-connect">
       <h3 style="margin-top:0">Connect + paste</h3>
-      <p class="xl-connect-note"><b>Honest status:</b> You post yourself. Tap <b>Connect</b> on each shop for a free guide (signup → verify → create listing → <b>paste kit</b>). fashionistas.ai only auto-posts when a shop shows <b>Connected</b> with a real API link (eBay OAuth when tokens exist). We never invent API credentials or take marketplace passwords. Paste multilist always works — or open <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="hcToggle()" data-tip="Opens Guide A to Z for account setup.">Guide A to Z</button>.</p>
+      <p class="xl-connect-note"><b>Honest status:</b> You post yourself. Tap <b>Connect</b> on each shop for a free guide (signup → verify → create listing → <b>paste kit</b>). fashionistas.ai only API-creates when <b>eBay</b> shows <b>Connected</b> with a valid OAuth token + sell scopes (sandbox recommended). We never invent API credentials or take marketplace passwords. Paste multilist always works — or open <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="hcToggle()" data-tip="Opens Guide A to Z for account setup.">Guide A to Z</button>.</p>
       <div class="xl-connect-grid">${xlConnectRowsHtml()}</div>
-      <p class="xl-connect-foot">Every shop has a <b>Connect</b> guidance panel (status: Needs account · Ready to guide · Connected). <b>eBay</b> supports BYO Client ID/Secret + OAuth. Depop, Poshmark, Mercari, Vinted, Grailed: no public seller OAuth — guided open + paste, optional local I've connected. See <code>docs/EBAY_OAUTH.md</code>.</p>
+      <p class="xl-connect-foot">Every shop has a <b>Connect</b> guidance panel (status: Needs account · Ready to guide · Connected). <b>eBay</b>: BYO keys + OAuth + optional <b>Create on eBay</b> (Inventory/Offer; needs business policies + sell scopes). Other shops: guide + paste only. See <code>docs/EBAY_OAUTH.md</code>.</p>
     </div>
 
     <div class="card">
@@ -3349,7 +3358,7 @@ function bulkDelete(){
 function bulkKit(){
  const items = (S.listings||[]).filter(l=>S.sel.has(l.id));
  if(!items.length) return;
- const kit = items.map(l=>xlKit(l)).join("\n\n" + "\u2500".repeat(42) + "\n\n");
+ const kit = items.map(l=>SHOP_SIX.map(s=>xlKit(l,s)).join('\n\n')).join("\n\n" + "\u2500".repeat(42) + "\n\n");
  let copied=false;
  if (navigator.clipboard) navigator.clipboard.writeText(kit).then(()=>{copied=true;}).catch(()=>{});
  openSheet(`
@@ -3880,23 +3889,201 @@ function xlChecks(){ return [...document.querySelectorAll("#xl-pick input[type=c
 function xlAll(on){ xlChecks().forEach(c=>{ c.checked = on; }); xlCount(); }
 function xlCount(){ const all=xlChecks(); const n=all.filter(c=>c.checked).length; const e=$("#xl-count"); if(e) e.textContent = n+" of "+all.length+" shops picked"; }
 
-/* Paste-ready listing kit for the marketplaces the user picked. */
-function xlKit(l){
- const bits=[l.title, l.brand, l.size?"Size "+l.size:"", l.condition, l.category].filter(Boolean);
- const tags=["#"+String(l.brand||"resale").replace(/\s+/g,""), "#"+String(l.category||"fashion").replace(/\s+/g,""), "#thrift", "#preloved"];
- return [l.title||"", "", bits.join(" \u00b7 "), l.price?"$"+Number(l.price).toFixed(2):"", "",
-   String(l.description||"").trim(), "", tags.join(" ")].join("\n").trim();
+/* Per-shop paste kits — title rules, tags, tone, field hints aligned with MKT_CARD. */
+const XL_KIT_RULES = {
+  depop: {
+    id:"depop", name:"Depop", titleMax:80,
+    tags:["#vintage","#thrift","#y2k","#resale","#rework","#preloved"],
+    tone:"Casual, emoji-light, honest sizing. Lead with brand + piece.",
+    fields:["title","brand","category","size","condition","price","description","tags"],
+    fieldHints:"Depop: title · brand · category · size · condition · price · description · up to 5 tags.",
+    cats:{Tops:"Shirts & Tops",Bottoms:"Trousers & Jeans",Dresses:"Dresses",Outerwear:"Jackets & Coats",Shoes:"Footwear",Accessories:"Accessories"}
+  },
+  ebay: {
+    id:"ebay", name:"eBay", titleMax:80,
+    tags:["vintage","thrift","resale","pre-owned"],
+    tone:"Search-friendly item specifics. No hashtag spam — comma keywords OK in description.",
+    fields:["title","brand","category","size","condition","color","price","description","item specifics"],
+    fieldHints:"eBay: title (≤80) · brand/size/color specifics · condition · fixed price · description + measurements.",
+    cats:{Tops:"Tops & Shirts",Bottoms:"Jeans & Trousers",Dresses:"Dresses",Outerwear:"Jackets & Coats",Shoes:"Shoes",Accessories:"Accessories"}
+  },
+  poshmark: {
+    id:"poshmark", name:"Poshmark", titleMax:80,
+    tags:[],
+    tone:"Clean closet voice. Mention bundle-friendly. No hashtag walls.",
+    fields:["title","category","brand","size","price","description","cover photo"],
+    fieldHints:"Poshmark: title · Category · Brand · Size · Price · description · 1 strong cover shot. Share to Parties after.",
+    cats:{Tops:"Tops",Bottoms:"Bottoms",Dresses:"Dresses",Outerwear:"Outerwear",Shoes:"Shoes",Accessories:"Accessories"}
+  },
+  mercari: {
+    id:"mercari", name:"Mercari", titleMax:80,
+    tags:[],
+    tone:"Offer-friendly. Clear condition first. Price near AI range.",
+    fields:["title","condition","price","description","brand","size"],
+    fieldHints:"Mercari: title · condition · price · description. Leave Smart Pricing off at first.",
+    cats:{Tops:"Tops",Bottoms:"Bottoms",Dresses:"Dresses",Outerwear:"Outerwear",Shoes:"Shoes",Accessories:"Accessories"}
+  },
+  vinted: {
+    id:"vinted", name:"Vinted", titleMax:100,
+    tags:[],
+    tone:"EU/INTL sizing. Concise; buyers pay protection fee — your price is what you keep.",
+    fields:["title","size (EU/INTL)","condition","price","description","photos (app)"],
+    fieldHints:"Vinted: title · EU/INTL size · condition · price · description. Prefer app photo upload.",
+    cats:{Tops:"Tops",Bottoms:"Bottoms",Dresses:"Dresses",Outerwear:"Outerwear",Shoes:"Shoes",Accessories:"Accessories"}
+  },
+  grailed: {
+    id:"grailed", name:"Grailed", titleMax:80,
+    tags:[],
+    tone:"Menswear/streetwear. Measurements + authenticity notes matter more than tags.",
+    fields:["title","brand","size","measurements","condition","retail price","resale price","description"],
+    fieldHints:"Grailed: brand + title · size · measurements · condition · original + asking price · flat-lay photos.",
+    cats:{Tops:"Tops",Bottoms:"Bottoms",Dresses:"Dresses",Outerwear:"Outerwear",Shoes:"Shoes",Accessories:"Accessories"}
+  }
+};
+
+function xlKitRules(shopId){
+  const k = String(shopId||"").toLowerCase();
+  return XL_KIT_RULES[k] || XL_KIT_RULES.depop;
 }
+
+function xlKitTags(rules, l){
+  const brand = String(l.brand||"resale").replace(/\s+/g,"");
+  const cat = String(l.category||"fashion").replace(/\s+/g,"");
+  if (rules.id === "ebay"){
+    const base = rules.tags.slice();
+    if (brand) base.unshift(brand.toLowerCase());
+    if (cat) base.push(cat.toLowerCase());
+    return [...new Set(base)].join(", ");
+  }
+  if (rules.id === "depop"){
+    const extra = ["#"+brand, "#"+cat].filter(t => t.length > 2);
+    return [...new Set(rules.tags.concat(extra))].slice(0, 8).join(" ");
+  }
+  /* Posh/Mercari/Vinted/Grailed — optional soft tags only if brand known */
+  if (brand && brand.toLowerCase() !== "unknown"){
+    return rules.id === "grailed" ? "" : "";
+  }
+  return "";
+}
+
+function xlKitDescription(rules, l){
+  const brand = l.brand || "";
+  const size = l.size || l.sizeHint || "";
+  const cond = l.condition || "";
+  const color = l.color || "";
+  const cat = l.category || "";
+  const base = String(l.description||"").trim();
+  const bits = [];
+  if (rules.id === "ebay"){
+    bits.push(base || (brand + " " + (cat||"item") + " in " + (cond||"good") + " condition.").trim());
+    bits.push("");
+    bits.push("Item specifics:");
+    if (brand) bits.push("Brand: " + brand);
+    if (size) bits.push("Size: " + size);
+    if (color) bits.push("Color: " + color);
+    if (cat) bits.push("Category: " + ((rules.cats&&rules.cats[cat])||cat));
+    if (cond) bits.push("Condition: " + cond);
+    bits.push("");
+    bits.push("Keywords: " + xlKitTags(rules, l));
+    return bits.join("\n").trim();
+  }
+  if (rules.id === "grailed"){
+    bits.push(base || ("Clean " + (brand||"") + " " + (cat||"piece") + " — measurements in photos/description.").replace(/\s+/g," ").trim());
+    bits.push("");
+    if (size) bits.push("Size: " + size + " (see measurements)");
+    if (cond) bits.push("Condition: " + cond);
+    if (color) bits.push("Color: " + color);
+    bits.push("Ships with tracking. Serious offers welcome.");
+    return bits.join("\n").trim();
+  }
+  if (rules.id === "vinted"){
+    bits.push(base || ((brand?brand+" ":"") + (cat||"Item") + " · " + (cond||"Good")).trim());
+    if (size) bits.push("Size (EU/INTL): " + size);
+    if (color) bits.push("Color: " + color);
+    bits.push("Smoke-free home. Message with questions.");
+    return bits.join("\n").trim();
+  }
+  if (rules.id === "poshmark"){
+    bits.push(base || ((brand?brand+" ":"") + (cat||"Item") + " — " + (cond||"Good") + " condition.").trim());
+    if (size) bits.push("Size: " + size);
+    bits.push("Bundle to save on shipping. Fast shipper.");
+    return bits.join("\n").trim();
+  }
+  if (rules.id === "mercari"){
+    bits.push(base || ((brand?brand+" ":"") + (cat||"Item") + ".").trim());
+    if (cond) bits.push("Condition: " + cond);
+    if (size) bits.push("Size: " + size);
+    bits.push("Offers welcome — priced to move.");
+    return bits.join("\n").trim();
+  }
+  /* depop default */
+  bits.push(base || ((brand?brand+" ":"") + (cat||"piece") + " ready to rewear ✨").replace(/\s+/g," ").trim());
+  if (size) bits.push("Size " + size);
+  if (cond) bits.push(cond + " condition");
+  if (color) bits.push(color);
+  const tags = xlKitTags(rules, l);
+  if (tags){ bits.push(""); bits.push(tags); }
+  return bits.join("\n").trim();
+}
+
+function xlKitTitle(rules, l){
+  const brand = (l.brand && String(l.brand).toLowerCase() !== "unknown") ? String(l.brand).trim() : "";
+  const cat = l.category || "";
+  const size = l.size || l.sizeHint || "";
+  let title = String(l.title||"").trim();
+  if (!title){
+    title = [brand, cat || "Fashion item", size ? "Size "+size : ""].filter(Boolean).join(" ");
+  }
+  if (rules.id === "grailed" && brand && title.toLowerCase().indexOf(brand.toLowerCase()) < 0){
+    title = brand + " " + title;
+  }
+  if (rules.id === "ebay"){
+    /* Prefer search keywords: Brand + item + size */
+    if (brand && title.toLowerCase().indexOf(brand.toLowerCase()) < 0) title = brand + " " + title;
+    if (size && !/\bsize\b/i.test(title)) title = title + " Size " + size;
+  }
+  const max = Number(rules.titleMax) || 80;
+  if (title.length <= max) return title;
+  return title.slice(0, max - 1).replace(/\s+\S*$/, "") + "\u2026";
+}
+
+function xlKit(l, shopId){
+  const rules = xlKitRules(shopId);
+  const title = xlKitTitle(rules, l);
+  const price = l.price != null && l.price !== "" ? ("$"+Number(l.price).toFixed(2)) : "";
+  const catLabel = (rules.cats && rules.cats[l.category]) || l.category || "";
+  const meta = [l.brand, sizeLine(l), l.condition, catLabel].filter(Boolean).join(" \u00b7 ");
+  const desc = xlKitDescription(rules, l);
+  const tags = xlKitTags(rules, l);
+  const lines = [
+    "=== " + rules.name + " kit ===",
+    "TITLE: " + title,
+    price ? ("PRICE: " + price) : "",
+    meta ? ("META: " + meta) : "",
+    rules.fieldHints ? ("FIELDS: " + rules.fieldHints) : "",
+    rules.tone ? ("TONE: " + rules.tone) : "",
+    "",
+    "DESCRIPTION:",
+    desc
+  ];
+  if (tags && rules.id !== "ebay"){ /* ebay tags already in description */
+    lines.push(""); lines.push("TAGS: " + tags);
+  }
+  return lines.filter((x,i)=>!(x==="" && lines[i-1]==="")).join("\n").trim();
+}
+function sizeLine(l){ return l.size ? ("Size "+l.size) : (l.sizeHint ? ("Size "+l.sizeHint) : ""); }
 
 async function crosspost(id){
  const picks = xlChecks().filter(c=>c.checked).map(c=>c.value);
  if (!picks.length) return toast("Select at least one marketplace first");
  const l = (S.listings||[]).find(x=>x.id===id) || {};
- const kit = xlKit(l);
+ const kits = {};
+ picks.forEach(pid => { kits[pid] = xlKit(l, pid); });
+ const allKit = picks.map(pid => kits[pid]).join("\n\n" + "\u2500".repeat(42) + "\n\n");
  let copied = false;
- try { await navigator.clipboard.writeText(kit); copied = true; } catch(e){}
+ try { await navigator.clipboard.writeText(allKit); copied = true; } catch(e){}
  try { await api(`/api/listings/${id}/crosspost`, { method:"POST", body: JSON.stringify({ platforms: picks }) }); } catch(e){}
- xlSheet(l, picks, copied, kit);
+ xlSheet(l, picks, copied, kits, allKit);
 }
 
 function xlTitleFor(m, title){
@@ -3905,28 +4092,119 @@ function xlTitleFor(m, title){
  if (!max || base.length <= max) return base;
  return base.slice(0, max - 1).replace(/\s+\S*$/, "") + "\u2026";
 }
-function xlSheet(l, picks, copied, kit){
+function xlSheet(l, picks, copied, kits, allKit){
+ kits = kits || {};
+ const ebayConnected = xlConnectStatus("ebay") === "connected";
  const rows = picks.map(pid=>{
  const m=(S.markets||[]).find(x=>x.id===pid)||{};
+ const rules = xlKitRules(pid);
  const label=platformName(pid);
- const t=xlTitleFor(m,l.title);
- return `<div class="xl-row"><div style="min-width:0"><b>${escapeHtml(label)}</b>
- <div class="mut" style="font-size:12px">You copy and paste \u00b7 they take ${m.feePct||0}% \u00b7 title up to ${m.maxChar||"\u221e"} letters</div>
- <div class="xl-title">${escapeHtml(t)}</div></div>
- <a class="btn btn-soft btn-sm" href="${escapeHtml(m.signup||"#")}" target="_blank" rel="noopener noreferrer">Open ${escapeHtml(label)}</a></div>`;
+ const t=xlKitTitle(rules, l);
+ const kit = kits[pid] || xlKit(l, pid);
+ const ebayBtn = (pid === "ebay" && ebayConnected)
+  ? `<button type="button" class="btn btn-accent btn-sm" onclick="xlEbayCreateListingFromId(${Number(l.id)||0})" data-tip="Uses your eBay OAuth cookie to create inventory + offer (sandbox/production per Connect).">Create on eBay</button>`
+  : (pid === "ebay"
+    ? `<button type="button" class="btn btn-soft btn-sm" onclick="xlShopOpenGuide('ebay')" data-tip="Connect eBay OAuth first for API create.">Connect for API</button>`
+    : "");
+ return `<div class="xl-kit-block" data-shop="${escapeHtml(pid)}">
+ <div class="xl-kit-head"><b>${escapeHtml(label)}</b>
+ <div style="display:flex;gap:6px;flex-wrap:wrap">
+  <button class="btn btn-soft btn-sm" onclick="xlCopy(this)" data-kit="${escapeHtml(kit).replace(/"/g,"&quot;")}" data-tip="Copy this shop's kit.">Copy ${escapeHtml(label)}</button>
+  <a class="btn btn-soft btn-sm" href="${escapeHtml((xlConnectShopById(pid)||{}).createListing || m.signup || "#")}" target="_blank" rel="noopener noreferrer">Open ${escapeHtml(label)}</a>
+  ${ebayBtn}
+ </div></div>
+ <p class="xl-kit-hint">${escapeHtml(rules.fieldHints||"")} · title ≤ ${rules.titleMax||"\u221e"} · fee ~${m.feePct!=null?m.feePct:(feeTableById(pid)||{}).feePct||"?"}%</p>
+ <div class="xl-title">${escapeHtml(t)}</div>
+ <pre class="xl-kit">${escapeHtml(kit)}</pre>
+</div>`;
  }).join("");
+
+ const ebayBanner = picks.includes("ebay") ? (
+  ebayConnected
+   ? `<div class="xl-ebay-create" id="xl-ebay-create-box"><p><b>eBay API:</b> Connected locally. <b>Create on eBay</b> calls Sell Inventory / Offer with your OAuth cookie (sandbox unless you chose production). Needs sell.inventory + business policies. Refresh token is cookie best-effort — durable KV on fashionistas-api still needed.</p><div id="xl-ebay-create-msg" class="mut" style="font-size:12px"></div></div>`
+   : `<div class="xl-ebay-create"><p><b>eBay API:</b> Not connected. Paste the eBay kit, or <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="xlShopOpenGuide('ebay')">Connect OAuth</button> then retry Create. Production scopes may block — use Sandbox first.</p></div>`
+ ) : "";
+
  openSheet(`
  <h3 style="margin:0 0 4px">Ready to post \u2014 ${picks.length} shop${picks.length===1?"":"s"}</h3>
- <p class="mut" style="margin-top:0">${copied?"Your listing words are on the clipboard. ":""}Open each shop below — the words are ready to go.</p>
- <div class="xl-note"><b>What actually happens:</b> there is no link between this app and any shop account, so nothing is sent to any marketplace. It saves a draft on your account for each shop you picked, writes the finished copy, and opens the right page for you \u2014 it does not post for you, and it never claims it did.</div>
- <div style="max-height:34vh;overflow:auto;margin-top:10px">${rows}</div>
+ <p class="mut" style="margin-top:0">${copied?"All shop kits are on the clipboard. ":""}Each shop has its own title rules, tags and tone below.</p>
+ <div class="xl-note"><b>What actually happens:</b> kits are paste-ready drafts. Only <b>eBay</b> can auto-create via API when Connected with a valid OAuth token + scopes. Other shops stay copy/paste. We never invent accounts or passwords.</div>
+ ${ebayBanner}
+ <div style="max-height:48vh;overflow:auto;margin-top:10px">${rows}</div>
  <div class="xl-row" style="border-top:1px solid var(--line);margin-top:6px;padding-top:10px">
- <div class="mut" style="font-size:12px">Your listing words</div>
- <button class="btn btn-soft btn-sm" onclick="xlCopy(this)" data-kit="${escapeHtml(kit).replace(/"/g,"&quot;")}" data-tip="Copies the finished words for this shop so you can paste them straight in." title="Copies the finished words for this shop so you can paste them straight in.">Copy again</button></div>
- <pre class="xl-kit">${escapeHtml(kit)}</pre>
+ <div class="mut" style="font-size:12px">All kits combined</div>
+ <button class="btn btn-soft btn-sm" onclick="xlCopy(this)" data-kit="${escapeHtml(allKit||"").replace(/"/g,"&quot;")}" data-tip="Copies every shop kit at once.">Copy all</button></div>
  <button class="btn btn-primary" style="width:100%" onclick="closeSheet()" data-tip="Closes this panel." title="Closes this panel.">Done</button>`);
 }
 function xlCopy(btn){ const t=btn&&btn.getAttribute("data-kit")||""; navigator.clipboard&&navigator.clipboard.writeText(t).then(()=>toast("Kit copied")).catch(()=>toast("Copy blocked by browser")); }
+
+function xlEbayCreateListingFromId(id){
+  const l = (S.listings||[]).find(x=>x.id===id) || {};
+  return xlEbayCreateListing({
+    id: l.id,
+    title: l.title,
+    description: l.description,
+    brand: l.brand,
+    size: l.size || l.sizeHint,
+    condition: l.condition,
+    category: l.category,
+    color: l.color,
+    price: l.price
+  });
+}
+async function xlEbayCreateListing(item){
+  const msg = document.getElementById("xl-ebay-create-msg");
+  const setMsg = (html, isErr) => {
+    if (msg){ msg.innerHTML = html; msg.className = isErr ? "err" : "mut"; msg.style.fontSize = "12.5px"; }
+  };
+  setMsg("Creating on eBay\u2026", false);
+  toast("Creating eBay inventory / offer\u2026");
+  const keys = xlEbayKeysLoad() || {};
+  const payload = {
+    id: item && item.id,
+    title: item && item.title,
+    description: item && item.description,
+    brand: item && item.brand,
+    size: item && item.size,
+    condition: item && item.condition,
+    category: item && item.category,
+    color: item && item.color,
+    price: item && item.price,
+    publish: false,
+    env: keys.env || "sandbox",
+    clientId: keys.clientId || "",
+    clientSecret: keys.clientSecret || ""
+  };
+  try {
+    const r = await fetch("/api/ebay/listing", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    let data = null;
+    try { data = await r.json(); } catch { data = null; }
+    if (r.ok && data && data.ok){
+      const bits = [
+        data.published ? "Published" : "Draft offer ready",
+        data.sku ? ("SKU "+data.sku) : "",
+        data.offerId ? ("offer "+data.offerId) : "",
+        data.env ? ("env "+data.env) : ""
+      ].filter(Boolean).join(" · ");
+      setMsg("<b>Success:</b> "+escapeHtml(bits)+(data.note ? "<br>"+escapeHtml(data.note) : ""), false);
+      toast("eBay listing created ✓");
+      return;
+    }
+    const err = (data && data.error) || ("http_"+r.status);
+    const message = (data && data.message) || "Create failed";
+    const next = (data && data.nextStep) || "";
+    setMsg("<b>"+escapeHtml(err)+":</b> "+escapeHtml(message)+(next ? "<br><b>Next:</b> "+escapeHtml(next) : "")+(data && data.sku ? "<br>SKU: "+escapeHtml(data.sku) : ""), true);
+    toast("eBay create blocked — see panel");
+  } catch(e){
+    setMsg("<b>network_error:</b> Could not reach /api/ebay/listing. Paste kit instead.", true);
+    toast("eBay create network error");
+  }
+}
 
 /* ================= SOLD SHEET ================= */
 function soldSheet(id){
@@ -4778,32 +5056,44 @@ async function safeApi(path){
 
 const MKT_CARD = {
  "Depop":{
- tags:"#vintage #thrift #y2k #resale #rework",
+ tags:"#vintage #thrift #y2k #resale #rework #preloved",
+ titleMax:80,
+ fieldHints:"title · brand · category · size · condition · price · description · up to 5 tags",
  cats:{Tops:"Shirts & Tops",Bottoms:"Trousers & Jeans",Dresses:"Dresses",Outerwear:"Jackets & Coats",Shoes:"Footwear",Accessories:"Accessories"},
  steps:["Install the Depop app and sign up with your email (free).","Tap the + Sell tab — set title, size, price and category from your copied payload.","Add up to 5 product tags — reuse the tags included in the copy helper.","First 10 listings per week are free; a small fee applies after that.","Ship with a Depop label or your own courier, then mark shipped in the app."]
  },
  "eBay":{
  tags:"vintage,thrift,resale,pre-owned",
+ titleMax:80,
+ fieldHints:"title (≤80) · brand/size/color specifics · condition · fixed price · description + measurements",
  cats:{Tops:"Tops & Shirts",Bottoms:"Jeans & Trousers",Dresses:"Dresses",Outerwear:"Jackets & Coats",Shoes:"Shoes",Accessories:"Accessories"},
- steps:["Go to ebay.com/sell or open the eBay app and register as a seller.","Choose 'List an item' and pick the Clothing category from your payload.","Set the condition, a fixed price, and 1 business-day handling.","Paste your description; add condition notes + measurements for trust.","Offers are enabled by default so buyers can nudge toward your AI-suggested price."]
+ steps:["Go to ebay.com/sell or open the eBay app and register as a seller.","Choose 'List an item' and pick the Clothing category from your payload.","Set the condition, a fixed price, and 1 business-day handling.","Paste your description; add condition notes + measurements for trust.","Offers are enabled by default so buyers can nudge toward your AI-suggested price.","Optional: Connect OAuth in Multilist for API create (sandbox first)."]
  },
  "Poshmark":{
  tags:"",
+ titleMax:80,
+ fieldHints:"title · Category · Brand · Size · Price · description · 1 strong cover shot",
  cats:{Tops:"Tops",Bottoms:"Bottoms",Dresses:"Dresses",Outerwear:"Outerwear",Shoes:"Shoes",Accessories:"Accessories"},
  steps:["Download Poshmark and sign up — you get a closet URL (posh.mk/…).","Tap + to list: pick Category, Brand, Size and Price from the payload.","Paste the description in, add 1 great cover shot.","Share new items to 'Parties' right after listing for first-day reach.","Sales ship with the flat $7.95 Poshmark label — print from the app."]
  },
  "Mercari":{
  tags:"",
+ titleMax:80,
+ fieldHints:"title · condition · price · description · brand · size",
  cats:{Tops:"Tops",Bottoms:"Bottoms",Dresses:"Dresses",Outerwear:"Outerwear",Shoes:"Shoes",Accessories:"Accessories"},
  steps:["Install Mercari and verify your phone + payout method in Settings.","Tap the big + to make a listing — choose the condition from your payload.","Paste title + description, set the price from the copy helper.","Mercari suggests a price — compare it with your AI-suggested range.","Leave Smart Pricing off at first; switch it on once you know demand."]
  },
  "Vinted":{
  tags:"",
+ titleMax:100,
+ fieldHints:"title · EU/INTL size · condition · price · description · app photos",
  cats:{Tops:"Tops",Bottoms:"Bottoms",Dresses:"Dresses",Outerwear:"Outerwear",Shoes:"Shoes",Accessories:"Accessories"},
  steps:["Install Vinted and sign up (EU/INTL sizing is expected).","Upload photos from the app — web upload is limited.","Add size (EU/INTL), condition, and paste the description.","Buyers pay a small protection fee; your price is what you keep.","Enable shipping methods in Settings so orders can be dispatched."]
  },
  "Grailed":{
  tags:"",
+ titleMax:80,
+ fieldHints:"brand + title · size · measurements · condition · original + asking price · flat-lay photos",
  cats:{Tops:"Tops",Bottoms:"Bottoms",Dresses:"Dresses",Outerwear:"Outerwear",Shoes:"Shoes",Accessories:"Accessories"},
  steps:["Sign up at grailed.com — the menswear-focused marketplace.","Create a listing: include brand + measurements from the payload.","Set an Original (retail) price and your resale price.","Flat-lays on plain backgrounds position best in feed.","Approve offers or run 'List & Promote' after your first sale."]
  },

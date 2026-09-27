@@ -1,4 +1,4 @@
-# eBay OAuth setup (fashionistas.ai)
+# eBay OAuth + listing create (fashionistas.ai)
 
 **Bring-your-own keys (v1) + optional Cloudflare env.** We never invent Client ID / Secret values. Paste multilist keeps working without OAuth.
 
@@ -6,87 +6,88 @@
 
 - fashionistas.ai provides a **free guide** to connect your own eBay developer app.
 - **We do not create eBay seller or developer accounts for you.**
-- **Connect OAuth** opens eBay’s own login / consent page in your browser.
-- After a successful token exchange, Multilist shows eBay as **Connected** (local flag + HttpOnly token cookie). **Listing create via API is not shipped yet** — you still paste drafts until that follow-up lands.
+- **Connect OAuth** opens eBay’s own login / consent page (requests **sell.inventory** + **sell.account** scopes).
+- After Connected: Multilist can call **Create on eBay** → `POST /api/ebay/listing` (Inventory + Offer). Prefer **Sandbox** until production scopes/policies work.
+- **Connected ≠ guaranteed publish.** Missing scopes or business policies return clear errors; paste kit always works.
 
-## What the UI does today
+## Flow
 
-- Multilist → **Connect + paste** → **Connect eBay** opens a guidance panel:
-  1. Create an eBay developer app at [developer.ebay.com](https://developer.ebay.com/)
-  2. Register RuName / redirect URI exactly: `https://fashionistas.ai/api/ebay/oauth/callback`
-  3. Paste **Client ID** + **Client Secret** into the form → **Save keys** (this browser only)
-  4. **Connect OAuth** → `POST /api/ebay/oauth/start` with those keys → browser goes to eBay
-  5. On return, callback **exchanges the code for tokens** and redirects `?ebay_oauth=ok` → UI sets Connected
-- Hive coach checklist in the panel (static Replit-style steps — not a full LLM).
+1. Multilist → **Connect eBay** → create app at [developer.ebay.com](https://developer.ebay.com/)
+2. RuName / redirect exactly: `https://fashionistas.ai/api/ebay/oauth/callback`
+3. Paste **Client ID** + **Secret** → **Save keys** (browser `localStorage` `fash_ebay_keys_v1`)
+4. **Connect OAuth** → `POST /api/ebay/oauth/start` → eBay consent (inventory + account scopes)
+5. Callback exchanges code → HttpOnly `ebay_oauth_tok` → `?ebay_oauth=ok` → UI Connected
+6. Multilist kit sheet → **Create on eBay** → `POST /api/ebay/listing` (credentials: same-origin cookie)
 
-## Bring-your-own keys (preferred v1)
+## Scopes requested
 
-| Where | What |
-|-------|------|
-| Browser `localStorage` key `fash_ebay_keys_v1` | Base64 JSON stub of `{ clientId, clientSecret, redirectUri, env }` — **not strong encryption**; do not use a shared computer for production secrets |
-| `POST /api/ebay/oauth/start` body | `{ "clientId", "clientSecret", "redirectUri", "env" }` |
-| Or headers | `Authorization: EbayKeys <base64url(json)>` · `X-Ebay-Client-Id` · `X-Ebay-Client-Secret` · `X-Ebay-Redirect-Uri` · `X-Ebay-Env` |
-| Short-lived cookie `ebay_byo_sess` | Set by `start` when BYO secret is present; `HttpOnly`, `Path=/api/ebay/oauth`, ~10 minutes — so `callback` can resolve the same keys after eBay redirects. Cleared after callback. **Never logged.** |
-| Token cookie `ebay_oauth_tok` | Set by `callback` after successful exchange; `HttpOnly`, `Path=/api/ebay`, holds access/refresh for future listing-create. **Never logged.** |
-
-Credential resolution: **request BYO first**, then Cloudflare env (start). Callback: **BYO cookie first**, then env.
-
-There is **no** durable per-user key API on `fashionistas-api` yet. Prefer storing encrypted keys / tokens there when that lands.
-
-## Optional Cloudflare secrets / vars
-
-| Name | Where | Purpose |
-|------|--------|---------|
-| `EBAY_CLIENT_ID` | Secret | eBay Developer App Client ID (Production or Sandbox) |
-| `EBAY_CLIENT_SECRET` | Secret | eBay Developer App Client Secret |
-| `EBAY_RU_NAME` | Var or Secret | RuName registered in eBay |
-| `EBAY_ENV` | Var | `sandbox` or `production` |
-| `EBAY_REDIRECT_URI` | Var | Exact redirect URI / RuName used in authorize + token exchange |
-
-```bash
-npx wrangler pages secret put EBAY_CLIENT_ID --project-name=fashionistas-ai
-npx wrangler pages secret put EBAY_CLIENT_SECRET --project-name=fashionistas-ai
-npx wrangler pages secret put EBAY_RU_NAME --project-name=fashionistas-ai
+```
+https://api.ebay.com/oauth/api_scope
+https://api.ebay.com/oauth/api_scope/sell.inventory
+https://api.ebay.com/oauth/api_scope/sell.inventory.readonly
+https://api.ebay.com/oauth/api_scope/sell.account
+https://api.ebay.com/oauth/api_scope/sell.account.readonly
 ```
 
-Never commit real Client ID/Secret. `.env.example` is a checklist only.
+If you connected **before** these scopes were added, **re-run Connect OAuth** (tokens cannot gain scopes).
 
-## eBay Developer Portal checklist
+## Routes
 
-1. Create / open an app at [developer.ebay.com](https://developer.ebay.com/).
-2. Enable **OAuth** (start with **Sandbox**).
-3. Create / configure a **RuName** whose Accept URL (redirect) is exactly:
-   `https://fashionistas.ai/api/ebay/oauth/callback`
-4. Copy **App ID (Client ID)** and **Cert ID (Client Secret)**.
-5. In Multilist → Connect eBay → paste both → **Save keys** → **Connect OAuth**.
-6. Complete login on eBay’s site. Callback exchanges the code; UI shows **Connected**.
+| Method | Path | File |
+|--------|------|------|
+| GET\|POST | `/api/ebay/oauth/start` | `functions/api/ebay/oauth/start.js` |
+| GET | `/api/ebay/oauth/callback` | `functions/api/ebay/oauth/callback.js` |
+| POST | `/api/ebay/listing` | `functions/api/ebay/listing.js` |
+| GET | `/api/ebay/status` | `functions/api/ebay/status.js` |
 
-## Pages Functions
+### Listing body (JSON)
 
-- `GET|POST /api/ebay/oauth/start` → `functions/api/ebay/oauth/start.js`
-- `GET /api/ebay/oauth/callback` → `functions/api/ebay/oauth/callback.js`
+`title`, `description`, `price` (required > 0), optional `brand`, `size`, `condition`, `category`, `color`, `sku`, `imageUrls[]`, `marketplaceId` (default `EBAY_US`), `publish` (default false), `env`, optional BYO `clientId`/`clientSecret` for refresh.
 
-If Client ID or redirect is missing on start → **501** JSON with `nextStep` and `missing` (no fake authorize URL).
+### Listing steps (server)
 
-Flow:
+1. Read `ebay_oauth_tok`; refresh if expired (needs Client Secret)
+2. Best-effort KV put if Pages binding exists
+3. `PUT /sell/inventory/v1/inventory_item/{sku}`
+4. Load fulfillment / payment / return policies (`sell/account`)
+5. `POST /sell/inventory/v1/offer`
+6. Optional `POST .../offer/{id}/publish` when `publish: true`
 
-1. `start` builds authorize URL (`client_id`, `redirect_uri` / RuName, `response_type=code`, `scope`, `state`).
-2. User approves on eBay; eBay hits `callback?code=…&state=…`.
-3. `callback` resolves secrets from BYO cookie or env → **POST** to
-   `https://api.sandbox.ebay.com/identity/v1/oauth2/token` (or production host) with
-   `grant_type=authorization_code`, Basic auth, and the same `redirect_uri` / RuName.
-4. On success → set `ebay_oauth_tok` cookie → redirect `/?ebay_oauth=ok` (client sets Connected).
-5. On failure → `/?ebay_oauth=error&ebay_error=…`.
+## Token storage (honest)
 
-## What is done / not done
+| Store | Status |
+|-------|--------|
+| HttpOnly cookie `ebay_oauth_tok` Path=/api/ebay | **Primary** — access + refresh; Max-Age ~90d when refresh present |
+| Pages KV binding `EBAY_TOKENS` / `FASHIONISTAS_KV` / `TOKENS` | **Best-effort** if bound |
+| **fashionistas-api KV/D1** | **Still needed** for durable per-user refresh across devices |
+
+Never log Client Secret or tokens.
+
+## Cloudflare secrets / vars
+
+| Name | Purpose |
+|------|---------|
+| `EBAY_CLIENT_ID` | App ID |
+| `EBAY_CLIENT_SECRET` | Cert ID (exchange + refresh) |
+| `EBAY_RU_NAME` / `EBAY_REDIRECT_URI` | Must match RuName |
+| `EBAY_ENV` | `sandbox` \| `production` |
+
+## Errors you will see (by design)
+
+| error | Meaning |
+|-------|---------|
+| `ebay_not_connected` | No token cookie — Connect OAuth |
+| `insufficient_scope_or_auth` | Re-consent with sell scopes / check sandbox vs prod |
+| `missing_business_policies` | Inventory may exist; create Fulfillment/Payment/Return policies in Seller Hub |
+| `insufficient_account_scope` | Need sell.account to read policies |
+| `token_refresh_failed` / `token_expired_missing_secret` | Paste BYO secret or set env; reconnect |
+| `offer_create_failed` / `publish_failed` | Category/policy issues — fix in Hub or paste kit |
+
+## Done / not done
 
 | Done | Not yet |
 |------|---------|
-| Authorize URL with BYO or env keys | Inventory / Offer / listing-create Inventory API |
-| Authorization-code **token exchange** | Durable per-user token store on fashionistas-api (KV/D1) |
-| Connected local state + HttpOnly token cookie | Auto-post to eBay from Multilist |
-| Paste multilist without OAuth | Full sell scopes beyond default `api_scope` (expand when listing-create ships) |
-
-## Follow-up (listing create)
-
-Wire `POST /api/ebay/listing` (or fashionistas-api) that reads `ebay_oauth_tok` (or worker storage), refreshes if needed, and creates a draft via eBay Sell Inventory. Until then: **Connected ≠ auto-post**.
+| BYO OAuth + token exchange | Durable fashionistas-api token store |
+| Listing create path (Inventory → Offer) | Perfect category taxonomy |
+| Clear sandbox/production UI errors | Auto business-policy bootstrap |
+| Per-shop paste kits (all six) | Auto-post for non-eBay shops |
