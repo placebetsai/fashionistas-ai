@@ -6,9 +6,10 @@ fashionistas.ai Multilist → **Connect your shops** opens a **guidance panel pe
 
 | Status | Meaning |
 |--------|---------|
-| **Needs account** | No local progress yet |
-| **Ready to guide** | Connect guide opened (or eBay BYO keys saved) |
-| **Connected** | Local flag; eBay after successful OAuth token exchange (HttpOnly cookie). Paste always works. eBay may additionally **Create on eBay** via API. |
+| **Needs account / Needs keys** | No local progress yet (eBay: paste Client ID + Secret) |
+| **Ready to guide / Keys saved** | Connect guide opened (or eBay BYO keys saved) |
+| **Connected / Ready to post** | Local flag; eBay after OAuth cookie (+ status probe). Paste always works. eBay may **Create on eBay** via API. |
+| **Reconnect needed** | eBay scopes stale / expired — one-tap **Reconnect eBay** restarts OAuth with sell.inventory |
 
 Stored in `localStorage` key `fash_connect_v1`.
 
