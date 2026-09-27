@@ -163,7 +163,8 @@ GitHub `main` after this handoff refresh is the commit that updated this file (s
 
 | Deployment | Source | In GitHub? | Notes |
 |------------|--------|------------|--------|
-| **`075ef679-…`** (latest) | `125816d` | Yes on **feat branch** (PR #7); **not on `main`** | eBay Multilist UX walkthrough **live** |
+| **`43cd56f9-…`** (latest) | `f75f7f5` | Yes on **feat/multilist-all-shops-first-class** | Equal Multilist UX **live** on fashionistas.ai |
+| `075ef679-…` | `125816d` | feat PR #7 | Prior eBay walkthrough |
 | `5c4311cb-…` | `36f2979` | Yes (`main` lineage) | Handoff stamp deploy |
 | `421a5d5a-…` | `d2d606d` | Yes | Prior handoff stamp |
 | `3d00b6ca-…` | `54a6d28` | Yes | PR #6 merge |
