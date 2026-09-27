@@ -2,7 +2,7 @@
  * GET /api/ebay/oauth/callback
  * Exchanges authorization code for tokens when BYO cookie or Cloudflare env keys are present.
  * Sets Connected via redirect ?ebay_oauth=ok (client updates fash_connect_v1).
- * Stores tokens in HttpOnly cookie for future listing-create (not implemented yet).
+ * Stores tokens in HttpOnly cookie (Path=/api/ebay) for POST /api/ebay/listing. Refresh token Max-Age ~90d best-effort.
  * Never logs client secret or tokens. See docs/EBAY_OAUTH.md.
  */
 
@@ -200,7 +200,10 @@ export async function onRequestGet(context) {
       obtained_at: Date.now(),
     })
   );
-  const maxAge = Math.max(3600, Number(result.expires_in) || 7200);
+  // Prefer long-lived cookie when refresh_token exists (best-effort until fashionistas-api KV).
+  const maxAge = result.refresh_token
+    ? 7776000
+    : Math.max(3600, Number(result.expires_in) || 7200);
   const tokCookie =
     `${TOK_COOKIE}=${tokPayload}; Path=/api/ebay; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`;
 
