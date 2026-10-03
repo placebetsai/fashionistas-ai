@@ -65,7 +65,10 @@ async function ensureSchema(db) {
 
 export async function onRequestGet(context) {
   const { request, env } = context;
-  const token = readCookie(request, SESSION_COOKIE);
+  // Bearer first (API clients), then the HttpOnly cookie (the web app).
+  const authzHdr = request.headers.get("Authorization") || "";
+  const bearer = /^\s*Bearer\s+(\S+)\s*$/i.exec(authzHdr);
+  const token = bearer ? bearer[1] : readCookie(request, SESSION_COOKIE);
 
   if (!token) {
     return json({ error: "Not signed in." }, 401);

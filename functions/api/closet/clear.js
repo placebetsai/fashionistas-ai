@@ -236,7 +236,40 @@ async function identityFromJwt(raw, env) {
  * Resolves the signed-in user, or null when we cannot vouch for who is asking.
  * null means "show nothing" — never someone else's closet.
  */
+
+/** Resolve a raw session token (Bearer) to the shared identity shape. */
+async function identityFromSessionToken(token, env) {
+  const db = dbOf(env);
+  if (!db || typeof db.prepare !== "function") return null;
+  try {
+    const row = await db
+      .prepare(
+        `SELECT u.id AS id, u.email AS email
+           FROM sessions s
+           JOIN users u ON u.id = s.user_id
+          WHERE s.token = ? AND s.expires_at > ?
+          LIMIT 1`
+      )
+      .bind(token, Math.floor(Date.now() / 1000))
+      .first();
+    if (!row) return null;
+    return { key: String(row.id), email: row.email ? String(row.email).toLowerCase() : null };
+  } catch {
+    return null;
+  }
+}
+
 export async function resolveIdentity(request, env) {
+  // 0) API clients: `Authorization: Bearer <session token>`. Resolved straight
+  //    against D1 — the same credential the auth gate accepts, so a Bearer
+  //    caller is not authenticated at the gate and then dropped downstream.
+  const authz = request.headers.get("Authorization") || "";
+  const bm = /^\s*Bearer\s+(\S+)\s*$/i.exec(authz);
+  if (bm) {
+    const ident = await identityFromSessionToken(bm[1], env);
+    if (ident) return ident;
+  }
+
   let jar;
   try {
     jar = readCookies(request);
