@@ -18,6 +18,7 @@
  * Without them this endpoint honestly answers 503 instead of pretending.
  */
 
+import { requireAuth } from "./_lib/auth.js";
 import { json, TryonError, errorResponse, toTryonError, sniffImageType, extForType } from "./_tryon/http.js";
 import { parseTryonForm } from "./_tryon/multipart.js";
 import { requireBucket, putImage, sourceKey, resultKey } from "./_tryon/r2.js";
@@ -256,6 +257,12 @@ async function handlePost(context) {
 }
 
 export async function onRequestPost(context) {
+  // Auth gate: no valid session token → 401, on every non-OPTIONS method.
+  if (context.request.method !== "OPTIONS") {
+    const __gate = await requireAuth(context.request, context.env);
+    if (__gate.response) return __gate.response;
+    context.__user = __gate.user;
+  }
   try {
     return await handlePost(context);
   } catch (err) {
@@ -265,7 +272,13 @@ export async function onRequestPost(context) {
   }
 }
 
-export async function onRequestGet() {
+export async function onRequestGet(context) {
+  // Auth gate: no valid session token → 401, on every non-OPTIONS method.
+  if (context.request.method !== "OPTIONS") {
+    const __gate = await requireAuth(context.request, context.env);
+    if (__gate.response) return __gate.response;
+    context.__user = __gate.user;
+  }
   return json({
     ok: true,
     endpoint: "/api/tryon",

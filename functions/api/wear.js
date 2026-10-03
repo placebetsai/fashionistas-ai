@@ -27,6 +27,7 @@
  * clear_it = true when the item has had no wear for 183+ days (last_worn_on,
  * or first_worn_on, or — never worn — acquired_on older than 6 months).
  */
+import { requireAuth } from "./_lib/auth.js";
 import {
   json,
   dbOf,
@@ -328,9 +329,21 @@ async function handlePost(request, env) {
 }
 
 export async function onRequestGet(context) {
+  // Auth gate: no valid session token → 401, on every non-OPTIONS method.
+  if (context.request.method !== "OPTIONS") {
+    const __gate = await requireAuth(context.request, context.env);
+    if (__gate.response) return __gate.response;
+    context.__user = __gate.user;
+  }
   return handleGet(context.request, context.env);
 }
 
 export async function onRequestPost(context) {
+  // Auth gate: no valid session token → 401, on every non-OPTIONS method.
+  if (context.request.method !== "OPTIONS") {
+    const __gate = await requireAuth(context.request, context.env);
+    if (__gate.response) return __gate.response;
+    context.__user = __gate.user;
+  }
   return handlePost(context.request, context.env);
 }

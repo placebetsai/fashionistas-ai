@@ -24,6 +24,7 @@
  * so rather than presenting themselves as a colourist's verdict.
  */
 
+import { requireAuth } from "./_lib/auth.js";
 import { json, TryonError, errorResponse, toTryonError, sniffImageType } from "./_tryon/http.js";
 import { analyzeImage } from "../../libs/aipixels.js";
 
@@ -218,6 +219,12 @@ async function readPerson(request) {
 }
 
 export async function onRequestPost(context) {
+  // Auth gate: no valid session token → 401, on every non-OPTIONS method.
+  if (context.request.method !== "OPTIONS") {
+    const __gate = await requireAuth(context.request, context.env);
+    if (__gate.response) return __gate.response;
+    context.__user = __gate.user;
+  }
   const { request } = context;
   try {
     const { bytes, type } = await readPerson(request);
@@ -257,6 +264,12 @@ export async function onRequestPost(context) {
 }
 
 export async function onRequest(context) {
+  // Auth gate: no valid session token → 401, on every non-OPTIONS method.
+  if (context.request.method !== "OPTIONS") {
+    const __gate = await requireAuth(context.request, context.env);
+    if (__gate.response) return __gate.response;
+    context.__user = __gate.user;
+  }
   if (context.request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: { allow: "POST, OPTIONS" } });
   }

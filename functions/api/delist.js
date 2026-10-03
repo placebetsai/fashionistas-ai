@@ -19,6 +19,7 @@
  * }
  */
 
+import { requireAuth } from "./_lib/auth.js";
 import { getFreshToken } from "./ebay/oauth/callback.js";
 import { getFreshEtsyToken } from "./etsy/oauth/callback.js";
 
@@ -273,6 +274,12 @@ async function delistEtsy(env, request, { listingId }) {
 /* ------------------------------ handlers ------------------------------- */
 
 export async function onRequestPost(context) {
+  // Auth gate: no valid session token → 401, on every non-OPTIONS method.
+  if (context.request.method !== "OPTIONS") {
+    const __gate = await requireAuth(context.request, context.env);
+    if (__gate.response) return __gate.response;
+    context.__user = __gate.user;
+  }
   const env = context.env || {};
   const req = context.request;
 
@@ -392,6 +399,12 @@ export async function onRequestPost(context) {
 }
 
 export async function onRequestGet(context) {
+  // Auth gate: no valid session token → 401, on every non-OPTIONS method.
+  if (context.request.method !== "OPTIONS") {
+    const __gate = await requireAuth(context.request, context.env);
+    if (__gate.response) return __gate.response;
+    context.__user = __gate.user;
+  }
   const env = context.env || {};
   const db = pickDb(env);
   if (!db) {
@@ -430,6 +443,12 @@ export async function onRequestGet(context) {
  * Body: { itemRef, shop, status: "done"|"failed", detail? }
  */
 export async function onRequestPut(context) {
+  // Auth gate: no valid session token → 401, on every non-OPTIONS method.
+  if (context.request.method !== "OPTIONS") {
+    const __gate = await requireAuth(context.request, context.env);
+    if (__gate.response) return __gate.response;
+    context.__user = __gate.user;
+  }
   const env = context.env || {};
   let body = {};
   try {

@@ -21,6 +21,7 @@
  * created lazily with CREATE TABLE IF NOT EXISTS inside the handler.
  */
 
+import { requireAuth } from "../_lib/auth.js";
 /* ---------------------------------------------------------------------------
  * Decision thresholds — every reason string below is built from these.
  * ------------------------------------------------------------------------ */
@@ -685,9 +686,21 @@ async function handleClear(request, env) {
 }
 
 export async function onRequestGet(context) {
+  // Auth gate: no valid session token → 401, on every non-OPTIONS method.
+  if (context.request.method !== "OPTIONS") {
+    const __gate = await requireAuth(context.request, context.env);
+    if (__gate.response) return __gate.response;
+    context.__user = __gate.user;
+  }
   return handleClear(context.request, context.env);
 }
 
 export async function onRequestPost(context) {
+  // Auth gate: no valid session token → 401, on every non-OPTIONS method.
+  if (context.request.method !== "OPTIONS") {
+    const __gate = await requireAuth(context.request, context.env);
+    if (__gate.response) return __gate.response;
+    context.__user = __gate.user;
+  }
   return handleClear(context.request, context.env);
 }
