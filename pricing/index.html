@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pricing — $14.99/mo seller plan | fashionistas.ai</title>
+<meta name="description" content="fashionistas.ai Pro is $14.99 per month. Cross-list your closet to your marketplaces from one button and price with real fee take-home. No listing fees, cancel anytime.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://fashionistas.ai/pricing/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="fashionistas.ai">
+<meta property="og:title" content="Pricing — $14.99/mo seller plan | fashionistas.ai">
+<meta property="og:description" content="One Pro plan at $14.99/month. Cross-list from one button, price with real fee take-home, cancel anytime.">
+<meta property="og:url" content="https://fashionistas.ai/pricing/">
+<meta property="og:image" content="https://fashionistas.ai/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Pricing — $14.99/mo seller plan | fashionistas.ai">
+<meta name="twitter:description" content="One Pro plan at $14.99/month. Cross-list from one button, price with real fee take-home, cancel anytime.">
+<meta name="twitter:image" content="https://fashionistas.ai/og.png">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/site.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Product","name":"fashionistas.ai Pro","brand":{"@type":"Brand","name":"fashionistas.ai"},
+"offers":{"@type":"Offer","price":"14.99","priceCurrency":"USD","availability":"https://schema.org/InStock","url":"https://fashionistas.ai/pricing/"},
+"description":"Monthly Pro subscription for fashionistas.ai: cross-list closet items to your connected marketplaces from one button, with real fee take-home pricing.",
+"hasMerchantReturnPolicy":{"@type":"MerchantReturnPolicy","applicableCountry":"US","returnPolicyCategory":"https://schema.org/MerchantReturnFiniteReturnWindow","merchantReturnDays":14,"returnMethod":"https://schema.org/ReturnMethodByMail"}}
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="topnav">
+<a class="brand" href="/">fashionistas<span>.ai</span></a>
+<nav aria-label="Main">
+<a href="/" >App</a>
+<a href="/fees/">Fees</a>
+<a href="/pricing/" aria-current="page">Pricing</a>
+<a href="/about/">About</a>
+<a href="/privacy/">Privacy</a>
+<a href="/contact/">Contact</a>
+</nav>
+</header>
+
+<main id="main">
+<span class="badge">Pricing</span>
+<h1>One plan. $14.99 a month.</h1>
+<p class="lede">No tiers, no listing fees, no cut of your sales. You keep what the marketplace lets you keep — the same take-home number you see on the <a href="/fees/">fees calculator</a>.</p>
+
+<div class="card">
+  <div class="grid-2">
+    <div>
+      <span class="badge">Pro</span>
+      <p class="calc-out" style="font-size:44px;line-height:1.1;margin:8px 0 0">$14.99<span style="font-size:18px;color:var(--mut)">/month</span></p>
+      <p class="muted" style="margin-top:6px">Billed monthly · cancel anytime · no free trial that auto-charges</p>
+
+      <button id="subscribe" class="btn btn-accent" type="button" style="margin-top:14px">
+        Subscribe — $14.99/mo
+      </button>
+
+      <p id="sub-status" class="note" role="status" aria-live="polite" style="margin-top:10px;min-height:1.4em"></p>
+      <p id="sub-actions" class="muted" style="margin-top:0"></p>
+    </div>
+
+    <div>
+      <h2 style="font-size:18px;margin-top:0">What Pro includes</h2>
+      <ul class="keep" style="padding-left:18px">
+        <li>One <strong>Sell everywhere</strong> button per closet item</li>
+        <li>Live per-shop status while a listing posts</li>
+        <li>Real fee take-home shown as you price — not after you sell</li>
+        <li>Virtual try-on on your own photos</li>
+        <li>Per-account daily limits so you never trip a marketplace ban</li>
+      </ul>
+      <p class="note">Already selling elsewhere? Import your closet and re-price it against real fees before you move it.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:18px">
+  <h2 style="font-size:18px;margin-top:0">Straight answers</h2>
+  <p><strong>Do you take a cut of my sales?</strong> No. Your buyer pays the marketplace, the marketplace pays you. We never touch it.</p>
+  <p><strong>Do you charge per listing?</strong> No. List one item or five hundred for the same $14.99.</p>
+  <p><strong>Where do I cancel?</strong> From your account, any time. No email required, no retention flow.</p>
+  <p><strong>Do you store my marketplace passwords?</strong> No. Never. Connecting a shop uses that shop's own sign-in, and the extension runs inside <em>your</em> browser.</p>
+  <p><strong>Who is this for?</strong> Resellers and closet-clearers who are already listing by hand on more than one app.</p>
+</div>
+
+<p class="note" style="margin-top:18px">Questions first? <a href="/contact/">Contact us</a> — a person answers.</p>
+</main>
+
+<footer class="site-footer">
+<p><a class="brand" href="/">fashionistas<span>.ai</span></a></p>
+<nav aria-label="Footer">
+<a href="/">App</a>
+<a href="/fees/">Fees</a>
+<a href="/pricing/">Pricing</a>
+<a href="/guide/">Guide</a>
+<a href="/about/">About</a>
+<a href="/privacy/">Privacy</a>
+<a href="/contact/">Contact</a>
+</nav>
+<p class="muted">© <span id="yr">2026</span> fashionistas.ai</p>
+</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var btn = document.getElementById("subscribe");
+  var statusEl = document.getElementById("sub-status");
+  var actionsEl = document.getElementById("sub-actions");
+  var yr = document.getElementById("yr");
+  if (yr) yr.textContent = String(new Date().getFullYear());
+
+  function setStatus(msg, tone) {
+    statusEl.textContent = msg;
+    statusEl.style.color = tone === "bad" ? "#a12b17"
+      : tone === "ok" ? "var(--good)"
+      : "var(--mut)";
+  }
+  function setActions(html) { actionsEl.innerHTML = html; }
+
+  async function subscribe() {
+    btn.disabled = true;
+    btn.textContent = "Contacting checkout…";
+    setStatus("Opening secure checkout…");
+    setActions("");
+
+    try {
+      var headers = { "Content-Type": "application/json" };
+      var token = null;
+      try { token = localStorage.getItem("fash_token"); } catch (e) {}
+      if (token) headers["Authorization"] = "Bearer " + token;
+
+      var res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: headers,
+        credentials: "same-origin",
+        cache: "no-store"
+      });
+
+      var data = null;
+      try { data = await res.json(); } catch (e) { data = null; }
+
+      // 401 — not signed in. Never pretend we can take money anonymously.
+      if (res.status === 401) {
+        setStatus("Sign in first — checkout is tied to your account.", "bad");
+        setActions('<a class="btn btn-accent" href="/">Sign in to continue</a>');
+        return;
+      }
+
+      // 402 — checkout does not emit this today (it has no subscription
+      // check), but a listing endpoint forwarded here would. Handled so the
+      // page stays correct if/when checkout adds that guard.
+      if (res.status === 402) {
+        setStatus("You already have an active subscription.", "ok");
+        setActions('<a class="btn btn-accent" href="/">Open the app</a>');
+        return;
+      }
+
+      // 503 — server is missing a required key. NAME it rather than lie.
+      // Actual shape today: {error:"STRIPE_SECRET_KEY not configured", detail:"Set the ..."}
+      if (res.status === 503) {
+        var missing = (data && (data.missing || data.vars)) || [];
+        var what = missing.length ? missing.join(", ")
+          : (data && data.error) || "a required payment key";
+        setStatus("Checkout is not live yet — " + what + ".", "bad");
+        setActions(data && data.detail ? String(data.detail) : "");
+        return;
+      }
+
+      // Success — Stripe returned a hosted checkout URL.
+      if (data && data.url) {
+        setStatus("Redirecting to secure checkout…", "ok");
+        window.location.href = data.url;
+        return;
+      }
+
+      setStatus("Checkout could not start" + (data && (data.error || data.detail)
+        ? " — " + (data.error + (data.detail ? ": " + data.detail : ""))
+        : " (HTTP " + res.status + ")"), "bad");
+
+    } catch (err) {
+      setStatus("Network error starting checkout — " + (err && err.message ? err.message : err), "bad");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Subscribe — $14.99/mo";
+    }
+  }
+
+  btn.addEventListener("click", subscribe);
+
+  // Sign-in preflight only.
+  //
+  // NOTE: /api/auth/me returns {id,email,authenticated} and exposes NO
+  // subscription field, so this page deliberately does NOT claim "Pro is
+  // active" — it cannot know. Subscription state is enforced server-side as a
+  // 402 on the listing endpoints, and checkout itself reports 402 if you are
+  // already paying. Guessing here would be theatre.
+  (async function preflight() {
+    try {
+      var token = null;
+      try { token = localStorage.getItem("fash_token"); } catch (e) {}
+      var headers = {};
+      if (token) headers["Authorization"] = "Bearer " + token;
+      var res = await fetch("/api/auth/me", { headers: headers, credentials: "same-origin", cache: "no-store" });
+
+      if (res.status === 401) {
+        setActions("Not signed in yet — <a href=\"/\">sign in</a> before subscribing.");
+        return;
+      }
+      if (res.ok) {
+        var d = await res.json().catch(function () { return {}; });
+        if (d && d.email) {
+          setActions("Signed in as <strong>" + String(d.email).replace(/[<>&]/g, "") + "</strong>");
+        }
+      }
+    } catch (e) { /* preflight is best-effort; never blocks the page */ }
+  })();
+})();
+</script>
+</body>
+</html>
