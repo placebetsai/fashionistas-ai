@@ -5580,5 +5580,100 @@ else { $("#view-auth").classList.remove("hidden"); $("#view-app").classList.add(
  window.addEventListener("resize", hide);
 })();
 </script>
+<script>
+/* fashionistas PWA bootstrap: service worker, install prompt, camera capture. */
+(function () {
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js").then(function () {
+        document.documentElement.setAttribute("data-sw", "on");
+      }).catch(function () { /* offline-first is best effort */ });
+    });
+  }
+
+  var deferredPrompt = null;
+  var banner = null;
+
+  function buildBanner() {
+    if (banner) return banner;
+    var el = document.createElement("div");
+    el.id = "pwa-install";
+    el.setAttribute("role", "status");
+    el.style.cssText = "position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;max-width:440px;margin:0 auto;background:#141110;color:#fff;border:1px solid #332b26;border-radius:16px;padding:12px 14px;display:none;box-shadow:0 14px 34px rgba(0,0,0,.4);font:600 14px/1.45 ui-sans-serif,system-ui,-apple-system,sans-serif";
+    el.innerHTML = '<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">'
+      + '<span>Install fashionistas.ai — camera, closet and drafts in one tap.</span>'
+      + '<span style="display:flex;gap:6px;align-items:center">'
+      + '<button type="button" id="pwa-install-go" style="background:#b3471f;color:#fff;border:0;border-radius:999px;padding:8px 13px;font:inherit;cursor:pointer">Install</button>'
+      + '<button type="button" id="pwa-install-no" style="background:transparent;color:#c8c0b8;border:0;font:inherit;cursor:pointer">Not now</button>'
+      + '</span></div>';
+    document.body.appendChild(el);
+
+    el.querySelector("#pwa-install-go").addEventListener("click", function () {
+      var prompt = deferredPrompt;
+      hide();
+      if (!prompt) return;
+      prompt.prompt();
+      prompt.userChoice.then(function (choice) {
+        deferredPrompt = null;
+        if (choice && choice.outcome === "accepted") {
+          try { localStorage.setItem("fash_pwa_installed", "1"); } catch (e) {}
+        }
+      });
+    });
+    el.querySelector("#pwa-install-no").addEventListener("click", function () {
+      hide();
+      try { localStorage.setItem("fash_pwa_install_dismissed", "1"); } catch (e) {}
+    });
+
+    function hide() { if (el) el.style.display = "none"; }
+    el._hide = hide;
+    banner = el;
+    return el;
+  }
+
+  function show() {
+    var el = buildBanner();
+    try {
+      if (localStorage.getItem("fash_pwa_installed") === "1") return;
+      if (localStorage.getItem("fash_pwa_install_dismissed") === "1") return;
+    } catch (e) {}
+    el.style.display = "block";
+  }
+
+  window.addEventListener("beforeinstallprompt", function (event) {
+    event.preventDefault();
+    deferredPrompt = event;
+    show();
+  });
+
+  window.addEventListener("appinstalled", function () {
+    deferredPrompt = null;
+    if (banner && banner._hide) banner._hide();
+    try { localStorage.setItem("fash_pwa_installed", "1"); } catch (e) {}
+  });
+
+  /* Camera capture: opens the rear camera on phones, gallery elsewhere.
+     Returns a Promise<File|null>. Used by the snap flow and installable PWA. */
+  window.fashCamera = function fashCamera(options) {
+    return new Promise(function (resolve) {
+      var input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.setAttribute("capture", (options && options.facing) || "environment");
+      input.style.cssText = "position:fixed;left:-9999px;top:0";
+      document.body.appendChild(input);
+      var done = function (file) {
+        if (input.parentNode) input.parentNode.removeChild(input);
+        resolve(file || null);
+      };
+      input.addEventListener("change", function () {
+        done(input.files && input.files[0]);
+      });
+      input.addEventListener("cancel", function () { done(null); });
+      input.click();
+    });
+  };
+})();
+</script>
 </body>
 </html>

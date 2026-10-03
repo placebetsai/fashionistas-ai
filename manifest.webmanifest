@@ -1,12 +1,44 @@
 {
+  "id": "/",
   "name": "Fashionistas",
   "short_name": "Fashionistas",
-  "description": "Snap a photo. AI drafts paste-ready listings for 6 shops — you post yourself.",
+  "description": "Snap a photo. AI drafts paste-ready listings for 6 shops — post them yourself on the free tier, crosslist to 8 shops on Pro ($14.99/month).",
+  "lang": "en",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0f1117",
   "theme_color": "#b3471f",
+  "categories": ["shopping", "business", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Pricing — Pro $14.99/month",
+      "short_name": "Pricing",
+      "description": "Free tier and Pro plan at $14.99 a month.",
+      "url": "/pricing/?source=pwa-shortcut",
+      "icons": [
+        {
+          "src": "/icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Marketplace fee take-home",
+      "short_name": "Fees",
+      "description": "What you keep after Depop, eBay, Poshmark, Mercari, Vinted and Grailed fees.",
+      "url": "/fees/?source=pwa-shortcut",
+      "icons": [
+        {
+          "src": "/icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ],
   "icons": [
     {
       "src": "/icon.svg",
