@@ -1,0 +1,6 @@
+// /package.json — repo manifest (scripts, deps). Not part of the site.
+import { block } from "./_lib/blocked.js";
+
+export function onRequest(context) {
+  return block(context);
+}

@@ -1,28 +1,48 @@
-# ── Internal files: never served publicly ────────────────────────────────────
-# The Pages output dir is the repo root, so anything checked in would otherwise
-# ship as a public URL. These return a real 404 instead.
-/wrangler.toml            /404.html   404
-/wrangler-d1.toml         /404.html   404
-/NEEDS_ISRAEL.txt         /404.html   404
-/package.json             /404.html   404
-/package-lock.json        /404.html   404
-/.env                     /404.html   404
-/.env.example             /404.html   404
-/.dev.vars                /404.html   404
-/.git/*                   /404.html   404
-/docs                     /404.html   404
-/docs/*                   /404.html   404
-/apps                     /404.html   404
-/apps/*                   /404.html   404
-/scripts                  /404.html   404
-/scripts/*                /404.html   404
-/libs                     /404.html   404
-/libs/*                   /404.html   404
-/functions                /404.html   404
-/functions/*              /404.html   404
-/.github                  /404.html   404
-/.github/*                /404.html   404
-
-# ── Existing product redirects ───────────────────────────────────────────────
+# ── Existing product redirects (static rules — these DO work) ────────────────
+# Static rules are listed first, as Cloudflare requires (see "Per file" in the
+# redirects docs: static before dynamic).
 /ar-tryon                 /try-on/    301
 /ar-tryon/                /try-on/    301
+
+# ── Internal files: never served publicly ────────────────────────────────────
+# The Pages output dir is the repo root, so anything checked in would otherwise
+# ship as a public URL.
+#
+# WHY THE OLD "… /404.html 404" RULES WERE REMOVED:
+# Cloudflare Pages does not support rewrites with a status code that is not a
+# redirect. Its docs list "Rewrites (other status codes)" as unsupported and
+# use `/blog/* /blog/404.html 404` as the literal example of a rule that is
+# parsed and silently ignored. Because of that these lines never shadowed an
+# asset that exists in the build output — /wrangler.toml, /package.json,
+# /NEEDS_ISRAEL.txt and /docs/*.md were all served as 200 while they were here.
+# (Rules such as /.env, /libs or /wrangler-d1.toml only *looked* effective:
+# those files are simply not deployed, so the 404 came from the asset layer.)
+#
+# REAL ENFORCEMENT → Pages Functions. Functions are matched before the static
+# asset layer, so they win even when the file ships in the deploy:
+#   functions/_lib/blocked.js        shared 404 responder (site's own 404 body)
+#   functions/wrangler.toml.js       functions/package.json.js
+#   functions/NEEDS_ISRAEL.txt.js    functions/TEST.md.js
+#   functions/docs/[[path]].js       functions/libs/[[path]].js
+#   functions/scripts/[[path]].js    functions/apps/[[path]].js
+#   functions/core/[[path]].js       functions/.github/[[path]].js
+#   functions/.env.js  functions/.env.example.js  functions/.dev.vars.js
+#   functions/wrangler-d1.toml.js    functions/package-lock.json.js
+#
+# The /…  /__blocked__  200 lines below are belt-and-braces for the asset layer
+# only: they are consulted solely when a path is served as a static asset
+# instead of by a Function (for example if a route were excluded through
+# _routes.json). /__blocked__ has no asset, so the internal file's contents are
+# replaced by the site's 404 page rather than being served. Functions take
+# precedence over _redirects, so these never interfere with the routes above.
+/wrangler.toml            /__blocked__   200
+/package.json             /__blocked__   200
+/NEEDS_ISRAEL.txt         /__blocked__   200
+/TEST.md                  /__blocked__   200
+/.env.example             /__blocked__   200
+/docs/*                   /__blocked__   200
+/libs/*                   /__blocked__   200
+/scripts/*                /__blocked__   200
+/apps/*                   /__blocked__   200
+/core/*                   /__blocked__   200
+/.github/*                /__blocked__   200
