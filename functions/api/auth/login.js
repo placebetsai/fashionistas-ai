@@ -6,10 +6,15 @@
  * time, then issues a 32-byte random session token stored in the D1 `sessions`
  * table (30 day expiry) and returned as an HttpOnly; Secure; SameSite=Lax
  * cookie. Never logs or echoes the password or the token.
+ *
+ * Schema is adapted to the table that already exists (see libs/auth-db.js).
  */
 
+import { getDB, ensureAuthSchema, findByEmail } from "../../../libs/auth-db.js";
+
 const MIN_PASSWORD = 6;
-const DEFAULT_ITERATIONS = 120000;
+// Cloudflare's Workers WebCrypto rejects iteration counts above 100000.
+const DEFAULT_ITERATIONS = 100000;
 
 const SESSION_COOKIE = "fash_session";
 const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
@@ -87,42 +92,6 @@ function timingSafeEqual(a, b) {
   return diff === 0;
 }
 
-/** First binding on env that actually looks like a D1 database (`DB` is canonical). */
-function getDB(env) {
-  for (const name of ["DB", "FASHIONISTAS_DB", "EBAY_DB", "EBAY_TOKENS_DB", "D1"]) {
-    const candidate = env ? env[name] : null;
-    if (candidate && typeof candidate.prepare === "function") return candidate;
-  }
-  return null;
-}
-
-async function ensureSchema(db) {
-  const stmts = [
-    `CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      pass_hash TEXT NOT NULL,
-      salt TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )`,
-    `CREATE TABLE IF NOT EXISTS sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      token TEXT UNIQUE NOT NULL,
-      expires_at INTEGER NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )`,
-  ];
-  for (const sql of stmts) {
-    try {
-      await db.prepare(sql).run();
-    } catch (err) {
-      const msg = String((err && err.message) || err);
-      if (!/already exists/i.test(msg)) throw err;
-    }
-  }
-}
-
 function sessionCookie(token) {
   return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_TTL_SECONDS}`;
 }
@@ -149,19 +118,18 @@ export async function onRequestPost(context) {
   }
 
   try {
-    await ensureSchema(db);
+    await ensureAuthSchema(db);
 
-    const user = await db
-      .prepare("SELECT id, email, pass_hash, salt FROM users WHERE email = ?")
-      .bind(email)
-      .first();
+    const user = await findByEmail(db, email);
 
     if (!user) {
       return json({ error: "Invalid email or password." }, 401);
     }
 
-    const parsed = parseStoredHash(user.pass_hash);
-    if (!parsed) {
+    // Rows written by the older Worker only have `password_hash`.
+    const stored = user.pass_hash || user.password_hash;
+    const parsed = parseStoredHash(stored);
+    if (!parsed || !user.salt) {
       return json({ error: "Invalid email or password." }, 401);
     }
 

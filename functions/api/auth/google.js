@@ -19,6 +19,8 @@
  * falling back to any baked-in value.
  */
 
+import { insertUser, ensureAuthSchema } from "../../../libs/auth-db.js";
+
 const SESSION_COOKIE = "fash_session";
 const STATE_COOKIE = "fash_gstate";
 const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
@@ -102,33 +104,6 @@ function getDB(env) {
   return null;
 }
 
-async function ensureSchema(db) {
-  const stmts = [
-    `CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      pass_hash TEXT NOT NULL,
-      salt TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )`,
-    `CREATE TABLE IF NOT EXISTS sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      token TEXT UNIQUE NOT NULL,
-      expires_at INTEGER NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )`,
-  ];
-  for (const sql of stmts) {
-    try {
-      await db.prepare(sql).run();
-    } catch (err) {
-      const msg = String((err && err.message) || err);
-      if (!/already exists/i.test(msg)) throw err;
-    }
-  }
-}
-
 function base64urlDecodeToString(value) {
   try {
     const pad = value.length % 4 === 0 ? value : value + "=".repeat(4 - (value.length % 4));
@@ -170,18 +145,15 @@ async function upsertUser(db, email) {
     ["deriveBits"]
   );
   const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", salt: fromHex(salt), iterations: 120000, hash: "SHA-256" },
+    { name: "PBKDF2", salt: fromHex(salt), iterations: 100000, hash: "SHA-256" },
     key,
     256
   );
-  const passHash = `pbkdf2-sha256$120000$${toHex(bits)}`;
+  const passHash = `pbkdf2-sha256$100000$${toHex(bits)}`;
 
   try {
-    const res = await db
-      .prepare("INSERT INTO users (email, pass_hash, salt) VALUES (?, ?, ?)")
-      .bind(email, passHash, salt)
-      .run();
-    if (res && res.meta && typeof res.meta.last_row_id === "number") return res.meta.last_row_id;
+    const created = await insertUser(db, { email, passHash, salt });
+    if (created && typeof created.id === "number") return created.id;
   } catch (err) {
     if (!/unique|constraint/i.test(String((err && err.message) || err))) throw err;
   }
@@ -285,7 +257,7 @@ export async function onRequestGet(context) {
   }
 
   try {
-    await ensureSchema(db);
+    await ensureAuthSchema(db);
     const userId = await upsertUser(db, email);
     if (!userId) {
       return json({ error: "Could not create or find the local account." }, 500);
