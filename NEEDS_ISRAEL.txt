@@ -11,4 +11,4 @@ STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET — https://dashboard.stripe.com/test/
 CLOUDFLARE_ACCOUNT_ID — MISSING from repo secrets placebetsai/fashionistas-ai (CLOUDFLARE_API_TOKEN is already set) — run EXACTLY: gh secret set CLOUDFLARE_ACCOUNT_ID --body "7eb89b01e9c3bec41ee24db8ecbe77f8" -R placebetsai/fashionistas-ai — blocks L01 deploy step. L01 STOPPED pending confirmation.
 EBAY_CLIENT_ID + EBAY_CLIENT_SECRET — https://developer.ebay.com/my/keys — blocks L07 production OAuth
 ETSY_API_KEY + ETSY_API_SECRET — https://www.etsy.com/developers/your-apps — blocks L07 Etsy OAuth
-D1 DATABASE BINDING — Cloudflare Pages → Settings → Functions → D1 (binding name DB) — blocks L07 durable eBay/Etsy tokens, delist_queue and auto-delist persistence (code degrades to "d1_binding_missing" without it)
+D1 DATABASE BINDING — RESOLVED 2026-10-03: wrangler.toml now declares DB/FASHIONISTAS_DB (fashionistas-db 0c1b88be-00b2-4e25-ae54-d30564190c4d) + R2/KV, deployed by CI. Live register/login/session confirmed working.
