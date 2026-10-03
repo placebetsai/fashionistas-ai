@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI virtual try-on — see it on you | fashionistas.ai</title>
+<meta name="description" content="Upload a photo of yourself and a garment, press Try it on, and fashionistas.ai renders the piece on your photo. Download, save or share the result in one click.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://fashionistas.ai/try-on/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="fashionistas.ai">
+<meta property="og:title" content="AI virtual try-on — see it on you">
+<meta property="og:description" content="Upload a photo of yourself and a garment, press Try it on, and get a render you can download, save or share.">
+<meta property="og:url" content="https://fashionistas.ai/try-on/">
+<meta property="og:image" content="https://fashionistas.ai/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI virtual try-on — see it on you">
+<meta name="twitter:description" content="Upload a photo of yourself and a garment, press Try it on, and get a render you can download, save or share.">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/site.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to use the fashionistas.ai virtual try-on","description":"Upload a photo of a person and a garment photo, press Try it on, then download, save or share the render.","step":[{"@type":"HowToStep","name":"Add a photo of yourself","text":"Pick or drop a photo of the person wearing the garment."},{"@type":"HowToStep","name":"Add a garment","text":"Pick or drop a photo of the item you want to see on."},{"@type":"HowToStep","name":"Try it on","text":"Press Try it on to POST both photos to /api/tryon and wait for the render."},{"@type":"HowToStep","name":"Keep the result","text":"Download, save or share the rendered image."}]}</script>
+<style>
+.to-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:640px){.to-grid{grid-template-columns:1fr}}
+.to-zone{position:relative;border:1.5px dashed var(--line);border-radius:14px;padding:16px;text-align:center;background:#faf7f3;transition:border-color .15s,background .15s;min-height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.to-zone.over{border-color:var(--accent);background:#fff}
+.to-zone.has{border-style:solid;background:#fff}
+.to-zone img{max-width:100%;max-height:170px;border-radius:10px;display:block}
+.to-zone .to-ic{width:38px;height:38px;border-radius:50%;background:rgba(179,71,31,.1);display:flex;align-items:center;justify-content:center}
+.to-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.to-name{font-size:12px;color:var(--mut);word-break:break-all}
+.to-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center}
+.to-btn{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:11px 16px;font-weight:700;font:inherit;font-size:14px;cursor:pointer}
+.to-btn:hover{border-color:var(--accent);color:var(--accent)}
+.to-btn[disabled]{opacity:.5;cursor:not-allowed}
+.to-out{margin-top:18px;padding:14px;border-radius:14px;background:#faf7f3;border:1px dashed var(--line);display:none}
+.to-out.on{display:block}
+.to-out img{width:100%;border-radius:12px;display:block;background:#fff}
+.to-status{font-size:13.5px;color:var(--mut);margin-top:12px;min-height:20px}
+.to-status.err{color:#a3210f;font-weight:700}
+.to-ok{background:#eaf7ef;border:1px solid #bfe5cd;color:#14532d;padding:10px 12px;border-radius:10px;font-weight:600;font-size:13.5px;margin-top:12px;display:none}
+.to-ok.on{display:block}
+.to-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 16px;border-radius:999px;font-size:13.5px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
+.to-toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="topnav">
+<a class="brand" href="/">fashionistas<span>.ai</span></a>
+<nav aria-label="Main">
+<a href="/try-on/" aria-current="page">Try it on</a>
+<a href="/fees/">Fees</a>
+<a href="/about/">About</a>
+<a href="/privacy/">Privacy</a>
+<a href="/contact/">Contact</a>
+<a href="/">App</a>
+</nav>
+</header>
+
+<span class="badge">AI virtual try-on</span>
+<h1>See it on you before you list it</h1>
+<p class="lede">Two photos in, one render out. Add a picture of the person and a picture of the garment, press <b>Try it on</b>, and fashionistas.ai posts both to the try-on engine and hands back the composited image — ready to download, save or share.</p>
+
+<div class="card">
+ <div class="to-grid">
+  <div class="to-zone" id="zone-person">
+   <span class="to-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3471f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4"/></svg></span>
+   <b style="font-size:14.5px">Person photo</b>
+   <span class="to-name" id="name-person">Drop a selfie or full-body shot here, or click to choose</span>
+   <img id="prev-person" alt="Person photo preview" class="hidden" style="display:none">
+   <input type="file" id="file-person" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose the person photo">
+  </div>
+  <div class="to-zone" id="zone-garment">
+   <span class="to-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3471f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 3.5 12 5.4l3.5-1.9 4.5 2.4-2.2 4-2.1-1V21H8.3V8.9l-2.1 1-2.2-4z"/></svg></span>
+   <b style="font-size:14.5px">Garment photo</b>
+   <span class="to-name" id="name-garment">Drop the item you want to try on here, or click to choose</span>
+   <img id="prev-garment" alt="Garment photo preview" class="hidden" style="display:none">
+   <input type="file" id="file-garment" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose the garment photo">
+  </div>
+ </div>
+
+ <div class="to-acts">
+  <button class="btn btn-accent" id="btn-go" data-tip="Send both photos to the try-on engine and render the result.">Try it on</button>
+  <button class="to-btn" id="btn-retry" disabled data-tip="Run the try-on again with the same two photos.">Retry</button>
+  <button class="to-btn" id="btn-download" disabled data-tip="Save the render as a file on this device.">Download</button>
+  <button class="to-btn" id="btn-save" disabled data-tip="Keep the render in this browser so you can come back to it.">Save</button>
+  <button class="to-btn" id="btn-share" disabled data-tip="Share the render with the system share sheet, or copy a link.">Share</button>
+ </div>
+
+ <p class="to-status" id="status" role="status" aria-live="polite">Add both photos to start.</p>
+ <div class="to-ok" id="ok">Render ready — download it, save it to this browser, or share it.</div>
+
+ <div class="to-out" id="out">
+  <img id="out-img" alt="Virtual try-on result">
+  <p class="note" id="out-meta" style="margin-bottom:0"></p>
+ </div>
+</div>
+
+<div class="card" style="margin-top:18px">
+ <h2 style="font-size:1.15rem;margin-top:0">What happens when you press Try it on</h2>
+ <p>The page sends a <b>multipart POST</b> with two parts — <code>person</code> and <code>garment</code> — to <code>/api/tryon</code>. The engine decodes both images, aligns the garment to the person, and returns the rendered image, which is drawn straight into the panel above. Nothing is posted anywhere else and nothing is published to a marketplace.</p>
+ <p style="margin-bottom:0">Want the colour side of it too? <a href="/contact/">Ask us about colour analysis</a> — it reads undertone and contrast from your photo and hands back a palette. &nbsp; <a href="/">Open the fashionistas.ai app</a></p>
+</div>
+
+<footer class="site-footer">
+<nav aria-label="Footer">
+<a href="/">Home</a>
+<a href="/try-on/">Try it on</a>
+<a href="/fees/">Fee take-home</a>
+<a href="/about/">About</a>
+<a href="/privacy/">Privacy</a>
+<a href="/contact/">Contact</a>
+</nav>
+<p>fashionistas.ai — AI listing drafts you post yourself. Email: <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a></p>
+</footer>
+</div>
+
+<div class="to-toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+  var API = "/api/tryon";
+  var files = { person:null, garment:null };
+  var last = { dataUrl:null, blobUrl:null, mime:"image/png", at:0 };
+  var busy = false;
+
+  var $ = function(id){ return document.getElementById(id); };
+
+  function say(msg, isErr){
+    var s = $("status");
+    s.textContent = msg;
+    s.className = isErr ? "to-status err" : "to-status";
+  }
+  var toastT = null;
+  function toast(msg){
+    var t = $("toast");
+    t.textContent = msg;
+    t.classList.add("on");
+    if (toastT) clearTimeout(toastT);
+    toastT = setTimeout(function(){ t.classList.remove("on"); }, 2600);
+  }
+  function setBusy(v){
+    busy = v;
+    $("btn-go").disabled = v;
+    $("btn-retry").disabled = v || !last.at;
+    if (v) $("btn-go").textContent = "Rendering…";
+    else $("btn-go").textContent = "Try it on";
+  }
+  function keepEnabled(){
+    var ready = !!(files.person && files.garment);
+    $("btn-go").disabled = busy || !ready;
+    $("btn-retry").disabled = busy || !last.at;
+    $("btn-download").disabled = !last.at;
+    $("btn-save").disabled = !last.at;
+    $("btn-share").disabled = !last.at;
+  }
+
+  function setFile(kind, file){
+    if (!file) return;
+    if (!/^image\//.test(file.type || "")){
+      say("That file is not an image. " + (kind === "person" ? "Person" : "Garment") + " photo must be a JPG, PNG or WebP.", true);
+      return;
+    }
+    files[kind] = file;
+    $("name-person");
+    $("name-" + kind).textContent = file.name + " · " + Math.max(1, Math.round(file.size/1024)) + " KB";
+    $("zone-" + kind).classList.add("has");
+    var img = $("prev-" + kind);
+    if (img.dataset.url) URL.revokeObjectURL(img.dataset.url);
+    var url = URL.createObjectURL(file);
+    img.dataset.url = url;
+    img.src = url;
+    img.style.display = "block";
+    say((files.person && files.garment) ? "Both photos are in. Press Try it on." : "One photo in — add the other one.", false);
+    keepEnabled();
+  }
+
+  ["person","garment"].forEach(function(kind){
+    var input = $("file-" + kind);
+    var zone = $("zone-" + kind);
+    input.addEventListener("change", function(){ setFile(kind, input.files && input.files[0]); });
+    ["dragenter","dragover"].forEach(function(ev){
+      zone.addEventListener(ev, function(e){ e.preventDefault(); zone.classList.add("over"); });
+    });
+    ["dragleave","drop"].forEach(function(ev){
+      zone.addEventListener(ev, function(e){ e.preventDefault(); zone.classList.remove("over"); });
+    });
+    zone.addEventListener("drop", function(e){
+      var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) setFile(kind, f);
+    });
+  });
+
+  function readAsDataUrl(blob){
+    return new Promise(function(res, rej){
+      var r = new FileReader();
+      r.onload = function(){ res(r.result); };
+      r.onerror = function(){ rej(r.error); };
+      r.readAsDataURL(blob);
+    });
+  }
+
+  function pickImage(payload){
+    var cands = [];
+    if (payload && typeof payload === "object"){
+      ["image","url","result","output","data","tryon","render","photo","base64"].forEach(function(k){
+        if (typeof payload[k] === "string") cands.push(payload[k]);
+      });
+      ["result","output","data","image"].forEach(function(k){
+        var inner = payload[k];
+        if (inner && typeof inner === "object"){
+          ["url","image","base64","src"].forEach(function(k2){
+            if (typeof inner[k2] === "string") cands.push(inner[k2]);
+          });
+        }
+      });
+    }
+    for (var i = 0; i < cands.length; i++){
+      var v = cands[i];
+      if (/^data:image\//i.test(v) || /^https?:\/\//i.test(v) || /^\//.test(v)) return v;
+    }
+    return null;
+  }
+
+  function showResult(blob, srcUrl, note){
+    if (last.blobUrl) URL.revokeObjectURL(last.blobUrl);
+    last.blobUrl = null;
+    last.dataUrl = null;
+    last.mime = (blob && blob.type) || "image/png";
+    last.at = Date.now();
+    var img = $("out-img");
+    var paint = function(url){
+      img.src = url;
+      $("out").classList.add("on");
+      $("ok").classList.add("on");
+      $("out-meta").textContent = note || "";
+      say("Done. Download, save or share it below.", false);
+      keepEnabled();
+      var box = $("out");
+      if (box.scrollIntoView) box.scrollIntoView({ behavior:"smooth", block:"nearest" });
+    };
+    if (blob){
+      last.blobUrl = URL.createObjectURL(blob);
+      readAsDataUrl(blob).then(function(d){ last.dataUrl = d; paint(last.blobUrl); })
+                         .catch(function(){ paint(last.blobUrl); });
+    } else {
+      paint(srcUrl);
+    }
+  }
+
+  function fail(msg){
+    $("ok").classList.remove("on");
+    say(msg, true);
+    keepEnabled();
+  }
+
+  function run(){
+    if (busy) return;
+    if (!files.person || !files.garment){
+      say("Add both a person photo and a garment photo first.", true);
+      return;
+    }
+    $("ok").classList.remove("on");
+    setBusy(true);
+    say("Rendering your try-on…", false);
+    var fd = new FormData();
+    fd.append("person", files.person);
+    fd.append("garment", files.garment);
+    fetch(API, { method:"POST", body: fd, accept:"application/json, image/*" })
+      .then(function(res){
+        var ct = (res.headers.get("content-type") || "").toLowerCase();
+        if (!res.ok){
+          return res.text().then(function(t){
+            var msg = "Try-on failed (" + res.status + ").";
+            try {
+              var j = JSON.parse(t);
+              if (j && (j.error || j.message)) msg = "Try-on failed: " + (j.error || j.message);
+            } catch(e){ if (t) msg = "Try-on failed (" + res.status + "): " + t.slice(0,160); }
+            throw new Error(msg);
+          });
+        }
+        if (ct.indexOf("image/") === 0){
+          return res.blob().then(function(b){ showResult(b, null, "Rendered from your two photos · " + Math.round(b.size/1024) + " KB"); });
+        }
+        return res.text().then(function(t){
+          var src = null, blobNote = "Rendered from your two photos";
+          try {
+            var j = JSON.parse(t);
+            src = pickImage(j);
+            if (j && typeof j.width === "number" && typeof j.height === "number"){
+              blobNote += " · " + j.width + "×" + j.height;
+            }
+          } catch(e){ src = null; }
+          if (!src) throw new Error("The try-on engine returned no image.");
+          if (/^data:image\//i.test(src)){
+            var bin;
+            try {
+              bin = atob(src.split(",")[1] || "");
+            } catch(err){ bin = null; }
+            if (bin){
+              var arr = new Uint8Array(bin.length);
+              for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+              showResult(new Blob([arr], { type: src.slice(5, src.indexOf(";")) || "image/png" }), null, blobNote);
+              return;
+            }
+          }
+          showResult(null, src, blobNote + " · " + src);
+        });
+      })
+      .catch(function(err){
+        fail(err && err.message ? err.message : "The try-on request did not go through. Try again.");
+      })
+      .then(function(){ setBusy(false); });
+  }
+
+  $("btn-go").addEventListener("click", run);
+  $("btn-retry").addEventListener("click", run);
+
+  $("btn-download").addEventListener("click", function(){
+    if (!last.at) return;
+    var name = "fashionistas-tryon-" + new Date().toISOString().slice(0,19).replace(/[:T]/g,"-") + (last.mime.indexOf("png") > -1 ? ".png" : last.mime.indexOf("webp") > -1 ? ".webp" : ".jpg");
+    var href = last.dataUrl || last.blobUrl || $("out-img").src;
+    var a = document.createElement("a");
+    a.href = href; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    toast("Downloaded " + name);
+  });
+
+  $("btn-save").addEventListener("click", function(){
+    if (!last.at) return;
+    try {
+      var record = { at: last.at, mime: last.mime, image: last.dataUrl || last.blobUrl || $("out-img").src };
+      localStorage.setItem("fashionistas.tryon.last", JSON.stringify(record));
+      toast(last.dataUrl ? "Saved to this browser" : "Saved (link only — this session)");
+    } catch(e){
+      toast("Could not save — storage is blocked here");
+    }
+  });
+
+  $("btn-share").addEventListener("click", function(){
+    if (!last.at) return;
+    var text = "My fashionistas.ai virtual try-on";
+    var shareUrl = location.href;
+    if (navigator.share){
+      var payload = { title:"fashionistas.ai virtual try-on", text: text, url: shareUrl };
+      if (navigator.canShare && last.dataUrl){
+        try {
+          var b64 = last.dataUrl.split(",")[1];
+          var bin = atob(b64);
+          var arr = new Uint8Array(bin.length);
+          for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+          var f = new File([arr], "fashionistas-tryon.png", { type: last.mime });
+          if (navigator.canShare({ files:[f] })) payload = { title: payload.title, text: text, files:[f] };
+        } catch(e){}
+      }
+      navigator.share(payload).then(function(){ toast("Shared"); }).catch(function(){});
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(shareUrl).then(function(){ toast("Link copied"); }).catch(function(){ toast("Copy this page URL to share"); });
+    } else {
+      toast("Copy this page URL to share");
+    }
+  });
+
+  // bring back a render saved earlier in this browser
+  try {
+    var saved = JSON.parse(localStorage.getItem("fashionistas.tryon.last") || "null");
+    if (saved && saved.image && saved.at){
+      $("out-img").src = saved.image;
+      $("out").classList.add("on");
+      $("out-meta").textContent = "Saved try-on from " + new Date(saved.at).toLocaleString();
+      last.at = saved.at; last.dataUrl = saved.image; last.mime = saved.mime || "image/png";
+    }
+  } catch(e){}
+
+  keepEnabled();
+})();
+</script>
+</body>
+</html>

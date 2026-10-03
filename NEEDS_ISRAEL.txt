@@ -1,0 +1,14 @@
+NEEDS ISRAEL — blocked on real assets/accounts. One line per item. Do not fake these.
+
+TEST IMAGES MISSING (blocks L03 tryon-api and L04 tryon-ui): ~/fashrun/selfie.jpg and ~/fashrun/garment.jpg do not exist. Need one real full-body selfie photo and one real garment photo (flat-lay or hanger). No fake/generated test images will be created.
+REPLICATE_API_TOKEN — https://replicate.com/account/api-tokens — blocks L03 try-on (IDM-VTON).
+STRIPE_TEST_KEY + STRIPE_WEBHOOK_SECRET — https://dashboard.stripe.com/test/apikeys — blocks L10 checkout.
+EBAY_PRODUCTION_APP — https://developer.ebay.com/my/keys — blocks L07 env=production.
+ETSY_APP_KEY — https://www.etsy.com/developers/your-apps — blocks L07 etsy oauth.
+GOOGLE_OAUTH_CLIENT — https://console.cloud.google.com/apis/credentials — blocks L02 Google sign-in.
+GITHUB_WORKFLOW_SCOPE — https://github.com/settings/tokens — gh auth refresh -s workflow — blocks L01 deploy.yml push: ! [remote rejected] lane-1 -> lane-1 (refusing to allow an OAuth App to create or update workflow `.github/workflows/deploy.yml` without `workflow` scope)
+STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET — https://dashboard.stripe.com/test/apikeys — blocks L10 checkout
+CLOUDFLARE_ACCOUNT_ID — MISSING from repo secrets placebetsai/fashionistas-ai (CLOUDFLARE_API_TOKEN is already set) — run EXACTLY: gh secret set CLOUDFLARE_ACCOUNT_ID --body "7eb89b01e9c3bec41ee24db8ecbe77f8" -R placebetsai/fashionistas-ai — blocks L01 deploy step. L01 STOPPED pending confirmation.
+EBAY_CLIENT_ID + EBAY_CLIENT_SECRET — https://developer.ebay.com/my/keys — blocks L07 production OAuth
+ETSY_API_KEY + ETSY_API_SECRET — https://www.etsy.com/developers/your-apps — blocks L07 Etsy OAuth
+D1 DATABASE BINDING — Cloudflare Pages → Settings → Functions → D1 (binding name DB) — blocks L07 durable eBay/Etsy tokens, delist_queue and auto-delist persistence (code degrades to "d1_binding_missing" without it)
