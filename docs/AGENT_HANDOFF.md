@@ -16,6 +16,130 @@ Read this before changing live Pages, inventing marketplace credentials, merging
 
 ## 0. CURRENT STATE — 2026-10-03 (read this first)
 
+> ## ⚠️ READ THIS BEFORE YOU WRITE ANYTHING INTO THIS FILE
+>
+> **This document is served publicly at `https://fashionistas.ai/docs/AGENT_HANDOFF.md` → HTTP 200.**
+> `_redirects` does **not** block files that exist as deployed static assets — see
+> "SECURITY FINDING" below. **Never put a secret in `docs/`.** Secrets go in `.env`
+> (gitignored, untracked, returns 404 live, zero traces in git history).
+
+### SECURITY FINDING — `_redirects` blocking NEVER WORKED (2026-10-03)
+
+The file `_redirects` contains rules claiming to 404 internal files. **They are inert
+for anything that ships as a static asset.** Proven live:
+
+| Path | `_redirects` rule | Actual live response |
+|---|---|---|
+| `/docs/AGENT_HANDOFF.md` | line 14 → 404 | **200** (26,885 bytes served) |
+| `/wrangler.toml` | line 4 → 404 | **200** |
+| `/NEEDS_ISRAEL.txt` | line 6 → 404 | **200** |
+| `/package.json` | line 7 → 404 | **200** |
+| `/.env` | line 9 → 404 | 404 ✅ |
+| `/functions/api/_lib/auth.js` | line 22 → 404 | 404 ✅ |
+
+**Why the two "working" ones pass:** they are *not deployed as assets* — `.env` is
+gitignored, and Cloudflare Pages excludes `functions/` from static output. So the
+redirect is never reached. **Every real file is served first; the redirect never runs.**
+
+**Consequence:** any file committed to the repo root or a subdirectory is public.
+`git grep` found no secrets in committed files as of `d0592fc`, but this must be
+re-checked whenever a file is added.
+
+**Fix not yet implemented.** Viable options: (a) `_routes.json` with an `include`
+list forcing those paths into the Functions runtime (then return 404), or (b) move
+internal files out of the deploy root. (b) is simpler but breaks in-repo history
+for other agents. **Do not assume the leak is fixed until a live curl proves 404.**
+
+### Shipped 2026-10-03 (commits `afe61d0`, `d0592fc`)
+
+| Item | Proof |
+|---|---|
+| `apps/extension/adapters/engine.js` (22,277 B) | 26 jsdom tests, all pass |
+| `core/ai_inference.js`, `core/tryon_pipeline.js` | parse clean, honest failure paths |
+| `TEST.md` manual script | claims `# tests 57` → reality `57 / pass 57 / fail 0` |
+| **`/pricing/`** (was 404 — a v1 spec item) | live **HTTP 200**, renders `$14.99` |
+| `sitemap.xml` repaired | 6 → **12** URLs, dead `/app/` removed, **0 dead entries** |
+
+**Full suite: `# tests 57  # pass 57  # fail 0`.** Head at time of writing: `d0592fc`, CI `success`.
+
+**`engine.js` is deliberately `chrome.*`-free** (only hit is its own header comment) —
+so the same module serves the extension *and* a mobile WebView. Its dry-run lock:
+`submit()` under `dryRun` throws `DRY_RUN_BLOCKED` **without even querying
+the publish selector**. Verified by sabotaging the guard → 2 tests go red → restore →
+26 pass. That is what proves the tests are not rubber stamps.
+
+### `/pricing/` Subscribe button — exact server contract
+
+Do not guess these; they were read out of `functions/api/billing/checkout.js`:
+
+| HTTP | Body | Meaning |
+|---|---|---|
+| `401` | `{error:"Not signed in."}` | not authenticated |
+| `503` | `{error:"STRIPE_SECRET_KEY not configured", detail:"Set the ... Pages environment variable…"}` | key missing — page **names it verbatim** |
+| `502` | `{error:"stripe_unreachable"\|"stripe_error"\|"stripe_no_checkout_url"}` | Stripe call failed |
+| `200` | `{url, id, uid}` | redirect to hosted checkout |
+
+**`checkout` never returns 402.** It has no subscription check. The page keeps a 402
+branch as defensive future-proofing and says so in a comment.
+**`/api/auth/me` returns `{id, email, authenticated}` only — no subscription field.**
+An earlier version of the page read `d.subscribed` and would have claimed "Pro is
+active" with no way to know. Removed; the page now shows only the sign-in address.
+
+### ENV VAR NAME CORRECTIONS (my earlier list was wrong)
+
+Re-verified by grepping `env.X` across `functions/`:
+
+| I said | Reality |
+|---|---|
+| `STRIPE_PRICE_ID` | **never read** — checkout builds the price inline via `price_data`. Do not chase it. |
+| `ETSY_SHARED_SECRET` | real name **`ETSY_API_SECRET`** |
+| `GOOGLE_OAUTH_CLIENT_ID/_SECRET` | real names **`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`** |
+
+**What the code actually reads** (bindings excluded): `EBAY_CLIENT_ID`,
+`EBAY_CLIENT_SECRET`, `EBAY_ENV`, `EBAY_REDIRECT_URI`, `EBAY_RU_NAME`,
+`EBAY_SANDBOX_CLIENT_ID`, `EBAY_SANDBOX_CLIENT_SECRET`, `EBAY_SANDBOX_REDIRECT_URI`,
+`EBAY_FULFILLMENT_POLICY`, `EBAY_PAYMENT_POLICY`, `EBAY_RETURN_POLICY`,
+`ETSY_API_KEY`, `ETSY_API_SECRET`, `ETSY_REDIRECT_URI`, `GOOGLE_CLIENT_ID`,
+`GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `REPLICATE_API_TOKEN`,
+`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
+
+**Two distinct eBay key sets are needed:** `EBAY_SANDBOX_*` is read only by
+`/api/list/*` (v1 path); `EBAY_CLIENT_ID` + `EBAY_REDIRECT_URI` + `EBAY_RU_NAME` +
+`EBAY_ENV` are read by the OAuth flow (`/api/ebay/oauth/*`). Filling both with the
+same sandbox values is the starting point.
+
+A template with links lives at **`.env`** in the repo root (gitignored, safe).
+
+### AI: use the free model for text — image still costs (2026-10-03)
+
+Decision (supersedes any suggestion to bill for an LLM):
+
+- `opencode/mimo-v2.6-flash-free` → **input $0.00 / output $0.00**. Use it for
+  titles, descriptions, category and price copy.
+- The model catalog returns **0 image-generation models** — mimo is text-only.
+  **Virtual try-on still needs a diffusion model**, i.e. Replicate (token now stored
+  in `.env`) or an equivalent. `core/tryon_pipeline.js` refuses honestly with
+  `generative_endpoint_unconfigured` rather than returning a fake try-on.
+- **No callable free-AI HTTP endpoint exists in this environment** — only OpenCode
+  session vars, no API key. So server-side mimo cannot be wired from a Worker
+  without an endpoint being provided first. Do not claim otherwise.
+
+`core/ai_inference.js` returns `engine_unavailable` (not invented text) because
+`@huggingface/transformers` is not bundled. Its `source` field is `"vlm"` only when
+a model genuinely ran, otherwise `"pixel_heuristics"`.
+
+### STILL TRUE / STILL OPEN (do not mark these done)
+
+- **Zero marketplace posts have ever occurred.** The extension has never been loaded
+  into a real Chrome profile. `TEST.md` §1–6 requires a human in Chrome.
+- Adapter list (9): poshmark, mercari, depop, grailed, vinted, facebook, kidizen,
+  vestiaire, whatnot. **`craigslist.js` does not exist** — zero code, do not claim it.
+- `/api/marketplaces` → 404 (L07). Other audit gaps remain: OG cards on `/ar-tryon/`,
+  twitter:card on `/about/`+`/privacy/`, 262-byte `icon.svg`, 3 `<h1>`, contrast
+  3.07:1 on `--accent`.
+- Replicate token is stored but **never used** — try-on still unrun.
+- **The `docs/` leak above is unfixed.**
+
 ### Product truth (supersedes §1)
 
 | Item | Truth |
