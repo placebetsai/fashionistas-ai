@@ -1,14 +1,88 @@
 /**
  * POST /api/ebay/listing
- * Creates an eBay inventory item (+ offer when business policies exist) using
- * the HttpOnly ebay_oauth_tok cookie from OAuth callback.
+ * createDraftInventoryItem (PUT sell/inventory/v1/inventory_item/{sku}) →
+ * createOffer → publishInventoryItem (POST .../offer/{offerId}/publish)
+ * via the Sell Inventory API on api.ebay.com (production) or api.sandbox.ebay.com.
  *
- * Sandbox-first. Clear JSON errors when scopes / policies / token block.
+ * Tokens come from D1 ebay_tokens (proactively refreshed when < 5 min left);
+ * the HttpOnly ebay_oauth_tok cookie remains the fallback.
+ * Missing business policies return {"error":"missing_business_policies","guidance":[...]}
+ * instead of a raw upstream failure.
  * Never logs secrets or tokens. See docs/EBAY_OAUTH.md.
  */
 
+import { getFreshToken } from "./oauth/callback.js";
+
 const TOK_COOKIE = "ebay_oauth_tok";
 const BYO_COOKIE = "ebay_byo_sess";
+
+function pickDb(env) {
+  if (!env || typeof env !== "object") return null;
+  for (const n of ["DB", "FASHIONISTAS_DB", "EBAY_DB", "EBAY_TOKENS_DB", "D1"]) {
+    const db = env[n];
+    if (db && typeof db.prepare === "function" && typeof db.bind === "function") return db;
+  }
+  return null;
+}
+
+const TOKEN_SCHEMA = `CREATE TABLE IF NOT EXISTS ebay_tokens (
+  token_key TEXT PRIMARY KEY,
+  access_token TEXT,
+  refresh_token TEXT,
+  expires_at INTEGER,
+  token_type TEXT,
+  env TEXT,
+  scopes TEXT,
+  updated_at INTEGER
+)`;
+
+/** Same key scheme as the OAuth callback: signed-in user, else anonymous. */
+function tokenKeyFromRequest(request) {
+  const raw = request.headers.get("Cookie") || "";
+  for (const name of ["fash_uid", "fash_user_id", "fash_session", "fash_connect_v1"]) {
+    for (const part of raw.split(";")) {
+      const p = part.trim();
+      if (!p.startsWith(name + "=")) continue;
+      const v = p.slice(name.length + 1);
+      if (v) return "u:" + v.slice(0, 120);
+    }
+  }
+  return "anon";
+}
+
+/**
+ * Prefer the durable D1 token. Refreshes it when it expires within 5 minutes.
+ * Returns { ok:false, reason } when D1 is unbound or empty — caller falls back
+ * to the cookie token.
+ */
+async function loadDurableToken(env, request, { clientId, clientSecret, ebayEnv }) {
+  const db = pickDb(env);
+  if (!db) return { ok: false, reason: "d1_binding_missing" };
+  try {
+    await db.prepare(TOKEN_SCHEMA).run();
+    const fresh = await getFreshToken(db, tokenKeyFromRequest(request), {
+      clientId,
+      clientSecret,
+      ebayEnv,
+    });
+    if (!fresh.ok) return { ok: false, reason: fresh.error };
+    return {
+      ok: true,
+      access_token: fresh.token.access_token,
+      refresh_token: fresh.token.refresh_token,
+      expires_in: Math.max(60, Math.round((fresh.token.expires_at - Date.now()) / 1000)),
+      token_type: fresh.token.token_type,
+      env: fresh.token.env,
+      obtained_at: Date.now(),
+      refreshed: fresh.refreshed,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      reason: "d1_error:" + String(e && e.message ? e.message : e).slice(0, 80),
+    };
+  }
+}
 
 function json(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
@@ -298,31 +372,16 @@ export async function onRequestPost(context) {
   }
   if (!body || typeof body !== "object") body = {};
 
+  const byo = parseByoCookie(req);
   let tok = parseTokCookie(req);
-  if (!tok || !tok.access_token) {
-    return json(
-      {
-        ok: false,
-        error: "ebay_not_connected",
-        message:
-          "No eBay OAuth token cookie. Connect eBay in Multilist (BYO keys → Connect OAuth) first. Paste kits still work.",
-        nextStep:
-          "Multilist → Connect eBay → Save keys → Connect OAuth. After ?ebay_oauth=ok, retry Create on eBay.",
-      },
-      401
-    );
-  }
+  let tokenSource = tok && tok.access_token ? "cookie" : "none";
 
   const ebayEnv =
-    (safeStr(body.env) || tok.env || safeStr(env.EBAY_ENV) || "sandbox").toLowerCase() ===
-    "production"
-      ? "production"
-      : "sandbox";
+    (safeStr(body.env) || (tok && tok.env) || safeStr(env.EBAY_ENV) || "production").toLowerCase() ===
+    "sandbox"
+      ? "sandbox"
+      : "production";
 
-  // Refresh if access likely expired (60s skew) and we have refresh + client secret.
-  const ageMs = tok.obtained_at ? Date.now() - tok.obtained_at : 0;
-  const expired = ageMs > (tok.expires_in - 60) * 1000;
-  const byo = parseByoCookie(req);
   const clientId =
     safeStr(body.clientId || body.client_id) ||
     (byo && byo.clientId) ||
@@ -331,6 +390,34 @@ export async function onRequestPost(context) {
     safeStr(body.clientSecret || body.client_secret) ||
     (byo && byo.clientSecret) ||
     safeStr(env.EBAY_CLIENT_SECRET);
+
+  // Durable D1 token wins; getFreshToken refreshes when < 5 min remain.
+  const durable = await loadDurableToken(env, req, { clientId, clientSecret, ebayEnv });
+  if (durable.ok) {
+    tok = durable;
+    tokenSource = durable.refreshed ? "d1_refreshed" : "d1";
+  }
+
+  if (!tok || !tok.access_token) {
+    return json(
+      {
+        ok: false,
+        error: "ebay_not_connected",
+        message:
+          "No eBay OAuth token available (D1: " +
+          (durable.reason || "empty") +
+          "; cookie: absent). Connect eBay in Multilist first. Paste kits still work.",
+        nextStep:
+          "Multilist → Connect eBay → Save keys → Connect OAuth. After ?ebay_oauth=ok, retry Create on eBay.",
+        tokenStore: durable.reason || "unknown",
+      },
+      401
+    );
+  }
+
+  // Refresh if access likely expired (60s skew) and we have refresh + client secret.
+  const ageMs = tok.obtained_at ? Date.now() - tok.obtained_at : 0;
+  const expired = ageMs > (tok.expires_in - 60) * 1000;
 
   const setCookies = [];
   if ((expired || safeStr(body.forceRefresh) === "1") && tok.refresh_token) {
@@ -476,23 +563,66 @@ export async function onRequestPost(context) {
   ) {
     const headers = {};
     if (setCookies[0]) headers["Set-Cookie"] = setCookies[0];
+
+    const missingPolicies = [
+      !policies.fulfillmentPolicyId ? "fulfillmentPolicyId" : null,
+      !policies.paymentPolicyId ? "paymentPolicyId" : null,
+      !policies.returnPolicyId ? "returnPolicyId" : null,
+    ].filter(Boolean);
+
+    const guidance = [];
+    if (policies.scopeBlocked) {
+      guidance.push(
+        "Reconnect eBay OAuth and approve the sell.account scope (https://api.ebay.com/oauth/api_scope/sell.account) so business policies can be read."
+      );
+      guidance.push(
+        "Retry POST /api/ebay/listing after reconnecting; inventory item " + sku + " is already saved."
+      );
+    } else {
+      guidance.push(
+        "Open eBay Seller Hub → Account → Business policies for " +
+          marketplaceId +
+          " and enable Business Policies if it is off."
+      );
+      if (!policies.fulfillmentPolicyId)
+        guidance.push(
+          "Create a Fulfillment policy (shipping service + handling time), then pass its fulfillmentPolicyId."
+        );
+      if (!policies.paymentPolicyId)
+        guidance.push(
+          "Create a Payment policy (accepted payment methods, immediate payment), then pass its paymentPolicyId."
+        );
+      if (!policies.returnPolicyId)
+        guidance.push(
+          "Create a Return policy (30-day returns, who pays), then pass its returnPolicyId."
+        );
+      guidance.push(
+        "Retry POST /api/ebay/listing with those three IDs — inventory item " +
+          sku +
+          " already exists, so only createOffer + publish remain."
+      );
+      guidance.push(
+        "No Seller Hub access? Copy the listing manually: the item data is ready (SKU " + sku + ")."
+      );
+    }
+
     return json(
       {
         ok: false,
-        error: policies.scopeBlocked ? "insufficient_account_scope" : "missing_business_policies",
+        error: "missing_business_policies",
+        guidance,
+        cause: policies.scopeBlocked ? "insufficient_scope" : "policies_not_created",
         message: policies.scopeBlocked
           ? "Token lacks sell.account scope to read business policies (needed for createOffer)."
           : "Inventory item saved, but eBay business policies (fulfillment / payment / return) were not found — cannot createOffer yet.",
-        nextStep: policies.scopeBlocked
-          ? "Reconnect OAuth with sell.account (+ sell.inventory) scopes, then retry. Or paste the kit on eBay."
-          : "In eBay Seller Hub (Sandbox or Production), enable Business Policies and create Fulfillment, Payment, and Return policies for " +
-            marketplaceId +
-            ". Then retry Create on eBay. Inventory SKU is ready: " +
-            sku,
+        nextStep: guidance[0] || "Create the missing business policies and retry.",
+        missing: missingPolicies,
+        scopeBlocked: !!policies.scopeBlocked,
         env: ebayEnv,
         sku,
         inventoryCreated: true,
         policies,
+        tokenSource,
         kv: kvNote,
       },
       409,
@@ -609,6 +739,7 @@ export async function onRequestPost(context) {
       published,
       categoryId,
       marketplaceId,
+      tokenSource,
       note: published
         ? "Listing published on eBay (" + ebayEnv + ")."
         : "Inventory + unpublished offer created. Set publish:true to go live, or publish in Seller Hub.",
