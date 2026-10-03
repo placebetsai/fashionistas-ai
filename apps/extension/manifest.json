@@ -106,6 +106,17 @@
       ],
       "run_at": "document_idle",
       "all_frames": false
+    },
+    {
+      "matches": [
+        "https://fashionistas.ai/*",
+        "https://www.fashionistas.ai/*"
+      ],
+      "js": [
+        "content/announce.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
     }
   ]
 }

@@ -14,7 +14,8 @@
 // executed here on the desktop extension (or by the L09 cloud runner); the
 // phone only displays status — it is never a manual step.
 
-import { SHOPS, normalizeShop, selectorsFor } from "./config/selectors.js";
+import { SHOPS, normalizeShop, selectorsFor, initSelectors } from "./config/selectors.js";
+import { capFor, capKey, capOverrideKey, checkCap, prune, retryAfterSeconds } from "./ratecap.js";
 import { apiGet, apiPost, JOB_POLL_PATH, MAX_ATTEMPTS, RETRY_BASE_MS } from "./config/api.js";
 import * as poshmark from "./adapters/poshmark.js";
 import * as mercari from "./adapters/mercari.js";
@@ -165,25 +166,43 @@ async function normalizePhotos(photos) {
 
 /* ------------------------------------------------------- rate limiting */
 
-async function recentPosts(shop) {
-  const key = `rl:${shop}`;
+/* Per-ACCOUNT caps: timestamps persist under capKey(shop, account) in
+   chrome.storage.local, so closing Chrome does not hand an account a fresh
+   allowance. Window math and limits live in ratecap.js (pure, unit-tested). */
+async function capState(shop, cfg, account) {
+  const key = capKey(shop, account);
   const store = await lsGet(key);
   const stamps = Array.isArray(store[key]) ? store[key] : [];
-  const hourAgo = Date.now() - 3600000;
-  return stamps.filter((t) => typeof t === "number" && t > hourAgo);
+  const ovStore = await lsGet(capOverrideKey(shop));
+  const override = ovStore[capOverrideKey(shop)] || null;
+  return { key, stamps, caps: capFor(shop, override, cfg) };
 }
 
-/** How many posts per hour this account may take on this shop. */
-async function canPost(shop, cfg) {
-  const recent = await recentPosts(shop);
-  return recent.length < (cfg.postsPerHour || 4);
+/** Timestamps this account holds on a shop (raw; windows applied by checkCap). */
+async function recentPosts(shop, account) {
+  const { stamps } = await capState(shop, null, account);
+  return prune(stamps, Date.now());
 }
 
-async function recordPost(shop) {
-  const key = `rl:${shop}`;
-  const recent = await recentPosts(shop);
-  recent.push(Date.now());
-  await lsSet({ [key]: recent, [`lastPost:${shop}`]: Date.now() });
+/** Decide whether this account may post to this shop right now. */
+async function canPost(shop, cfg, account) {
+  const { stamps, caps } = await capState(shop, cfg, account);
+  return checkCap({ stamps, now: Date.now(), ...caps }).ok;
+}
+
+/** Full cap verdict — reason + counts + wait, so a skip is never silent. */
+async function capVerdict(shop, cfg, account) {
+  const { stamps, caps } = await capState(shop, cfg, account);
+  const now = Date.now();
+  const v = checkCap({ stamps, now, ...caps });
+  v.retryAfterSeconds = v.ok ? 0 : retryAfterSeconds({ stamps, now, ...caps });
+  return v;
+}
+
+async function recordPost(shop, cfg, account) {
+  const { key, stamps } = await capState(shop, cfg, account);
+  const now = Date.now();
+  await lsSet({ [key]: [...prune(stamps, now), now], [`lastPost:${shop}`]: now });
 }
 
 /** Randomized human spacing between two posts on the same shop. */
@@ -308,6 +327,7 @@ export async function tick() {
   if (lockedAt && Date.now() - lockedAt < LOCK_STALE_MS) return;
   await lsSet({ [LOCK_KEY]: Date.now() });
   try {
+    await initSelectors();        // refresh selector config (bundled floor)
     await flushReports();
     const jobs = await pullJobs();
     for (const job of jobs) {
@@ -359,12 +379,21 @@ export async function runJob(job, attempt) {
     return report(job, { status: "failed", error: `unknown_shop:${job.shop}`, attempts: attempt + 1 });
   }
   const type = job.type || "publish";
+  await initSelectors();
 
-  if (type === "publish" && !(await canPost(shopKey, cfg))) {
-    // hourly cap reached -> wait for the window to open again
-    const recent = await recentPosts(shopKey);
-    const oldest = recent.length ? recent[0] : Date.now();
-    return defer(job, attempt, oldest + 3600000 - Date.now() + rand(3000, 15000));
+  const account = job.account || "default";
+  if (type === "publish" && !(await canPost(shopKey, cfg, account))) {
+    // This account's hourly OR daily allowance on this shop is spent. Defer
+    // until it frees up, and record which cap bound — a skipped post must
+    // never be silent, the seller needs to see "18/20 today, retry in 4h".
+    const verdict = await capVerdict(shopKey, cfg, account);
+    const delayMs = Math.max(5000, verdict.retryAfterSeconds * 1000) + rand(3000, 15000);
+    await report(job, {
+      status: "capped",
+      error: `${verdict.reason} ${verdict.hourUsed}/${verdict.hourLimit}/h ${verdict.dayUsed}/${verdict.dayLimit}/d`,
+      attempts: attempt + 1
+    });
+    return defer(job, attempt, delayMs);
   }
 
   await waitForGap(cfg, shopKey);
@@ -378,7 +407,7 @@ export async function runJob(job, attempt) {
         : await runPublish(job, cfg, adapter, shopKey);
 
     if (result.status === "posted" || result.status === "delisted" || result.status === "signup_prefilled") {
-      if (type === "publish") await recordPost(shopKey);
+      if (type === "publish") await recordPost(shopKey, cfg, account);
       return report(job, { ...result, attempts: attempt + 1 });
     }
     if (result.deferUntil) return defer(job, attempt, result.deferUntil);

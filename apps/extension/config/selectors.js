@@ -15,6 +15,7 @@ export const SHOPS = {
     signupUrl: "https://www.poshmark.com/signup",
     listingPattern: "^https://www\\.poshmark\\.com/listing/",
     postsPerHour: 4,
+    postsPerDay: 40,
     minGapMs: 45000,
     sessionCookies: ["SPJ", "gps", "csrftoken", "client"],
     autocomplete: ["brand", "category"],
@@ -60,6 +61,7 @@ export const SHOPS = {
     signupUrl: "https://www.mercari.com/signup/",
     listingPattern: "^https://(www\\.)?mercari\\.com/(jp/)?item/",
     postsPerHour: 4,
+    postsPerDay: 50,
     minGapMs: 50000,
     sessionCookies: ["sid", "user_token", "_processin_session"],
     autocomplete: ["category", "brand"],
@@ -103,6 +105,7 @@ export const SHOPS = {
     signupUrl: "https://www.depop.com/onboarding/interests/",
     listingPattern: "^https://www\\.depop\\.com/products/",
     postsPerHour: 4,
+    postsPerDay: 40,
     minGapMs: 45000,
     sessionCookies: ["csrftoken", "sessionid", "dpid"],
     autocomplete: ["category", "brand"],
@@ -147,6 +150,7 @@ export const SHOPS = {
     signupUrl: "https://www.vinted.com/signup",
     listingPattern: "^https://www\\.vinted\\.com/items/",
     postsPerHour: 4,
+    postsPerDay: 60,
     minGapMs: 50000,
     sessionCookies: ["_vinted_fr_session", "optli_guid"],
     autocomplete: ["category", "brand"],
@@ -190,6 +194,7 @@ export const SHOPS = {
     signupUrl: "https://www.grailed.com/signup",
     listingPattern: "^https://www\\.grailed\\.com/listings/",
     postsPerHour: 3,
+    postsPerDay: 30,
     minGapMs: 60000,
     sessionCookies: ["csrftoken", "sessionid", "grailed_session"],
     autocomplete: ["category", "brand", "size"],
@@ -233,6 +238,7 @@ export const SHOPS = {
     signupUrl: "https://www.facebook.com/r.php",
     listingPattern: "^https://www\\.facebook\\.com/marketplace/item/",
     postsPerHour: 3,
+    postsPerDay: 25,
     minGapMs: 70000,
     sessionCookies: ["c_user", "xs", "fr", "datr"],
     autocomplete: ["category"],
@@ -275,6 +281,7 @@ export const SHOPS = {
     signupUrl: "https://www.kidizen.com/users/sign_up",
     listingPattern: "^https://www\\.kidizen\\.com/(sell/)?items/",
     postsPerHour: 4,
+    postsPerDay: 30,
     minGapMs: 45000,
     sessionCookies: ["_kidizen_session", "_kidizen_remember"],
     autocomplete: ["category", "brand"],
@@ -317,6 +324,7 @@ export const SHOPS = {
     signupUrl: "https://www.vestiairecollective.com/signup/",
     listingPattern: "^https://www\\.vestiairecollective\\.com/(home/)?[a-z0-9-]+-[0-9]+",
     postsPerHour: 3,
+    postsPerDay: 25,
     minGapMs: 60000,
     sessionCookies: ["PHPSESSID", "__Secure-next-auth.session-token", "vc_session"],
     autocomplete: ["brand", "category"],
@@ -360,6 +368,7 @@ export const SHOPS = {
     signupUrl: "https://www.whatnot.com/signup",
     listingPattern: "^https://www\\.whatnot\\.com/(listing|item)/",
     postsPerHour: 3,
+    postsPerDay: 20,
     minGapMs: 55000,
     sessionCookies: ["connect.sid", "__session", "cf_clearance"],
     autocomplete: ["category"],
@@ -451,4 +460,89 @@ export function selectorsFor(shopKey) {
     autocomplete: cfg.autocomplete || [],
     successLinks: cfg.successLinks || ["a[href]"]
   };
+}
+
+/* ------------------------------------------------------- runtime config
+   The static SHOPS above IS the bundled floor — it always loads, needs no
+   network, and can never fail. initSelectors() then tries to improve on it
+   with the versioned remote doc at fashionistas.ai/selectors.json, so a
+   marketplace changing its layout is a one-line server edit instead of an
+   extension release.
+   SHOPS is mutated in place, not replaced: queue.js and background.js hold a
+   reference to it, so a successful remote load is visible to them with no
+   call-site changes. A failed load leaves the bundled selectors untouched. */
+import { loadSelectors } from "./selector-source.js";
+
+export const BUNDLED_VERSION = 1;
+
+let _initPromise = null;
+let _initAt = 0;
+let _status = { source: "bundled", version: BUNDLED_VERSION, error: null, at: 0 };
+
+/** Where the active selectors came from: bundled | cache | remote. */
+export function selectorStatus() {
+  return { ..._status };
+}
+
+/** chrome.storage.local wrapped in the minimal shape loadSelectors wants. */
+function chromeStorage() {
+  try {
+    if (typeof chrome !== "undefined" && chrome && chrome.storage && chrome.storage.local) {
+      const st = chrome.storage.local;
+      return {
+        get: async (k) => {
+          const o = await st.get(k);
+          return o ? o[k] : null;
+        },
+        set: async (o) => st.set(o)
+      };
+    }
+  } catch (e) {
+    /* storage unavailable -> loader just uses bundled, which is fine */
+  }
+  return null;
+}
+
+function applyShops(shops) {
+  if (!shops || shops === SHOPS) return;
+  for (const k of Object.keys(SHOPS)) if (!(k in shops)) delete SHOPS[k];
+  for (const [k, v] of Object.entries(shops)) SHOPS[k] = v;
+}
+
+/**
+ * Fetch + apply the remote selector config. Never throws, never leaves SHOPS
+ * worse than the bundled copy. Re-runs at most every 10 minutes so each tick
+ * can recover from a network blip without hammering the endpoint.
+ */
+export async function initSelectors(opts = {}) {
+  const now = Date.now();
+  if (_initPromise && now - _initAt < (opts.minIntervalMs || 600000)) return _initPromise;
+  _initAt = now;
+  _initPromise = (async () => {
+    try {
+      const res = await loadSelectors({
+        bundled: { version: BUNDLED_VERSION, shops: SHOPS },
+        ...opts,
+        storage: "storage" in opts ? opts.storage : chromeStorage()
+      });
+      applyShops(res.shops);
+      _status = { source: res.source, version: res.version, error: res.error, at: Date.now() };
+    } catch (e) {
+      _status = {
+        source: "bundled",
+        version: BUNDLED_VERSION,
+        error: String((e && e.message) || e),
+        at: Date.now()
+      };
+    }
+    return { ..._status };
+  })();
+  return _initPromise;
+}
+
+/** Test hook: allow a fresh init instead of the 10-minute memo. */
+export function resetSelectorsForTests() {
+  _initPromise = null;
+  _initAt = 0;
+  _status = { source: "bundled", version: BUNDLED_VERSION, error: null, at: 0 };
 }

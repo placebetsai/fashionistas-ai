@@ -4193,46 +4193,100 @@ function handoffPayload(shopId, l){
    chrome://extensions → Details. Without it we fall back to the one-tap
    clipboard handoff, so the button always does something honest.          */
 const FASH_EXT_KEY = "fash_ext_id";
-function extId(){ try { return (localStorage.getItem(FASH_EXT_KEY) || "").trim(); } catch(e){ return ""; } }
+
+/* ── Web Store extension ID — the ONE place it is written down.
+   Empty until the extension is actually published to the Web Store; it is
+   deliberately not invented here. Users never paste anything either way:
+   content/announce.js posts the live chrome.runtime.id to this page, it is
+   persisted automatically, and a ping on load confirms it.               */
+const FASH_EXT_IDS = [];
+
+/** True only after a ping to the extension has actually succeeded. */
+let EXT_LIVE = false;
+let EXT_DETECTED = "";
+
+function extCandidates(){
+  const out = [];
+  try { const v = (localStorage.getItem(FASH_EXT_KEY) || "").trim(); if (v) out.push(v); } catch(e){}
+  FASH_EXT_IDS.forEach(v => { const c = String(v || "").trim(); if (c && !out.includes(c)) out.push(c); });
+  if (EXT_DETECTED && !out.includes(EXT_DETECTED)) out.unshift(EXT_DETECTED);
+  return out;
+}
+function extId(){ return extCandidates()[0] || ""; }
 function extSetId(id){
   const v = String(id || "").trim();
   try { v ? localStorage.setItem(FASH_EXT_KEY, v) : localStorage.removeItem(FASH_EXT_KEY); } catch(e){}
-  toast(v ? "Extension ID saved — Sell everywhere will now post through it." : "Extension ID cleared.");
 }
 function extRuntime(){
   return (typeof chrome !== "undefined" && chrome && chrome.runtime && chrome.runtime.sendMessage) ? chrome.runtime : null;
 }
+/** Try every candidate ID in turn; first non-error reply wins. */
 function extSend(msg){
   return new Promise((resolve) => {
-    const id = extId(), rt = extRuntime();
-    if (!id || !rt) return resolve(null);
-    let done = false;
-    const timer = setTimeout(() => { if (!done){ done = true; resolve(null); } }, 4000);
-    try {
-      rt.sendMessage(id, msg, (resp) => {
-        if (done) return;
-        done = true; clearTimeout(timer);
-        const err = rt.lastError;               // extension absent/not readable
-        resolve(err ? null : (resp || null));
-      });
-    } catch(e){ if (!done){ done = true; clearTimeout(timer); resolve(null); } }
+    const rt = extRuntime(), ids = extCandidates();
+    if (!rt || !ids.length) return resolve(null);
+    let idx = 0;
+    const tryNext = () => {
+      if (idx >= ids.length) return resolve(null);
+      const id = ids[idx++];
+      let done = false;
+      const timer = setTimeout(() => { if (!done){ done = true; tryNext(); } }, 3000);
+      try {
+        rt.sendMessage(id, msg, (resp) => {
+          if (done) return;
+          done = true; clearTimeout(timer);
+          if (rt.lastError) return tryNext();        // wrong id / not installed
+          resolve(resp || null);
+        });
+      } catch(e){ if (!done){ done = true; clearTimeout(timer); tryNext(); } }
+    };
+    tryNext();
   });
 }
+
+/* Learn the ID from the extension itself — no user input, no paste box. */
+window.addEventListener("message", (ev) => {
+  if (ev.source !== window) return;
+  const d = ev.data;
+  if (!d || d.source !== "fashionistas-ext" || d.type !== "fash-ext-ready") return;
+  const id = String(d.id || "").trim();
+  if (!id) return;
+  EXT_DETECTED = id;
+  try { localStorage.setItem(FASH_EXT_KEY, id); } catch(e){}
+  extAutoDetect();
+});
+
+/** Ping on load. The Connect button is rendered only if this fails. */
+async function extAutoDetect(){
+  const r = await extSend({ type: "status" });
+  EXT_LIVE = !!(r && r.ok);
+  const btn = document.querySelector("#xl-ext-connect");
+  if (btn) btn.style.display = EXT_LIVE ? "none" : "";
+  const mode = document.querySelector("#xl-handoff-mode");
+  if (mode) mode.textContent = EXT_LIVE
+    ? "Posts through your extension — no API keys."
+    : "No extension detected — clipboard handoff.";
+  return EXT_LIVE;
+}
+/** Connect is shown only when the ping failed. Never a paste prompt. */
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => extAutoDetect(), { once: true });
+else setTimeout(() => extAutoDetect(), 600);
+function extConnectBtnHtml(){
+  return `<button id="xl-ext-connect" type="button" class="btn btn-soft btn-sm"` +
+    ` style="display:${EXT_LIVE ? "none" : ""}" onclick="extConnectPrompt()"` +
+    ` data-tip="Confirms the Fashionistas Crosslister is installed and enabled.">Connect extension</button>`;
+}
+/** Re-check only. The ID is never asked for — announce.js supplies it. */
+async function extConnectPrompt(){
+  const live = await extAutoDetect();
+  if (live) { toast("Connected — extension detected automatically."); return; }
+  toast("Extension not detected. Enable \"Fashionistas Crosslister\" at chrome://extensions, then reload this page.");
+}
+
 async function extAvailable(){ const r = await extSend({ type: "status" }); return !!(r && r.ok); }
 async function extPublish(shop, payload){ return extSend({ type: "publish", shop: shop, payload: payload }); }
 async function extResults(){ const r = await extSend({ type: "results" }); return (r && r.results) || []; }
 
-
-/** One-time setup: paste the Chrome extension ID so the site can address it. */
-function extConnectPrompt(){
-  const cur = extId();
-  const val = window.prompt(
-    "Chrome extension ID\n\nOpen chrome://extensions → enable Developer mode → Details → copy the 32-character ID, then paste it here.\n\n(Leave blank to clear and fall back to the one-tap clipboard handoff.)",
-    cur
-  );
-  if (val === null) return;
-  extSetId(val);
-}
 
 /** Listing -> the exact payload shape queue.js/runPublish expects. */
 function extPayload(l, p){
@@ -4486,7 +4540,7 @@ function xlSheet(l, picks, copied, kits, allKit){
  <div class="mut" style="font-size:12px" id="xl-handoff-mode">${extId()?"Posts through your extension — no API keys.":"No extension yet — clipboard handoff."}</div>
  <div style="display:flex;gap:8px;flex-wrap:wrap">
  <button class="btn btn-accent btn-sm" onclick="handoffSellAll(${Number(l.id)||0})" data-tip="Queues every selected shop to your extension (or opens the first one with its payload copied).">Sell everywhere</button>
- <button class="btn btn-soft btn-sm" onclick="extConnectPrompt()" data-tip="Paste your Chrome extension ID once, so Sell everywhere can post through it.">${extId()?"Extension connected":"Connect extension"}</button></div>
+ ${extConnectBtnHtml()}</div>
  <button class="btn btn-primary" style="width:100%" onclick="closeSheet()" data-tip="Closes this panel." title="Closes this panel.">Done</button>`);
 }
 function xlCopy(btn){ const t=btn&&btn.getAttribute("data-kit")||""; navigator.clipboard&&navigator.clipboard.writeText(t).then(()=>toast("Kit copied")).catch(()=>toast("Copy blocked by browser")); }
