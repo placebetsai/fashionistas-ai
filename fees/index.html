@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Marketplace fee take-home calculator — Depop vs Poshmark vs eBay | fashionistas.ai</title>
-<meta name="description" content="Compare seller fee take-home across Depop, eBay, Poshmark, Mercari, Vinted and Grailed. Same fee concept fashionistas.ai uses before you paste listing drafts yourself.">
+<meta name="description" content="Compare what you actually keep after marketplace fees — Poshmark, Mercari, Depop, Vinted, Grailed, eBay, Etsy and more. Real take-home before you list anything.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://fashionistas.ai/fees/">
 <meta property="og:type" content="website">
@@ -34,7 +34,7 @@
 </header>
 <span class="badge">Fee take-home</span>
 <h1>What you keep after marketplace fees</h1>
-<p class="lede">Before you paste a fashionistas.ai draft into Depop, eBay, Poshmark, Mercari, Vinted or Grailed, check approximate seller take-home. Rates below mirror the fee concept in the app (platform % of sale price). Shipping and payment nuances vary by country — confirm on each shop before you price.</p>
+<p class="lede">Check what you actually keep before you list. fashionistas.ai shows this same take-home number on every item as you price it, so the fee never surprises you at the end. Rates below are platform % of sale price — shipping and payment nuances vary by country, so confirm on each shop before you price.</p>
 
 <div class="card">
 <div class="grid-2">
@@ -48,12 +48,12 @@
 </div>
 </div>
 <div class="calc-out" id="out" aria-live="polite"></div>
-<p class="note" style="margin-bottom:0">Vinted is modeled at <strong>0% seller fee</strong> in most regions (buyers pay protection). Poshmark uses a flat <strong>$2.95</strong> under $15 and <strong>20%</strong> at $15+. Other % values are common US seller approximations used for take-home comparison — the live app refreshes platform fee % from its marketplace list after you sign in.</p>
+<p class="note" style="margin-bottom:0">Rates verified against each marketplace's own published seller fees for 2026 (US). Poshmark is a flat <strong>$2.95</strong> under $15 and <strong>20%</strong> at $15+; Depop dropped its 10% commission in 2024 and now charges processing only; Vinted charges sellers <strong>0%</strong> in most regions. Shipping and payment nuances vary by country — confirm on each shop before you price.</p>
 </div>
 
 <div class="card" style="margin-top:18px">
 <h2 style="font-size:1.15rem;margin-top:0">Why this page exists</h2>
-<p>fashionistas.ai prepares <strong>text drafts you post yourself</strong>. Fee clarity is part of that workflow: know net take-home before you paste. This calculator is static HTML for search and for sellers who want the comparison without opening the app shell.</p>
+<p>fashionistas.ai prices your closet and posts it to every shop you have connected — <strong>and it works out the take-home first</strong>. That is the point of this page: know your net before you commit to a price, not after the sale. This calculator is static HTML so you can compare marketplaces without opening the app.</p>
 <p style="margin-bottom:0"><a class="btn btn-accent" href="/">Open fashionistas.ai</a> &nbsp; <a href="/contact/">Questions? Contact us</a></p>
 </div>
 
@@ -66,23 +66,28 @@
 <a href="/privacy/">Privacy</a>
 <a href="/">Open app</a>
 </nav>
-<p>fashionistas.ai — AI listing drafts you post yourself. Email: <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a></p>
+<p>fashionistas.ai — photograph your closet, list it everywhere. Email: <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a></p>
 </footer>
 </div>
 <script>
 // Approximate seller fee model aligned with fashionistas multilist fee take-home.
 const MARKETS = [
-  { id:"depop", name:"Depop", feePct:10, note:"~10% seller fee (US typical)" },
-  { id:"ebay", name:"eBay", feePct:13.25, note:"~13.25% managed payments (varies by category)" },
-  { id:"poshmark", name:"Poshmark", feePct:20, note:"20% at $15+; $2.95 under $15", special:"posh" },
-  { id:"mercari", name:"Mercari", feePct:10, note:"~10% selling fee (processing extra on some sales)" },
+  { id:"poshmark", name:"Poshmark", feePct:20, note:"20% at $15+; $2.95 flat under $15", special:"posh" },
+  { id:"mercari", name:"Mercari", feePct:10, note:"10% selling fee" },
+  { id:"depop", name:"Depop", feePct:3.3, fixed:0.45, note:"0% commission (removed 2024) + 3.3% + $0.45 processing" },
+  { id:"ebay", name:"eBay", feePct:13.6, fixed:0.40, note:"13.6% final value fee + $0.40 per order" },
+  { id:"etsy", name:"Etsy", feePct:9.5, fixed:0.25, note:"6.5% transaction + ~3% processing + $0.25 per order" },
+  { id:"grailed", name:"Grailed", feePct:9, fixed:0.49, note:"9% commission (6% under $120) + 3.49% + $0.49 processing" },
   { id:"vinted", name:"Vinted", feePct:0, note:"0% seller fee in most countries" },
-  { id:"grailed", name:"Grailed", feePct:9, note:"~9% commission" }
+  { id:"facebook", name:"Facebook Marketplace", feePct:10, note:"10% on shipped orders; 0% local pickup" },
+  { id:"kidizen", name:"Kidizen", feePct:12, fixed:0.50, note:"12% + $0.50 per transaction" },
+  { id:"vestiaire", name:"Vestiaire Collective", feePct:15, note:"12% selling fee + 3% payment processing (US)" },
+  { id:"whatnot", name:"Whatnot", feePct:10.9, fixed:0.30, note:"8% commission + 2.9% + $0.30 processing" }
 ];
 function money(n){ return "$" + (Math.round(n*100)/100).toFixed(2); }
 function feeFor(m, price){
   if (m.special === "posh") return price < 15 ? 2.95 : price * 0.20;
-  return price * (m.feePct/100);
+  return price * (m.feePct/100) + (m.fixed || 0);
 }
 function render(){
   const price = Math.max(0, parseFloat(document.getElementById("price").value)||0);

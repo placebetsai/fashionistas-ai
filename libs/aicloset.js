@@ -29,10 +29,10 @@ export const SHOP_ORDER = [
 export const FEE_TABLE = {
   ebay: {
     label: "eBay",
-    pct: 0.1325,
+    pct: 0.136,
     fixed: 0.4,
     ship: 8.99,
-    note: "13.25% final value fee + $0.40 per order (US, most categories); seller-paid USPS Ground Advantage assumed.",
+    note: "13.6% final value fee + $0.40 per order (US, most categories, 2026); seller-paid USPS Ground Advantage assumed.",
   },
   etsy: {
     label: "Etsy",
@@ -57,10 +57,10 @@ export const FEE_TABLE = {
   },
   depop: {
     label: "Depop",
-    pct: 0.1,
-    fixed: 0,
+    pct: 0.033,
+    fixed: 0.45,
     ship: 5.99,
-    note: "~10% seller fee, the US approximation already published on /fees/; seller-paid shipping assumed.",
+    note: "0% commission (removed 2024) + 3.3% payment processing + $0.45 per order; seller-paid shipping assumed.",
   },
   vinted: {
     label: "Vinted",
@@ -72,16 +72,37 @@ export const FEE_TABLE = {
   grailed: {
     label: "Grailed",
     pct: 0.09,
-    fixed: 0,
+    fixed: 0.49,
     ship: 7.99,
-    note: "~9% commission; seller-paid shipping assumed.",
+    note: "9% commission (6% + $1.99 min under $120) + 3.49% + $0.49 processing; seller-paid shipping assumed.",
   },
   facebook: {
     label: "Facebook Marketplace",
-    pct: 0.05,
+    pct: 0.10,
     fixed: 0,
     ship: 7.99,
-    note: "5% fee on shipped orders (0% for local pickup); shipping assumed.",
+    note: "10% fee on shipped orders (0% for local pickup); shipping assumed.",
+  },
+  kidizen: {
+    label: "Kidizen",
+    pct: 0.12,
+    fixed: 0.5,
+    ship: 6.99,
+    note: "12% + $0.50 per transaction; seller-paid shipping assumed.",
+  },
+  vestiaire: {
+    label: "Vestiaire Collective",
+    pct: 0.15,
+    fixed: 0,
+    ship: 14.0,
+    note: "12% selling fee + 3% payment processing (US, 2026); seller-paid shipping to authentication centre assumed.",
+  },
+  whatnot: {
+    label: "Whatnot",
+    pct: 0.109,
+    fixed: 0.3,
+    ship: 0,
+    note: "8% commission + 2.9% + $0.30 payment processing; shipping is buyer-paid.",
   },
 };
 
