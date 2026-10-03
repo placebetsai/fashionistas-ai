@@ -1,2 +1,28 @@
-/ar-tryon  /try-on/  301
-/ar-tryon/  /try-on/  301
+# ── Internal files: never served publicly ────────────────────────────────────
+# The Pages output dir is the repo root, so anything checked in would otherwise
+# ship as a public URL. These return a real 404 instead.
+/wrangler.toml            /404.html   404
+/wrangler-d1.toml         /404.html   404
+/NEEDS_ISRAEL.txt         /404.html   404
+/package.json             /404.html   404
+/package-lock.json        /404.html   404
+/.env                     /404.html   404
+/.env.example             /404.html   404
+/.dev.vars                /404.html   404
+/.git/*                   /404.html   404
+/docs                     /404.html   404
+/docs/*                   /404.html   404
+/apps                     /404.html   404
+/apps/*                   /404.html   404
+/scripts                  /404.html   404
+/scripts/*                /404.html   404
+/libs                     /404.html   404
+/libs/*                   /404.html   404
+/functions                /404.html   404
+/functions/*              /404.html   404
+/.github                  /404.html   404
+/.github/*                /404.html   404
+
+# ── Existing product redirects ───────────────────────────────────────────────
+/ar-tryon                 /try-on/    301
+/ar-tryon/                /try-on/    301
