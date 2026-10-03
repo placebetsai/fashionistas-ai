@@ -1,0 +1,70 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: version.txt + Cloudflare Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Artifact approach (NOT commit-back): version.txt carries the SHA of the
+      # commit that triggered this run, so after the deploy the live file always
+      # equals `git ls-remote origin main`. Committing it back would move HEAD
+      # past the value written and loop forever.
+      - name: Write version.txt (bare 40-char SHA, no newline)
+        run: bash scripts/gen-version.sh
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 pages deploy . --project-name=fashionistas-ai --branch=main
+
+      # The API Worker lives in workers/ (absent as of this commit): deploy it
+      # when it appears, otherwise no-op instead of failing the run.
+      - name: Deploy API Worker (no-op guard)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if [ -d workers ]; then
+            echo "workers/ found - deploying worker"
+            npx --yes wrangler@4 deploy
+          else
+            echo "workers/ not present - skipping worker deploy (no-op)"
+          fi
+
+      - name: Verify live version.txt matches this SHA
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            live="$(curl -fsS https://fashionistas.ai/version.txt 2>/dev/null | tr -d '[:space:]' || true)"
+            echo "attempt $i: live=$live expected=$GITHUB_SHA"
+            if [ "$live" = "$GITHUB_SHA" ]; then
+              echo "deploy verified"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "version.txt on the live site does not match $GITHUB_SHA yet" >&2
+          exit 1
