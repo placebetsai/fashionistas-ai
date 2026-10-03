@@ -58,13 +58,16 @@ function readCookie(request, name) {
 }
 
 export function buildConnectUrl({ clientId, redirectUri, state, scope }) {
-  const url = new URL(AUTH_URL);
-  url.searchParams.set("client_id", clientId || "");
-  url.searchParams.set("scope", scope || ETSY_SCOPE);
-  url.searchParams.set("redirect_uri", redirectUri);
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("state", state);
-  return url.toString();
+  // Built by hand so the scope separator is a literal %20 (URLSearchParams
+  // would emit "+", which some OAuth servers do not decode as a space).
+  const qs = [
+    "client_id=" + encodeURIComponent(clientId || ""),
+    "scope=" + (scope || ETSY_SCOPE).split(" ").join("%20"),
+    "redirect_uri=" + encodeURIComponent(redirectUri),
+    "response_type=code",
+    "state=" + encodeURIComponent(state),
+  ].join("&");
+  return AUTH_URL + "?" + qs;
 }
 
 export async function onRequestGet(context) {

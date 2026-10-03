@@ -15,7 +15,7 @@
  *
  * Response shape:
  *   - browser navigation (Accept: text/html)  -> 302 Location: auth.ebay.com/...
- *   - fetch/XHR or ?format=json               -> 200 { authorizeUrl, ... } (index.html contract)
+ *   - everything else (fetch/curl, ?format=json) -> 200 { authorizeUrl, ... } (index.html contract)
  */
 
 const DEFAULT_REDIRECT = "https://fashionistas.ai/api/ebay/oauth/callback";
@@ -141,13 +141,15 @@ async function readByoFromRequest(request) {
 }
 
 function buildAuthorizeUrl({ clientId, redirectUri, state }) {
-  const url = new URL(AUTH_HOST);
-  url.searchParams.set("client_id", clientId);
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("redirect_uri", redirectUri);
-  url.searchParams.set("scope", EBAY_SCOPE);
-  url.searchParams.set("state", state);
-  return url.toString();
+  // Hand-built query so scope separators are literal %20 (eBay's docs show %20).
+  const qs = [
+    "client_id=" + encodeURIComponent(clientId),
+    "response_type=code",
+    "redirect_uri=" + encodeURIComponent(redirectUri),
+    "scope=" + EBAY_SCOPE.split(" ").join("%20"),
+    "state=" + encodeURIComponent(state),
+  ].join("&");
+  return AUTH_HOST + "?" + qs;
 }
 
 export async function onRequestGet(context) {
@@ -225,10 +227,11 @@ async function handleStart(context) {
   }
 
   const accept = (request.headers.get("Accept") || "").toLowerCase();
+  const wantsHtml = accept.includes("text/html");
   const wantsJson =
+    !wantsHtml ||
     new URL(request.url).searchParams.get("format") === "json" ||
-    request.headers.get("X-Requested-With") === "fetch" ||
-    (!accept.includes("text/html") && accept.includes("*/*"));
+    request.headers.get("X-Requested-With") === "fetch";
 
   if (!wantsJson) {
     return redirect(authorizeUrl, extraHeaders);
