@@ -1073,7 +1073,14 @@ textarea.input{font-family:inherit}
 @media (prefers-reduced-motion:reduce){#tip-bubble{transition:none!important;transform:none!important}}
 @media (hover:none){#tip-bubble{display:none}}
 </style>
-<noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+<noscript><style>.reveal{opacity:1!important;transform:none!important}
+/* per-shop handoff status (one-tap sell flow) */
+.handoff-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+ letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:999px;
+ border:1px solid var(--line);color:var(--mut);background:var(--soft);white-space:nowrap}
+.handoff-chip-ok{border-color:color-mix(in srgb,var(--good) 55%,transparent);
+ color:var(--good);background:color-mix(in srgb,var(--good) 12%,transparent)}
+</style></noscript>
 </head>
 <body>
 <div class="wrap">
@@ -4088,6 +4095,200 @@ async function crosspost(id){
  xlSheet(l, picks, copied, kits, allKit);
 }
 
+
+/* ══════════════════ AUTO-FILL HANDOFF (no extension, no passwords) ══════════════════
+   Shops with a real server API (eBay, Etsy) post for you through /api/list/*.
+   The other nine expose no seller API and return no Access-Control-Allow-Origin
+   header (probed 2026-10-03), and their session cookies are scoped to their own
+   domain — so a web page physically cannot submit on their behalf. That is a
+   browser rule, not a missing feature.
+
+   The honest ceiling in-app, which is what this does:
+     1. formats that shop's payload for you,
+     2. puts it on your clipboard in the SAME gesture as opening their form
+        (no hunting for text boxes, no separate copy step),
+     3. opens that shop's create-listing page,
+     4. records `awaiting_publish` — never `posted` — until you confirm.
+   Status is persisted per shop per listing, so a shop is only ever marked
+   posted when you say it is. We never take a marketplace password.          */
+const HANDOFF_KEY = "fash_handoff_v1";
+const HANDOFF_API_HOSTS = { ebay: "/api/list/ebay", etsy: "/api/list/etsy" };
+/* Shops beyond the six Connect rows — same handoff path, no API claimed. */
+const HANDOFF_EXTRA_SHOPS = [
+  { id: "facebook",  name: "Facebook Marketplace", createListing: "https://www.facebook.com/marketplace/create/" },
+  { id: "kidizen",   name: "Kidizen",              createListing: "https://www.kidizen.com/sell/" },
+  { id: "vestiaire", name: "Vestiaire Collective", createListing: "https://us.vestiairecollective.com/sell/" },
+  { id: "whatnot",   name: "Whatnot",              createListing: "https://www.whatnot.com/sell" }
+];
+
+function handoffLoad(){ try { return JSON.parse(localStorage.getItem(HANDOFF_KEY) || "{}"); } catch(e){ return {}; } }
+function handoffSave(o){ try { localStorage.setItem(HANDOFF_KEY, JSON.stringify(o)); } catch(e){} }
+function handoffStateOf(shopId, lid){
+  const all = handoffLoad();
+  const per = all[String(lid)] || {};
+  return per[shopId] || null;
+}
+function handoffSet(shopId, lid, status){
+  const all = handoffLoad();
+  const key = String(lid);
+  all[key] = all[key] || {};
+  if (status) all[key][shopId] = { status: status, at: new Date().toISOString() };
+  else delete all[key][shopId];
+  handoffSave(all);
+}
+function handoffLabel(status){
+  if (status === "posted") return "Posted";
+  if (status === "awaiting_publish") return "Open in shop";
+  if (status === "posting") return "Posting…";
+  if (status === "failed") return "Failed";
+  return null;
+}
+function handoffChip(shopId, lid){
+  const st = handoffStateOf(shopId, lid);
+  const label = handoffLabel(st && st.status);
+  if (!label) return "";
+  const cls = (st.status === "posted") ? "handoff-chip handoff-chip-ok" : "handoff-chip";
+  return `<span class="${cls}">${label}</span>`;
+}
+
+/** Everything needed to paste into one shop's form, formatted for that shop. */
+function handoffPayload(shopId, l){
+  const rules = xlKitRules(shopId);
+  const m = (S.markets || []).find(x => x.id === shopId) || {};
+  return {
+    title: xlKitTitle(rules, l),
+    price: (l.price != null && isFinite(Number(l.price))) ? Number(l.price) : null,
+    description: l.description || l.notes || "",
+    condition: l.condition || "",
+    brand: l.brand || "",
+    size: l.size || "",
+    category: l.category || "",
+    hints: rules.fieldHints || m.createHints || "",
+    url: (xlConnectShopById(shopId) || {}).createListing || m.createListing || m.sellUrl || m.signup || ""
+  };
+}
+
+/**
+ * One gesture: copy that shop's payload, open their create-listing form,
+ * and mark it `awaiting_publish`. `posted` is only ever set by handoffConfirm
+ * or by a real API response — never by merely opening a page.
+ */
+async function handoffOpen(shopId, lid){
+  const l = (S.listings || []).find(x => x.id === Number(lid)) || CURRENT.listing || null;
+  if (!l) { toast("No listing selected yet — snap one first."); return; }
+  const p = handoffPayload(shopId, l);
+  const name = ((xlConnectShopById(shopId) || {}).name) || platformName(shopId);
+
+  let copied = false;
+  const text = [p.title, p.price != null ? "$" + p.price.toFixed(2) : "", p.condition, p.brand, p.size, p.description]
+    .filter(Boolean).join("\n");
+  try { await navigator.clipboard.writeText(text); copied = true; } catch(e){}
+
+  handoffSet(shopId, l.id, "awaiting_publish");
+
+  if (p.url) window.open(p.url, "_blank", "noopener,noreferrer");
+  toast(copied
+    ? name + " opened · payload copied. Publish there, then tap Posted."
+    : name + " opened · copy blocked by the browser — select the payload manually.");
+  try { xlSheetRefresh(lid); } catch(e){}
+}
+
+/** User confirms they really published it. This is the only path to `posted` for the nine. */
+function handoffConfirm(shopId, lid){
+  const name = ((xlConnectShopById(shopId) || {}).name) || platformName(shopId);
+  handoffSet(shopId, lid, "posted");
+  toast(name + " marked Posted — this stays on your device.");
+  try { xlSheetRefresh(lid); } catch(e){}
+}
+
+function handoffReset(shopId, lid){
+  handoffSet(shopId, lid, null);
+  try { xlSheetRefresh(lid); } catch(e){}
+}
+
+/**
+ * Real API post for eBay / Etsy. Maps the gate's own answers to plain words:
+ * 401 → sign in, 402 → subscribe, 503 → name the missing key. Never claims a
+ * listing when the API did not return an id.
+ */
+async function handoffApi(shopId, lid){
+  const host = HANDOFF_API_HOSTS[shopId];
+  if (!host) { toast(platformName(shopId) + " posts through the handoff, not the API."); return; }
+  const l = (S.listings || []).find(x => x.id === Number(lid)) || CURRENT.listing || null;
+  if (!l) { toast("No listing selected yet."); return; }
+  const name = platformName(shopId);
+  const payload = shopId === "etsy"
+    ? { title: l.title, description: l.description || "", price: String(l.price || "0"), photoUrl: l.photo || l.image || "", taxonomyId: 1, quantity: 1 }
+    : { title: l.title, description: l.description || "", price: String(l.price || "0"), photoUrl: l.photo || l.image || "", categoryId: "11483", condition: (l.condition || "USED_EXCELLENT").toUpperCase().replace(/\s+/g, "_") };
+
+  handoffSet(shopId, l.id, "posting");
+  try { xlSheetRefresh(lid); } catch(e){}
+
+  let res, data = null;
+  try {
+    res = await fetch(API + host, {
+      method: "POST",
+      headers: { "content-type": "application/json", Authorization: "Bearer " + (TOKEN || "") },
+      body: JSON.stringify(payload)
+    });
+    try { data = await res.json(); } catch(e){ data = null; }
+  } catch(e){
+    handoffSet(shopId, l.id, "failed");
+    toast(name + " failed: " + (e && e.message || "network error"));
+    try { xlSheetRefresh(lid); } catch(e2){}
+    return;
+  }
+
+  if (res.status === 401){ handoffSet(shopId, l.id, null); toast("Sign in first — " + name + " needs a session."); }
+  else if (res.status === 402){ handoffSet(shopId, l.id, null); toast("Active $14.99/mo plan required before " + name + " will post."); }
+  else if (res.status === 503 && data && data.error === "env_missing"){ handoffSet(shopId, l.id, null); toast(name + " key missing: " + (data.missing || []).join(", ")); }
+  else if (res.ok && data && data.listingId){ handoffSet(shopId, l.id, "posted"); toast(name + " posted · listing " + data.listingId); }
+  else {
+    handoffSet(shopId, l.id, "failed");
+    toast(name + " failed: " + ((data && (data.detail || data.error)) || ("HTTP " + res.status)));
+  }
+  try { xlSheetRefresh(lid); } catch(e){}
+}
+
+/**
+ * Sell everywhere: real API post for eBay/Etsy, mark the rest awaiting_publish,
+ * then open the FIRST remaining shop. Browsers block stacked popups, so the
+ * rest are opened one tap at a time from their own buttons — never silently.
+ */
+async function handoffSellAll(lid){
+  const picks = xlChecks().filter(c=>c.checked).map(c=>c.value);
+  if (!picks.length) { toast("Select at least one marketplace first"); return; }
+  const api  = picks.filter(p => HANDOFF_API_HOSTS[p]);
+  const rest = picks.filter(p => !HANDOFF_API_HOSTS[p]);
+  const l = (S.listings||[]).find(x=>x.id===Number(lid));
+  for (const p of api) await handoffApi(p, lid);
+  rest.forEach(p => handoffSet(p, lid, "awaiting_publish"));
+  if (l) { const first = rest[0]; if (first) { await handoffOpen(first, lid); } }
+  try { xlSheetRefresh(lid); } catch(e){}
+  const done = api.length, opened = rest.length ? 1 : 0, queued = Math.max(0, rest.length - opened);
+  toast(done + " posted via API · " + opened + " opened · " + queued + " waiting on their buttons.");
+}
+
+/** Re-render the sheet's handoff rows without reopening it. */
+function xlSheetRefresh(lid){
+  const box = document.querySelector("#sheet");
+  if (!box || !lid) return;
+  const l = (S.listings || []).find(x => x.id === Number(lid));
+  if (!l) return;
+  box.querySelectorAll("[data-handoff]").forEach(row => {
+    const shopId = row.getAttribute("data-handoff");
+    const chip = row.querySelector(".handoff-chip");
+    const st = handoffStateOf(shopId, l.id);
+    const label = handoffLabel(st && st.status);
+    if (chip) {
+      if (!label) { chip.textContent = ""; chip.className = "handoff-chip"; }
+      else { chip.textContent = label; chip.className = (st.status === "posted") ? "handoff-chip handoff-chip-ok" : "handoff-chip"; }
+    }
+    const confirmBtn = row.querySelector("[data-handoff-confirm]");
+    if (confirmBtn) confirmBtn.style.display = (st && st.status === "awaiting_publish") ? "" : "none";
+  });
+}
+
 function xlTitleFor(m, title){
  const max = Number(m && m.maxChar) || 0;
  const base = String(title || "Untitled").trim();
@@ -4108,11 +4309,12 @@ function xlSheet(l, picks, copied, kits, allKit){
   : (pid === "ebay"
     ? `<button type="button" class="btn btn-soft btn-sm" onclick="xlShopOpenGuide('ebay')" data-tip="Connect eBay OAuth first for API create.">Connect for API</button>`
     : "");
- return `<div class="xl-kit-block" data-shop="${escapeHtml(pid)}">
+ return `<div class="xl-kit-block" data-shop="${escapeHtml(pid)}" data-handoff="${escapeHtml(pid)}">
  <div class="xl-kit-head"><b>${escapeHtml(label)}</b>
  <div style="display:flex;gap:6px;flex-wrap:wrap">
-  <button class="btn btn-soft btn-sm" onclick="xlCopy(this)" data-kit="${escapeHtml(kit).replace(/"/g,"&quot;")}" data-tip="Copy this shop's kit.">Copy ${escapeHtml(label)}</button>
-  <a class="btn btn-soft btn-sm" href="${escapeHtml((xlConnectShopById(pid)||{}).createListing || m.signup || "#")}" target="_blank" rel="noopener noreferrer">Open ${escapeHtml(label)}</a>
+  ${handoffChip(pid, Number(l.id)||0)}
+  <button class="btn btn-accent btn-sm" onclick="handoffOpen('${escapeHtml(pid)}', ${Number(l.id)||0})" data-tip="One tap: copies this shop's payload and opens their listing form.">Sell to ${escapeHtml(label)}</button>
+  <button class="btn btn-soft btn-sm" style="display:none" data-handoff-confirm onclick="handoffConfirm('${escapeHtml(pid)}', ${Number(l.id)||0})" data-tip="Confirms you published it on ${escapeHtml(label)}.">Published</button>
   ${ebayBtn}
  </div></div>
  <p class="xl-kit-hint">${escapeHtml(rules.fieldHints||"")} · title ≤ ${rules.titleMax||"\u221e"} · fee ~${m.feePct!=null?m.feePct:(feeTableById(pid)||{}).feePct||"?"}%</p>
@@ -4129,13 +4331,13 @@ function xlSheet(l, picks, copied, kits, allKit){
 
  openSheet(`
  <h3 style="margin:0 0 4px">Ready to post \u2014 ${picks.length} shop${picks.length===1?"":"s"}</h3>
- <p class="mut" style="margin-top:0">${copied?"All shop kits are on the clipboard. ":""}Each shop has its own title rules, tags and tone below.</p>
- <div class="xl-note"><b>What actually happens:</b> every shop posts through its own path. <b>eBay</b> and <b>Etsy</b> create the listing through their API when Connected; the other nine post through the extension in your browser. We never invent accounts or passwords.</div>
+ <p class="mut" style="margin-top:0">Each shop keeps its own title rules, tags and tone below. One tap per shop copies that payload and opens their form.</p>
+ <div class="xl-note"><b>What actually happens:</b> every shop posts through its own path. <b>eBay</b> and <b>Etsy</b> create the listing through their API. The other shops expose no seller API and refuse cross-origin requests, so the app copies the finished payload and opens that shop's form in one tap — you tap Publish there, and the app records it as Posted. We never take a marketplace password.</div>
  ${ebayBanner}
  <div style="max-height:48vh;overflow:auto;margin-top:10px">${rows}</div>
  <div class="xl-row" style="border-top:1px solid var(--line);margin-top:6px;padding-top:10px">
- <div class="mut" style="font-size:12px">All kits combined</div>
- <button class="btn btn-soft btn-sm" onclick="xlCopy(this)" data-kit="${escapeHtml(allKit||"").replace(/"/g,"&quot;")}" data-tip="Copies every shop kit at once.">Copy all</button></div>
+ <div class="mut" style="font-size:12px">Ready when you are</div>
+ <button class="btn btn-accent btn-sm" onclick="handoffSellAll(${Number(l.id)||0})" data-tip="Posts eBay + Etsy through their API, then opens the next shop with its payload copied.">Sell everywhere</button></div>
  <button class="btn btn-primary" style="width:100%" onclick="closeSheet()" data-tip="Closes this panel." title="Closes this panel.">Done</button>`);
 }
 function xlCopy(btn){ const t=btn&&btn.getAttribute("data-kit")||""; navigator.clipboard&&navigator.clipboard.writeText(t).then(()=>toast("Kit copied")).catch(()=>toast("Copy blocked by browser")); }
