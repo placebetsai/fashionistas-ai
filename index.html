@@ -1131,7 +1131,7 @@ textarea.input{font-family:inherit}
  <button class="theme-btn" data-tip="Switch between light and dark." onclick="toggleTheme()" title="Switch between light and dark theme" aria-label="Switch between light and dark theme"><svg class="ic-sun" aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg><svg class="ic-moon" aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.8A8.7 8.7 0 0 1 9.2 3.5a8.7 8.7 0 1 0 11.3 11.3z"/></svg></button>
  </div>
  <span class="kicker"><span class="dot"></span>Your AI sidekick — A to Z</span>
- <h1><span class="hw" style="--i:0">One</span> <span class="hw" style="--i:1">photo.</span><br><span class="hw" style="--i:2"><em class="rotator"><span id="rot-word">Six drafts.</span></em></span> <span class="hw" style="--i:3">Every</span> <span class="hw" style="--i:4">shop.</span></h1>
+ <h1><span class="hw" style="--i:0">One</span> <span class="hw" style="--i:1">photo.</span><br><span class="hw" style="--i:2"><em class="rotator"><span id="rot-word">Eleven shops.</span></em></span> <span class="hw" style="--i:3">One</span> <span class="hw" style="--i:4">button.</span></h1>
  <p class="lede">Take one photo of an item and <b>fashionistas.ai</b> works out what it is, sets the price, shows what you keep after every marketplace's fee — then <b>Sell everywhere</b> posts it to eleven shops in one click. You watch each shop move from queued to posted.</p>
  <div class="hero-acts" style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px"><a class="btn btn-accent btn-sm" href="/try-on/" data-tip="Add a photo of you and a garment and see the AI render it on you.">Try it on</a></div>
  <div class="stat-row">
@@ -4894,8 +4894,8 @@ const GUIDE_STEPS = [
  body:"No integrations, no developer tools. Pick a marketplace below to see exactly how to open your account, then tap 'Generate listing content' — it builds real JSON + CSV from your current listing for anything you'd rather list by hand.",
  action:null },
  { title:"Prepare the listing copy", emoji:"<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='#ff4e3a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-3px;margin-right:6px'><path d='M12 3.2 20 7.6v8.8L12 20.8 4 16.4V7.6z'/></svg>",
- body:"From any listing, tick the shops and tap 'Get ready to post' — the app posts to each shop and reports queued, posting or posted so you know exactly what happened where. The button below does that for the listing you're looking at now. It reports queued, posting or posted for every connected shop.\",
- action:{ label:\"Sell everywhere for this listing →\", fn:()=>guideCrosspost() } },
+ body:"From any listing, tick the shops and tap 'Get ready to post' — the app posts to each shop and reports queued, posting or posted so you know exactly what happened where. The button below does that for the listing you're looking at now. It reports queued, posting or posted for every connected shop.",
+ action:{ label:"Sell everywhere for this listing →", fn:()=>guideCrosspost() } },
  { title:"Mark sold & track profit", emoji:"<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='#ff4e3a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-3px;margin-right:6px'><path d='M12 3.2 20 7.6v8.8L12 20.8 4 16.4V7.6z'/></svg>",
  body:"When an item sells, write down what it sold for, the shop's cut, the postage and what it cost you — the profit screen works out what you kept automatically. One tap opens the real 'Mark it as sold' sheet on your current listing.",
  action:{ label:"Open 'Mark it as sold' →", fn:()=>guideMarkSold() } },
@@ -5465,7 +5465,7 @@ else { $("#view-auth").classList.remove("hidden"); $("#view-app").classList.add(
  countUp(document);
 
  // animated headline word
- var WORDS = ["One photo.","Eleven shops.","Live in seconds."];
+ var WORDS = ["Eleven shops.","Live in seconds.","Queued to posted."];
  var wi = 0, w = document.getElementById("rot-word");
  if (w && !reduce){
  setInterval(function(){
