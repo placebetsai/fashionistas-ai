@@ -83,6 +83,49 @@ npx wrangler pages secret put EBAY_SANDBOX_CLIENT_ID --project-name=fashionistas
 
 **Pending, cannot be faked past:** sandbox eBay developer app + sandbox seller account; Etsy Open API app review; Stripe **test-mode** key + `$14.99` Price + webhook endpoint. Until they exist there are **no `viewUrl`s to report** — `POST /api/list/*` returns `503 env_missing` naming the var.
 
+### Scaling without API keys — the extension is the answer (2026-10-03)
+
+**The per-shop-API model does not scale** and should not be presented as if it does:
+11 shops × developer app × review × OAuth × rate limit = 2 of 11 actually achievable.
+
+The repo already contains the scalable mechanism at `apps/extension/` — **~1,700 lines,
+9 adapters, a real job queue** — and it needs **zero keys**:
+
+| | Server API (eBay/Etsy) | Extension (9 others) |
+|---|---|---|
+| Keys per shop | 3–4 secrets + app review | **none** |
+| Rate limit | negotiable, per shop | **none** — `waitForGap()` paces like a person |
+| Requires shop agreement | yes | no — runs in the **user's own session** |
+| Scales to a new shop | weeks | one adapter file + selectors |
+
+Adapters keep **zero selectors** (`config/selectors.js`), so a shop layout change is a
+one-file fix. `runPublish()` does a **full submit** (no draft), then polls for the real
+`/listing/` URL. Hard rules already encoded: never solve/bypass a CAPTCHA, never upload a
+password or shop cookie (heartbeat sends booleans only).
+
+**Gap found and closed today:** the site→extension half worked
+(`onMessageExternal` accepts `publish|delist|signup|status` from fashionistas.ai), but
+results were only POSTed to the `fashionistas-api` worker — so a locally queued job showed
+`queued` forever on our side.
+
+- `queue.js` now persists every outcome as `result:{job_id}` and exports `getResults()`
+- `background.js` exposes `{type:"results"}` on `onMessageExternal`
+- `index.html` bridge: `extAvailable / extPublish / extResults / extPollStart`
+  → status `queued` → **`posted` + real listing URL** (or `failed` + reason), polled every 3s
+
+`Sell everywhere` is now **extension-first**: every shop queues through it when present
+(no keys, no manual taps); otherwise eBay/Etsy post server-side and the rest fall back to
+the one-tap clipboard handoff. Extension ID is set once via the sheet's
+**Connect extension** button (`extSetId`, stored in `fash_ext_id`) — Chrome shows the ID at
+`chrome://extensions` → Details.
+
+**Removed:** `https://*/*` from `host_permissions` (audit BLOCKER). 25 explicit hosts remain.
+
+> **Still unverified end-to-end:** a real auto-post needs the extension loaded in a real
+> Chrome profile with a logged-in shop account. This environment cannot install one, so
+> no "posted" claim has been made from the extension. Verified here: the site renders,
+> all 8 bridge functions exist, extension files parse as ESM, manifest is valid JSON.
+
 ### One-tap handoff for the shops with no API (built 2026-10-03)
 
 The nine non-API shops **cannot** be auto-posted from a web page — verified, not assumed:
