@@ -206,6 +206,13 @@ export async function report(job, result) {
     attempts: result.attempts || 1,
     reported_at: new Date().toISOString()
   };
+  // Persist locally FIRST: fashionistas.ai queued this job and must be able to
+  // read the outcome back (posted + listing_url) even if the API post fails.
+  try {
+    await lsSet({ [`result:${job.id}`]: body });
+  } catch (e) {
+    /* storage full/unavailable — the API report below still carries it */
+  }
   try {
     await apiPost(`/api/jobs/${encodeURIComponent(job.id)}/status`, body);
     await lsSet({ [`pendingReport:${job.id}`]: null });
@@ -214,6 +221,21 @@ export async function report(job, result) {
     await lsSet({ [`pendingReport:${job.id}`]: body });
   }
   notify(job, body);
+}
+
+/**
+ * Results for jobs this extension ran, newest first.
+ * fashionistas.ai polls this so a locally queued job shows posted/failed with
+ * the real listing URL instead of sitting at "queued" forever.
+ */
+export async function getResults() {
+  const all = await lsGet(null);
+  const out = [];
+  for (const key of Object.keys(all)) {
+    if (key.startsWith("result:") && all[key]) out.push(all[key]);
+  }
+  out.sort((a, b) => String(b.reported_at || "").localeCompare(String(a.reported_at || "")));
+  return out.slice(0, 100);
 }
 
 function notify(job, body) {

@@ -42,8 +42,7 @@
     "https://www.etsy.com/*",
     "https://fashionistas.ai/*",
     "https://www.fashionistas.ai/*",
-    "https://fashionistas-api.fashionistas1979.workers.dev/*",
-    "https://*/*"
+    "https://fashionistas-api.fashionistas1979.workers.dev/*"
   ],
   "externally_connectable": {
     "matches": [
@@ -74,7 +73,9 @@
         "https://www.ebay.com/*",
         "https://www.etsy.com/*"
       ],
-      "js": ["content/bridge.js"],
+      "js": [
+        "content/bridge.js"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     },
@@ -100,7 +101,9 @@
         "https://www.ebay.com/*",
         "https://www.etsy.com/*"
       ],
-      "js": ["content/formkit.js"],
+      "js": [
+        "content/formkit.js"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     }

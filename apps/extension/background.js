@@ -18,7 +18,7 @@
 // or a shop token. The heartbeat sends ONLY booleans — "session present" —
 // plus the one-way probe result per shop.
 
-import { tick, onAlarm, enqueue } from "./queue.js";
+import { tick, onAlarm, enqueue, getResults } from "./queue.js";
 import { SHOPS, SESSION_ONLY_SHOPS, normalizeShop } from "./config/selectors.js";
 import { apiPost, SESSIONS_PATH } from "./config/api.js";
 
@@ -171,6 +171,13 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
   if (msg.type === "status") {
     heartbeat()
       .then((sessions) => sendResponse({ ok: true, sessions }))
+      .catch((e) => sendResponse({ ok: false, error: String(e && e.message) }));
+    return true;
+  }
+  // Result channel back to the site: closes the loop for locally queued jobs.
+  if (msg.type === "results") {
+    getResults()
+      .then((results) => sendResponse({ ok: true, results }))
       .catch((e) => sendResponse({ ok: false, error: String(e && e.message) }));
     return true;
   }

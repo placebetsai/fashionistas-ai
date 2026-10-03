@@ -4138,6 +4138,7 @@ function handoffSet(shopId, lid, status){
 }
 function handoffLabel(status){
   if (status === "posted") return "Posted";
+  if (status === "queued") return "Queued";
   if (status === "awaiting_publish") return "Open in shop";
   if (status === "posting") return "Posting…";
   if (status === "failed") return "Failed";
@@ -4173,11 +4174,140 @@ function handoffPayload(shopId, l){
  * and mark it `awaiting_publish`. `posted` is only ever set by handoffConfirm
  * or by a real API response — never by merely opening a page.
  */
+
+/* ═════════════════ EXTENSION BRIDGE — the key-free path ═════════════════
+   WHY THIS IS THE SCALABLE ONE: the extension runs inside the user's own
+   browser session, so it needs NO per-shop API key, NO developer app, NO app
+   review and has NO API rate limit to negotiate — queue.js paces itself with
+   waitForGap() like a person would. That is why it covers all 11 shops while
+   server APIs only cover eBay + Etsy.
+
+   Contract (apps/extension/background.js, onMessageExternal, origin-checked
+   to fashionistas.ai):
+     {type:"publish", shop, payload} -> {ok:true, queued:true}
+     {type:"status"}                 -> {ok:true, sessions:{...}}
+     {type:"results"}                -> {ok:true, results:[{job_id,status,
+                                         listing_url,shop,reported_at}]}
+
+   Set the ID once with extSetId("<32-char id>") — Chrome shows it at
+   chrome://extensions → Details. Without it we fall back to the one-tap
+   clipboard handoff, so the button always does something honest.          */
+const FASH_EXT_KEY = "fash_ext_id";
+function extId(){ try { return (localStorage.getItem(FASH_EXT_KEY) || "").trim(); } catch(e){ return ""; } }
+function extSetId(id){
+  const v = String(id || "").trim();
+  try { v ? localStorage.setItem(FASH_EXT_KEY, v) : localStorage.removeItem(FASH_EXT_KEY); } catch(e){}
+  toast(v ? "Extension ID saved — Sell everywhere will now post through it." : "Extension ID cleared.");
+}
+function extRuntime(){
+  return (typeof chrome !== "undefined" && chrome && chrome.runtime && chrome.runtime.sendMessage) ? chrome.runtime : null;
+}
+function extSend(msg){
+  return new Promise((resolve) => {
+    const id = extId(), rt = extRuntime();
+    if (!id || !rt) return resolve(null);
+    let done = false;
+    const timer = setTimeout(() => { if (!done){ done = true; resolve(null); } }, 4000);
+    try {
+      rt.sendMessage(id, msg, (resp) => {
+        if (done) return;
+        done = true; clearTimeout(timer);
+        const err = rt.lastError;               // extension absent/not readable
+        resolve(err ? null : (resp || null));
+      });
+    } catch(e){ if (!done){ done = true; clearTimeout(timer); resolve(null); } }
+  });
+}
+async function extAvailable(){ const r = await extSend({ type: "status" }); return !!(r && r.ok); }
+async function extPublish(shop, payload){ return extSend({ type: "publish", shop: shop, payload: payload }); }
+async function extResults(){ const r = await extSend({ type: "results" }); return (r && r.results) || []; }
+
+
+/** One-time setup: paste the Chrome extension ID so the site can address it. */
+function extConnectPrompt(){
+  const cur = extId();
+  const val = window.prompt(
+    "Chrome extension ID\n\nOpen chrome://extensions → enable Developer mode → Details → copy the 32-character ID, then paste it here.\n\n(Leave blank to clear and fall back to the one-tap clipboard handoff.)",
+    cur
+  );
+  if (val === null) return;
+  extSetId(val);
+}
+
+/** Listing -> the exact payload shape queue.js/runPublish expects. */
+function extPayload(l, p){
+  const photos = [];
+  [l.photo, l.image, l.img, l.cover, l.photoUrl, l.imageUrl].forEach(x => { if (x) photos.push(String(x)); });
+  if (Array.isArray(l.images)) l.images.forEach(x => { if (x) photos.push(String(x)); });
+  if (Array.isArray(l.photos)) l.photos.forEach(x => { if (x) photos.push(String(x)); });
+  return {
+    title: p.title || l.title || "",
+    description: p.description || "",
+    price: p.price != null ? String(p.price) : "",
+    condition: p.condition || "",
+    brand: p.brand || "",
+    size: p.size || "",
+    category: p.category || "",
+    tags: l.tags || "",
+    photos: photos.filter(Boolean)
+  };
+}
+
+/** Poll the extension for outcomes of jobs we queued; flip queued -> posted/failed. */
+let EXT_POLL_TIMER = null;
+function extPollStart(lid){
+  if (EXT_POLL_TIMER) clearInterval(EXT_POLL_TIMER);
+  let ticks = 0;
+  EXT_POLL_TIMER = setInterval(async () => {
+    ticks++;
+    const results = await extResults();
+    let changed = false;
+    if (results.length) {
+      const all = handoffLoad();
+      Object.keys(all).forEach(key => {
+        Object.keys(all[key] || {}).forEach(shop => {
+          const st = all[key][shop];
+          if (!st || st.status !== "queued") return;
+          const hit = results.find(r => r && r.shop === shop && r.reported_at && r.reported_at >= (st.at || ""));
+          if (!hit) return;
+          all[key][shop] = {
+            status: hit.status === "posted" ? "posted" : "failed",
+            at: hit.reported_at,
+            url: hit.listing_url || null,
+            error: hit.error || null
+          };
+          changed = true;
+        });
+      });
+      if (changed) { handoffSave(all); try { xlSheetRefresh(lid); } catch(e){} }
+    }
+    if (changed || ticks >= 40) { clearInterval(EXT_POLL_TIMER); EXT_POLL_TIMER = null; }
+  }, 3000);
+}
+
 async function handoffOpen(shopId, lid){
   const l = (S.listings || []).find(x => x.id === Number(lid)) || CURRENT.listing || null;
   if (!l) { toast("No listing selected yet — snap one first."); return; }
   const p = handoffPayload(shopId, l);
   const name = ((xlConnectShopById(shopId) || {}).name) || platformName(shopId);
+
+  // ── PATH A: the extension posts it in the user's own session (no API key) ──
+  if (await extAvailable()) {
+    handoffSet(shopId, l.id, "queued");
+    try { xlSheetRefresh(lid); } catch(e){}
+    const r = await extPublish(shopId, extPayload(l, p));
+    if (r && r.ok) {
+      toast(name + " queued — the extension posts it in your session. No API key involved.");
+      extPollStart(lid);
+    } else {
+      handoffSet(shopId, l.id, "failed");
+      toast(name + " could not be queued: " + ((r && r.error) || "no response from the extension"));
+    }
+    try { xlSheetRefresh(lid); } catch(e){}
+    return;
+  }
+
+  // ── PATH B: no extension installed — one-tap clipboard handoff ──
 
   let copied = false;
   const text = [p.title, p.price != null ? "$" + p.price.toFixed(2) : "", p.condition, p.brand, p.size, p.description]
@@ -4258,15 +4388,32 @@ async function handoffApi(shopId, lid){
 async function handoffSellAll(lid){
   const picks = xlChecks().filter(c=>c.checked).map(c=>c.value);
   if (!picks.length) { toast("Select at least one marketplace first"); return; }
+  const l = (S.listings||[]).find(x=>x.id===Number(lid));
   const api  = picks.filter(p => HANDOFF_API_HOSTS[p]);
   const rest = picks.filter(p => !HANDOFF_API_HOSTS[p]);
-  const l = (S.listings||[]).find(x=>x.id===Number(lid));
+
+  // Extension present: EVERY shop queues through it — no keys, no manual taps.
+  if (await extAvailable()) {
+    let ok = 0, bad = [];
+    for (const shop of rest) {
+      const p = handoffPayload(shop, l || {});
+      handoffSet(shop, lid, "queued");
+      const r = await extPublish(shop, extPayload(l || {}, p));
+      if (r && r.ok) ok++; else { bad.push(shop); handoffSet(shop, lid, "failed"); }
+    }
+    for (const shop of api) await handoffApi(shop, lid);
+    try { xlSheetRefresh(lid); } catch(e){}
+    if (ok) extPollStart(lid);
+    toast(ok + " queued to the extension · " + api.length + " via API" + (bad.length ? " · " + bad.length + " failed" : "") + ".");
+    return;
+  }
+
+  // No extension: eBay/Etsy still post server-side; the rest need one tap each.
   for (const p of api) await handoffApi(p, lid);
   rest.forEach(p => handoffSet(p, lid, "awaiting_publish"));
-  if (l) { const first = rest[0]; if (first) { await handoffOpen(first, lid); } }
+  if (l && rest.length) await handoffOpen(rest[0], lid);
   try { xlSheetRefresh(lid); } catch(e){}
-  const done = api.length, opened = rest.length ? 1 : 0, queued = Math.max(0, rest.length - opened);
-  toast(done + " posted via API · " + opened + " opened · " + queued + " waiting on their buttons.");
+  toast(api.length + " posted via API · " + (rest.length ? 1 : 0) + " opened · " + Math.max(0, rest.length - 1) + " waiting on their buttons.");
 }
 
 /** Re-render the sheet's handoff rows without reopening it. */
@@ -4336,8 +4483,10 @@ function xlSheet(l, picks, copied, kits, allKit){
  ${ebayBanner}
  <div style="max-height:48vh;overflow:auto;margin-top:10px">${rows}</div>
  <div class="xl-row" style="border-top:1px solid var(--line);margin-top:6px;padding-top:10px">
- <div class="mut" style="font-size:12px">Ready when you are</div>
- <button class="btn btn-accent btn-sm" onclick="handoffSellAll(${Number(l.id)||0})" data-tip="Posts eBay + Etsy through their API, then opens the next shop with its payload copied.">Sell everywhere</button></div>
+ <div class="mut" style="font-size:12px" id="xl-handoff-mode">${extId()?"Posts through your extension — no API keys.":"No extension yet — clipboard handoff."}</div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap">
+ <button class="btn btn-accent btn-sm" onclick="handoffSellAll(${Number(l.id)||0})" data-tip="Queues every selected shop to your extension (or opens the first one with its payload copied).">Sell everywhere</button>
+ <button class="btn btn-soft btn-sm" onclick="extConnectPrompt()" data-tip="Paste your Chrome extension ID once, so Sell everywhere can post through it.">${extId()?"Extension connected":"Connect extension"}</button></div>
  <button class="btn btn-primary" style="width:100%" onclick="closeSheet()" data-tip="Closes this panel." title="Closes this panel.">Done</button>`);
 }
 function xlCopy(btn){ const t=btn&&btn.getAttribute("data-kit")||""; navigator.clipboard&&navigator.clipboard.writeText(t).then(()=>toast("Kit copied")).catch(()=>toast("Copy blocked by browser")); }
