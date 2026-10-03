@@ -27,6 +27,15 @@ function readCookie(request, name) {
   return null;
 }
 
+/** First binding on env that actually looks like a D1 database (`DB` is canonical). */
+function getDB(env) {
+  for (const name of ["DB", "FASHIONISTAS_DB", "EBAY_DB", "EBAY_TOKENS_DB", "D1"]) {
+    const candidate = env ? env[name] : null;
+    if (candidate && typeof candidate.prepare === "function") return candidate;
+  }
+  return null;
+}
+
 async function ensureSchema(db) {
   const stmts = [
     `CREATE TABLE IF NOT EXISTS users (
@@ -62,9 +71,9 @@ export async function onRequestGet(context) {
     return json({ error: "Not signed in." }, 401);
   }
 
-  const db = env.DB;
+  const db = getDB(env);
   if (!db) {
-    return json({ error: "Server not configured: D1 binding `DB` is missing on this Pages project." }, 500);
+    return json({ error: "Server not configured: no D1 binding found on this Pages project (tried DB, FASHIONISTAS_DB, EBAY_DB, EBAY_TOKENS_DB, D1). Set the binding named DB." }, 500);
   }
 
   try {

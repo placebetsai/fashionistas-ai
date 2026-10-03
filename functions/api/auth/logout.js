@@ -31,6 +31,15 @@ function clearedCookie() {
   return `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }
 
+/** First binding on env that actually looks like a D1 database (`DB` is canonical). */
+function getDB(env) {
+  for (const name of ["DB", "FASHIONISTAS_DB", "EBAY_DB", "EBAY_TOKENS_DB", "D1"]) {
+    const candidate = env ? env[name] : null;
+    if (candidate && typeof candidate.prepare === "function") return candidate;
+  }
+  return null;
+}
+
 async function ensureSchema(db) {
   try {
     await db
@@ -53,7 +62,7 @@ async function ensureSchema(db) {
 async function handle(context) {
   const { request, env } = context;
   const token = readCookie(request, SESSION_COOKIE);
-  const db = env.DB;
+  const db = getDB(env);
 
   if (db && token) {
     try {
