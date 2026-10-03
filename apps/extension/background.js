@@ -1,449 +1,181 @@
-/* fashionistas.ai crosslister — MV3 background service worker.
- *
- * Job: receive a listing JSON payload (from the fashionistas.ai app through
- * externally_connectable, or from the popup/devtools through chrome.runtime),
- * find or open the target shop's create-listing page in the user's logged-in
- * tab, and hand the payload to the injected filler (fill.js).
- *
- * Payload contract:
- *   {
- *     type: "fashionistas:crosslist",
- *     listing: {
- *       title, description, price, currency, category, brand, size,
- *       condition, tags: string[],
- *       photos: [ { filename?, mimeType?, data: "data:image/...;base64,..." } |
- *                 { url: "https://..." } ]
- *     },
- *     shops?: ["poshmark","mercari","depop","vinted","grailed","facebook"]
- *   }
- * Reply: { ok, results: [{ shop, label, tabId, status, detail?|error? }] }
- *
- * The extension NEVER publishes: fill.js stops before Submit by design.
- */
-importScripts("config.js");
+// background.js — MV3 service worker: the engine room of the crosslister.
+//
+// WHAT RUNS HERE
+//   * an alarms-driven poll of GET {API_BASE}/api/jobs?status=queued
+//   * queue.js executes each job: one background tab per marketplace, the
+//     shop adapter fills everything, uploads photos, SUBMITS the listing,
+//     captures the live listing URL and reports {status:"posted", listing_url}
+//   * a "session detected" heartbeat telling fashionistas.ai which shops the
+//     user is logged into
+//
+// MOBILE (product rule, do not "fix" this): phones have NO extension, so a
+// queued job NEVER runs on the phone and NEVER becomes a manual step for the
+// user. Jobs created on mobile (or from fashionistas.ai's one button) execute
+// here, on the user's DESKTOP extension, or in the L09 cloud runner when the
+// desktop is offline. The phone only displays status.
+//
+// PRIVACY (hard rule): this worker never uploads a password, a shop cookie
+// or a shop token. The heartbeat sends ONLY booleans — "session present" —
+// plus the one-way probe result per shop.
 
-const CONFIG = globalThis.FASHIONISTAS_CONFIG;
-const SHOP_KEYS = Object.keys(CONFIG.shops);
-const DEFAULT_SHOPS = SHOP_KEYS.slice();
+import { tick, onAlarm, enqueue } from "./queue.js";
+import { SHOPS, SESSION_ONLY_SHOPS, normalizeShop } from "./config/selectors.js";
+import { apiPost, SESSIONS_PATH } from "./config/api.js";
 
-const MSG = {
-  crosslist: "fashionistas:crosslist",
-  fill: "fashionistas:fill",
-  needPayload: "fashionistas:need-payload",
-  fetchPhoto: "fashionistas:fetch-photo",
-  retryUrl: "fashionistas:retry-url",
-  status: "fashionistas:status",
-  filled: "fashionistas:filled"
-};
+const POLL_ALARM = "fash-poll";
+const HEARTBEAT_ALARM = "fash-heartbeat";
 
-const PENDING_PREFIX = "fashionistas:pending:";
-const RESULTS_KEY = "fashionistas:results";
-
-/* createUrls index already tried, per shop, this session. */
-const urlTries = new Map();
-
-function log() {
-  try {
-    console.log("[fashionistas]", ...arguments);
-  } catch (e) {
-    /* ignore */
-  }
-}
-
-/* ------------------------------------------------------------------ utils */
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/** Turn a Chrome match pattern into a URL test. */
-function matchPattern(url, pattern) {
-  const m = /^(\*|https?):\/\/([^/]*)(\/.*)$/.exec(pattern || "");
-  if (!m) return false;
-  const scheme = m[1];
-  const host = m[2];
-  const path = m[3];
-  let u;
-  try {
-    u = new URL(url);
-  } catch (e) {
-    return false;
-  }
-  if (scheme !== "*" && u.protocol !== scheme + ":") return false;
-  const esc = (s) => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
-  const hostRe = "^" + host.split("*").map(esc).join(".*") + "$";
-  if (!new RegExp(hostRe).test(u.hostname)) return false;
-  const pathRe = "^" + path.split("*").map(esc).join("[\\s\\S]*");
-  return new RegExp(pathRe).test(u.pathname + u.search);
-}
-
-/** "Poshmark", "fb marketplace", "posh" -> config key. */
-function normalizeShop(raw) {
-  if (!raw) return null;
-  const k = String(raw).trim().toLowerCase();
-  if (CONFIG.shops[k]) return k;
-  const aliases = {
-    fb: "facebook",
-    "fb marketplace": "facebook",
-    "facebook marketplace": "facebook",
-    marketplace: "facebook",
-    posh: "poshmark",
-    "vinted.com": "vinted"
-  };
-  if (aliases[k]) return aliases[k];
-  return (
-    SHOP_KEYS.find(
-      (key) =>
-        CONFIG.shops[key].label.toLowerCase() === k ||
-        key.startsWith(k) ||
-        k.startsWith(key)
-    ) || null
-  );
-}
-
-function shopForUrl(url) {
-  if (!url) return null;
-  return (
-    SHOP_KEYS.find((key) =>
-      CONFIG.shops[key].tabMatch.some((p) => matchPattern(url, p))
-    ) || null
-  );
-}
-
-function isAppOrigin(origin) {
-  try {
-    const u = new URL(origin);
-    const h = u.hostname;
-    return (
-      u.protocol === "https:" &&
-      (h === "fashionistas.ai" ||
-        h.endsWith(".fashionistas.ai") ||
-        h.endsWith(".pages.dev"))
-    );
-  } catch (e) {
-    return false;
-  }
-}
-
-function senderIsApp(sender) {
-  const origin =
-    sender.origin || (sender.url ? new URL(sender.url).origin : "") || "";
-  return isAppOrigin(origin);
-}
-
-/* ------------------------------------------------------- pending payloads */
-
-async function setPending(tabId, record) {
-  const key = PENDING_PREFIX + tabId;
-  if (record) await chrome.storage.local.set({ [key]: record });
-  else await chrome.storage.local.remove(key);
-}
-
-async function getPending(tabId) {
-  const key = PENDING_PREFIX + tabId;
-  const out = await chrome.storage.local.get(key);
-  return out[key] || null;
-}
-
-async function saveResults(results) {
-  const record = { at: Date.now(), results: results };
-  await chrome.storage.local.set({ [RESULTS_KEY]: record });
-  return record;
-}
-
-/* ----------------------------------------------------------- tab plumbing */
-
-function whenReady(tabId, timeoutMs) {
-  const budget = timeoutMs || 20000;
-  return new Promise((resolve) => {
-    let done = false;
-    const finish = () => {
-      if (done) return;
-      done = true;
-      try {
-        chrome.tabs.onUpdated.removeListener(listener);
-      } catch (e) {
-        /* ignore */
-      }
-      clearTimeout(timer);
-      resolve(true);
-    };
-    const listener = (id, info) => {
-      if (id === tabId && info.status === "complete") finish();
-    };
-    const timer = setTimeout(finish, budget);
-    try {
-      chrome.tabs.onUpdated.addListener(listener);
-      chrome.tabs
-        .get(tabId)
-        .then((t) => {
-          if (t && t.status === "complete") finish();
-        })
-        .catch(finish);
-    } catch (e) {
-      finish();
-    }
-  });
-}
-
-/**
- * Find a logged-in tab already sitting on the shop's create page; otherwise
- * reuse another tab for that shop; otherwise open a new one. Never reloads a
- * tab that is already on a create-listing URL (that would discard typing).
- */
-async function openShopTab(shopKey) {
-  const shop = CONFIG.shops[shopKey];
-  if (!shop) throw new Error("unknown shop: " + shopKey);
-  const tries = Math.min(urlTries.get(shopKey) || 0, shop.createUrls.length - 1);
-  const createUrl = shop.createUrls[tries];
-
-  const existing = (await chrome.tabs.query({ url: shop.tabMatch })) || [];
-  const onCreate = existing.find(
-    (t) => t.url && shop.createUrls.some((u) => t.url.split("#")[0].startsWith(u))
-  );
-  if (onCreate) {
-    await chrome.tabs.update(onCreate.id, { active: true });
-    await whenReady(onCreate.id);
-    return onCreate.id;
-  }
-  if (existing.length) {
-    const tab = existing[0];
-    await chrome.tabs.update(tab.id, { active: true, url: createUrl });
-    await whenReady(tab.id);
-    return tab.id;
-  }
-  const created = await chrome.tabs.create({ url: createUrl, active: true });
-  await whenReady(created.id);
-  return created.id;
-}
-
-/* -------------------------------------------------------------- delivery */
-
-async function deliver(tabId, shopKey, listing) {
-  const shop = CONFIG.shops[shopKey];
-  const token = shopKey + ":" + tabId + ":" + Date.now();
-  const record = { shop: shopKey, listing: listing, token: token, at: Date.now() };
-  await setPending(tabId, record);
-
-  /* Manifest already injects config.js + fill.js on these origins; injecting
-   * again guarantees they are present even if the tab predated the install. */
-  try {
-    await chrome.scripting.executeScript({
-      target: { tabId: tabId },
-      files: ["config.js", "fill.js"]
-    });
-  } catch (e) {
-    log("executeScript fallback failed", shopKey, e && e.message);
-  }
-
-  const payload = { type: MSG.fill, shop: shopKey, listing: listing, token: token };
-  let lastError = null;
-  for (let attempt = 0; attempt < 6; attempt++) {
-    try {
-      const resp = await chrome.tabs.sendMessage(tabId, payload);
-      if (resp) {
-        await setPending(tabId, null);
-        return resp;
-      }
-    } catch (e) {
-      lastError = e;
-    }
-    await sleep(400 + attempt * 300);
-  }
-  return { ok: false, error: (lastError && lastError.message) || "no reply" };
-}
-
-async function handleCrosslist(msg) {
-  const listing = msg && msg.listing;
-  if (!listing || typeof listing !== "object") {
-    return { ok: false, error: "missing listing payload" };
-  }
-  const requested =
-    Array.isArray(msg.shops) && msg.shops.length ? msg.shops : DEFAULT_SHOPS;
-  const shops = [];
-  requested.forEach((raw) => {
-    const key = normalizeShop(raw);
-    if (key && shops.indexOf(key) === -1) shops.push(key);
-  });
-  if (!shops.length) return { ok: false, error: "no known shops in 'shops'" };
-
-  log("crosslisting to", shops.join(", "));
-
-  const opened = await Promise.allSettled(shops.map((k) => openShopTab(k)));
-  const results = [];
-  const deliveries = [];
-  opened.forEach((res, i) => {
-    const key = shops[i];
-    if (res.status === "fulfilled") {
-      deliveries.push(
-        deliver(res.value, key, listing)
-          .then((resp) => ({ key: key, tabId: res.value, resp: resp }))
-          .catch((e) => ({ key: key, tabId: res.value, resp: { ok: false, error: String(e && e.message) } }))
-      );
-    } else {
-      results.push({
-        shop: key,
-        label: CONFIG.shops[key].label,
-        status: "error",
-        error: String(res.reason && res.reason.message ? res.reason.message : res.reason)
-      });
-    }
-  });
-
-  const done = await Promise.allSettled(deliveries);
-  done.forEach((res) => {
-    if (res.status !== "fulfilled") return;
-    const r = res.value;
-    results.push({
-      shop: r.key,
-      label: CONFIG.shops[r.key].label,
-      tabId: r.tabId,
-      status: r.resp && r.resp.ok ? "filled" : "error",
-      detail: r.resp
-    });
-  });
-
-  await saveResults(results);
-  return { ok: results.some((r) => r.status === "filled"), results: results };
-}
-
-async function handleRetryUrl(msg, sender) {
-  const shopKey = normalizeShop(msg.shop);
-  if (!shopKey || !sender.tab) return { ok: false, error: "bad retry request" };
-  const shop = CONFIG.shops[shopKey];
-  const next = (urlTries.get(shopKey) || 0) + 1;
-  if (next >= shop.createUrls.length) {
-    return { ok: false, error: "no more create URLs for " + shopKey };
-  }
-  urlTries.set(shopKey, next);
-  const tabId = sender.tab.id;
-  await chrome.tabs.update(tabId, { url: shop.createUrls[next] });
-  await whenReady(tabId);
-  const resp = await deliver(tabId, shopKey, msg.listing || {});
-  return { ok: !!(resp && resp.ok), detail: resp };
-}
-
-/* ---------------------------------------------------------- photo proxy */
-
-function arrayBufferToDataUrl(buf, type) {
-  const bytes = new Uint8Array(buf);
-  let bin = "";
-  const CHUNK = 0x8000;
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
-  }
-  return "data:" + (type || "image/jpeg") + ";base64," + btoa(bin);
-}
-
-async function proxyPhoto(url) {
-  const res = await fetch(url, { redirect: "follow" });
-  if (!res.ok) throw new Error("photo fetch HTTP " + res.status);
-  const buf = await res.arrayBuffer();
-  const type = (res.headers.get("content-type") || "image/jpeg").split(";")[0];
-  return { data: arrayBufferToDataUrl(buf, type), mimeType: type };
-}
-
-/* -------------------------------------------------------------- routing */
-
-function route(msg, sender, sendResponse, external) {
-  if (!msg || typeof msg !== "object" || typeof msg.type !== "string") return;
-  if (msg.type.indexOf("fashionistas:") !== 0) return;
-
-  if (external && !senderIsApp(sender)) {
-    log("rejected external sender", sender && sender.origin);
-    sendResponse({ ok: false, error: "origin not allowed" });
-    return;
-  }
-  if (external && msg.type !== MSG.crosslist && msg.type !== MSG.status) {
-    sendResponse({ ok: false, error: "external senders may only crosslist/status" });
-    return;
-  }
-
-  switch (msg.type) {
-    case MSG.crosslist:
-      handleCrosslist(msg)
-        .then(sendResponse)
-        .catch((e) => sendResponse({ ok: false, error: String(e && e.message) }));
-      return true;
-
-    case MSG.status:
-      chrome.storage.local
-        .get(RESULTS_KEY)
-        .then((out) => sendResponse({ ok: true, results: (out[RESULTS_KEY] || {}).results || [] }))
-        .catch(() => sendResponse({ ok: true, results: [] }));
-      return true;
-
-    case MSG.needPayload: {
-      const tabId = sender.tab && sender.tab.id;
-      if (tabId == null) {
-        sendResponse({ ok: true, pending: null });
-        return false;
-      }
-      getPending(tabId)
-        .then((record) => sendResponse({ ok: true, pending: record }))
-        .catch(() => sendResponse({ ok: true, pending: null }));
-      return true;
-    }
-
-    case MSG.fetchPhoto: {
-      if (typeof msg.url !== "string" || !/^https?:/.test(msg.url)) {
-        sendResponse({ ok: false, error: "bad photo url" });
-        return false;
-      }
-      proxyPhoto(msg.url)
-        .then((out) => sendResponse(Object.assign({ ok: true }, out)))
-        .catch((e) => sendResponse({ ok: false, error: String(e && e.message) }));
-      return true;
-    }
-
-    case MSG.retryUrl:
-      handleRetryUrl(msg, sender)
-        .then(sendResponse)
-        .catch((e) => sendResponse({ ok: false, error: String(e && e.message) }));
-      return true;
-
-    case MSG.filled:
-      /* fill.js reports what it did; keep it for the app's status panel. */
-      saveResults([Object.assign({ shop: msg.shop, status: "filled" }, msg.report || {})])
-        .then(() => sendResponse({ ok: true }))
-        .catch(() => sendResponse({ ok: false }));
-      return true;
-
-    default:
-      sendResponse({ ok: false, error: "unknown message type" });
-      return false;
-  }
-}
-
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) =>
-  route(msg, sender, sendResponse, false)
-);
-
-chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) =>
-  route(msg, sender, sendResponse, true)
-);
-
-chrome.tabs.onRemoved.addListener((tabId) => {
-  setPending(tabId, null).catch(() => {});
-});
-
-/* Clicking the toolbar icon grants the optional host permission used only to
- * proxy photo downloads that the shop CDN refuses to serve cross-origin. */
-if (chrome.action && chrome.action.onClicked) {
-  chrome.action.onClicked.addListener(async () => {
-    try {
-      const granted = await chrome.permissions.request({
-        origins: ["https://*/*", "http://*/*"]
-      });
-      log("photo host permission granted:", granted);
-    } catch (e) {
-      log("permission request failed", e && e.message);
-    }
-  });
+function scheduleAlarms() {
+  // Poll fast enough that a tapped "Post to every marketplace" feels instant,
+  // while staying inside Chrome's alarm budget for a persistent-less worker.
+  chrome.alarms.create(POLL_ALARM, { delayInMinutes: 0.2, periodInMinutes: 1 });
+  chrome.alarms.create(HEARTBEAT_ALARM, { delayInMinutes: 1, periodInMinutes: 30 });
 }
 
 chrome.runtime.onInstalled.addListener(() => {
-  log("fashionistas.ai crosslister installed; shops:", SHOP_KEYS.join(", "));
+  scheduleAlarms();
+  tick().catch((e) => console.error("[fash] initial tick:", e));
+  heartbeat().catch((e) => console.error("[fash] initial heartbeat:", e));
 });
 
-log("service worker up; shops:", SHOP_KEYS.join(", "));
+chrome.runtime.onStartup.addListener(() => {
+  scheduleAlarms();
+  tick().catch((e) => console.error("[fash] startup tick:", e));
+  heartbeat().catch((e) => console.error("[fash] startup heartbeat:", e));
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (!alarm || !alarm.name) return;
+  if (alarm.name === POLL_ALARM) {
+    tick().catch((e) => console.error("[fash] poll tick:", e));
+    return;
+  }
+  if (alarm.name === HEARTBEAT_ALARM) {
+    heartbeat().catch((e) => console.error("[fash] heartbeat:", e));
+    return;
+  }
+  // retry:<jobId> alarms come from queue.js (exponential backoff)
+  onAlarm(alarm).catch((e) => console.error("[fash] retry alarm:", e));
+});
+
+/* ------------------------------------------------------- session heartbeat */
+
+/**
+ * One-way probe: is there a live session for this shop on THIS machine?
+ * Returns true/false. It never returns a cookie, a token or anything else —
+ * only the boolean "session present".
+ */
+async function probeShop(cfg) {
+  let cookieHit = false;
+  try {
+    const cookies = await chrome.cookies.getAll({ url: cfg.origin });
+    const hints = cfg.sessionCookies || [];
+    const now = Date.now() / 1000;
+    cookieHit = cookies.some(
+      (c) =>
+        hints.includes(c.name) &&
+        (!c.expirationDate || c.expirationDate > now)
+    );
+  } catch (e) {
+    cookieHit = false;
+  }
+
+  if (!cfg.sessionCheck) return cookieHit;
+
+  // Optional authenticated probe (eBay/Etsy session sync): a request made by
+  // the extension itself, with the user's own cookies, no payload, no upload.
+  try {
+    const res = await fetch(cfg.sessionCheck, {
+      method: "GET",
+      credentials: "include",
+      redirect: "manual"
+    });
+    if (res.type === "opaqueredirect") return false;
+    if (res.status >= 200 && res.status < 400) return true;
+    if (res.status === 401 || res.status === 403) return false;
+  } catch (e) {
+    // network hiccup -> fall back to the cookie probe result
+  }
+  return cookieHit;
+}
+
+/** Report which shops the user is logged into — booleans only. */
+export async function heartbeat() {
+  const sessions = {};
+  const all = { ...SHOPS, ...SESSION_ONLY_SHOPS };
+  for (const key of Object.keys(all)) {
+    sessions[key] = await probeShop(all[key]);
+  }
+  try {
+    await apiPost(SESSIONS_PATH, {
+      sessions, // { poshmark: true, mercari: false, ... }  <- booleans, nothing else
+      source: "extension",
+      probed_at: new Date().toISOString()
+    });
+  } catch (e) {
+    // heartbeat is best-effort; never surface it as a job failure
+  }
+  return sessions;
+}
+
+/* ------------------------------------------------------------- messaging */
+
+// Status requests from the popup / devtools / the site bridge.
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (!msg || typeof msg.type !== "string") return false;
+  if (msg.type === "fash:tick") {
+    tick()
+      .then(() => sendResponse({ ok: true }))
+      .catch((e) => sendResponse({ ok: false, error: String(e && e.message) }));
+    return true;
+  }
+  if (msg.type === "fash:heartbeat") {
+    heartbeat()
+      .then((sessions) => sendResponse({ ok: true, sessions }))
+      .catch((e) => sendResponse({ ok: false, error: String(e && e.message) }));
+    return true;
+  }
+  if (msg.type === "fash:enqueue") {
+    if (!normalizeShop(msg.job && msg.job.shop)) {
+      sendResponse({ ok: false, error: "unknown_shop" });
+      return false;
+    }
+    enqueue(msg.job)
+      .then(() => sendResponse({ ok: true }))
+      .catch((e) => sendResponse({ ok: false, error: String(e && e.message) }));
+    return true;
+  }
+  return false;
+});
+
+// fashionistas.ai's ONE button: the page posts straight into the queue and
+// the desktop extension takes it from there (no copy/paste, no manual step).
+chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
+  const fromUs =
+    sender && sender.url && /^(https:\/\/(www\.)?fashionistas\.ai)\/?/.test(sender.url);
+  if (!fromUs) {
+    sendResponse({ ok: false, error: "origin_not_allowed" });
+    return false;
+  }
+  if (!msg || typeof msg.type !== "string") return false;
+  if (msg.type === "publish" || msg.type === "delist" || msg.type === "signup") {
+    if (!normalizeShop(msg.shop)) {
+      sendResponse({ ok: false, error: "unknown_shop" });
+      return false;
+    }
+    enqueue({ type: msg.type, shop: msg.shop, payload: msg.payload || {} })
+      .then(() => sendResponse({ ok: true, queued: true }))
+      .catch((e) => sendResponse({ ok: false, error: String(e && e.message) }));
+    return true; // async response
+  }
+  if (msg.type === "status") {
+    heartbeat()
+      .then((sessions) => sendResponse({ ok: true, sessions }))
+      .catch((e) => sendResponse({ ok: false, error: String(e && e.message) }));
+    return true;
+  }
+  return false;
+});
+
+// First boot: make sure alarms exist even if onInstalled already fired.
+scheduleAlarms();

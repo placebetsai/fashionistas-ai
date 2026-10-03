@@ -1,49 +1,106 @@
 {
   "manifest_version": 3,
-  "name": "fashionistas.ai Crosslister",
+  "name": "Fashionistas Crosslister",
   "version": "1.0.0",
-  "description": "One click fills your listing draft on Poshmark, Mercari, Depop, Vinted, Grailed and Facebook Marketplace in your logged-in tabs, then stops before Submit for you to review and post.",
-  "permissions": ["activeTab", "scripting", "storage", "tabs"],
-  "optional_host_permissions": ["https://*/*", "http://*/*"],
-  "host_permissions": [
-    "https://poshmark.com/*",
-    "https://www.poshmark.com/*",
-    "https://www.mercari.com/*",
-    "https://mercari.com/*",
-    "https://www.depop.com/*",
-    "https://www.vinted.com/*",
-    "https://www.vinted.fr/*",
-    "https://www.grailed.com/*",
-    "https://www.facebook.com/marketplace/*"
-  ],
+  "description": "One button posts a closet item to every marketplace automatically: fully submitted, live listing URL captured, no manual steps.",
+  "minimum_chrome_version": "116",
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
-  "action": {
-    "default_title": "fashionistas.ai — grant photo access (click once)"
-  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs",
+    "alarms",
+    "notifications",
+    "cookies"
+  ],
+  "host_permissions": [
+    "https://www.poshmark.com/*",
+    "https://poshmark.com/*",
+    "https://www.mercari.com/*",
+    "https://jp.mercari.com/*",
+    "https://www.depop.com/*",
+    "https://depop.com/*",
+    "https://www.vinted.com/*",
+    "https://www.vinted.co.uk/*",
+    "https://www.vinted.fr/*",
+    "https://www.vinted.it/*",
+    "https://www.vinted.es/*",
+    "https://www.grailed.com/*",
+    "https://grailed.com/*",
+    "https://www.facebook.com/*",
+    "https://m.facebook.com/*",
+    "https://www.kidizen.com/*",
+    "https://www.vestiairecollective.com/*",
+    "https://vestiairecollective.com/*",
+    "https://whatnot.com/*",
+    "https://www.whatnot.com/*",
+    "https://www.ebay.com/*",
+    "https://www.etsy.com/*",
+    "https://fashionistas.ai/*",
+    "https://www.fashionistas.ai/*",
+    "https://fashionistas-api.fashionistas1979.workers.dev/*",
+    "https://*/*"
+  ],
   "externally_connectable": {
     "matches": [
       "https://fashionistas.ai/*",
-      "https://www.fashionistas.ai/*",
-      "https://*.fashionistas.ai/*",
-      "https://*.pages.dev/*"
+      "https://www.fashionistas.ai/*"
     ]
   },
   "content_scripts": [
     {
       "matches": [
-        "https://poshmark.com/*",
         "https://www.poshmark.com/*",
+        "https://poshmark.com/*",
         "https://www.mercari.com/*",
-        "https://mercari.com/*",
+        "https://jp.mercari.com/*",
         "https://www.depop.com/*",
         "https://www.vinted.com/*",
+        "https://www.vinted.co.uk/*",
         "https://www.vinted.fr/*",
+        "https://www.vinted.it/*",
+        "https://www.vinted.es/*",
         "https://www.grailed.com/*",
-        "https://www.facebook.com/marketplace/*"
+        "https://www.facebook.com/*",
+        "https://m.facebook.com/*",
+        "https://www.kidizen.com/*",
+        "https://www.vestiairecollective.com/*",
+        "https://whatnot.com/*",
+        "https://www.whatnot.com/*",
+        "https://www.ebay.com/*",
+        "https://www.etsy.com/*"
       ],
-      "js": ["config.js", "fill.js"],
+      "js": ["content/bridge.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://www.poshmark.com/*",
+        "https://poshmark.com/*",
+        "https://www.mercari.com/*",
+        "https://jp.mercari.com/*",
+        "https://www.depop.com/*",
+        "https://www.vinted.com/*",
+        "https://www.vinted.co.uk/*",
+        "https://www.vinted.fr/*",
+        "https://www.vinted.it/*",
+        "https://www.vinted.es/*",
+        "https://www.grailed.com/*",
+        "https://www.facebook.com/*",
+        "https://m.facebook.com/*",
+        "https://www.kidizen.com/*",
+        "https://www.vestiairecollective.com/*",
+        "https://whatnot.com/*",
+        "https://www.whatnot.com/*",
+        "https://www.ebay.com/*",
+        "https://www.etsy.com/*"
+      ],
+      "js": ["content/formkit.js"],
       "run_at": "document_idle",
       "all_frames": false
     }
