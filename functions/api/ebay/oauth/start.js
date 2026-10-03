@@ -1,17 +1,31 @@
 /**
  * GET|POST /api/ebay/oauth/start
- * Builds eBay authorize URL when Client ID + redirect/RuName are available.
+ * Builds and issues the eBay user-consent authorization request:
+ *   https://auth.ebay.com/oauth2/authorize?client_id=...&redirect_uri=...
+ *   &response_type=code&scope=...&state=...
  *
  * Credential order (never logged):
- * 1) Request BYO: POST JSON, Authorization: EbayKeys <base64url(json)>, or X-Ebay-* headers
- * 2) Cloudflare env: EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, EBAY_REDIRECT_URI / EBAY_RU_NAME
+ *   1) BYO paste (X-Ebay-* headers, Authorization: EbayKeys ..., JSON body, ebay_byo_sess cookie)
+ *   2) Cloudflare env EBAY_CLIENT_ID / EBAY_CLIENT_SECRET / EBAY_REDIRECT_URI
  *
- * When BYO secret is present, sets a short-lived HttpOnly cookie for the callback
- * round-trip only (Path=/api/ebay/oauth). See docs/EBAY_OAUTH.md.
+ * Behavior when EBAY_CLIENT_ID is absent (declared contract, consistent for GET+POST):
+ *   HTTP 400 JSON naming the missing env var. No redirect is issued with an empty
+ *   client_id, because eBay would reject it anyway and a silent redirect hides the
+ *   real blocker. (Etsy behaves differently on purpose — see etsy/oauth/start.js.)
+ *
+ * Response shape:
+ *   - browser navigation (Accept: text/html)  -> 302 Location: auth.ebay.com/...
+ *   - fetch/XHR or ?format=json               -> 200 { authorizeUrl, ... } (index.html contract)
  */
 
-const BYO_COOKIE = "ebay_byo_sess";
 const DEFAULT_REDIRECT = "https://fashionistas.ai/api/ebay/oauth/callback";
+const AUTH_HOST = "https://auth.ebay.com/oauth2/authorize";
+
+// Exact consent scope string used for eBay production OAuth.
+const EBAY_SCOPE =
+  "https://api.ebay.com/oauth/api_scope " +
+  "https://api.ebay.com/oauth/api_scope/sell.inventory " +
+  "https://api.ebay.com/oauth/api_scope/sell.account";
 
 function json(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
@@ -24,6 +38,17 @@ function json(body, status = 200, extraHeaders = {}) {
   });
 }
 
+function redirect(location, extraHeaders = {}) {
+  return new Response(null, {
+    status: 302,
+    headers: { location, "cache-control": "no-store", ...extraHeaders },
+  });
+}
+
+function safeStr(v) {
+  return typeof v === "string" ? v.trim() : "";
+}
+
 function b64urlEncode(str) {
   const bytes = new TextEncoder().encode(str);
   let bin = "";
@@ -31,17 +56,40 @@ function b64urlEncode(str) {
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-function safeStr(v) {
-  return typeof v === "string" ? v.trim() : "";
+function readCookie(request, name) {
+  const raw = request.headers.get("Cookie") || "";
+  for (const part of raw.split(";")) {
+    const p = part.trim();
+    if (!p.startsWith(name + "=")) continue;
+    return p.slice(name.length + 1);
+  }
+  return null;
+}
+
+function decodeJsonCookie(val) {
+  if (!val) return null;
+  try {
+    const pad = val.length % 4 === 0 ? val : val + "=".repeat(4 - (val.length % 4));
+    const jsonStr = atob(pad.replace(/-/g, "+").replace(/_/g, "/"));
+    const o = JSON.parse(jsonStr);
+    return o && typeof o === "object" ? o : null;
+  } catch {
+    return null;
+  }
+}
+
+function b64UrlDecodeStrict(raw) {
+  if (!raw) return "";
+  try {
+    const pad = raw.length % 4 === 0 ? raw : raw + "=".repeat(4 - (raw.length % 4));
+    return atob(pad.replace(/-/g, "+").replace(/_/g, "/"));
+  } catch {
+    return "";
+  }
 }
 
 async function readByoFromRequest(request) {
-  const out = {
-    clientId: "",
-    clientSecret: "",
-    redirectUri: "",
-    env: "",
-  };
+  const out = { clientId: "", clientSecret: "", redirectUri: "", env: "" };
 
   const hId = safeStr(request.headers.get("X-Ebay-Client-Id"));
   const hSec = safeStr(request.headers.get("X-Ebay-Client-Secret"));
@@ -54,20 +102,21 @@ async function readByoFromRequest(request) {
 
   const auth = safeStr(request.headers.get("Authorization"));
   if (auth.toLowerCase().startsWith("ebaykeys ")) {
-    try {
-      const raw = auth.slice(9).trim();
-      const pad = raw.length % 4 === 0 ? raw : raw + "=".repeat(4 - (raw.length % 4));
-      const jsonStr = atob(pad.replace(/-/g, "+").replace(/_/g, "/"));
-      const o = JSON.parse(jsonStr);
-      if (o && typeof o === "object") {
-        if (!out.clientId) out.clientId = safeStr(o.clientId || o.client_id);
-        if (!out.clientSecret) out.clientSecret = safeStr(o.clientSecret || o.client_secret);
-        if (!out.redirectUri) out.redirectUri = safeStr(o.redirectUri || o.redirect_uri || o.ruName);
-        if (!out.env) out.env = safeStr(o.env);
-      }
-    } catch {
-      /* ignore malformed BYO auth — fall through to body/env */
+    const o = decodeJsonCookie(b64UrlDecodeStrict(auth.slice(9).trim()));
+    if (o) {
+      if (!out.clientId) out.clientId = safeStr(o.clientId || o.client_id);
+      if (!out.clientSecret) out.clientSecret = safeStr(o.clientSecret || o.client_secret);
+      if (!out.redirectUri) out.redirectUri = safeStr(o.redirectUri || o.redirect_uri || o.ruName);
+      if (!out.env) out.env = safeStr(o.env);
     }
+  }
+
+  const cookie = decodeJsonCookie(readCookie(request, "ebay_byo_sess"));
+  if (cookie) {
+    if (!out.clientId) out.clientId = safeStr(cookie.clientId);
+    if (!out.clientSecret) out.clientSecret = safeStr(cookie.clientSecret);
+    if (!out.redirectUri) out.redirectUri = safeStr(cookie.redirectUri);
+    if (!out.env) out.env = safeStr(cookie.env);
   }
 
   if (request.method === "POST") {
@@ -84,101 +133,21 @@ async function readByoFromRequest(request) {
         }
       }
     } catch {
-      /* ignore bad JSON */
+      /* malformed body — fall through */
     }
   }
 
   return out;
 }
 
-function resolveCreds(env, byo) {
-  const clientId = byo.clientId || safeStr(env.EBAY_CLIENT_ID);
-  const clientSecret = byo.clientSecret || safeStr(env.EBAY_CLIENT_SECRET);
-  const redirectUri =
-    byo.redirectUri ||
-    safeStr(env.EBAY_REDIRECT_URI) ||
-    safeStr(env.EBAY_RU_NAME) ||
-    "";
-  const ebayEnv = (byo.env || safeStr(env.EBAY_ENV) || "").toLowerCase();
-  const source = byo.clientId ? "byo" : clientId ? "env" : "none";
-  return { clientId, clientSecret, redirectUri, ebayEnv, source };
-}
-
-async function handleStart(context) {
-  const env = context.env || {};
-  const byo = await readByoFromRequest(context.request);
-  const creds = resolveCreds(env, byo);
-
-  if (!creds.clientId || !creds.redirectUri) {
-    return json(
-      {
-        ok: false,
-        error: "ebay_oauth_not_configured",
-        message:
-          "eBay OAuth needs a Client ID and redirect URI / RuName. Paste your keys in Multilist → Connect eBay (saved in this browser), or set Cloudflare secrets EBAY_CLIENT_ID + EBAY_REDIRECT_URI. Paste multilist still works.",
-        nextStep:
-          "Create an app at developer.ebay.com → register RuName with redirect https://fashionistas.ai/api/ebay/oauth/callback → paste Client ID + Secret here → Save → Connect OAuth.",
-        redirectUriHint: DEFAULT_REDIRECT,
-        missing: [
-          !creds.clientId ? "EBAY_CLIENT_ID (or BYO clientId)" : null,
-          !creds.clientSecret ? "EBAY_CLIENT_SECRET (or BYO clientSecret) — needed for token exchange on callback" : null,
-          !creds.redirectUri ? "EBAY_REDIRECT_URI / EBAY_RU_NAME (or BYO redirectUri)" : null,
-        ].filter(Boolean),
-      },
-      501
-    );
-  }
-
-  const authHost =
-    creds.ebayEnv === "production"
-      ? "https://auth.ebay.com/oauth2/authorize"
-      : "https://auth.sandbox.ebay.com/oauth2/authorize";
-
-  const state = crypto.randomUUID();
-  const url = new URL(authHost);
-  url.searchParams.set("client_id", creds.clientId);
+function buildAuthorizeUrl({ clientId, redirectUri, state }) {
+  const url = new URL(AUTH_HOST);
+  url.searchParams.set("client_id", clientId);
   url.searchParams.set("response_type", "code");
-  url.searchParams.set("redirect_uri", creds.redirectUri);
+  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("scope", EBAY_SCOPE);
   url.searchParams.set("state", state);
-  // sell.inventory + sell.account needed for listing create; users must re-consent after scope change.
-  const scopes = [
-    "https://api.ebay.com/oauth/api_scope",
-    "https://api.ebay.com/oauth/api_scope/sell.inventory",
-    "https://api.ebay.com/oauth/api_scope/sell.inventory.readonly",
-    "https://api.ebay.com/oauth/api_scope/sell.account",
-    "https://api.ebay.com/oauth/api_scope/sell.account.readonly",
-  ].join(" ");
-  url.searchParams.set("scope", scopes);
-
-  const extraHeaders = {};
-  // Round-trip BYO secret to callback via HttpOnly cookie (10 min). Never log.
-  if (byo.clientId && byo.clientSecret) {
-    const payload = b64urlEncode(
-      JSON.stringify({
-        clientId: byo.clientId,
-        clientSecret: byo.clientSecret,
-        redirectUri: creds.redirectUri,
-        env: creds.ebayEnv || "sandbox",
-      })
-    );
-    const secure =
-      (context.request.url || "").startsWith("https:") ? "; Secure" : "";
-    extraHeaders["Set-Cookie"] =
-      `${BYO_COOKIE}=${payload}; Path=/api/ebay/oauth; HttpOnly; SameSite=Lax; Max-Age=600${secure}`;
-  }
-
-  return json(
-    {
-      ok: true,
-      authorizeUrl: url.toString(),
-      env: creds.ebayEnv || "sandbox-default",
-      source: creds.source,
-      note:
-        "Authorize on eBay with sell.inventory + sell.account scopes; callback exchanges the code. Then Multilist can POST /api/ebay/listing. Secrets were not logged.",
-    },
-    200,
-    extraHeaders
-  );
+  return url.toString();
 }
 
 export async function onRequestGet(context) {
@@ -187,4 +156,98 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   return handleStart(context);
+}
+
+async function handleStart(context) {
+  const env = context.env || {};
+  const request = context.request;
+  const byo = await readByoFromRequest(request);
+
+  const clientId = byo.clientId || safeStr(env.EBAY_CLIENT_ID);
+  const clientSecret = byo.clientSecret || safeStr(env.EBAY_CLIENT_SECRET);
+  const redirectUri =
+    byo.redirectUri ||
+    safeStr(env.EBAY_REDIRECT_URI) ||
+    safeStr(env.EBAY_RU_NAME) ||
+    DEFAULT_REDIRECT;
+
+  if (!clientId) {
+    return json(
+      {
+        ok: false,
+        error: "missing_env_var",
+        missing: ["EBAY_CLIENT_ID"],
+        message:
+          "eBay OAuth start aborted: EBAY_CLIENT_ID is not set on this deployment (and no BYO Client ID was pasted).",
+        nextStep:
+          "Set the Cloudflare Pages secret EBAY_CLIENT_ID (plus EBAY_CLIENT_SECRET) at https://developer.ebay.com/my/keys, or paste keys in Multilist → Connect eBay, then retry Connect OAuth.",
+        redirectUri: redirectUri,
+        scope: EBAY_SCOPE,
+      },
+      400
+    );
+  }
+
+  if (!clientSecret) {
+    return json(
+      {
+        ok: false,
+        error: "missing_env_var",
+        missing: ["EBAY_CLIENT_SECRET"],
+        message:
+          "eBay OAuth start aborted: EBAY_CLIENT_SECRET is not set — the callback cannot exchange the code without it.",
+        nextStep: "Set the Cloudflare Pages secret EBAY_CLIENT_SECRET, then retry Connect OAuth.",
+        redirectUri: redirectUri,
+        scope: EBAY_SCOPE,
+      },
+      400
+    );
+  }
+
+  const state = crypto.randomUUID();
+  const authorizeUrl = buildAuthorizeUrl({ clientId, redirectUri, state });
+
+  const extraHeaders = {};
+  if (byo.clientId && byo.clientSecret) {
+    const secure = (request.url || "").startsWith("https:") ? "; Secure" : "";
+    extraHeaders["Set-Cookie"] =
+      "ebay_byo_sess=" +
+      b64urlEncode(
+        JSON.stringify({
+          clientId: byo.clientId,
+          clientSecret: byo.clientSecret,
+          redirectUri,
+          env: byo.env || safeStr(env.EBAY_ENV) || "production",
+        })
+      ) +
+      "; Path=/api/ebay/oauth; HttpOnly; SameSite=Lax; Max-Age=600" +
+      secure;
+  }
+
+  const accept = (request.headers.get("Accept") || "").toLowerCase();
+  const wantsJson =
+    new URL(request.url).searchParams.get("format") === "json" ||
+    request.headers.get("X-Requested-With") === "fetch" ||
+    (!accept.includes("text/html") && accept.includes("*/*"));
+
+  if (!wantsJson) {
+    return redirect(authorizeUrl, extraHeaders);
+  }
+
+  return json(
+    {
+      ok: true,
+      authorizeUrl,
+      redirect_url: authorizeUrl,
+      env: "production",
+      scope: EBAY_SCOPE,
+      redirectUri,
+      state,
+      source: byo.clientId ? "byo" : "env",
+      note:
+        "Open authorizeUrl to consent sell.inventory + sell.account scopes; the callback stores the tokens in D1 (ebay_tokens).",
+    },
+    200,
+    extraHeaders
+  );
 }
