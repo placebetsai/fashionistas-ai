@@ -1,11 +1,117 @@
 # Agent handoff — fashionistas.ai
 
 **Audience:** Other agents continuing product / deploy / Connect / Multilist UX work  
-**Session covered:** 2026-09-26 full day → **night ET** (through ~23:42 EDT / early 2026-09-27 UTC)  
+**Session covered:** 2026-10-03 — **v1 build attempt (eBay + Etsy + Stripe)**  
 **Repo:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
-**Handoff refreshed:** 2026-09-26 night ET — complete record through PR #7 (open) + equal-UX demand in flight  
+**Handoff refreshed:** 2026-10-03 — auth gate shipped & proven; v1 **blocked on 8 missing env vars**  
 
 Read this before changing live Pages, inventing marketplace credentials, merging eBay-centric UX, or assuming GitHub `main` equals production.
+
+> **⚠️ Sections §1–§12 below are the 2026-09-26 record (6 shops / paste-kit era).**
+> They are kept for history. Where they conflict with **§0**, §0 wins — in particular
+> §1's "Shops (6)" is now **11**, and §1's "paste-ready kits / mostly no auto-post" is the
+> **rejected** framing that has been removed from the site.
+
+---
+
+## 0. CURRENT STATE — 2026-10-03 (read this first)
+
+### Product truth (supersedes §1)
+
+| Item | Truth |
+|------|--------|
+| **Shops** | **11** — Poshmark, Mercari, Depop, Vinted, Grailed, eBay, Etsy, Facebook, Kidizen, Vestiaire, Whatnot |
+| **Auto-post** | **Yes.** One **Sell everywhere** button; live per-shop status `queued → posting → posted` / `failed` (retry) / `needs_connection` |
+| **Pricing** | **$14.99/mo** — every claim site-wide. "Free forever" / "$0" / "no subscription" copy is **banned** (was 94 hits on the homepage, now 0) |
+| **Rejected UX** | **Paste-kit / "copy and post yourself" framing is REMOVED.** Do not reintroduce it — the About page previously sold it and was rewritten |
+| **Bonanza** | Has **zero code anywhere** — never claim it (9 adapters + eBay/Etsy server-side) |
+
+### Security: auth gate (shipped 2026-10-03)
+
+Shared guard: `functions/api/_lib/auth.js` (`_`-prefixed dirs are not routes).
+
+- `requireAuth(request, env)` → **401** unless a valid session token resolves in D1
+- `requireActiveSubscriber(...)` → **402** when the user has no active `$14.99/mo` plan
+- Credential order: **`Authorization: Bearer <token>`** first, then the `fash_session` cookie (the web app). Both hit the same `sessions` row — a browser session and a Bearer token are one credential carried two ways. **Nothing anonymous gets through.**
+- `missingEnv(env, names)` → names the exact absent var; never stubs around it
+
+Applied to **all 8** mutating paths: `/api/list/ebay`, `/api/list/etsy`, `/api/list/all`, `/api/closet/clear`, `/api/delist`, `/api/wear`, `/api/tryon`, `/api/color`.
+CORS `OPTIONS` is the only method allowed without a credential (preflight carries none and returns no data).
+
+Also fixed: `resolveIdentity()` in `closet/clear.js` and `GET /api/auth/me` were **cookie-only**, so a Bearer caller authenticated at the gate and then 401'd downstream. Both now read the `Authorization` header.
+
+**Proof (raw, live):**
+
+```
+$ curl -s -o /dev/null -w "%{http_code}\n" -X POST https://fashionistas.ai/api/list/ebay
+401
+
+# no credentials, all 8
+  POST /api/list/ebay       -> 401      POST /api/closet/clear    -> 401
+  POST /api/list/etsy       -> 401      POST /api/delist          -> 401
+  POST /api/list/all        -> 401      POST /api/wear            -> 401
+  POST /api/tryon           -> 401      POST /api/color           -> 401
+
+# authed, not subscribed
+$ curl ... -X POST .../api/list/ebay -H "Authorization: Bearer $TOKEN"
+402 {"ok":false,"error":"subscription_required","status":"inactive",
+     "detail":"An active $14.99/mo subscription is required to list. POST /api/billing/checkout to subscribe."}
+
+# Bearer identity resolves
+{"id":76,"email":"gateproof…@fashionistas.ai","authenticated":true}  -> 200
+
+# checkout does NOT fake a URL without Stripe keys
+503 {"error":"STRIPE_SECRET_KEY not configured","detail":"Set the STRIPE_SECRET_KEY Pages environment variable …"}
+```
+
+### v1 BLOCKED — 8 env vars missing (checked in 5 places)
+
+Verified **unset** in: process env, repo `.env*`, GitHub secrets, **Cloudflare Pages secrets (project has zero)**, shell profiles.
+
+```
+EBAY_SANDBOX_CLIENT_ID     EBAY_SANDBOX_CLIENT_SECRET   EBAY_SANDBOX_REDIRECT_URI
+ETSY_API_KEY               ETSY_SHARED_SECRET
+STRIPE_SECRET_KEY          STRIPE_WEBHOOK_SECRET        STRIPE_PRICE_ID
+```
+
+> **Naming:** `.env.example` uses `EBAY_CLIENT_ID` / `EBAY_CLIENT_SECRET`. The v1 task specifies **`EBAY_SANDBOX_*`**. The code reads the **`EBAY_SANDBOX_*`** names. Reconcile before setting secrets.
+
+Set with:
+```bash
+npx wrangler pages secret put EBAY_SANDBOX_CLIENT_ID --project-name=fashionistas-ai   # …and the rest
+```
+
+**Pending, cannot be faked past:** sandbox eBay developer app + sandbox seller account; Etsy Open API app review; Stripe **test-mode** key + `$14.99` Price + webhook endpoint. Until they exist there are **no `viewUrl`s to report** — `POST /api/list/*` returns `503 env_missing` naming the var.
+
+### Listing endpoints (built, gated, credential-blocked)
+
+`functions/api/list/{ebay,etsy,all}.js`
+
+Layer order: **401 auth → 402 subscription → 503 `env_missing` (names vars) → real sandbox call.**
+`/api/list/all` returns **per-marketplace** results so one failure never hides the other:
+`{ ok, ebay:{…}, etsy:{…} }` — `ok` is true only when both publish.
+
+eBay path: `PUT inventory_item/{sku}` (idempotent by SKU) → `POST offer` → `publish_offer`; returns `listingId` + sandbox `viewUrl`, or **eBay's own error text**.
+Etsy path: `POST application/listings` (draft) → image upload; handles **429 rate limits** (surfaces `retry-after`) and missing-attribute errors verbatim.
+
+> **Still TODO before these can succeed:** business-policy IDs (`EBAY_FULFILLMENT_POLICY` / `EBAY_PAYMENT_POLICY` / `EBAY_RETURN_POLICY`) are read but unset; the sandbox token + publish path has **never run against a real sandbox account**.
+
+### Deploy
+
+**GitHub push DOES auto-deploy** (workflow `deploy`, CI `CLOUDFLARE_API_TOKEN` — broader than the local token). This contradicts §7; §7's "Git Provider: No" is **stale**. Verify with `gh run list -R placebetsai/fashionistas-ai --workflow=deploy`.
+
+SSH push only (HTTPS token lacks `workflow` scope):
+```bash
+GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes" \
+  git push ssh://git@github.com/placebetsai/fashionistas-ai.git main
+```
+
+### Gotchas learned the hard way
+
+1. **`node --check file.js` is a NO-OP for ESM** — returns `exit 0` on broken files. Use:
+   `node --input-type=module --check < file.js`
+2. A raw-string regex replacement (`re.subn(r'…', r'…\"…')`) writes a **literal backslash-quote** → unterminates a JS string → **entire page renders blank**. Always verify a rendered page in a real browser (`document.documentElement.scrollHeight`), not just `curl`.
+3. Security: Pages serves the repo root, so checked-in files are public URLs. `_redirects` + `404.html` block `/functions/*`, `/docs/*`, `/wrangler.toml`, `/NEEDS_ISRAEL.txt`, `/.env*`.
 
 ---
 
