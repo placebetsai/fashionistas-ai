@@ -1,0 +1,37 @@
+# Cloudflare Pages function bindings for fashionistas.ai
+# The functions probe these binding names (see getDB() in functions/api/*).
+name = "fashionistas-ai"
+pages_build_output_dir = "."
+compatibility_date = "2026-10-02"
+
+# D1 — primary database (users, sessions, listings, closet, jobs)
+[[d1_databases]]
+binding = "DB"
+database_name = "fashionistas-db"
+database_id = "0c1b88be-00b2-4e25-ae54-d30564190c4d"
+
+# D1 — alias probed by getDB(env) fallbacks
+[[d1_databases]]
+binding = "FASHIONISTAS_DB"
+database_name = "fashionistas-db"
+database_id = "0c1b88be-00b2-4e25-ae54-d30564190c4d"
+
+# R2 — cutouts, try-on results, listing photos
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "fashionistas-images"
+
+# R2 — try-on output (functions/api/tryon.js reads env.TRYON_BUCKET)
+[[r2_buckets]]
+binding = "TRYON_BUCKET"
+bucket_name = "fashionistas-images"
+
+# KV — free-model catalog cache, session cache
+[[kv_namespaces]]
+binding = "CACHE"
+id = "2c710998e6d94970bf922643d4955452"
+
+# KV — alias probed by env.FASHIONISTAS_KV
+[[kv_namespaces]]
+binding = "FASHIONISTAS_KV"
+id = "2c710998e6d94970bf922643d4955452"
