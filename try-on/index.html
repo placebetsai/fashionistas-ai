@@ -16,6 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="AI virtual try-on — see it on you">
 <meta name="twitter:description" content="Upload a photo of yourself and a garment, press Try it on, and get a render you can download, save or share.">
+<meta name="twitter:image" content="https://fashionistas.ai/og.png">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/site.css">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to use the fashionistas.ai virtual try-on","description":"Upload a photo of a person and a garment photo, press Try it on, then download, save or share the render.","step":[{"@type":"HowToStep","name":"Add a photo of yourself","text":"Pick or drop a photo of the person wearing the garment."},{"@type":"HowToStep","name":"Add a garment","text":"Pick or drop a photo of the item you want to see on."},{"@type":"HowToStep","name":"Try it on","text":"Press Try it on to POST both photos to /api/tryon and wait for the render."},{"@type":"HowToStep","name":"Keep the result","text":"Download, save or share the rendered image."}]}</script>
@@ -57,6 +58,7 @@
 <a href="/">App</a>
 </nav>
 </header>
+<main id="main">
 
 <span class="badge">AI virtual try-on</span>
 <h1>See it on you before you list it</h1>
@@ -102,6 +104,8 @@
  <p>The page sends a <b>multipart POST</b> with two parts — <code>person</code> and <code>garment</code> — to <code>/api/tryon</code>. The engine decodes both images, aligns the garment to the person, and returns the rendered image, which is drawn straight into the panel above. Nothing is posted anywhere else and nothing is published to a marketplace.</p>
  <p style="margin-bottom:0">Want the colour side of it too? <a href="/contact/">Ask us about colour analysis</a> — it reads undertone and contrast from your photo and hands back a palette. &nbsp; <a href="/">Open the fashionistas.ai app</a></p>
 </div>
+
+</main>
 
 <footer class="site-footer">
 <nav aria-label="Footer">

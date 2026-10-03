@@ -1084,6 +1084,7 @@ textarea.input{font-family:inherit}
 </head>
 <body>
 <div class="wrap">
+<main id="main">
 
  <!-- ================= AUTH ================= -->
  <section id="view-auth" class="hidden">
@@ -1252,6 +1253,8 @@ textarea.input{font-family:inherit}
  </div>
  </section>
 
+
+ </main>
 
  <footer class="land-site-footer" style="max-width:1080px;margin:28px auto 8px;padding:18px 18px 8px;border-top:1px solid var(--line);color:var(--mut);font-size:12.5px;text-align:center">
   <nav aria-label="Footer" style="display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:center;margin-bottom:8px;font-weight:700">
@@ -3128,7 +3131,7 @@ async function renderHome(el){
   const st = a.stats || {};
   el.innerHTML = roleSwitchHtml() + `
   <div class="hero">
- <h1>Hey ${USER.username}</h1>
+ <h2 style="font-size:26px;margin:0 0 4px">Hey ${USER.username}</h2>
  <p>${st.activeListings||0} for sale · ${st.sales||0} sold · ${money(st.profit)} profit</p>
  <div class="hero-tick"><span class="ht-dot"></span><span class="ht-clip"><span id="hero-word">Snap it.</span></span></div>
  </div>
@@ -5100,7 +5103,7 @@ async function profitScreen(){
  <button class="btn btn-ghost btn-sm" onclick="go('more')" data-tip="Opens the rest of your tools in one place." title="Opens the rest of your tools in one place.">← Back</button>
  <div class="card" style="text-align:center" data-tip="Everything you've kept after fees, postage and what it cost you.">
  <p class="mut" style="margin:0">What you've kept, after everything</p>
- <h1 style="font-size:44px;margin:10px 0;color:${(p.net_profit||0)>=0?"var(--good)":"var(--bad)"}">${money(p.net_profit)}</h1>
+ <h2 style="font-size:44px;margin:10px 0;color:${(p.net_profit||0)>=0?"var(--good)":"var(--bad)"}">${money(p.net_profit)}</h2>
  <p class="mut">from ${p.sales||0} sales</p>
  </div>
  <div class="card">
