@@ -1,8 +1,10 @@
 /**
  * Closet pricing model (lane 5).
  *
- * Fee percentages mirror the public /fees/ calculator (fees/index.html) and are
- * common US-seller approximations, not legal fee schedules. Take-home is always:
+ * Fee percentages mirror the approximate model this repo publishes on
+ * /api/marketplaces (also shown by /api/fees/estimate and /api/fees/compare)
+ * and are common US-seller approximations, not legal fee schedules. Take-home
+ * is always:
  *
  *     net = sale_price - marketplace_fee - assumed_seller_paid_shipping
  *

@@ -27,8 +27,13 @@
  *                                    guide/ — poshmark, ebay, mercari, etsy.
  *                                    Absent means there is no page; we do not
  *                                    link a URL we have not shipped.
- *   feePct, feeFixed, feeNote        verbatim from fees/index.html, which
- *                                    labels them an approximate model.
+ *   feePct, feeFixed, feeNote        the approximate US-seller fee model this
+ *                                    repo publishes. /api/fees/estimate and
+ *                                    /api/fees/compare (functions/api/fees/)
+ *                                    serve the same numbers, so the
+ *                                    catalogue and the calculator cannot
+ *                                    drift apart. Approximate — never a live
+ *                                    quote from any platform.
  *
  * Response:
  *   { ok: true, count, schema, generatedAt, caveat, marketplaces: [...] }
@@ -46,8 +51,8 @@ const CAVEAT =
   "autoPost reports capability this repo's code provides, not verified results: " +
   "no real marketplace post has ever been executed (the extension has never been " +
   "loaded in a real browser profile; eBay calls only its sandbox API; Etsy creates " +
-  "a draft). feePct/feeFixed/feeNote are the approximate model published on /fees/, " +
-  "not live quotes from any platform.";
+  "a draft). feePct/feeFixed/feeNote are the approximate model served by " +
+  "/api/fees/estimate and /api/fees/compare, not live quotes from any platform.";
 
 /**
  * The catalogue. `method: "extension"` = posting runs in the user's own
@@ -56,8 +61,12 @@ const CAVEAT =
  * credentials configured on this Pages project; the extension shops need none.
  * `docsUrl` is a site-relative path and is present only where guide/ has a
  * real index.html.
+ *
+ * `MARKETPLACES` is exported (not just used in place) so that
+ * functions/api/_lib/fees.js can compute /api/fees/* from this exact array.
+ * One table, two consumers: the catalogue and the fee calculator cannot drift.
  */
-const MARKETPLACES = [
+export const MARKETPLACES = [
   {
     id: "poshmark",
     name: "Poshmark",

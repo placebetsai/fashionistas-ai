@@ -3,7 +3,7 @@
 **Audience:** Other agents continuing product / deploy / Connect / Multilist UX work  
 **Session covered:** 2026-10-03 — **v1 build attempt (eBay + Etsy + Stripe)**  
 **Repo:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
-**Handoff refreshed:** 2026-10-03 — auth gate shipped & proven; v1 **blocked on 8 missing env vars**  
+**Handoff refreshed:** 2026-10-04 — **try-on engine replaced: Leffa is dead, FASHN VTON v1.5 is the path**  
 
 Read this before changing live Pages, inventing marketplace credentials, merging eBay-centric UX, or assuming GitHub `main` equals production.
 
@@ -11,6 +11,166 @@ Read this before changing live Pages, inventing marketplace credentials, merging
 > They are kept for history. Where they conflict with **§0**, §0 wins — in particular
 > §1's "Shops (6)" is now **11**, and §1's "paste-ready kits / mostly no auto-post" is the
 > **rejected** framing that has been removed from the site.
+
+---
+
+## TRY-ON ENGINE — 2026-10-04 (CURRENT PRIORITY — supersedes every prior try-on note)
+
+### DECISION: Leffa is DEAD. Do not revive it.
+
+Four independent reasons, all measured:
+
+| # | Reason | Proof |
+|---|---|---|
+| 1 | **Legally unsellable.** Leffa *code* is MIT, but both training datasets are non-commercial — VITON-HD = `CC BY-NC 4.0`, DressCode = YNAP "non-commercial academic research only" | `/tmp/opencode/leffa/{vh_license.txt,dc_lic.txt}` |
+| 2 | **Ungodly slow.** 10 steps = **1049.6 s (17.5 min)** → and that output was **visually smeared garbage** | `/tmp/opencode/leffa/svc/bench3.log` |
+| 3 | **No fast setting exists.** Linear fit from two measured points: **95.4 s/step + 95.8 s overhead**. Leffa's own default is 50 steps (`inference.py:37`) → **81 min** | 2 steps = 286.6 s, 10 steps = 1049.6 s |
+| 4 | **Six models stacked** — UNet + ReferenceUNet + VAE + DensePose + OpenPose + parsing | `leffa/model.py` |
+
+**Lever tests on Leffa — every one measured, none save it:**
+
+| change | measured | verdict |
+|---|---|---|
+| threads 4 → 8 | 251.0 → 244.9 s/step | 2.4% — useless |
+| bf16 autocast | 100.3 vs 58.7 s | **1.7× SLOWER** on this CPU |
+| CFG off (`guidance_scale=0`) | 118.1 → 119.6 s/step | no change |
+| res 768×1024 → 512×768 | 209 → 118 s/step | ~1.8× — real |
+| `power-saver` → `performance` | pinned **1200 MHz** → 2400–4000 MHz | biggest win; the box had been in power-saver the whole time |
+
+The `power-saver` finding matters for **any** future benchmark on this machine: run
+`powerprofilesctl set performance` first or your numbers are self-inflicted garbage.
+
+### REPLACEMENT: FASHN VTON v1.5
+
+| | FASHN VTON v1.5 | Leffa |
+|---|---|---|
+| License | **Apache-2.0, commercial allowed** | MIT code, **non-commercial data** |
+| Models | **1** (972M MMDiT, pixel-space) | 6 |
+| Masks / DensePose / OpenPose | **none** | all required |
+| Output | 576×864 | 768×1024 |
+| Weights | **1.94 GB**, public | 8.2 GB |
+| Steps | 30 default (20 = fast) | 50 |
+
+Repo cloned to `/tmp/opencode/fashn`, installed editable into `/tmp/opencode/.venv`
+(`import fashn_vton` OK). Weights at `/tmp/opencode/fashn/weights/model.safetensors`.
+
+### THREE ROUTES — status
+
+**A. Free HF Space — ✅ WORKS, but quota-limited.**
+
+Endpoint is `fashn-ai/fashn-vton-1-5.hf.space` on **ZeroGPU A10G**. Working client at
+`/tmp/opencode/fashn/free_tryon.py`. Protocol is Gradio 6.3.0 and it is *not* obvious:
+
+```
+POST /gradio_api/upload          -> ["/tmp/gradio/<hash>/<name>"]
+POST /gradio_api/call/try_on     -> {"event_id": ...}
+GET  /gradio_api/call/try_on/<id>-> SSE: "event: complete" + "data: [...]"
+```
+
+Three gotchas that cost time — do not rediscover them:
+1. Images must be full `FileData`: `{"path","url","orig_name","meta":{"_type":"gradio.FileData"}}`.
+   A bare `{"path": ...}` is silently rejected.
+2. The completion event is **`event: complete`**, *not* `process_completed`, and `data:`
+   is a **JSON array**, not an object. Code that does `isinstance(msg, dict)` will
+   reject every successful result.
+3. `event: error` arrives **immediately, before any GPU work** — that is a quota signal,
+   not a payload bug.
+
+| test | result | time |
+|---|---|---|
+| user photo + sample jacket | **OK** (user: *"its good"*) | 25.9 s |
+| one-pieces / model | OK 19,182 B | 27.2 s |
+| tops / model | OK 33,966 B | 12.7 s |
+| tops / flat-lay | OK 44,438 B | 12.0 s |
+| remaining 6 tests | `ERROR` | quota |
+
+Outputs in `/tmp/opencode/fashn/results/` (3) + `/tmp/opencode/fashn/free_out.png`.
+Test matrix (all 3 categories × both photo types) in `/tmp/opencode/fashn/testset/`.
+
+**Quota diagnosis — proven, not guessed:** non-GPU endpoints (`load_example`,
+`load_example_1`) still return **OK** while `try_on` errors instantly. So the Space is
+alive and the payload is valid; only the GPU quota is exhausted (anonymous). An
+authenticated `HF_TOKEN` would raise it — **but creating/verifying an HF account needs
+Israel, and is blocked on him.**
+
+**B. Local CPU — ❌ DEAD, same trap as Leffa.**
+
+```
+[load] 5.7s          <- fast, fine
+Sampling: 110.0s/it  -> 30 steps ≈ 55 minutes
+```
+Every Euler step does **2 forwards** (CFG cond + uncond, `forward_for_cfg`), so CPU cost
+is doubled before anything else. FASHN is not a "runs on CPU" model despite being far
+lighter than Leffa.
+
+**C. Iris Xe iGPU via OpenVINO — 🔶 hardware proven, model export NOT proven.**
+
+This is the only unlimited-free path. Hardware and driver are fully working:
+
+| check | result |
+|---|---|
+| GPU present | `Intel Iris Xe (TigerLake-LP GT2)` |
+| `/dev/dri/renderD128` | `user:billionaremaker:rw-` (ACL, no root needed) |
+| kernel driver | `i915` owns `card1` + `renderD128`, device enabled, TGL GuC/HuC/DMC firmware present |
+| OpenVINO devices | **`['CPU', 'GPU']`** → `GPU = Intel(R) Iris(R) Xe Graphics (iGPU)` |
+
+**The env recipe — BOTH are required. Missing either gives silent CPU-only with no error:**
+
+```bash
+source /tmp/opencode/gpu-env.sh
+# LD_LIBRARY_PATH  -> resolves libze_loader / libze_intel_gpu / libigc
+# OCL_ICD_VENDORS  -> OpenVINO uses OpenCL for *device discovery*
+```
+
+Verified matrix: `LD only → ['CPU']`, `LD + OCL_ICD_VENDORS → ['CPU','GPU']`,
+`+ fresh HOME → ['CPU','GPU']` (so it is not a cache effect).
+
+The GPU stack was assembled **without root**: Ubuntu 24.04 debs fetched with a per-user
+`apt` lists dir and extracted via `dpkg -x` into `/tmp/opencode/gpu-libs`. Level Zero
+additionally needs symlinks in `~/.local/share/uv/python/cpython-3.11.17-*/lib/`
+because the loader searches `<python>/bin/../lib` first and that path is user-writable.
+
+**Export status — DO NOT CLAIM THIS WORKS.** First `ov.convert_model` attempt failed:
+
+```
+No conversion rule found for operations: aten::chunk, aten::einsum, aten::unbind
+Inputs to Einsum operation must have the same type (f32 vs f64)
+```
+
+Root cause found in `rope()` (`tryon_mmdit.py:35`): `torch.arange(..., dtype=torch.float64)`
+made `omega` float64, which poisons an einsum against float32 positions — and that
+aborted OpenVINO's normalize pass, cascading everything else into unconvertible
+`PtFrameworkNode`s. Patched to `float32` (the fn already casts to `.float()` at line 40,
+so numerics are unchanged).
+
+**The rerun was killed by a server restart and never completed. There is no GPU timing
+number.** Next agent: rerun `/tmp/opencode/fashn/gpu_gate.py` with `gpu-env.sh` sourced.
+
+### Files (all `/tmp/opencode/fashn/`)
+
+| file | what |
+|---|---|
+| `free_tryon.py` | working free-Space client (see protocol above) |
+| `batch_test.py` | 9-case matrix runner |
+| `gpu_gate.py` | OpenVINO export + CPU-vs-GPU timing gate |
+| `run_local.py` | local CPU timing |
+| `testset/` | 6 person/garment pairs with category + photo_type |
+| `results/`, `free_out.png` | generated images |
+| `local.log`, `dl.log`, `batch` logs | raw timings |
+
+### BLOCKED ON ISRAEL — try-on
+
+1. **Review the 4 generated images.** Only one is approved (*"its good"*). The other 3 are
+   unreviewed. This is the gate on everything else.
+2. **An HF account/token** would lift the Space quota. Needs his email verification.
+
+### NOT DONE — do not mark any of this complete
+
+- No GPU speed number (export unproven).
+- Nothing wired into `/tryon/hd` or the free tier yet.
+- The on-device warp+composite free tier is still the rejected "sticker overlay" —
+  user has explicitly rejected it. No replacement has shipped.
+- No commit, no deploy.
 
 ---
 
@@ -337,8 +497,8 @@ Package script: `"deploy": "npx wrangler pages deploy . --project-name=fashionis
 | **Contact** | Static `/contact/` — FormSubmit → `fashionistas1979@gmail.com`, honeypot `_honey`, unique title (not SPA) | #1 |
 | **About / Privacy** | Static `/about/`, `/privacy/` + footer links | #1 |
 | **ads.txt** | Plain-text **comment-only** placeholder — **no invented** AdSense pub-id; `_headers` forces text/plain | #1 |
-| **Fees calculator** | Indexable `/fees/` take-home for all 6 marketplaces | #1 |
-| **Sitemap** | In: `/`, `/fees/`, `/contact/`, `/about/`, `/privacy/`, `/app/`. Out: thin `/blog`, `/ar-tryon` | #1 |
+| **Fees calculator** | Shipped in #1 as an indexable static fee page (`fees/index.html`); **deliberately removed later** — take-home now comes from `POST /api/fees/estimate` and `POST /api/fees/compare` inside the app, and no standalone fee page is served | #1 |
+| **Sitemap** | In: `/`, `/contact/`, `/about/`, `/privacy/`, `/app/`. Out: thin `/blog`, `/ar-tryon`, and the removed fee page | #1 |
 
 **Follow (not fail):** FormSubmit activation on first real submit; real AdSense `google.com, pub-…` lines **only after** a real pub-id exists. **Do not** invent a pub-id or ship `adsbygoogle` without it.
 
@@ -361,17 +521,18 @@ Package script: `"deploy": "npx wrangler pages deploy . --project-name=fashionis
 
 ---
 
-## 3. Contact / fees / ads.txt / about / privacy
+## 3. Contact / ads.txt / about / privacy
 
 All live on fashionistas.ai (wrangler → `fashionistas-ai`):
 
 | URL | Notes |
 |-----|--------|
 | https://fashionistas.ai/contact/ | FormSubmit → `fashionistas1979@gmail.com` |
-| https://fashionistas.ai/fees/ | 6-shop take-home calculator |
 | https://fashionistas.ai/ads.txt | Comment-only; no pub-id |
 | https://fashionistas.ai/about/ | Honest product (not auto-poster) |
 | https://fashionistas.ai/privacy/ | Privacy |
+
+> **Removed on purpose:** the 6-shop take-home calculator page that used to sit in the `fees/` directory no longer exists. Fee take-home is now `POST /api/fees/estimate` and `POST /api/fees/compare`, computed from the same catalogue `GET /api/marketplaces` serves.
 
 ---
 
@@ -480,7 +641,7 @@ git cat-file -t <source_sha>   # fatal = not in this clone / laptop-only
 | Capability | Status |
 |------------|--------|
 | Paste multilist drafts (6 shops) | **YES** — **per-shop kits** |
-| Fee estimate / compare / `/fees/` | **YES** |
+| Fee estimate / compare (`POST /api/fees/estimate`, `POST /api/fees/compare`) | **YES** — the old standalone fee page was removed on purpose |
 | Photo → AI analyze → listing form | **YES** (API live) |
 | Contact / about / privacy / ads.txt placeholder | **YES** |
 | Honesty copy + Multilist tab + sample jacket | **YES** (PR #5) |
@@ -567,12 +728,13 @@ npx wrangler pages deployment list --project-name=fashionistas-ai
 | URL | Purpose |
 |-----|---------|
 | https://fashionistas.ai/ | Marketing + SPA |
-| https://fashionistas.ai/fees/ | Fee take-home |
 | https://fashionistas.ai/contact/ | FormSubmit contact |
 | https://fashionistas.ai/about/ | Ownership / honesty |
 | https://fashionistas.ai/privacy/ | Privacy |
 | https://fashionistas.ai/ads.txt | Placeholder ads.txt |
 | https://fashionistas-api.fashionistas1979.workers.dev/api/health | API health |
 | https://075ef679.fashionistas-ai.pages.dev | Latest known CF prod (PR #7 source `125816d`) |
+
+> **Not a live URL any more:** the fee take-home page that used to sit in the `fees/` directory was deleted on purpose (removed from `sitemap.xml` and from every nav/footer). Fee take-home now lives in the app via `POST /api/fees/estimate` and `POST /api/fees/compare`.
 
 **End of handoff — 2026-09-26 night ET (complete through Connect #1–#4, P0 #5, kits+listing #6, eBay walkthrough #7 open+live, equal-UX in flight).**

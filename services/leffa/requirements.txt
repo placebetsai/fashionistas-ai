@@ -1,0 +1,9 @@
+# fashionistas-tryon service dependencies.
+# The Leffa project's own requirements are installed separately in the image
+# (see Dockerfile); this file is the HTTP layer on top.
+
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pillow>=10.0.0
+numpy>=1.26.0

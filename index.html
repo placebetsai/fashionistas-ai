@@ -1099,7 +1099,6 @@ textarea.input{font-family:inherit}
    <a href="#land-ai" onclick="landNavClose()" data-tip="What the AI does for you at every step, A to Z.">The AI</a>
    <a href="#land-shops" onclick="landNavClose()" data-tip="The shops we prepare words for.">Shops</a>
    <a href="/try-on/" onclick="landNavClose()" data-tip="Add a photo of you and a garment and see the AI render it on you.">Try it on</a>
-   <a href="/fees/" onclick="landNavClose()" data-tip="Compare marketplace fee take-home before you list.">Fees</a>
    <a href="/contact/" onclick="landNavClose()" data-tip="Contact fashionistas.ai support.">Contact</a>
    <a href="/about/" onclick="landNavClose()" data-tip="About the product.">About</a>
    <a href="/privacy/" onclick="landNavClose()" data-tip="Privacy policy.">Privacy</a>
@@ -1248,7 +1247,7 @@ textarea.input{font-family:inherit}
  <p class="mut" style="margin:0 0 6px">Try it now with the demo account</p>
  <button class="btn btn-soft btn-sm" onclick="demoLogin()" data-tip="Signs you in with the shared demo account so you can look around first." title="Signs you in with the shared demo account so you can look around first.">Log in as demo seller</button>
  </div>
- <p class="legal-line">$14.99/mo · Cancel anytime · Your data stays yours<br><a href="/contact/" style="color:inherit">Contact</a> · <a href="/privacy/" style="color:inherit">Privacy</a> · <a href="/about/" style="color:inherit">About</a> · <a href="/fees/" style="color:inherit">Fees</a></p>
+ <p class="legal-line">$14.99/mo · Cancel anytime · Your data stays yours<br><a href="/contact/" style="color:inherit">Contact</a> · <a href="/privacy/" style="color:inherit">Privacy</a> · <a href="/about/" style="color:inherit">About</a></p>
  </div>
  </div>
  </section>
@@ -1258,7 +1257,6 @@ textarea.input{font-family:inherit}
 
  <footer class="land-site-footer" style="max-width:1080px;margin:28px auto 8px;padding:18px 18px 8px;border-top:1px solid var(--line);color:var(--mut);font-size:12.5px;text-align:center">
   <nav aria-label="Footer" style="display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:center;margin-bottom:8px;font-weight:700">
-   <a href="/fees/" style="color:var(--mut)">Fee take-home</a>
    <a href="/contact/" style="color:var(--mut)">Contact</a>
    <a href="/about/" style="color:var(--mut)">About</a>
    <a href="/privacy/" style="color:var(--mut)">Privacy</a>
@@ -2958,7 +2956,7 @@ document.addEventListener("DOMContentLoaded", () => {
   } catch {}
 });
 
-/* Canonical fee table — mirrors /fees/ static calculator (Vinted 0%, Poshmark special).
+/* Canonical fee table — Vinted 0% seller fee, Poshmark flat $2.95 under $15 / 20% at $15+.
    Multilist "kept" figures use this so Vinted stays 0% even if API feePct drifts. */
 const FEE_TABLE = [
   { id:"depop", name:"Depop", feePct:10, note:"~10% seller fee (US typical)" },
@@ -3045,7 +3043,7 @@ async function renderXL(el){
     <div class="card">
       <h3 style="margin-top:0">Every shop we prepare for</h3>
       <p class="mut" style="margin-top:0">Their cut, the title length they allow, and how many of your items are already written up for them. The <b>kept</b> figure is what lands in your pocket from a ${money(EXAMPLE)} sale.</p>
-      <p class="mut" style="font-size:12px;margin:0 0 10px">Fee % matches the <a href="/fees/" target="_blank" rel="noopener">/fees/</a> table (Vinted 0% seller fee). Kept = $${EXAMPLE} sale minus estimated fee.</p>
+      <p class="mut" style="font-size:12px;margin:0 0 10px">Fee % is an estimate from this page's own fee table (Vinted 0% seller fee). Kept = $${EXAMPLE} sale minus estimated fee.</p>
       ${six.length ? six.map(m => {
           const fee = feeEstimateAmount(m, EXAMPLE);
           const kept = EXAMPLE - fee;
@@ -5047,7 +5045,7 @@ async function renderMore(el){
  </div>
  <p class="mut" style="margin:8px 0 0">Both are plain files that open in Excel or Google Sheets.</p>
  </div>
- <footer>fashionistas.ai · everything saved to your account<br><a href="/contact/" style="color:inherit">Contact</a> · <a href="/privacy/" style="color:inherit">Privacy</a> · <a href="/about/" style="color:inherit">About</a> · <a href="/fees/" style="color:inherit">Fees</a><br>Powering the independent resale economy.</footer>`;
+ <footer>fashionistas.ai · everything saved to your account<br><a href="/contact/" style="color:inherit">Contact</a> · <a href="/privacy/" style="color:inherit">Privacy</a> · <a href="/about/" style="color:inherit">About</a><br>Powering the independent resale economy.</footer>`;
 }
 async function exportSafe(e, p){
  try { const r = await fetch(API+"/api/"+p, { headers:{ Authorization:"Bearer "+TOKEN } }); const t = await r.text(); const b = new Blob([t],{type:"text/csv"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=p.replace("/","_"); a.click(); } catch(err){ toast("Download failed"); }

@@ -19,7 +19,7 @@
 <meta name="twitter:image" content="https://fashionistas.ai/og.png">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/site.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to use the fashionistas.ai virtual try-on","description":"Upload a photo of a person and a garment photo, press Try it on, then download, save or share the render.","step":[{"@type":"HowToStep","name":"Add a photo of yourself","text":"Pick or drop a photo of the person wearing the garment."},{"@type":"HowToStep","name":"Add a garment","text":"Pick or drop a photo of the item you want to see on."},{"@type":"HowToStep","name":"Try it on","text":"Press Try it on to POST both photos to /api/tryon and wait for the render."},{"@type":"HowToStep","name":"Keep the result","text":"Download, save or share the rendered image."}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to use the fashionistas.ai virtual try-on","description":"Upload a photo of a person and a garment photo, press Try it on, then download, save or share the render.","step":[{"@type":"HowToStep","name":"Add a photo of yourself","text":"Pick or drop a photo of the person wearing the garment."},{"@type":"HowToStep","name":"Add a garment","text":"Pick or drop a photo of the item you want to see on."},{"@type":"HowToStep","name":"Try it on","text":"Press Try it on. Free mode warps and composites the garment in your own browser with no upload; Photoreal mode posts person and garment to /api/tryon/hd and requires Pro or a try-on credit."},{"@type":"HowToStep","name":"Keep the result","text":"Download, save or share the rendered image."}]}</script>
 <style>
 .to-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:640px){.to-grid{grid-template-columns:1fr}}
@@ -39,19 +39,156 @@
 .to-out img{width:100%;border-radius:12px;display:block;background:#fff}
 .to-status{font-size:13.5px;color:var(--mut);margin-top:12px;min-height:20px}
 .to-status.err{color:#a3210f;font-weight:700}
+.to-mode{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 4px}
+@media(max-width:640px){.to-mode{grid-template-columns:1fr}}
+.to-mode-opt{display:block;border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;cursor:pointer;background:var(--card);transition:border-color .18s,box-shadow .18s,transform .18s}
+.to-mode-opt:hover{border-color:#d3c6b8;transform:translateY(-1px)}
+.to-mode-opt input{position:absolute;opacity:0;pointer-events:none}
+.to-mode-opt.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(179,71,31,.13)}
+.to-mode-t{display:block;font-weight:800;font-size:14px;color:var(--ink);margin-bottom:3px}
+.to-mode-d{display:block;font-size:12.2px;line-height:1.45;color:var(--mut)}
+.to-mode-opt.on .to-mode-t{color:var(--accent)}
 .to-ok{background:#eaf7ef;border:1px solid #bfe5cd;color:#14532d;padding:10px 12px;border-radius:10px;font-weight:600;font-size:13.5px;margin-top:12px;display:none}
 .to-ok.on{display:block}
 .to-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 16px;border-radius:999px;font-size:13.5px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
 .to-toast.on{opacity:1}
+
+/* ================= animated backdrop ================= */
+.to-sky{position:fixed;inset:0;z-index:-1;overflow:hidden;background:
+  radial-gradient(1100px 680px at 10% -12%,#ffe6d3 0%,transparent 58%),
+  radial-gradient(980px 760px at 98% 4%,#e2ecff 0%,transparent 52%),
+  linear-gradient(180deg,#fcfaf7 0%,#f6f0e9 55%,#f1eae1 100%)}
+.to-sky::after{content:"";position:absolute;inset:-60%;pointer-events:none;opacity:.75;
+  background:
+   repeating-linear-gradient(0deg,rgba(26,20,16,.04) 0 1px,transparent 1px 52px),
+   repeating-linear-gradient(90deg,rgba(26,20,16,.04) 0 1px,transparent 1px 52px);
+  animation:gridPan 16s linear infinite}
+.to-blob{position:absolute;width:46vw;height:46vw;min-width:320px;min-height:320px;
+  border-radius:50%;filter:blur(72px);opacity:.42;will-change:transform}
+.to-blob.b1{background:radial-gradient(circle at 32% 32%,#ffab84,#ffdac6 60%,transparent 72%);top:-16%;left:-9%;animation:auroraMove 21s ease-in-out infinite}
+.to-blob.b2{background:radial-gradient(circle at 62% 42%,#9dbdff,#dbe7ff 60%,transparent 72%);top:6%;right:-13%;animation:meshDrift 25s ease-in-out infinite}
+.to-blob.b3{background:radial-gradient(circle at 50% 50%,#ffe199,#fff4d8 60%,transparent 72%);bottom:-20%;left:30%;animation:bgDrift 29s ease-in-out infinite}
+.to-skyline{position:absolute;left:0;right:0;bottom:0;height:34%;opacity:.5;
+  background:linear-gradient(180deg,transparent,rgba(179,71,31,.07))}
+
+/* ================= animated words ================= */
+.to-h1{max-width:16ch}
+.to-h1 .w{display:inline-block;opacity:0;animation:wordIn .72s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i,0)*72ms)}
+.to-h1 .w.sh{
+  background:linear-gradient(100deg,#8f3818,#e0763f 42%,#b3471f 70%,#8f3818);
+  background-size:280% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:wordIn .72s cubic-bezier(.22,1,.36,1) both,wordShimmer 5.5s linear infinite;
+  animation-delay:calc(var(--i,0)*72ms),calc(var(--i,0)*72ms)}
+.to-rot{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 20px;
+  font-size:13.5px;font-weight:800;color:var(--mut);letter-spacing:.02em;
+  opacity:0;animation:fadeUp .7s .5s cubic-bezier(.22,1,.36,1) both}
+.to-rotbox{display:inline-block;height:1.55em;overflow:hidden;vertical-align:bottom;
+  padding:0 13px;border-radius:999px;background:#fff;border:1px solid var(--line);
+  box-shadow:0 4px 14px rgba(26,20,16,.06);min-width:6.6em;text-align:center}
+.to-rotstrip{display:block;animation:rotWord 12s cubic-bezier(.7,0,.3,1) infinite}
+.to-rotstrip i{display:block;height:1.55em;line-height:1.55em;font-style:normal;white-space:nowrap;
+  background:linear-gradient(100deg,#8f3818,#e0763f 45%,#b3471f 75%,#8f3818);
+  background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:wordShimmer 4.5s linear infinite}
+@keyframes rotWord{
+  0%,15%{transform:translateY(0)}
+  18.5%,32%{transform:translateY(-1.55em)}
+  35.5%,49%{transform:translateY(-3.1em)}
+  52.5%,66%{transform:translateY(-4.65em)}
+  69.5%,83%{transform:translateY(-6.2em)}
+  86.5%,100%{transform:translateY(-7.75em)}}
+.to-badge{opacity:0;animation:fadeUp .6s cubic-bezier(.22,1,.36,1) both}
+.to-lede{opacity:0;animation:fadeUp .7s .28s cubic-bezier(.22,1,.36,1) both}
+
+/* ================= logos ticker ================= */
+.marquee{display:block;overflow:hidden;margin-top:14px;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.to-track{display:flex;width:max-content;padding:4px 0;animation:marq 36s linear infinite}
+.to-g{display:flex;gap:10px;padding-right:10px}
+.marquee:hover .to-track,.marquee:focus-within .to-track{animation-play-state:paused}
+.to-chip{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+  padding:9px 16px;border-radius:999px;background:#fff;border:1px solid var(--line);
+  font-weight:800;font-size:13.5px;letter-spacing:-.01em;color:var(--ink);
+  box-shadow:0 4px 14px rgba(26,20,16,.05);transition:transform .2s,border-color .2s,box-shadow .2s}
+.to-chip:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 10px 22px rgba(179,71,31,.16)}
+.to-chip svg{flex:none;stroke:var(--c,#b3471f);stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.to-chip:hover svg{transform:rotate(-10deg) scale(1.15)}
+.to-cap{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-top:18px}
+.to-cap::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+
+/* ================= touch cards ================= */
+.sheen{position:relative;overflow:hidden}
+.sheen::after{content:"";position:absolute;top:-20%;bottom:-20%;width:48%;pointer-events:none;
+  background:linear-gradient(104deg,transparent,rgba(255,255,255,.78),transparent);
+  transform:translateX(-135%);transition:transform .78s cubic-bezier(.4,0,.2,1)}
+.sheen:hover::after,.sheen:focus-within::after,.sheen.lit::after{transform:translateX(245%)}
+.to-zone{transition:border-color .18s,background .18s,transform .28s cubic-bezier(.22,1,.36,1),box-shadow .28s}
+.to-zone:hover,.to-zone:focus-within{transform:translateY(-5px);box-shadow:0 16px 34px rgba(26,20,16,.10)}
+.to-zone.has{animation:tagPulse 3.4s ease-in-out infinite}
+.to-zone .to-ic{transition:transform .3s cubic-bezier(.34,1.56,.64,1),background .3s}
+.to-zone:hover .to-ic{transform:scale(1.14) rotate(-6deg);background:rgba(179,71,31,.18)}
+.to-mode-opt{transition:border-color .18s,box-shadow .18s,transform .3s cubic-bezier(.22,1,.36,1),background .3s}
+.to-mode-opt:hover{transform:translateY(-4px);box-shadow:0 14px 30px rgba(26,20,16,.10)}
+.to-mode-opt.on{transform:translateY(-2px);box-shadow:0 0 0 3px rgba(179,71,31,.14),0 14px 30px rgba(179,71,31,.10)}
+.to-acts .btn-accent{position:relative;overflow:hidden;box-shadow:0 8px 22px rgba(179,71,31,.30);
+  transition:transform .22s cubic-bezier(.22,1,.36,1),box-shadow .22s,background .2s}
+.to-acts .btn-accent:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(179,71,31,.38)}
+.to-acts .btn-accent:active{transform:translateY(-1px) scale(.985)}
+.to-acts .btn-accent::after{content:"";position:absolute;top:-20%;bottom:-20%;width:46%;pointer-events:none;
+  background:linear-gradient(104deg,transparent,rgba(255,255,255,.55),transparent);
+  transform:translateX(-135%);animation:shineSweep 3.6s cubic-bezier(.4,0,.2,1) infinite}
+.to-acts .btn-accent[disabled]::after{animation:none;opacity:0}
+
+/* ================= entrance stagger ================= */
+.to-card{animation:cardIn .62s cubic-bezier(.22,1,.36,1) both}
+.to-grid>*{animation:cardIn .55s cubic-bezier(.22,1,.36,1) both}
+.to-grid>*:nth-child(1){animation-delay:.14s}
+.to-grid>*:nth-child(2){animation-delay:.24s}
+.to-mode>*:nth-child(1){animation-delay:.34s}
+.to-mode>*:nth-child(2){animation-delay:.44s}
+.to-acts{animation:fadeUp .55s .54s cubic-bezier(.22,1,.36,1) both}
+.to-out.on{animation:cardIn .5s cubic-bezier(.22,1,.36,1) both}
+.to-ok.on{animation:floatUp .45s cubic-bezier(.34,1.56,.64,1) both}
+.to-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+@media(max-width:640px){.to-stats{grid-template-columns:1fr}}
+.to-stat{background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px 14px;
+  transition:transform .26s cubic-bezier(.22,1,.36,1),box-shadow .26s,border-color .26s;
+  animation:cardIn .55s cubic-bezier(.22,1,.36,1) both}
+.to-stat:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 14px 30px rgba(26,20,16,.10)}
+.to-stat:nth-child(1){animation-delay:.60s}
+.to-stat:nth-child(2){animation-delay:.68s}
+.to-stat:nth-child(3){animation-delay:.76s}
+.to-stat b{display:block;font-size:1.3rem;letter-spacing:-.03em;color:var(--accent);line-height:1.2}
+.to-stat span{font-size:12.5px;color:var(--mut);font-weight:600}
+.to-art{display:flex;align-items:center;justify-content:center;
+  width:54px;height:54px;flex:none;border-radius:15px;
+  background:linear-gradient(145deg,rgba(179,71,31,.12),rgba(179,71,31,.04));
+  border:1px solid rgba(179,71,31,.18)}
+.to-row{display:flex;gap:14px;align-items:flex-start}
+
+@media (prefers-reduced-motion:reduce){
+  .to-sky::after,.to-blob,.to-track,.to-rotstrip,.to-rotstrip i,
+  .to-h1 .w,.to-h1 .w.sh,.to-badge,.to-lede,.to-rot,.to-card,.to-grid>*,.to-mode>*,
+  .to-acts,.to-stat,.to-zone.has,.to-acts .btn-accent::after,.to-ok.on,.to-out.on{animation:none!important}
+  .to-h1 .w,.to-badge,.to-lede,.to-rot,.to-card,.to-grid>*,.to-mode>*,.to-acts,.to-stat{opacity:1!important;transform:none!important}
+  .sheen::after{display:none}
+}
 </style>
 </head>
 <body>
+<div class="to-sky" aria-hidden="true">
+  <span class="to-blob b1"></span>
+  <span class="to-blob b2"></span>
+  <span class="to-blob b3"></span>
+  <span class="to-skyline"></span>
+</div>
 <div class="wrap">
 <header class="topnav">
 <a class="brand" href="/">fashionistas<span>.ai</span></a>
 <nav aria-label="Main">
 <a href="/try-on/" aria-current="page">Try it on</a>
-<a href="/fees/">Fees</a>
 <a href="/about/">About</a>
 <a href="/privacy/">Privacy</a>
 <a href="/contact/">Contact</a>
@@ -60,20 +197,25 @@
 </header>
 <main id="main">
 
-<span class="badge">AI virtual try-on</span>
-<h1>See it on you before you list it</h1>
-<p class="lede">Two photos in, one render out. Add a picture of the person and a picture of the garment, press <b>Try it on</b>, and fashionistas.ai posts both to the try-on engine and hands back the composited image — ready to download, save or share.</p>
+<span class="badge to-badge">AI virtual try-on</span>
+<h1 class="to-h1" aria-label="See it on you before you list it"><span class="w" style="--i:0" aria-hidden="true">See</span> <span class="w" style="--i:1" aria-hidden="true">it</span> <span class="w" style="--i:2" aria-hidden="true">on</span> <span class="w sh" style="--i:3" aria-hidden="true">you</span> <span class="w" style="--i:4" aria-hidden="true">before</span> <span class="w sh" style="--i:5" aria-hidden="true">you</span> <span class="w" style="--i:6" aria-hidden="true">list</span> <span class="w" style="--i:7" aria-hidden="true">it</span></h1>
+<p class="lede to-lede">Add a photo of the person and a photo of the piece, press <b>Try it on</b>, and see it worn. Download it, save it or share it when you like what you see.</p>
 
-<div class="card">
+<div class="to-rot">
+ <span>Works on any piece</span>
+ <span class="to-rotbox" aria-hidden="true"><span class="to-rotstrip"><i>jacket</i><i>dress</i><i>jeans</i><i>coat</i><i>blazer</i><i>jacket</i></span></span>
+</div>
+
+<div class="card to-card">
  <div class="to-grid">
-  <div class="to-zone" id="zone-person">
+  <div class="to-zone sheen" id="zone-person">
    <span class="to-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3471f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4"/></svg></span>
    <b style="font-size:14.5px">Person photo</b>
    <span class="to-name" id="name-person">Drop a selfie or full-body shot here, or click to choose</span>
    <img id="prev-person" alt="Person photo preview" class="hidden" style="display:none">
    <input type="file" id="file-person" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose the person photo">
   </div>
-  <div class="to-zone" id="zone-garment">
+  <div class="to-zone sheen" id="zone-garment">
    <span class="to-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3471f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 3.5 12 5.4l3.5-1.9 4.5 2.4-2.2 4-2.1-1V21H8.3V8.9l-2.1 1-2.2-4z"/></svg></span>
    <b style="font-size:14.5px">Garment photo</b>
    <span class="to-name" id="name-garment">Drop the item you want to try on here, or click to choose</span>
@@ -82,7 +224,20 @@
   </div>
  </div>
 
- <div class="to-acts">
+ <div class="to-mode" role="radiogroup" aria-label="Render mode">
+ <label class="to-mode-opt on" id="lab-device">
+  <input type="radio" name="to-mode" value="device" checked>
+  <span class="to-mode-t">Instant · free</span>
+  <span class="to-mode-d">Right away, in this browser. Good for checking placement and colour. Your photos never leave your device, and there's nothing to sign up for.</span>
+ </label>
+ <label class="to-mode-opt" id="lab-hd">
+  <input type="radio" name="to-mode" value="hd">
+  <span class="to-mode-t">Photoreal · Pro</span>
+  <span class="to-mode-d">The full render — real fabric, drape and light, not an overlay. Part of Pro or a try-on credit, and it takes a few minutes.</span>
+ </label>
+</div>
+
+<div class="to-acts">
   <button class="btn btn-accent" id="btn-go" data-tip="Send both photos to the try-on engine and render the result.">Try it on</button>
   <button class="to-btn" id="btn-retry" disabled data-tip="Run the try-on again with the same two photos.">Retry</button>
   <button class="to-btn" id="btn-download" disabled data-tip="Save the render as a file on this device.">Download</button>
@@ -99,9 +254,57 @@
  </div>
 </div>
 
+<div class="card to-card" style="margin-top:18px;animation-delay:.66s">
+ <div class="to-cap" style="margin-top:0">List it anywhere you already sell</div>
+ <div class="marquee">
+  <div class="to-track">
+   <div class="to-g">
+    <span class="to-chip" style="--c:#e53238"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>eBay</span>
+    <span class="to-chip" style="--c:#f1641e"><svg width="15" height="15" viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8 6.6 19.7l1.2-6.1L3.3 9.4l6.1-.8L12 3Z"/></svg>Etsy</span>
+    <span class="to-chip" style="--c:#ff2300"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M5.8 7h12.4l1 13H4.8l1-13Z"/><path d="M9 7V5.6a3 3 0 0 1 6 0V7"/></svg>Depop</span>
+    <span class="to-chip" style="--c:#7f2b82"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M8.5 3.5 12 5.4l3.5-1.9 4.5 2.4-2.2 4-2.1-1V21H8.3V8.9l-2.1 1-2.2-4Z"/></svg>Poshmark</span>
+    <span class="to-chip" style="--c:#09b1ba"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M5.8 7h12.4l1 13H4.8l1-13Z"/><path d="M9 7V5.6a3 3 0 0 1 6 0V7"/></svg>Vinted</span>
+    <span class="to-chip" style="--c:#2fb9e6"><svg width="15" height="15" viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8 6.6 19.7l1.2-6.1L3.3 9.4l6.1-.8L12 3Z"/></svg>Mercari</span>
+    <span class="to-chip" style="--c:#1a1a1a"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>Grailed</span>
+    <span class="to-chip" style="--c:#1a1a1a"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M8.5 3.5 12 5.4l3.5-1.9 4.5 2.4-2.2 4-2.1-1V21H8.3V8.9l-2.1 1-2.2-4Z"/></svg>Vestiaire Collective</span>
+    <span class="to-chip" style="--c:#ef5b5b"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M5.8 7h12.4l1 13H4.8l1-13Z"/><path d="M9 7V5.6a3 3 0 0 1 6 0V7"/></svg>Kidizen</span>
+    <span class="to-chip" style="--c:#1877f2"><svg width="15" height="15" viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8 6.6 19.7l1.2-6.1L3.3 9.4l6.1-.8L12 3Z"/></svg>Facebook Marketplace</span>
+    <span class="to-chip" style="--c:#e11d48"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>Whatnot</span>
+   </div>
+   <div class="to-g" aria-hidden="true">
+    <span class="to-chip" style="--c:#e53238"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>eBay</span>
+    <span class="to-chip" style="--c:#f1641e"><svg width="15" height="15" viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8 6.6 19.7l1.2-6.1L3.3 9.4l6.1-.8L12 3Z"/></svg>Etsy</span>
+    <span class="to-chip" style="--c:#ff2300"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M5.8 7h12.4l1 13H4.8l1-13Z"/><path d="M9 7V5.6a3 3 0 0 1 6 0V7"/></svg>Depop</span>
+    <span class="to-chip" style="--c:#7f2b82"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M8.5 3.5 12 5.4l3.5-1.9 4.5 2.4-2.2 4-2.1-1V21H8.3V8.9l-2.1 1-2.2-4Z"/></svg>Poshmark</span>
+    <span class="to-chip" style="--c:#09b1ba"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M5.8 7h12.4l1 13H4.8l1-13Z"/><path d="M9 7V5.6a3 3 0 0 1 6 0V7"/></svg>Vinted</span>
+    <span class="to-chip" style="--c:#2fb9e6"><svg width="15" height="15" viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8 6.6 19.7l1.2-6.1L3.3 9.4l6.1-.8L12 3Z"/></svg>Mercari</span>
+    <span class="to-chip" style="--c:#1a1a1a"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>Grailed</span>
+    <span class="to-chip" style="--c:#1a1a1a"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M8.5 3.5 12 5.4l3.5-1.9 4.5 2.4-2.2 4-2.1-1V21H8.3V8.9l-2.1 1-2.2-4Z"/></svg>Vestiaire Collective</span>
+    <span class="to-chip" style="--c:#ef5b5b"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M5.8 7h12.4l1 13H4.8l1-13Z"/><path d="M9 7V5.6a3 3 0 0 1 6 0V7"/></svg>Kidizen</span>
+    <span class="to-chip" style="--c:#1877f2"><svg width="15" height="15" viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8 6.6 19.7l1.2-6.1L3.3 9.4l6.1-.8L12 3Z"/></svg>Facebook Marketplace</span>
+    <span class="to-chip" style="--c:#e11d48"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>Whatnot</span>
+   </div>
+  </div>
+ </div>
+ <p class="note" style="margin-bottom:0">Every piece you try on here can be listed through the app — titles, fees and shipping worked out for all eleven shops.</p>
+</div>
+
+<div class="card to-card" style="margin-top:18px;animation-delay:.76s">
+ <div class="to-stats">
+  <div class="to-stat"><b>0</b><span>photos uploaded in Instant mode — your picture stays in this browser</span></div>
+  <div class="to-stat"><b>1</b><span>click to download, save or share the render once you like it</span></div>
+  <div class="to-stat"><b>11</b><span>marketplaces priced by the fee engine, so you know what you keep</span></div>
+ </div>
+</div>
+
 <div class="card" style="margin-top:18px">
- <h2 style="font-size:1.15rem;margin-top:0">What happens when you press Try it on</h2>
- <p>The page sends a <b>multipart POST</b> with two parts — <code>person</code> and <code>garment</code> — to <code>/api/tryon</code>. The engine decodes both images, aligns the garment to the person, and returns the rendered image, which is drawn straight into the panel above. Nothing is posted anywhere else and nothing is published to a marketplace.</p>
+ <h2 style="font-size:1.15rem;margin-top:0">Get a better result</h2>
+ <ul style="margin:0;padding-left:20px;line-height:1.75;font-size:14.5px">
+  <li>Stand straight with your whole torso in frame, facing the camera.</li>
+  <li>Plain background, even light — no harsh shadows across the body.</li>
+  <li>Lay the garment flat, or shoot it on a hanger, so the shape reads clearly.</li>
+  <li>Use the biggest photo you have. Small, blurry shots give small, blurry results.</li>
+ </ul>
  <p style="margin-bottom:0">Want the colour side of it too? <a href="/contact/">Ask us about colour analysis</a> — it reads undertone and contrast from your photo and hands back a palette. &nbsp; <a href="/">Open the fashionistas.ai app</a></p>
 </div>
 
@@ -111,7 +314,6 @@
 <nav aria-label="Footer">
 <a href="/">Home</a>
 <a href="/try-on/">Try it on</a>
-<a href="/fees/">Fee take-home</a>
 <a href="/about/">About</a>
 <a href="/privacy/">Privacy</a>
 <a href="/contact/">Contact</a>
@@ -122,10 +324,16 @@
 
 <div class="to-toast" id="toast" role="status" aria-live="polite"></div>
 
-<script>
+<script type="module">
+import { TryOnPipeline } from "/core/tryon_pipeline.js";
+
 (function(){
   "use strict";
-  var API = "/api/tryon";
+  // FREE tier default: on-device warp+composite. Nothing is uploaded, so it
+  // costs $0 at any scale and works with no account and no keys.
+  // "hd" is the credit/Pro lane -> /api/tryon/hd (402 if not entitled).
+  var API_HD = "/api/tryon/hd";
+  var mode = "device";
   var files = { person:null, garment:null };
   var last = { dataUrl:null, blobUrl:null, mime:"image/png", at:0 };
   var busy = false;
@@ -260,6 +468,88 @@
     keepEnabled();
   }
 
+  function loadImage(file){
+    return new Promise(function(res, rej){
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function(){ URL.revokeObjectURL(url); res(img); };
+      img.onerror = function(){ URL.revokeObjectURL(url); rej(new Error("That photo could not be decoded in this browser.")); };
+      img.src = url;
+    });
+  }
+
+  // FREE TIER — layers 1 and 2 of core/tryon_pipeline.js: canvas warp+composite
+  // using MediaPipe body anchors (or the documented default layout if the pose
+  // model is not available). Everything happens inside this tab: no upload, no
+  // request, no account, no key. This is why the free tier costs $0 at any
+  // scale — there is no server round trip to pay for.
+  function runDevice(){
+    var person, garment;
+    return Promise.all([loadImage(files.person), loadImage(files.garment)])
+      .then(function(imgs){
+        person = imgs[0]; garment = imgs[1];
+        var pipe = new TryOnPipeline({ useGenerative: false });
+        return pipe.run({
+          personImage: person,
+          garmentImage: garment,
+          width: person.naturalWidth || person.width || 720,
+          height: person.naturalHeight || person.height || 960
+        });
+      })
+      .then(function(out){
+        if (!out || !out.ok || !out.canvas){
+          throw new Error("On-device composition failed: " + ((out && out.error) || "no canvas returned"));
+        }
+        // The caption under the picture is for the person looking at it, not
+        // for us: no pose-model names, no stage names.
+        var note = "Instant preview · your photos never left this device";
+        return new Promise(function(res, rej){
+          out.canvas.toBlob(function(b){
+            if (!b) return rej(new Error("The on-device renderer produced no image."));
+            showResult(b, null, note);
+            res();
+          }, "image/png");
+        });
+      });
+  }
+
+  // PRO / CREDITS TIER — the in-house Leffa model behind /api/tryon/hd.
+  // The server answers 402 when the caller has neither Pro nor a credit, and
+  // that error is shown verbatim instead of substituting a fake render.
+  function runHd(){
+    var fd = new FormData();
+    fd.append("person", files.person);
+    fd.append("garment", files.garment);
+    return fetch(API_HD, { method:"POST", body: fd, accept:"application/json, image/*" })
+      .then(function(res){
+        var ct = (res.headers.get("content-type") || "").toLowerCase();
+        if (!res.ok){
+          return res.text().then(function(t){
+            var msg = "Photoreal try-on failed (" + res.status + ").";
+            try {
+              var j = JSON.parse(t);
+              if (j && (j.detail || j.error || j.message)) msg = "Photoreal try-on failed: " + (j.detail || j.error || j.message);
+            } catch(e){ if (t) msg = "Photoreal try-on failed (" + res.status + "): " + t.slice(0,160); }
+            throw new Error(msg);
+          });
+        }
+        if (ct.indexOf("image/") === 0){
+          return res.blob().then(function(b){ showResult(b, null, "Photoreal render · " + Math.round(b.size/1024) + " KB"); });
+        }
+        return res.text().then(function(t){
+          var src = null, blobNote = "Photoreal render";
+          try {
+            var j = JSON.parse(t);
+            src = j && j.url ? j.url : pickImage(j);
+            if (j && j.category) blobNote += " · " + j.category;
+            if (j && typeof j.ms === "number") blobNote += " · " + Math.round(j.ms / 1000) + "s";
+          } catch(e){ src = null; }
+          if (!src) throw new Error("The photoreal endpoint returned no image.");
+          showResult(null, src, blobNote + " · " + src);
+        });
+      });
+  }
+
   function run(){
     if (busy) return;
     if (!files.person || !files.garment){
@@ -268,56 +558,31 @@
     }
     $("ok").classList.remove("on");
     setBusy(true);
-    say("Rendering your try-on…", false);
-    var fd = new FormData();
-    fd.append("person", files.person);
-    fd.append("garment", files.garment);
-    fetch(API, { method:"POST", body: fd, accept:"application/json, image/*" })
-      .then(function(res){
-        var ct = (res.headers.get("content-type") || "").toLowerCase();
-        if (!res.ok){
-          return res.text().then(function(t){
-            var msg = "Try-on failed (" + res.status + ").";
-            try {
-              var j = JSON.parse(t);
-              if (j && (j.error || j.message)) msg = "Try-on failed: " + (j.error || j.message);
-            } catch(e){ if (t) msg = "Try-on failed (" + res.status + "): " + t.slice(0,160); }
-            throw new Error(msg);
-          });
-        }
-        if (ct.indexOf("image/") === 0){
-          return res.blob().then(function(b){ showResult(b, null, "Rendered from your two photos · " + Math.round(b.size/1024) + " KB"); });
-        }
-        return res.text().then(function(t){
-          var src = null, blobNote = "Rendered from your two photos";
-          try {
-            var j = JSON.parse(t);
-            src = pickImage(j);
-            if (j && typeof j.width === "number" && typeof j.height === "number"){
-              blobNote += " · " + j.width + "×" + j.height;
-            }
-          } catch(e){ src = null; }
-          if (!src) throw new Error("The try-on engine returned no image.");
-          if (/^data:image\//i.test(src)){
-            var bin;
-            try {
-              bin = atob(src.split(",")[1] || "");
-            } catch(err){ bin = null; }
-            if (bin){
-              var arr = new Uint8Array(bin.length);
-              for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-              showResult(new Blob([arr], { type: src.slice(5, src.indexOf(";")) || "image/png" }), null, blobNote);
-              return;
-            }
-          }
-          showResult(null, src, blobNote + " · " + src);
-        });
-      })
+    say(mode === "hd"
+          ? "Rendering — this takes a few minutes…"
+          : "Making your preview…", false);
+    var job = (mode === "hd") ? runHd() : runDevice();
+    job
       .catch(function(err){
-        fail(err && err.message ? err.message : "The try-on request did not go through. Try again.");
+        fail(err && err.message ? err.message : "The try-on did not go through. Try again.");
       })
       .then(function(){ setBusy(false); });
   }
+
+  // Mode switch — the free/on-device lane is the default and needs no session.
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="to-mode"]'), function(radio){
+    radio.addEventListener("change", function(){
+      if (!radio.checked) return;
+      mode = radio.value;
+      var dev = $("lab-device"), hd = $("lab-hd");
+      if (dev) dev.classList.toggle("on", mode === "device");
+      if (hd) hd.classList.toggle("on", mode === "hd");
+      say(mode === "hd"
+            ? "Photoreal render. Your photos go to our model, and it takes a few minutes."
+            : "Instant preview. Your photos stay on this device.",
+          false);
+    });
+  });
 
   $("btn-go").addEventListener("click", run);
   $("btn-retry").addEventListener("click", run);
