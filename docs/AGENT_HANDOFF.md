@@ -1,9 +1,10 @@
 # Agent handoff — fashionistas.ai
 
 **Audience:** Other agents continuing product / deploy / Connect / Multilist UX work  
-**Session covered:** 2026-10-03 — **v1 build attempt (eBay + Etsy + Stripe)**  
+**Session covered:** 2026-10-04 — **try-on engine pivot (Leffa → FASHN VTON v1.5)**  
 **Repo:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
-**Handoff refreshed:** 2026-10-04 — **try-on engine replaced: Leffa is dead, FASHN VTON v1.5 is the path**  
+**`main` = `5ffba1e`** — pushed & verified (`ls-remote` == `rev-parse`), tree clean  
+**Handoff refreshed:** 2026-10-04 — **read `MISSION` first, then `TRY-ON ENGINE`, then §0**  
 
 Read this before changing live Pages, inventing marketplace credentials, merging eBay-centric UX, or assuming GitHub `main` equals production.
 
@@ -11,6 +12,63 @@ Read this before changing live Pages, inventing marketplace credentials, merging
 > They are kept for history. Where they conflict with **§0**, §0 wins — in particular
 > §1's "Shops (6)" is now **11**, and §1's "paste-ready kits / mostly no auto-post" is the
 > **rejected** framing that has been removed from the site.
+
+---
+
+## MISSION — what this app is for (read before touching anything)
+
+**One sentence:** let a single person photograph a garment and sell it in **eleven
+marketplaces** without doing eleven jobs.
+
+That is the whole product. Everything else is in service of it.
+
+### The promise the site makes
+
+> **"Photograph Your Closet, Sell It Everywhere."**
+
+| Half | What it does |
+|---|---|
+| **Listing engine** ← the business | Photo → AI draft (title, identifier, price, **fee take-home**) → **one "Sell everywhere" button** → auto-post to **11 shops** with live per-shop status `queued → posting → posted` / `failed` (retry) / `needs_connection` |
+| **Try-on** ← the thing people can *see* | Photo of you + a garment → see it on you → that drives the sale |
+
+**Price: `$14.99/mo`.** That number is claimed site-wide and must stay consistent.
+
+### What this app is NOT — these were removed deliberately
+
+Do not reintroduce any of them. Each was shipped once and explicitly rejected:
+
+| Rejected | Why |
+|---|---|
+| **"Copy and paste the kit yourself"** / paste-kit framing | Was the old pitch. The About page sold it and was rewritten. It is the *antithesis* of the promise above. |
+| **"Free forever" / "$0" / "no subscription"** | Banned copy — was 94 hits on the homepage, now 0. |
+| **Bonanza** | Has **zero code anywhere**. Never claim it. |
+| **Sticker / overlay "try-on"** (superimpose the garment on the photo) | User: *"this is the most pathetic app in history… it simply superimposed the jeans onto my picture."* Rejected outright. |
+| **Developer-speak on consumer pages** | User: *"why the fuck are you telling people what happens when you press try it on."* No implementation copy where a user reads. |
+| **Chrome extension as a v1 deliverable, AR** | Out of scope for v1. |
+
+### Definition of "the app works"
+
+Not: *the code runs.* Not: *the tests pass.* Those were both claimed wrongly before
+and the user caught it. It means:
+
+1. A person opens `fashionistas.ai/try-on/`
+2. Picks a photo and a garment
+3. **Gets a real photoreal try-on back in seconds**
+4. Presses **Sell everywhere** and it actually posts
+
+Right now step 3 is a dead backend and step 4 has **never once succeeded for any
+user.** Everything below the ✅ column is real; everything else is not done.
+
+### Proof standard (user-mandated)
+
+- **No mocks. No fake proofs. No unverified claims.** Every assertion carries
+  terminal / curl output.
+- **Never say "IT WORKS" when you only proved code ran.** Say explicitly which
+  part is *proven* and which is *unproven.* The user rewards that framing and
+  punishes the alternative.
+- **Three failures on one item → one line in `NEEDS_ISRAEL.txt`, then move on.**
+- **Do not ask for budget or new accounts.** Fix it on this box for free, or
+  change the product shape.
 
 ---
 
@@ -76,22 +134,54 @@ Three gotchas that cost time — do not rediscover them:
 3. `event: error` arrives **immediately, before any GPU work** — that is a quota signal,
    not a payload bug.
 
-| test | result | time |
+### The code that ships, tested for real (2026-10-04)
+
+`functions/api/tryon/hd.js` exports its transport helpers **specifically so the shipped
+code can be tested rather than a copy of it.** Test harness:
+`/tmp/opencode/fashn/test_shipped_hd.mjs` imports the real file and runs it.
+
+```
+inputs: person=180388B garment=289011B
+RESULT bytes=30004 type=image/webp ms=25308
+PROVEN: shipped runFashn() -> real image over HTTP, free
+```
+
+Failure path forced with a bad space URL — this is the behaviour the user demanded
+(no silent degradation):
+
+```
+code=upload_failed  -> Worker 502   msg=upload HTTP 405
+```
+
+### Generation results
+
+| run | result | time |
 |---|---|---|
 | user photo + sample jacket | **OK** (user: *"its good"*) | 25.9 s |
-| one-pieces / model | OK 19,182 B | 27.2 s |
-| tops / model | OK 33,966 B | 12.7 s |
-| tops / flat-lay | OK 44,438 B | 12.0 s |
-| remaining 6 tests | `ERROR` | quota |
+| **shipped `runFashn()`** | **OK 30,004 B webp** | **25.3 s** |
+| one-pieces / model | OK 19,182 B | 10.1–27.2 s |
+| tops / model | OK 33,966 B | 10.2–12.7 s |
+| tops / flat-lay | OK 44,438 B (1st batch) | 12.0 s |
+| **7 of 9** (both runs) | `ERROR` | quota |
 
-Outputs in `/tmp/opencode/fashn/results/` (3) + `/tmp/opencode/fashn/free_out.png`.
-Test matrix (all 3 categories × both photo types) in `/tmp/opencode/fashn/testset/`.
+**Only 2 of 9 passed on the 2026-10-04 rerun** (A0, A1), then quota died again.
+One case failed differently: `A4 URLError: SSL handshake operation timed out` —
+a transient network blip, *not* quota. Do not conflate the two when triaging.
+
+Outputs in `/tmp/opencode/fashn/results/`. Test matrix (all 3 categories × both photo
+types) in `/tmp/opencode/fashn/testset/index.json`.
+
+> ⚠️ **`/tmp/opencode/fashn/` holds 2.2 GB — code, the 1.94 GB weights and every
+> generated image — and it is NOT in git.** systemd purges `/tmp` after 10 days and a
+> reinstall wipes it. **Back it up or it disappears.**
 
 **Quota diagnosis — proven, not guessed:** non-GPU endpoints (`load_example`,
 `load_example_1`) still return **OK** while `try_on` errors instantly. So the Space is
-alive and the payload is valid; only the GPU quota is exhausted (anonymous). An
-authenticated `HF_TOKEN` would raise it — **but creating/verifying an HF account needs
-Israel, and is blocked on him.**
+alive and the payload is valid; only the GPU quota is exhausted (anonymous). It also
+*resets* — the same calls that failed at 16:22 succeeded at 18:32 — so treat a failure
+as **temporary capacity, never a bug**, and retest before debugging.
+An authenticated `HF_TOKEN` would raise it — **but creating/verifying an HF account
+needs Israel, and is blocked on him.**
 
 **B. Local CPU — ❌ DEAD, same trap as Leffa.**
 
@@ -160,17 +250,48 @@ number.** Next agent: rerun `/tmp/opencode/fashn/gpu_gate.py` with `gpu-env.sh` 
 
 ### BLOCKED ON ISRAEL — try-on
 
-1. **Review the 4 generated images.** Only one is approved (*"its good"*). The other 3 are
-   unreviewed. This is the gate on everything else.
+Everything below is **his**, and nothing else is waiting on him:
+
+1. **Review the generated images.** 5 exist, **1 approved** (*"its good"*).
+   Unreviewed: `/tmp/opencode/fashn/results/{A0_onepieces_model,A1_tops_model,
+   A2_tops_flatlay}.png` and `shipped_hd_test.webp`.
+   **This is the gate** — if the output is bad, the whole FASHN path dies and the
+   next agent must be told so, not quietly proceed.
 2. **An HF account/token** would lift the Space quota. Needs his email verification.
+3. **`TEST.md` §1–6** (~10 min, no keys needed) → first *real* marketplace post.
+   There has never been one.
+4. **8 env vars** — `EBAY_SANDBOX_*`, `EBAY_*_POLICY`, `ETSY_*`, `GOOGLE_*`, `STRIPE_*`.
+   Checked in 5 places, all missing.
+
+### SHIP STATUS — `main` = `5ffba1e`, pushed and verified
+
+```
+git ls-remote origin main  ->  5ffba1ebe1c2c8dbc289e8adffafa6736bf52e6c
+git rev-parse HEAD         ->  5ffba1ebe1c2c8dbc289e8adffafa6736bf52e6c   (identical)
+git status --porcelain     ->  0 remaining                                 (tree clean)
+```
+
+Commit `5ffba1e` = 33 files, 717 KB: the FASHN `hd.js` rewrite, the fees/guide work
+(`/fees/` removed, 5 new guide pages), `services/leffa/` kept as history under
+`RETIRED.md`, and this file. Secret-scanned before push (`.env`, `node_modules/`,
+`__pycache__/` all excluded — `__pycache__`/`*.pyc` added to `.gitignore`).
+
+**Pushed ≠ deployed.** The commit is on GitHub; **Cloudflare Pages has not been
+re-deployed**, so `fashionistas.ai` still serves the pre-`5ffba1e` output.
 
 ### NOT DONE — do not mark any of this complete
 
-- No GPU speed number (export unproven).
-- Nothing wired into `/tryon/hd` or the free tier yet.
-- The on-device warp+composite free tier is still the rejected "sticker overlay" —
-  user has explicitly rejected it. No replacement has shipped.
-- No commit, no deploy.
+- **No GPU speed number.** The export is still running/converting. `rope()` float32
+  patch is in; there is **no Iris Xe timing** yet. Do not invent one.
+- **Not deployed.** `5ffba1e` is on GitHub, not on Pages.
+- **Try-on is not reachable by a user.** `hd.js` exists and its transport is proven,
+  but nothing on `/try-on/` calls it. The page still runs the rejected overlay.
+- **Free tier still has no replacement.** The on-device warp+composite is the
+  rejected "sticker overlay". Nothing else has shipped.
+- **7 of 9 item/category tests still unproven** — blocked on quota.
+- **Zero marketplace posts, ever.** Blocked on Israel running `TEST.md` §1–6.
+- **8 env vars missing** (eBay / Etsy / Google / Stripe).
+- **placebets Phase 2 sidecar failed** (rate-limited); its output was never verified.
 
 ---
 
