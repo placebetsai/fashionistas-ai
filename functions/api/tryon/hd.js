@@ -56,8 +56,9 @@
 import { requireAuth, subscriptionState } from "../_lib/auth.js";
 import { json, toTryonError, sniffImageType, extForType } from "../_tryon/http.js";
 import { parseTryonForm } from "../_tryon/multipart.js";
-import { requireBucket, putImage, resultKey } from "../_tryon/r2.js";
+import { requireBucket, putImage, resultKey, publicUrl } from "../_tryon/r2.js";
 import { findD1 } from "../_tryon/ledger.js";
+import { cacheKey, cacheObjectKey, runProvider } from "../_tryon/provider.js";
 
 const MODEL_VERSION = "fashn-vton-1.5";
 const DEFAULT_SPACE = "https://fashn-ai-fashn-vton-1-5.hf.space";
@@ -476,27 +477,7 @@ export async function onRequestPost(context) {
     );
   }
 
-  // --- 3. budget guard ------------------------------------------------
-  const cap = spendCap(env);
-  const spent = await monthSpendUsd(env);
-  if (spent + COST_PER_RUN_USD > cap) {
-    return json(
-      {
-        ok: false,
-        error: "spend_cap_reached",
-        code: "monthly_tryon_spend_cap",
-        detail:
-          `Monthly metered try-on spend is $${spent.toFixed(4)} against a ` +
-          `$${cap.toFixed(4)} cap (MAX_MONTHLY_TRYON_SPEND). FASHN runs are $0 metered, ` +
-          "so the default cap of 0 admits them; any priced fallback logged here would be refused.",
-        spent_usd: spent,
-        cap_usd: cap,
-      },
-      503
-    );
-  }
-
-  // --- 4. inputs ------------------------------------------------------
+  // --- 3. inputs ------------------------------------------------------
   let form;
   try {
     form = await parseTryonForm(request);

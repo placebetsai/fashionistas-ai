@@ -18,18 +18,22 @@
 // or a shop token. The heartbeat sends ONLY booleans — "session present" —
 // plus the one-way probe result per shop.
 
-import { tick, onAlarm, enqueue, getResults } from "./queue.js";
+import { tick, onAlarm, enqueue, getResults, runSalesScanNow } from "./queue.js";
 import { SHOPS, SESSION_ONLY_SHOPS, normalizeShop } from "./config/selectors.js";
 import { apiPost, SESSIONS_PATH } from "./config/api.js";
 
 const POLL_ALARM = "fash-poll";
 const HEARTBEAT_ALARM = "fash-heartbeat";
+// Sale detection opens one background tab per marketplace in the seller's own
+// session, so it runs on a slow cadence — not on the 1-minute poll.
+const SALES_SCAN_ALARM = "fash-sales-scan";
 
 function scheduleAlarms() {
   // Poll fast enough that a tapped "Post to every marketplace" feels instant,
   // while staying inside Chrome's alarm budget for a persistent-less worker.
   chrome.alarms.create(POLL_ALARM, { delayInMinutes: 0.2, periodInMinutes: 1 });
   chrome.alarms.create(HEARTBEAT_ALARM, { delayInMinutes: 1, periodInMinutes: 30 });
+  chrome.alarms.create(SALES_SCAN_ALARM, { delayInMinutes: 5, periodInMinutes: 360 });
 }
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -52,6 +56,14 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
   if (alarm.name === HEARTBEAT_ALARM) {
     heartbeat().catch((e) => console.error("[fash] heartbeat:", e));
+    return;
+  }
+  if (alarm.name === SALES_SCAN_ALARM) {
+    // Sale detection: read-only scan of the seller's own closets. Fail-soft —
+    // a wall or a broken selector is a skipped result, never an exception.
+    runSalesScanNow()
+      .then((results) => console.info("[fash] sales scan:", JSON.stringify(results)))
+      .catch((e) => console.error("[fash] sales scan:", e));
     return;
   }
   // retry:<jobId> alarms come from queue.js (exponential backoff)
@@ -205,6 +217,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
     enqueue(msg.job)
       .then(() => sendResponse({ ok: true }))
+      .catch((e) => sendResponse({ ok: false, error: String(e && e.message) }));
+    return true;
+  }
+  // On-demand sale detection (popup / site bridge): runs the same read-only
+  // scan as the 6-hour alarm, in the seller's own session. Fail-soft — the
+  // response is per-shop {shop, status, reason, recorded} summaries, and a
+  // broken scan still answers instead of hanging the caller.
+  if (msg.type === "fash:sales-scan") {
+    const shops = Array.isArray(msg.shops)
+      ? msg.shops.map((s) => normalizeShop(s)).filter(Boolean)
+      : undefined;
+    runSalesScanNow({ shops })
+      .then((results) => sendResponse({ ok: true, results }))
       .catch((e) => sendResponse({ ok: false, error: String(e && e.message) }));
     return true;
   }

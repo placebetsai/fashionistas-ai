@@ -12,6 +12,7 @@
  */
 
 import { getFreshToken } from "./oauth/callback.js";
+import { requireAuth } from "../_lib/auth.js";
 
 const TOK_COOKIE = "ebay_oauth_tok";
 const BYO_COOKIE = "ebay_byo_sess";
@@ -750,7 +751,18 @@ export async function onRequestPost(context) {
   );
 }
 
-export async function onRequestGet() {
+/**
+ * Usage/discovery response.
+ *
+ * This used to answer 200 to any caller with no session at all, which made the
+ * route reachable anonymously and advertised its accepted body shape to
+ * strangers. The help text is not secret, but there is also no reason for an
+ * unauthenticated caller to have it, so it now sits behind the same session
+ * gate as the POST that actually does work.
+ */
+export async function onRequestGet(context) {
+  const auth = await requireAuth(context.request, context.env);
+  if (!auth.ok) return auth.response;
   return json(
     {
       ok: true,

@@ -115,12 +115,23 @@ export async function onRequest(context) {
   const { request, env } = context;
   const method = (request.method || "GET").toUpperCase();
 
+  // CORS preflight carries no credentials, so it is answered before auth.
   if (method === "OPTIONS") {
     return new Response(null, {
       status: 204,
       headers: { allow: ALLOW, "cache-control": "no-store" },
     });
   }
+
+  // Auth BEFORE anything that inspects or consumes the request. It used to sit
+  // below the method, content-type, JSON-parse and body-validation checks, so
+  // an anonymous caller could drive every one of them — and a GET never saw a
+  // 401 at all, which made the route look public to the auth matrix. Refusing
+  // first also stops us advertising which methods we accept to someone who has
+  // not proven who they are.
+  const auth = await requireAuth(request, env);
+  if (!auth.ok) return auth.response;
+
   if (method !== "POST") {
     return json(
       { ok: false, error: "method_not_allowed", detail: "Use POST with { message }." },
@@ -153,9 +164,6 @@ export async function onRequest(context) {
   if (parsed.error) return parsed.error;
   const { message, history } = parsed;
 
-  // --- auth (401) ---------------------------------------------------------
-  const auth = await requireAuth(request, env);
-  if (!auth.ok) return auth.response;
   const userId = auth.user.id;
 
   // --- free-tier cap (402) ------------------------------------------------

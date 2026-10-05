@@ -10,6 +10,8 @@
  * fabricated success.
  */
 
+import { requireAuth } from "../_lib/auth.js";
+
 const OPEN_API = "https://openapi.etsy.com/v3/application";
 const REFRESH_HINT = "/api/etsy/oauth/start";
 
@@ -178,6 +180,14 @@ function guessContentType(url, declared) {
 export async function onRequestPost(context) {
   const env = context.env || {};
   const req = context.request;
+
+  // Session gate first. This route previously had none: it read the body and
+  // then answered 501 with a description of which Etsy env vars are missing,
+  // so an anonymous caller could both drive it and read our configuration
+  // state. Nothing below may run until a session is proven.
+  const auth = await requireAuth(req, env);
+  if (!auth.ok) return auth.response;
+
   const apiKey = safeStr(env.ETSY_API_KEY);
 
   let body = {};
@@ -373,7 +383,10 @@ export async function onRequestPost(context) {
   );
 }
 
-export async function onRequestGet() {
+/** Usage/discovery — same session gate as the POST, so it is not public. */
+export async function onRequestGet(context) {
+  const auth = await requireAuth(context.request, context.env || {});
+  if (!auth.ok) return auth.response;
   return json({
     ok: true,
     method: "POST",

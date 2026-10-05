@@ -24,10 +24,30 @@
 // covered offline by apps/extension/__tests__/sales.test.mjs.
 
 import { selectorsFor, normalizeShop } from "../config/selectors.js";
-import { detectLogin } from "../../../libs/login-detect.js";
+// NOTE: libs/login-detect.js lives OUTSIDE the packaged extension
+// (apps/extension/ is the package root), so a static import of it would fail
+// the whole module load in Chrome. It is resolved lazily below: in-package
+// global first, then a dynamic import that is allowed to fail (the kit's own
+// verdict stands when the detector is unreachable). NEVER throws.
 import { withSoldSel, SALES_SHOPS } from "./sold-selectors.js";
 import { SALES_ADAPTERS } from "./adapters/index.js";
 import { makeSaleEvent, acceptNew, pushEvent, emptyState } from "./registry.js";
+
+/**
+ * Resolve the login-wall detector without ever throwing and without a static
+ * cross-package import. Returns the detectLogin function or null.
+ */
+export async function resolveDetectLogin() {
+  try {
+    const g = globalThis && globalThis.__fashLoginDetect;
+    if (g && typeof g.detectLogin === "function") return g.detectLogin;
+  } catch (e) { /* no global — fall through */ }
+  try {
+    const m = await import("../../../libs/login-detect.js");
+    if (m && typeof m.detectLogin === "function") return m.detectLogin;
+  } catch (e) { /* outside the packaged extension, or test harness without it */ }
+  return null;
+}
 
 export const STATE_KEY = "sales:state";
 export const SALES_PATH = "/api/sales";
@@ -180,23 +200,30 @@ export async function scanAndRecord(deps = {}) {
       summary.report = raw.report;
     }
 
-    // Nothing readable? Ask libs/login-detect.js WHY before believing it:
+    // Nothing readable? Ask the login detector WHY before believing it:
     // a bounced sign-in page is a login wall, a soft-404 is not "no listings".
     const readable = summary.items.length > 0;
     const wallish = [null, "no_listings", "items_unreadable", "needs_input"].includes(summary.reason);
     if (!readable && wallish) {
       try {
-        const v = detectLogin({
-          requestedPath,
-          finalPath: raw.href || "",
-          signals: raw.signals || {}
-        });
-        if (!v.connected && (v.reason === "bounced" || v.reason === "login_form")) {
-          summary.status = "skipped";
-          summary.reason = "login_wall";
-        } else if (v.reason === "soft_404") {
-          summary.status = "skipped";
-          summary.reason = "page_not_found";
+        const detectLogin = typeof deps.detectLogin === "function"
+          ? deps.detectLogin
+          : await resolveDetectLogin();
+        if (!detectLogin) {
+          /* detector unreachable — keep the kit's verdict, never throw */
+        } else {
+          const v = detectLogin({
+            requestedPath,
+            finalPath: raw.href || "",
+            signals: raw.signals || {}
+          });
+          if (!v.connected && (v.reason === "bounced" || v.reason === "login_form")) {
+            summary.status = "skipped";
+            summary.reason = "login_wall";
+          } else if (v.reason === "soft_404") {
+            summary.status = "skipped";
+            summary.reason = "page_not_found";
+          }
         }
       } catch (e) {
         /* the detector is pure; if it ever fails, keep the kit's verdict */
@@ -340,4 +367,4 @@ export async function scanAllShops({ chrome, shops, storage, apiPost, now } = {}
   return results;
 }
 
-export default { scanAndRecord, runShopScan, scanAllShops, loadState, saveState, chromeStorage, STATE_KEY };
+export default { scanAndRecord, runShopScan, scanAllShops, loadState, saveState, chromeStorage, resolveDetectLogin, STATE_KEY };

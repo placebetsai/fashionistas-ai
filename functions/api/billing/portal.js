@@ -83,9 +83,43 @@ async function stripePost(key, path, params) {
   return { ok: res.ok, status: res.status, data };
 }
 
+/**
+ * Session-only gate — reads `sessions` and never a billing column, so an
+ * anonymous caller is refused before any `ALTER TABLE` runs and before the
+ * answer can reveal whether Stripe is configured. `currentUser` SELECTs
+ * `u.stripe_customer_id`, which `ensureBillingColumns` creates, so it cannot
+ * be the gate: on a pre-column database it would force a migration first.
+ */
+async function hasLiveSession(db, token) {
+  if (!token) return false;
+  const row = await db
+    .prepare("SELECT user_id FROM sessions WHERE token = ? AND expires_at > ? LIMIT 1")
+    .bind(token, Math.floor(Date.now() / 1000))
+    .first();
+  return Boolean(row);
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
+  const db = env.DB;
+  if (!db) {
+    return json({ error: "Server not configured: D1 binding `DB` is missing on this Pages project." }, 500);
+  }
+
+  // 1. Gate — nothing above this may vary with configuration or write to D1.
+  const token = readCookie(request, SESSION_COOKIE);
+  let signedIn = false;
+  try {
+    signedIn = await hasLiveSession(db, token);
+  } catch (err) {
+    return json({ error: "Could not read the session.", detail: String((err && err.message) || err) }, 500);
+  }
+  if (!signedIn) {
+    return json({ error: "Not signed in." }, 401);
+  }
+
+  // 2. Configuration, now that only a real session can see the answer.
   const stripeKey = typeof env.STRIPE_SECRET_KEY === "string" ? env.STRIPE_SECRET_KEY.trim() : "";
   if (!stripeKey) {
     return json(
@@ -98,15 +132,16 @@ export async function onRequestPost(context) {
     );
   }
 
-  const db = env.DB;
-  if (!db) {
-    return json({ error: "Server not configured: D1 binding `DB` is missing on this Pages project." }, 500);
+  // 3. Schema, then the full user row (which needs those columns).
+  try {
+    await ensureBillingColumns(db);
+  } catch (err) {
+    return json({ error: "Could not prepare the billing schema.", detail: String((err && err.message) || err) }, 500);
   }
 
   let user = null;
   try {
-    await ensureBillingColumns(db);
-    user = await currentUser(db, readCookie(request, SESSION_COOKIE));
+    user = await currentUser(db, token);
   } catch (err) {
     return json({ error: "Could not read the session.", detail: String((err && err.message) || err) }, 500);
   }

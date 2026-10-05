@@ -1,9 +1,12 @@
 /**
- * multipart/form-data parsing for POST /api/tryon (lane-3).
+ * multipart/form-data parsing for POST /api/tryon (lane-3) and
+ * POST /api/tryon/hd.
  *
  * Required file parts: person, garment.
- * Optional file parts: garment2, garment3 (top + bottom + outerwear chains).
- * Optional fields: previews, seed, crop, category[2|3], description[2|3].
+ * Optional file parts: garment2, garment3 (top + bottom + outerwear chains —
+ * the /api/tryon/hd route ignores the chain and renders garment only).
+ * Optional fields: previews, steps, photo_type, seed, crop,
+ *                  category[2|3], description[2|3].
  *
  * No onRequest* exports here — this file is imported, not routed.
  */
@@ -12,6 +15,11 @@ import { TryonError, sniffImageType } from "./http.js";
 
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 const CATEGORIES = ["upper_body", "lower_body", "dresses"];
+const PHOTO_TYPES = ["model", "flat-lay"];
+/** FASHN VTON's supported sampler range; 20 is the product default. */
+const STEPS_DEFAULT = 20;
+const STEPS_MIN = 10;
+const STEPS_MAX = 50;
 
 function readField(form, name) {
   try {
@@ -56,6 +64,21 @@ function boolField(form, name, def) {
   if (typeof raw !== "string") return def;
   const v = raw.trim().toLowerCase();
   return !(v === "0" || v === "false" || v === "no" || v === "off");
+}
+
+/**
+ * Which photo the person image is:
+ *   "model"    the person photo IS the model shot (the product's normal case)
+ *   "flat-lay" the person image is a flat garment laid flat, not a person
+ * Passed through to the provider as `photo_type` and mixed into the cache key,
+ * because "same person photo + same garment" means a different render per mode.
+ * Unvalidated here on purpose: the route owns the 422 so the error shape stays
+ * with the other route-level field errors.
+ */
+function photoTypeField(form) {
+  const raw = readField(form, "photo_type");
+  if (raw === null || raw === undefined || raw === "") return "model";
+  return String(raw).trim().toLowerCase();
 }
 
 async function readImagePart(form, name, required) {
@@ -125,6 +148,8 @@ async function readImagePart(form, name, required) {
  *   person: {field:string,bytes:Uint8Array,type:string,size:number},
  *   garments: Array<{field:string,file:object,category:string,description:string}>,
  *   previews: number,
+ *   steps: number,
+ *   photoType: string,
  *   seed: number|null,
  *   crop: boolean,
  *   requestedPreviews: number
@@ -178,6 +203,8 @@ export async function parseTryonForm(request) {
   }
 
   const requestedPreviews = intField(form, "previews", 3, 1, 6);
+  const steps = intField(form, "steps", STEPS_DEFAULT, STEPS_MIN, STEPS_MAX);
+  const photoType = photoTypeField(form);
   const seedRaw = readField(form, "seed");
   const seed =
     typeof seedRaw === "string" && seedRaw.trim() !== "" && Number.isFinite(Number.parseInt(seedRaw, 10))
@@ -189,7 +216,11 @@ export async function parseTryonForm(request) {
     garments,
     previews: requestedPreviews,
     requestedPreviews,
+    steps,
+    photoType,
     seed,
     crop: boolField(form, "crop", true),
   };
 }
+
+export { PHOTO_TYPES, STEPS_DEFAULT, STEPS_MIN, STEPS_MAX };

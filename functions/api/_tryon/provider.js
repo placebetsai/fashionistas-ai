@@ -49,19 +49,35 @@
 import { TryonError } from "./http.js";
 import { runpodProvider } from "./runpod.js";
 
-/** Bump when the cache-key recipe changes (invalidates every cached render). */
-export const CACHE_VERSION = "fashn-vton-1.5|v1";
+/**
+ * Bump when the cache-key recipe changes — that is, when the SAME four inputs
+ * would now produce a DIFFERENT canonical image.
+ *
+ * v2 (2026-10-05): the render moved off the Gradio Space to RunPod and the
+ * product default is now steps=20 instead of 30. A v1 key therefore points at a
+ * 30-step Space render, which is not the image this route promises today, so
+ * every v1 cache entry is deliberately orphaned rather than served.
+ */
+export const CACHE_VERSION = "fashn-vton-1.5|runpod|steps20|v2";
 
 /**
  * THE REGISTRY — adding a provider is: 1 import + 1 line here.
  * Nothing else in the repo branches on provider names except this map.
+ *
+ * Null prototype on purpose. GPU_PROVIDER is attacker-uncontrolled but
+ * operator-controlled, and a normal object literal inherits `constructor`,
+ * `toString`, `__proto__`… so `REGISTRY["constructor"]` returns Object and the
+ * lookup below would resolve a non-provider instead of failing closed.
+ * Object.create(null) makes every lookup an own-property lookup.
  */
-const REGISTRY = Object.freeze({
-  runpod: runpodProvider,
-  // vast:    vastProvider,     // functions/api/_tryon/vast.js
-  // salad:   saladProvider,    // functions/api/_tryon/salad.js
-  // selfhosted: selfHostedProvider,
-});
+const REGISTRY = Object.freeze(
+  Object.assign(Object.create(null), {
+    runpod: runpodProvider,
+    // vast:    vastProvider,     // functions/api/_tryon/vast.js
+    // salad:   saladProvider,    // functions/api/_tryon/salad.js
+    // selfhosted: selfHostedProvider,
+  })
+);
 
 /** Providers a config value may legitimately name, in preference order. */
 export const SUPPORTED_PROVIDERS = Object.freeze(Object.keys(REGISTRY));
@@ -83,14 +99,17 @@ export const RUN_RESULT_CONTRACT = Object.freeze([
   "jobId",
 ]);
 
-// A provider name comes straight from an env var. Echoing an arbitrary env
-// value back into an HTTP response is how secrets leak, so anything that is
-// not a plausible provider id is redacted instead of reflected.
-const SAFE_NAME = /^[a-z0-9_-]{1,24}$/;
-
-function displayName(name) {
-  return SAFE_NAME.test(name) ? name : "«redacted»";
-}
+/**
+ * The env value is NEVER reflected into a response body or an error message.
+ *
+ * GPU_PROVIDER is an operator-set string, but an operator can paste anything
+ * into it — including a credential, which would then be readable by whoever
+ * triggers a try-on. There is no value worth the risk: the supported set is a
+ * compile-time constant, so the message can always name that instead. Both
+ * messages below are fixed strings; the configured value appears nowhere.
+ */
+const NOT_SET = "gpu_provider_not_configured";
+const NOT_KNOWN = "gpu_provider_unknown";
 
 /** Normalized, lower-cased GPU_PROVIDER. "" when unset. Never throws. */
 export function providerName(env) {
@@ -101,40 +120,59 @@ export function providerName(env) {
 
 /**
  * Resolve GPU_PROVIDER to a provider module.
- * FAILS CLOSED: unset -> 503, unknown -> 503. Never leaks the raw value.
+ *
+ * FAILS CLOSED, both ways:
+ *   unset            -> TryonError 503 gpu_provider_not_configured
+ *   set but unknown  -> TryonError 503 gpu_provider_unknown
+ *
+ * There is no fallback provider, no "default to runpod", and no degraded local
+ * render: an unconfigured deployment must say so rather than quietly produce a
+ * different (and cheaper, worse) image than the button promises.
+ *
+ * Neither message contains the configured value — see NOT_SET above.
  */
 export function resolveProvider(env) {
   const name = providerName(env);
+  const supported = `Supported: ${SUPPORTED_PROVIDERS.join(", ")}.`;
   if (!name) {
     throw new TryonError(
       503,
-      "gpu_provider_not_configured",
-      "GPU_PROVIDER is not set, so photoreal try-on is disabled. Set it to one of: " +
-        SUPPORTED_PROVIDERS.join(", ") +
-        "."
+      NOT_SET,
+      `GPU_PROVIDER is not set, so photoreal try-on is disabled. ${supported}`
     );
   }
-  const provider = REGISTRY[name];
-  if (!provider) {
-    throw new TryonError(
-      503,
-      "gpu_provider_unknown",
-      `GPU_PROVIDER "${displayName(name)}" is not a supported try-on provider. ` +
-        `Supported: ${SUPPORTED_PROVIDERS.join(", ")}.`
-    );
+  // Own-property lookup only (null-proto registry), so "constructor" and
+  // "__proto__" are unknown names, not inherited objects.
+  if (!Object.prototype.hasOwnProperty.call(REGISTRY, name)) {
+    throw new TryonError(503, NOT_KNOWN, `GPU_PROVIDER is not a supported try-on provider. ${supported}`);
   }
-  return provider;
+  return REGISTRY[name];
 }
 
-function assertContract(provider) {
+/**
+ * Every registry entry must implement the whole contract before it is used.
+ * `id` is checked against the registry key so a module cannot answer under a
+ * name the route never asked for.
+ */
+function assertContract(name, provider) {
   for (const key of PROVIDER_CONTRACT) {
     if (provider[key] === undefined || provider[key] === null) {
       throw new TryonError(
         503,
         "gpu_provider_misconfigured",
-        `Provider "${displayName(provider.id)}" does not implement "${key}".`
+        `Provider "${name}" does not implement "${key}".`
       );
     }
+  }
+  if (typeof provider.run !== "function" || typeof provider.probe !== "function") {
+    throw new TryonError(503, "gpu_provider_misconfigured", `Provider "${name}" run/probe must be functions.`);
+  }
+  if (provider.id !== name) {
+    throw new TryonError(
+      503,
+      "gpu_provider_misconfigured",
+      `Provider "${name}" reports id "${String(provider.id).slice(0, 24)}".`
+    );
   }
 }
 
@@ -149,7 +187,7 @@ function assertContract(provider) {
  */
 export async function runProvider(env, input) {
   const provider = resolveProvider(env);
-  assertContract(provider);
+  assertContract(provider.id, provider);
 
   const out = await provider.run({ ...input, env });
 
@@ -178,7 +216,7 @@ export async function runProvider(env, input) {
 /** Health/cost probe for the configured provider. Never throws for 4xx/5xx. */
 export async function probeProvider(env, input = {}) {
   const provider = resolveProvider(env);
-  assertContract(provider);
+  assertContract(provider.id, provider);
   try {
     const out = await provider.probe({ ...input, env });
     return {
@@ -213,9 +251,13 @@ export function providerCostUsd(env) {
  *
  * Properties the tests assert:
  *   - stable:   same 4 inputs -> same 64-char hex, always
- *   - order-independent: the record is serialized with sorted keys, so the
- *     hash does not depend on the order the caller lists the fields
+ *   - order-independent: the field RECORD is built here from named fields and
+ *     serialized through sorted keys, so the hash cannot depend on the order a
+ *     caller happened to list them in. It is a fixed schema, not a merge of
+ *     caller-supplied keys, so a caller cannot inject or omit a field.
  *   - sensitive: changing ANY one of the 4 inputs changes the hash
+ *   - unambiguous: fields are length-prefixed, so no combination of
+ *     category/mode text can imitate a different split of the same characters
  *
  * Deliberately NOT in the key: steps, seed, guidance. The cache stores the
  * canonical render of "this person + this garment + this category + this
@@ -224,10 +266,22 @@ export function providerCostUsd(env) {
  * CACHE_VERSION instead.
  * ------------------------------------------------------------------ */
 
-/** Uint8Array|string -> 64 lowercase hex chars. */
+/**
+ * Uint8Array|string -> 64 lowercase hex chars.
+ *
+ * Works on Workers (WebCrypto) and on Node >= 18 (globalThis.crypto), which is
+ * why the tests can call this with no shim and no dependency.
+ */
 export async function sha256Hex(value) {
+  const c = globalThis.crypto;
+  if (!c || !c.subtle || typeof c.subtle.digest !== "function") {
+    throw new TryonError(500, "no_sha256", "This runtime has no SHA-256 (WebCrypto) available.");
+  }
   const bytes = typeof value === "string" ? new TextEncoder().encode(value) : value;
-  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  if (!(bytes instanceof Uint8Array) || !bytes.length) {
+    throw new TryonError(400, "cache_key_empty", "cacheKey cannot hash an empty value.");
+  }
+  const digest = await c.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
@@ -237,8 +291,31 @@ function requireBytes(value, field) {
   }
 }
 
-/** @returns {Promise<string>} 64-char lowercase hex. */
-export async function cacheKey({ person, garment, category, mode }) {
+/**
+ * Canonical, unambiguous serialization of a flat string record.
+ *
+ * `name.length:value` per field, joined with "\n". The length prefix is what
+ * makes it injective: without it, {category:"a\nmode:b", mode:""} and
+ * {category:"a", mode:"b"} would produce the same bytes and therefore the same
+ * cache key for two different renders.
+ */
+function canonicalRecord(fields) {
+  return Object.keys(fields)
+    .sort()
+    .map((k) => {
+      const v = String(fields[k]);
+      return `${k.length}:${k}=${v.length}:${v}`;
+    })
+    .join("\n");
+}
+
+/**
+ * @returns {Promise<string>} 64-char lowercase hex.
+ *
+ * The four inputs are read BY NAME from the argument, so `cacheKey(a, b)` and
+ * `cacheKey({garment:b, mode:m, category:c, person:a})` are the same call.
+ */
+export async function cacheKey({ person, garment, category, mode } = {}) {
   requireBytes(person, "person");
   requireBytes(garment, "garment");
   const fields = {
@@ -248,13 +325,20 @@ export async function cacheKey({ person, garment, category, mode }) {
     person: await sha256Hex(person),
     garment: await sha256Hex(garment),
   };
-  // Sorted keys => the same four inputs hash identically regardless of the
-  // order they were passed in.
-  const canonical = Object.keys(fields)
-    .sort()
-    .map((k) => `${k}:${fields[k]}`)
-    .join("\n");
-  return sha256Hex(canonical);
+  return sha256Hex(canonicalRecord(fields));
+}
+
+/** Exported for the tests: the exact bytes the cache key hashes. */
+export async function cacheKeySource({ person, garment, category, mode } = {}) {
+  requireBytes(person, "person");
+  requireBytes(garment, "garment");
+  return canonicalRecord({
+    version: CACHE_VERSION,
+    category: String(category === undefined || category === null ? "" : category),
+    mode: String(mode === undefined || mode === null ? "" : mode),
+    person: await sha256Hex(person),
+    garment: await sha256Hex(garment),
+  });
 }
 
 /**

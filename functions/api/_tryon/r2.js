@@ -4,10 +4,15 @@
  * Bucket binding: env.TRYON_BUCKET (Pages → Settings → Functions → R2 bindings).
  * Object keys:
  *   tryon/{uuid}.{ext}        generated try-on results  → /api/tryon/image/{uuid}.{ext}
- *   tryon/src-{uuid}.{ext}    uploaded inputs we hand Replicate as a hosted URL
+ *   tryon/src-{uuid}.{ext}    uploaded inputs we hand a remote model as a URL
+ *   tryon/{cacheHash32}.png   content-addressed try-on cache (see _tryon/provider.js)
+ *
+ * All three key shapes are served by the EXISTING /api/tryon/image/{uuid} route:
+ * the cache key is 32 hex chars + ".png", which is exactly the id that route
+ * already accepts. A cache hit therefore needs no new route and no second copy.
  */
 
-import { TryonError, extForType, randomHex } from "./http.js";
+import { TryonError, extForType, randomHex, sniffImageType } from "./http.js";
 
 const RESULT_PREFIX = "tryon/";
 
@@ -35,7 +40,7 @@ export function keyFor({ prefix = "", ext }) {
   return `${RESULT_PREFIX}${prefix}${randomHex()}.${ext}`;
 }
 
-/** Store bytes and return the absolute URL Replicate (or a browser) can fetch. */
+/** Store bytes and return the absolute URL a model (or a browser) can fetch. */
 export async function putImage(bucket, request, key, bytes, contentType) {
   try {
     await bucket.put(key, bytes, { httpMetadata: { contentType } });
@@ -47,6 +52,68 @@ export async function putImage(bucket, request, key, bytes, contentType) {
     );
   }
   return publicUrl(request, key);
+}
+
+/**
+ * Read one stored object. Used by the try-on cache to answer "have we already
+ * rendered this exact request?" WITHOUT calling a GPU.
+ *
+ * @returns {Promise<{bytes:Uint8Array,type:string,size:number}|null>}
+ *   null = miss (absent, or an R2 read error — a broken cache must degrade to a
+ *   miss, never fail the user's render).
+ */
+export async function getImage(bucket, key) {
+  let object = null;
+  try {
+    object = await bucket.get(key);
+  } catch (err) {
+    console.log(
+      `[tryon-cache] read_failed ${((err && err.message) || "unknown").slice(0, 160)}`
+    );
+    return null;
+  }
+  if (!object || typeof object.arrayBuffer !== "function") return null;
+
+  let bytes;
+  try {
+    bytes = new Uint8Array(await object.arrayBuffer());
+  } catch (err) {
+    console.log(
+      `[tryon-cache] body_unreadable ${((err && err.message) || "unknown").slice(0, 160)}`
+    );
+    return null;
+  }
+  if (!bytes.length) return null;
+
+  // Sniff rather than trust the stored metadata: a cache hit that hands back
+  // something that is not an image is worse than a miss.
+  const declared = (object.httpMetadata && object.httpMetadata.contentType) || "";
+  const type = sniffImageType(bytes) || (/^image\//.test(declared) ? declared.split(";")[0].trim() : null);
+  if (!type) return null;
+
+  return { bytes, type, size: bytes.length };
+}
+
+/**
+ * Store a rendered image under its content-addressed cache key.
+ * Fire-and-forget on failure: the user already has their image, and losing the
+ * cache write only costs money on the next identical request.
+ */
+export async function putCached(bucket, key, bytes, contentType = "image/png") {
+  try {
+    await bucket.put(key, bytes, { httpMetadata: { contentType } });
+    return true;
+  } catch (err) {
+    console.log(
+      `[tryon-cache] write_failed ${((err && err.message) || "unknown").slice(0, 160)}`
+    );
+    return false;
+  }
+}
+
+/** Same shape as publicUrl, from a context object. */
+export function keyUrl(context, key) {
+  return publicUrl((context && context.request) || context, key);
 }
 
 /** "tryon/src-ab12….jpg" → "https://host/api/tryon/image/src-ab12….jpg" */

@@ -665,6 +665,75 @@ async function runSignup(job, cfg, adapter, shopKey) {
   }
 }
 
+/* ---------------------------------------------------------- sales scan
+   Phase 2 (sale detection) runner. A scan OPENS each marketplace's own-listings
+   page in a background tab of the seller's browser, READS it, and closes the
+   tab — the same session, the same machine, never our servers, no passwords.
+   A sold listing becomes a POST /api/sales event (via the driver's apiPost);
+   deleting copies elsewhere is always the seller's one-tap confirm, which
+   enqueues through the EXISTING delist path above (runDelist), never here.
+
+   Fail-soft by construction: the sales modules load via dynamic import inside
+   try/catch, so a sales bug can never break publish/delist/tick; every wall
+   (login, CAPTCHA, empty or redesigned DOM) is a per-shop skipped result. */
+
+/** chrome.storage.local in the single-key shape sales/driver.js wants. */
+function salesStorage() {
+  return {
+    async get(key) {
+      try {
+        const o = await lsGet(key);
+        return o ? o[key] : null;
+      } catch (e) {
+        return null;
+      }
+    },
+    async set(key, value) {
+      try {
+        await lsSet({ [key]: value });
+      } catch (e) {
+        /* storage full: the next scan re-derives what it can */
+      }
+    }
+  };
+}
+
+/**
+ * Run one sale-detection pass over the given shops (default: all six).
+ * NEVER throws: without tabs it reports no_tab_runner per shop; without the
+ * sales modules it reports scan_unavailable; each shop is isolated anyway.
+ */
+export async function runSalesScanNow({ shops, storage, apiPost: post, now } = {}) {
+  const summarize = (results) =>
+    (Array.isArray(results) ? results : []).map((r) => ({
+      shop: (r && r.shop) || "unknown",
+      status: (r && r.status) || "skipped",
+      reason: (r && r.reason) || null,
+      recorded: Array.isArray(r && r.recorded) ? r.recorded.length : 0,
+      needsInput: Array.isArray(r && r.needsInput) ? r.needsInput.length : 0
+    }));
+  try {
+    const [driver, sold] = await Promise.all([
+      import("./sales/driver.js"),
+      import("./sales/sold-selectors.js")
+    ]);
+    if (!driver || typeof driver.scanAllShops !== "function") {
+      return [{ shop: "all", status: "skipped", reason: "scan_unavailable", recorded: 0, needsInput: 0 }];
+    }
+    const list = Array.isArray(shops) && shops.length ? shops : sold.SALES_SHOPS || [];
+    const results = await driver.scanAllShops({
+      chrome: typeof chrome !== "undefined" ? chrome : undefined,
+      shops: list,
+      storage: storage || salesStorage(),
+      apiPost: typeof post === "function" ? post : apiPost,
+      now
+    });
+    return summarize(results);
+  } catch (e) {
+    return [{ shop: "all", status: "skipped", reason: "scan_unavailable", recorded: 0, needsInput: 0 }];
+  }
+}
+
 /* --------------------------------------------------------------- alarms */
 
 /** background.js forwards chrome.alarms here (retries + poll alarm). */
