@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "version": 1,
-  "generatedAt": "2026-10-03T16:45:11.046Z",
+  "generatedAt": "2026-10-05T12:45:01.464Z",
   "shops": {
     "poshmark": {
       "label": "Poshmark",
@@ -1017,6 +1017,279 @@
           "#username"
         ]
       }
+    },
+    "ebay": {
+      "label": "eBay",
+      "origin": "https://www.ebay.com",
+      "createUrl": "https://www.ebay.com/lstng",
+      "signupUrl": "https://signup.ebay.com/ws/eBayISAPI.dll?CreateV3",
+      "listingPattern": "^https://www\\.ebay\\.com/itm/",
+      "sessionCheck": "https://www.ebay.com/myebay/home",
+      "postsPerHour": 4,
+      "postsPerDay": 40,
+      "minGapMs": 45000,
+      "sessionCookies": [
+        "nonsession",
+        "ebay",
+        "__sfbc",
+        "s"
+      ],
+      "autocomplete": [
+        "category",
+        "brand",
+        "condition"
+      ],
+      "captcha": [
+        "iframe[src*='recaptcha']",
+        "iframe[src*='hcaptcha']",
+        ".g-recaptcha",
+        "[data-testid='captcha']"
+      ],
+      "fields": {
+        "photos": [
+          "input[type='file'][accept*='image']",
+          "input[type='file']"
+        ],
+        "title": [
+          "input[name='title']",
+          "[data-testid='x-msky-input-title']",
+          "#x-msky-text-title",
+          "input[placeholder*='title' i]",
+          "input[aria-label*='title' i]"
+        ],
+        "description": [
+          "textarea[name='description']",
+          "[data-testid='description-editor']",
+          "#x-text-description",
+          "[contenteditable='true'][aria-label*='description' i]"
+        ],
+        "category": [
+          "input[name='category']",
+          "[data-testid='category-picker']",
+          "#x-sl-category",
+          "input[aria-label*='category' i]"
+        ],
+        "subcategory": [
+          "[data-testid='subcategory-picker']",
+          "input[name='subcategory']"
+        ],
+        "brand": [
+          "input[name='brand']",
+          "[data-testid='item-specific-brand']",
+          "input[aria-label*='brand' i]"
+        ],
+        "size": [
+          "input[name='size']",
+          "[data-testid='item-specific-size']"
+        ],
+        "condition": [
+          "[data-testid='condition-select']",
+          "select[name='condition']",
+          "input[name='condition']"
+        ],
+        "color": [
+          "input[name='color']",
+          "[data-testid='item-specific-color']"
+        ],
+        "material": [
+          "input[name='material']"
+        ],
+        "price": [
+          "input[name='price']",
+          "[data-testid='x-msky-input-price']",
+          "#x-msky-price",
+          "input[aria-label*='price' i]"
+        ],
+        "quantity": [
+          "input[name='quantity']",
+          "[data-testid='quantity-input']"
+        ],
+        "sku": [
+          "input[name='sku']",
+          "input[aria-label*='sku' i]"
+        ]
+      },
+      "suggestions": [
+        "[role='option']",
+        ".ebay-ui-menu-item",
+        "[data-testid='suggestion']",
+        ".suggestion"
+      ],
+      "buttons": {
+        "submit": [
+          "button[type='submit']",
+          "[data-testid='x-msky-list-item']",
+          "button[aria-label*='List item' i]"
+        ],
+        "next": [
+          "button[type='button'][aria-label*='Next' i]",
+          "[data-testid='next-button']"
+        ],
+        "menu": [
+          "[data-testid='listing-menu']",
+          "button[aria-label*='More' i]"
+        ],
+        "delete": [
+          "[data-testid='delete-listing']",
+          "button[aria-label*='Delete' i]"
+        ],
+        "deleteConfirm": [
+          "[role='dialog'] button[type='button']",
+          "[data-testid='confirm-delete']"
+        ]
+      },
+      "signup": {
+        "firstName": [
+          "input[name='first_name']",
+          "#first_name"
+        ],
+        "lastName": [
+          "input[name='last_name']",
+          "#last_name"
+        ],
+        "email": [
+          "input[name='email']",
+          "input[type='email']"
+        ],
+        "username": [
+          "input[name='username']",
+          "#username"
+        ]
+      }
+    },
+    "etsy": {
+      "label": "Etsy",
+      "origin": "https://www.etsy.com",
+      "createUrl": "https://www.etsy.com/your/shops/me/tools/listings/create",
+      "signupUrl": "https://www.etsy.com/join",
+      "listingPattern": "^https://www\\.etsy\\.com/listing/",
+      "sessionCheck": "https://www.etsy.com/your/shops",
+      "postsPerHour": 4,
+      "postsPerDay": 40,
+      "minGapMs": 45000,
+      "sessionCookies": [
+        "_etsy",
+        "fpts",
+        "keep_alive"
+      ],
+      "autocomplete": [
+        "category",
+        "brand",
+        "materials"
+      ],
+      "captcha": [
+        "iframe[src*='recaptcha']",
+        "iframe[src*='hcaptcha']",
+        ".g-recaptcha",
+        "[data-testid='captcha']"
+      ],
+      "fields": {
+        "photos": [
+          "input[type='file'][accept*='image']",
+          "input[type='file']"
+        ],
+        "title": [
+          "input[name='title']",
+          "[data-testid='listing-title']",
+          "#listing-title-input",
+          "input[placeholder*='title' i]"
+        ],
+        "description": [
+          "textarea[name='description']",
+          "[data-testid='listing-description']",
+          "#listing-description-input"
+        ],
+        "category": [
+          "input[name='category']",
+          "[data-testid='category-picker']",
+          "input[aria-label*='category' i]"
+        ],
+        "subcategory": [
+          "[data-testid='subcategory-picker']",
+          "input[name='subcategory']"
+        ],
+        "brand": [
+          "input[name='brand']",
+          "[data-testid='brand-input']"
+        ],
+        "size": [
+          "select[name='size']",
+          "input[name='size']",
+          "[data-testid='size-select']"
+        ],
+        "condition": [
+          "select[name='condition']",
+          "[data-testid='condition-select']",
+          "input[name='condition']"
+        ],
+        "color": [
+          "input[name='color']"
+        ],
+        "material": [
+          "input[name='materials']",
+          "input[name='material']"
+        ],
+        "price": [
+          "input[name='price']",
+          "[data-testid='price-input']",
+          "#listing-price-input",
+          "input[aria-label*='price' i]"
+        ],
+        "quantity": [
+          "input[name='quantity']",
+          "[data-testid='quantity-input']"
+        ],
+        "sku": [
+          "input[name='sku']",
+          "[data-testid='sku-input']"
+        ]
+      },
+      "suggestions": [
+        "[role='option']",
+        "[data-testid='suggestion']",
+        ".autocomplete-suggestion"
+      ],
+      "buttons": {
+        "submit": [
+          "button[type='submit']",
+          "[data-testid='publish-listing']",
+          "button[aria-label*='Publish' i]"
+        ],
+        "next": [
+          "button[type='button'][aria-label*='Next' i]",
+          "[data-testid='next-button']"
+        ],
+        "menu": [
+          "[data-testid='listing-menu']",
+          "button[aria-label*='More' i]"
+        ],
+        "delete": [
+          "[data-testid='delete-listing']",
+          "button[aria-label*='Delete' i]"
+        ],
+        "deleteConfirm": [
+          "[role='dialog'] button[type='button']",
+          "[data-testid='confirm-delete']"
+        ]
+      },
+      "signup": {
+        "firstName": [
+          "input[name='first_name']",
+          "#first_name"
+        ],
+        "lastName": [
+          "input[name='last_name']",
+          "#last_name"
+        ],
+        "email": [
+          "input[name='email']",
+          "input[type='email']"
+        ],
+        "username": [
+          "input[name='username']",
+          "#username"
+        ]
+      }
     }
   },
   "aliases": {
@@ -1028,29 +1301,5 @@
     "poshmark_com": "poshmark",
     "mercari_jp": "mercari"
   },
-  "sessionOnly": {
-    "ebay": {
-      "label": "eBay",
-      "origin": "https://www.ebay.com",
-      "signupUrl": "https://signup.ebay.com/ws/eBayISAPI.dll?CreateV3",
-      "sessionCookies": [
-        "nonsession",
-        "ebay",
-        "__sfbc",
-        "s"
-      ],
-      "sessionCheck": "https://www.ebay.com/myebay/home"
-    },
-    "etsy": {
-      "label": "Etsy",
-      "origin": "https://www.etsy.com",
-      "signupUrl": "https://www.etsy.com/join",
-      "sessionCookies": [
-        "_etsy",
-        "fpts",
-        "keep_alive"
-      ],
-      "sessionCheck": "https://www.etsy.com/your/shops"
-    }
-  }
+  "sessionOnly": {}
 }

@@ -403,26 +403,180 @@ export const SHOPS = {
       email: ["input[name='email']", "input[type='email']"],
       username: ["input[name='username']", "#username"]
     }
-  }
-};
-
-// Session-only shops (used by the heartbeat / session sync, no adapter needed).
-export const SESSION_ONLY_SHOPS = {
+  },
+  // eBay / Etsy: driven through the seller's own logged-in session exactly like
+  // the other shops — NO API key is used, requested or stored. The official
+  // API path exists but is parked behind EBAY_API_ENABLED / ETSY_API_ENABLED
+  // (see api/ebay_api.js, api/etsy_api.js), both false; when we turn those on
+  // they become "Connect eBay/Etsy" OAuth buttons and users still never see a key.
+  //
+  // Field selectors below are CANDIDATE LISTS (tried in order) and are marked
+  // NOT PROVEN until the dry-run is executed against the real logged-in form —
+  // they are not to be reported as working.
+  //
+  // createUrl IS proven, by navigating logged-out and reading the redirect:
+  //   ebay /lstng -> SignIn&...&ru=https%3A%2F%2Fwww.ebay.com%2Flstng
+  //   etsy .../me/tools/listings/create -> signin?from_page=<that same URL>
+  // Both bounce to sign-in and carry a return URL back to themselves, which is
+  // what proves the path is the real form.
+  //
+  // An earlier Etsy value (/your/shops/me/listings/create) was WRONG: it
+  // served a soft 404 ("Uh oh!") ON the requested path, so nothing redirected
+  // and it looked like success. Six candidate URLs were re-probed to find this
+  // one; the driver now rejects zero-control pages structurally so wording can
+  // never fake a pass again.
   ebay: {
     label: "eBay",
     origin: "https://www.ebay.com",
+    createUrl: "https://www.ebay.com/lstng",
     signupUrl: "https://signup.ebay.com/ws/eBayISAPI.dll?CreateV3",
+    listingPattern: "^https://www\\.ebay\\.com/itm/",
+    sessionCheck: "https://www.ebay.com/myebay/home",
+    postsPerHour: 4,
+    postsPerDay: 40,
+    minGapMs: 45000,
     sessionCookies: ["nonsession", "ebay", "__sfbc", "s"],
-    sessionCheck: "https://www.ebay.com/myebay/home"
+    autocomplete: ["category", "brand", "condition"],
+    captcha: [
+      "iframe[src*='recaptcha']",
+      "iframe[src*='hcaptcha']",
+      ".g-recaptcha",
+      "[data-testid='captcha']"
+    ],
+    fields: {
+      photos: ["input[type='file'][accept*='image']", "input[type='file']"],
+      title: [
+        "input[name='title']",
+        "[data-testid='x-msky-input-title']",
+        "#x-msky-text-title",
+        "input[placeholder*='title' i]",
+        "input[aria-label*='title' i]"
+      ],
+      description: [
+        "textarea[name='description']",
+        "[data-testid='description-editor']",
+        "#x-text-description",
+        "[contenteditable='true'][aria-label*='description' i]"
+      ],
+      category: [
+        "input[name='category']",
+        "[data-testid='category-picker']",
+        "#x-sl-category",
+        "input[aria-label*='category' i]"
+      ],
+      subcategory: ["[data-testid='subcategory-picker']", "input[name='subcategory']"],
+      brand: ["input[name='brand']", "[data-testid='item-specific-brand']", "input[aria-label*='brand' i]"],
+      size: ["input[name='size']", "[data-testid='item-specific-size']"],
+      condition: ["[data-testid='condition-select']", "select[name='condition']", "input[name='condition']"],
+      color: ["input[name='color']", "[data-testid='item-specific-color']"],
+      material: ["input[name='material']"],
+      price: [
+        "input[name='price']",
+        "[data-testid='x-msky-input-price']",
+        "#x-msky-price",
+        "input[aria-label*='price' i]"
+      ],
+      quantity: ["input[name='quantity']", "[data-testid='quantity-input']"],
+      sku: ["input[name='sku']", "input[aria-label*='sku' i]"]
+    },
+    suggestions: ["[role='option']", ".ebay-ui-menu-item", "[data-testid='suggestion']", ".suggestion"],
+    buttons: {
+      submit: ["button[type='submit']", "[data-testid='x-msky-list-item']", "button[aria-label*='List item' i]"],
+      next: ["button[type='button'][aria-label*='Next' i]", "[data-testid='next-button']"],
+      menu: ["[data-testid='listing-menu']", "button[aria-label*='More' i]"],
+      delete: ["[data-testid='delete-listing']", "button[aria-label*='Delete' i]"],
+      deleteConfirm: ["[role='dialog'] button[type='button']", "[data-testid='confirm-delete']"]
+    },
+    signup: {
+      firstName: ["input[name='first_name']", "#first_name"],
+      lastName: ["input[name='last_name']", "#last_name"],
+      email: ["input[name='email']", "input[type='email']"],
+      username: ["input[name='username']", "#username"]
+    }
   },
   etsy: {
     label: "Etsy",
     origin: "https://www.etsy.com",
+    createUrl: "https://www.etsy.com/your/shops/me/tools/listings/create",
     signupUrl: "https://www.etsy.com/join",
+    listingPattern: "^https://www\\.etsy\\.com/listing/",
+    sessionCheck: "https://www.etsy.com/your/shops",
+    postsPerHour: 4,
+    postsPerDay: 40,
+    minGapMs: 45000,
     sessionCookies: ["_etsy", "fpts", "keep_alive"],
-    sessionCheck: "https://www.etsy.com/your/shops"
+    autocomplete: ["category", "brand", "materials"],
+    captcha: [
+      "iframe[src*='recaptcha']",
+      "iframe[src*='hcaptcha']",
+      ".g-recaptcha",
+      "[data-testid='captcha']"
+    ],
+    fields: {
+      photos: ["input[type='file'][accept*='image']", "input[type='file']"],
+      title: [
+        "input[name='title']",
+        "[data-testid='listing-title']",
+        "#listing-title-input",
+        "input[placeholder*='title' i]"
+      ],
+      description: [
+        "textarea[name='description']",
+        "[data-testid='listing-description']",
+        "#listing-description-input"
+      ],
+      category: [
+        "input[name='category']",
+        "[data-testid='category-picker']",
+        "input[aria-label*='category' i]"
+      ],
+      subcategory: ["[data-testid='subcategory-picker']", "input[name='subcategory']"],
+      brand: ["input[name='brand']", "[data-testid='brand-input']"],
+      size: ["select[name='size']", "input[name='size']", "[data-testid='size-select']"],
+      condition: ["select[name='condition']", "[data-testid='condition-select']", "input[name='condition']"],
+      color: ["input[name='color']"],
+      material: ["input[name='materials']", "input[name='material']"],
+      price: [
+        "input[name='price']",
+        "[data-testid='price-input']",
+        "#listing-price-input",
+        "input[aria-label*='price' i]"
+      ],
+      quantity: ["input[name='quantity']", "[data-testid='quantity-input']"],
+      sku: ["input[name='sku']", "[data-testid='sku-input']"]
+    },
+    suggestions: ["[role='option']", "[data-testid='suggestion']", ".autocomplete-suggestion"],
+    buttons: {
+      submit: ["button[type='submit']", "[data-testid='publish-listing']", "button[aria-label*='Publish' i]"],
+      next: ["button[type='button'][aria-label*='Next' i]", "[data-testid='next-button']"],
+      menu: ["[data-testid='listing-menu']", "button[aria-label*='More' i]"],
+      delete: ["[data-testid='delete-listing']", "button[aria-label*='Delete' i]"],
+      deleteConfirm: ["[role='dialog'] button[type='button']", "[data-testid='confirm-delete']"]
+    },
+    signup: {
+      firstName: ["input[name='first_name']", "#first_name"],
+      lastName: ["input[name='last_name']", "#last_name"],
+      email: ["input[name='email']", "input[type='email']"],
+      username: ["input[name='username']", "#username"]
+    }
   }
 };
+
+// Session-only shops: now EMPTY on purpose.
+//
+// eBay and Etsy used to live here, which meant no adapter and an implicit
+// "key required" story. Both have been MOVED into SHOPS above with real
+// adapters (adapters/ebay.js, adapters/etsy.js) driven through the seller's own
+// logged-in browser session — the same as every other shop. No API key is
+// involved for us or for the seller.
+//
+// The official API paths are kept in api/ebay_api.js and api/etsy_api.js behind
+// EBAY_API_ENABLED / ETSY_API_ENABLED (both false). When enabled they become
+// "Connect eBay" / "Connect Etsy" OAuth buttons; users never see or enter a key.
+//
+// `sessionCheck` moved into the SHOPS entries, so the heartbeat in background.js
+// ({...SHOPS, ...SESSION_ONLY_SHOPS}) still resolves them.
+export const SESSION_ONLY_SHOPS = {};
 
 // Job payloads may use any of these names for the same shop.
 export const ALIASES = {

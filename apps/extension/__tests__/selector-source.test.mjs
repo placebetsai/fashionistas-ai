@@ -235,7 +235,10 @@ test("a remote doc that DROPS a shop cannot remove it", () => {
   for (const shop of Object.keys(bundledDoc.shops)) {
     assert.ok(merged[shop], `${shop} was dropped by remote but must survive`);
   }
-  assert.equal(Object.keys(merged).length, 9);
+  // Derived, not a literal: the bundle <-> selectors.js equality is enforced by
+  // the "bundled truth" test below, so hardcoding the shop count here would only
+  // create a THIRD place to update every time a shop ships.
+  assert.equal(Object.keys(merged).length, Object.keys(bundledDoc.shops).length);
 });
 
 test("a remote doc that BLANKS a selector cannot blank it", () => {
@@ -252,7 +255,7 @@ test("a remote doc may ADD a brand-new shop", () => {
     bonanza: { createUrl: "https://www.bonanza.com/items/new", title: ["#listing_title"] }
   });
   assert.ok(merged.bonanza, "new shops are allowed in");
-  assert.equal(Object.keys(merged).length, 10);
+  assert.equal(Object.keys(merged).length, Object.keys(bundledDoc.shops).length + 1);
 });
 
 /* ------------------------------------------------------------ bundled truth */
@@ -272,6 +275,6 @@ test("no fetch available -> bundled, still usable", async () => {
   // pass null (NOT undefined: undefined would fall back to globalThis.fetch)
   const r = await loadSelectors({ bundled: bundledDoc, fetchImpl: null, storage: fakeStorage() });
   assert.equal(r.source, "bundled");
-  assert.equal(Object.keys(r.shops).length, 9);
+  assert.equal(Object.keys(r.shops).length, Object.keys(bundledDoc.shops).length);
   void SELECTORS_URL;
 });
