@@ -65,6 +65,54 @@ chrome.alarms.onAlarm.addListener((alarm) => {
  * Returns true/false. It never returns a cookie, a token or anything else —
  * only the boolean "session present".
  */
+/**
+ * Reasons from libs/login-detect.js that positively prove "not signed in".
+ * Used only to override the *cookie-name* guess — never an authenticated
+ * sessionCheck, which is a real request made with the user's own cookies.
+ */
+const PAGE_SAYS_LOGGED_OUT = new Set([
+  "bounced", // marketplace redirected us to its sign-in page
+  "login_form", // the site is still asking for a password
+  "soft_404", // a "not found" page, so there is no working form
+  "no_form" // zero form controls: empty shell / SPA never mounted
+]);
+
+/**
+ * Ask a tab that is already open on this shop what the rendered page looks
+ * like. Returns { connected, reason } or null when no probeable tab exists.
+ *
+ * This is the strongest signal available: it inspects a real, rendered page for
+ * a logout control or a password field instead of guessing from cookie names.
+ * It reads presence booleans only — never form values, never passwords.
+ */
+async function probeViaPage(cfg) {
+  let origin;
+  try {
+    origin = new URL(cfg.origin).origin;
+  } catch (e) {
+    return null;
+  }
+  let tabs = [];
+  try {
+    tabs = await chrome.tabs.query({ url: origin + "/*" });
+  } catch (e) {
+    return null;
+  }
+  for (const tab of tabs) {
+    if (!tab.id) continue;
+    try {
+      const res = await chrome.tabs.sendMessage(tab.id, { type: "fash:probe" });
+      if (res && typeof res.connected === "boolean") {
+        return { connected: res.connected, reason: res.reason || "unknown" };
+      }
+    } catch (e) {
+      // no content script on this tab (chrome://, a web store page, still
+      // loading) — try the next one rather than failing the whole probe
+    }
+  }
+  return null;
+}
+
 async function probeShop(cfg) {
   let cookieHit = false;
   try {
@@ -80,22 +128,37 @@ async function probeShop(cfg) {
     cookieHit = false;
   }
 
-  if (!cfg.sessionCheck) return cookieHit;
+  // 1. A rendered page beats a cookie guess: if an open tab positively shows a
+  //    session (logout control / avatar / Sell), that settles it.
+  const page = await probeViaPage(cfg);
+  if (page && page.connected === true) return true;
 
-  // Optional authenticated probe (eBay/Etsy session sync): a request made by
-  // the extension itself, with the user's own cookies, no payload, no upload.
-  try {
-    const res = await fetch(cfg.sessionCheck, {
-      method: "GET",
-      credentials: "include",
-      redirect: "manual"
-    });
-    if (res.type === "opaqueredirect") return false;
-    if (res.status >= 200 && res.status < 400) return true;
-    if (res.status === 401 || res.status === 403) return false;
-  } catch (e) {
-    // network hiccup -> fall back to the cookie probe result
+  // 2. Optional authenticated probe (eBay/Etsy session sync): a request made by
+  //    the extension itself, with the user's own cookies, no payload, no upload.
+  //    Authoritative when configured — 401/403 is a real answer, not a guess.
+  if (cfg.sessionCheck) {
+    try {
+      const res = await fetch(cfg.sessionCheck, {
+        method: "GET",
+        credentials: "include",
+        redirect: "manual"
+      });
+      if (res.type === "opaqueredirect") return false;
+      if (res.status >= 200 && res.status < 400) return true;
+      if (res.status === 401 || res.status === 403) return false;
+    } catch (e) {
+      // network hiccup -> fall through to the weaker signals below
+    }
   }
+
+  // 3. An observed sign-in / 404 page outranks a cookie whose *name* merely
+  //    matches. A stale cookie is exactly what makes a "Connected" badge lie,
+  //    so a real observation of a login screen wins over it.
+  if (page && page.connected === false && PAGE_SAYS_LOGGED_OUT.has(page.reason)) {
+    return false;
+  }
+
+  // 4. Weakest fallback: a cookie with a recognised name and no expiry in the past.
   return cookieHit;
 }
 

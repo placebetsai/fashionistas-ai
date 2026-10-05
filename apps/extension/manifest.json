@@ -74,6 +74,7 @@
         "https://www.etsy.com/*"
       ],
       "js": [
+        "content/login-detect.js",
         "content/bridge.js"
       ],
       "run_at": "document_idle",
