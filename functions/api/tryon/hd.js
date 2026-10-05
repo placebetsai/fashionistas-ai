@@ -430,7 +430,16 @@ export async function onRequestOptions() {
   });
 }
 
-export async function onRequestPost(request, env) {
+// Pages Functions hand the handler exactly ONE argument: a context object
+// ({ request, env, params, ... }). This handler used to declare (request, env),
+// so `request` silently bound to the whole context, `request.headers` was
+// undefined, and requireAuth threw a TypeError before it could ever answer 401.
+// That single mismatch was the live "error code: 1101" on POST /api/tryon/hd.
+// All 20 other handlers in functions/ already take (context); this now matches.
+export async function onRequestPost(context) {
+  const request = context.request;
+  const env = context.env;
+
   // --- 1. who are you -------------------------------------------------
   const auth = await requireAuth(request, env);
   if (!auth.ok) return auth.response;
@@ -631,11 +640,11 @@ export async function onRequestPost(request, env) {
   );
 }
 
-export async function onRequest(request, env) {
-  const m = methodOf(request);
+export async function onRequest(context) {
+  const m = methodOf(context.request);
   if (m === "OPTIONS") return onRequestOptions();
   if (m !== "POST") {
     return json({ ok: false, error: "method_not_allowed", detail: "Use POST." }, 405);
   }
-  return onRequestPost(request, env);
+  return onRequestPost(context);
 }
