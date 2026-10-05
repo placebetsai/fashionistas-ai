@@ -16,7 +16,16 @@
 
 import { SHOPS, normalizeShop, selectorsFor, initSelectors } from "./config/selectors.js";
 import { capFor, capKey, capOverrideKey, checkCap, prune, retryAfterSeconds } from "./ratecap.js";
-import { apiGet, apiPost, JOB_POLL_PATH, MAX_ATTEMPTS, RETRY_BASE_MS } from "./config/api.js";
+import {
+  apiGet,
+  apiPost,
+  JOB_POLL_PATH,
+  MAX_ATTEMPTS,
+  RETRY_BASE_MS,
+  gateOpen,
+  gateAfterFailure,
+  gateAfterSuccess
+} from "./config/api.js";
 import * as poshmark from "./adapters/poshmark.js";
 import * as mercari from "./adapters/mercari.js";
 import * as depop from "./adapters/depop.js";
@@ -277,17 +286,77 @@ function notify(job, body) {
   }
 }
 
+/* --------------------------------------------------------------- api gate */
+/* Per-repo state: {fails, nextAt}. chrome.storage.local, so a browser restart
+   does not hand a dead endpoint a fresh allowance of 1,440 attempts a day.
+   Costs no network — it is the thing that decides whether we spend one. */
+const API_GATE_KEY = "apiGate";
+// A report may be re-sent this many times before we stop trying. The local
+// `result:` copy is never dropped, so getResults() still shows the outcome.
+const MAX_REPORT_ATTEMPTS = 30;
+
+async function readGate() {
+  try {
+    const store = await lsGet(API_GATE_KEY);
+    return store[API_GATE_KEY] || null;
+  } catch (e) {
+    return null; // unreadable storage == gate open; never block the queue
+  }
+}
+
+async function writeGate(state) {
+  try {
+    await lsSet({ [API_GATE_KEY]: state });
+  } catch (e) {
+    /* storage full — the next failure just re-derives it */
+  }
+}
+
+/** One failed call against {API_BASE}: step back along the ladder. */
+async function apiNoteFailure(err) {
+  const next = gateAfterFailure(await readGate(), Date.now());
+  await writeGate(next);
+  console.warn(
+    "[fash] api gated for", Math.round((next.nextAt - Date.now()) / 1000), "s after",
+    err && err.message ? err.message : err
+  );
+}
+
+/** An answer came back: back to full speed. */
+async function apiNoteSuccess() {
+  const cur = await readGate();
+  if (cur && cur.fails) await writeGate(gateAfterSuccess());
+}
+
 async function flushReports() {
   const all = await lsGet(null);
+  let flushed = 0;
   for (const key of Object.keys(all)) {
-    if (!key.startsWith("pendingReport:") || !all[key]) continue;
-    try {
-      await apiPost(`/api/jobs/${encodeURIComponent(all[key].job_id)}/status`, all[key]);
+    const entry = all[key];
+    if (!key.startsWith("pendingReport:") || !entry) continue;
+    const attempts = (entry._attempts || 0) + 1;
+    if (attempts > MAX_REPORT_ATTEMPTS) {
+      // Stop hammering a route that is never going to take it. The outcome
+      // survives in result: (written first in report()), so nothing is lost.
       await lsSet({ [key]: null });
+      console.warn("[fash] dropped report for", entry.job_id, "after", attempts, "attempts");
+      continue;
+    }
+    // _attempts is our bookkeeping, never part of the payload on the wire.
+    const { _attempts, ...wire } = entry;
+    try {
+      await apiPost(`/api/jobs/${encodeURIComponent(entry.job_id)}/status`, wire);
+      await lsSet({ [key]: null });
+      flushed++;
     } catch (e) {
-      // still offline; keep for the next tick
+      // keep it, with the attempt counted, and let the caller gate the API
+      await lsSet({ [key]: { ...entry, _attempts: attempts } });
+      throw e;
     }
   }
+  // How many real network calls succeeded — an empty flush proves nothing and
+  // must not reset the gate. tick() keys off this number.
+  return flushed;
 }
 
 /* --------------------------------------------------------------- retries */
@@ -328,11 +397,54 @@ export async function tick() {
   await lsSet({ [LOCK_KEY]: Date.now() });
   try {
     await initSelectors();        // refresh selector config (bundled floor)
-    await flushReports();
-    const jobs = await pullJobs();
-    for (const job of jobs) {
-      await runJob(job, 0);
+
+    /* Anything that talks to {API_BASE} runs only while the gate is open.
+       The ordering here is a fix, not a style choice: pullJobs() used to run
+       first with no guard, so its 401 escaped into the outer catch and
+       SKIPPED runLocalJobs() every minute of every day. The site's one-tap
+       jobs were queued and never executed. A remote failure must never be
+       able to stop the local queue. */
+    if (gateOpen(await readGate(), Date.now())) {
+      let jobs = null;
+      let healthy = false;   // some call against {API_BASE} answered
+      let failed = false;    // and some call did not
+
+      // Exactly one ladder step per tick, whichever call failed: a dead POST
+      // must not be able to step twice because a GET failed too.
+      const noteFailure = async (e) => {
+        if (failed) return;
+        failed = true;
+        await apiNoteFailure(e);
+      };
+
+      try {
+        if ((await flushReports()) > 0) healthy = true;
+      } catch (e) {
+        await noteFailure(e);
+      }
+
+      try {
+        jobs = await pullJobs();
+        healthy = true;
+      } catch (e) {
+        await noteFailure(e);
+        console.warn("[fash] pullJobs:", e && e.message ? e.message : e);
+      }
+
+      // A failure this tick always wins over a success: otherwise one dead
+      // route would be re-proved healthy every minute and gated forever.
+      if (healthy && !failed) await apiNoteSuccess();
+
+      for (const job of jobs || []) {
+        // A job that blows up must not take the rest of the batch with it.
+        try {
+          await runJob(job, 0);
+        } catch (e) {
+          console.error("[fash] job", job && job.id, "failed:", e && e.message ? e.message : e);
+        }
+      }
     }
+
     await runLocalJobs();
   } catch (e) {
     console.error("[fash] tick failed:", e && e.message ? e.message : e);
