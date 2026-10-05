@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets / local config
+.env
+.env.*
+!.env.example
+*.local
+
+# Model weights and caches - these are baked into the Modal image by
+# download_weights.py at deploy time and must never be committed.
+weights/
+hf/
+.hf_cache/
+.cache/
+*.safetensors
+*.onnx
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.msgpack
+*.safetensors.index.json
+
+# Large binaries and generated images
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.avif
+*.mp4
+*.zip
+*.tar
+*.tar.gz
+
+# Logs
+*.log
+nohup.out

@@ -1,0 +1,34 @@
+# Container + deploy dependencies for services/fashn-modal/app.py
+#
+# This file is the single source of truth for the Modal image: app.py reads it
+# at deploy time (relative to app.py, not $PWD) and passes every non-comment
+# line to `pip install`. Keep it next to app.py.
+#
+# The list is derived from fashn-vton's own pyproject dependencies
+# (https://github.com/fashn-AI/fashn-vton-1.5/blob/main/pyproject.toml) plus
+# what the HTTP wrapper needs. Note: there is deliberately NO `diffusers` -
+# fashn-vton ships its own MMDiT + Euler sampler, it does not use diffusers.
+
+# --- deploy tooling (needed on the machine that runs `modal deploy`) ---
+modal>=1.0,<2
+
+# --- HTTP app served inside the container ---
+# Modal's own docs use fastapi[standard]; the extra pulls in the ASGI server.
+fastapi[standard]>=0.115
+
+# --- model runtime ---
+# Not published on PyPI - installed from the official GitHub repo.
+fashn-vton @ git+https://github.com/fashn-AI/fashn-vton-1.5.git
+torch>=2.4,<3
+torchvision>=0.19,<1
+fashn-human-parser>=0.1.1
+transformers>=4.40
+huggingface_hub>=0.24
+safetensors>=0.4
+numpy>=1.26
+pillow>=10
+opencv-python>=4.8
+onnxruntime>=1.19
+matplotlib>=3.8
+tqdm>=4.66
+einops>=0.7
