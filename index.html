@@ -2596,10 +2596,24 @@ function xlConnectLoad(){
 function xlConnectSave(state){
   try { localStorage.setItem(XL_CONNECT_KEY, JSON.stringify(state || {})); } catch {}
 }
-/** Status: needs | ready | connected (local OK). eBay with saved keys upgrades needs→ready. */
+/**
+ * Status: needs | ready | unverified | connected.
+ *
+ * "connected" is reserved for a session the EXTENSION actually observed —
+ * libs/login-detect.js reading a real rendered marketplace page (a logout
+ * control or an avatar, and no password field), returned through
+ * `{type:"status"}`. A button the user pressed cannot produce it.
+ *
+ * A manual mark still counts for something, but it reports itself honestly as
+ * "unverified" instead of claiming a session we never saw. An extension "not
+ * logged in" verdict falls through to the normal ready/needs logic rather than
+ * forcing needs, because "no live session" is not the same as "no account" —
+ * which is why eBay's saved keys still upgrade it to ready.
+ */
 function xlConnectStatus(id){
   const s = xlConnectLoad()[id];
-  if (s && s.status === "connected") return "connected";
+  if (s && s.via === "extension" && s.status === "connected") return "connected";
+  if (s && s.status === "connected") return "unverified";   // manual / legacy local mark
   if (s && s.status === "ready") return "ready";
   if (id === "ebay") {
     const keys = xlEbayKeysLoad();
@@ -2610,6 +2624,7 @@ function xlConnectStatus(id){
 function xlConnectStatusTag(st){
   if (st === "connected") return `<span class="tag connected">Connected</span>`;
   if (st === "ready") return `<span class="tag ready">Ready to guide</span>`;
+  if (st === "unverified") return `<span class="tag needs" title="You marked this yourself — the extension has not confirmed a live logged-in session.">Unverified</span>`;
   return `<span class="tag needs">Needs account</span>`;
 }
 function xlConnectMarkReady(id){
@@ -2624,6 +2639,7 @@ function xlConnectRowsHtml(){
   return shops.map(shop => {
     const st = xlConnectStatus(shop.id);
     const connected = st === "connected";
+    const via = (xlConnectLoad()[shop.id] || {}).via || "";
     const statusTag = xlConnectStatusTag(st);
     let actions = "";
     if (connected) {
@@ -2632,11 +2648,19 @@ function xlConnectRowsHtml(){
     } else {
       const connectLabel = shop.oauth ? ("Connect " + shop.name) : ("Connect " + shop.name);
       actions = `<button type="button" class="btn btn-accent btn-sm" onclick="xlShopOpenGuide('${shop.id}')" data-tip="Opens the ${escapeHtml(shop.name)} connect guidance panel.">${escapeHtml(connectLabel)}</button>`
-        + `<a class="btn btn-soft btn-sm" href="${escapeHtml(shop.signup)}" target="_blank" rel="noopener noreferrer" data-tip="Opens ${escapeHtml(shop.name)} signup.">Signup</a>`
-        + `<button type="button" class="btn btn-ghost btn-sm" onclick="xlConnectMarkLocal('${shop.id}')" data-tip="Marks Connected locally only — does not grant API post access.">I've connected</button>`;
+        + `<a class="btn btn-soft btn-sm" href="${escapeHtml(shop.signup)}" target="_blank" rel="noopener noreferrer" data-tip="Opens ${escapeHtml(shop.name)} signup.">Signup</a>`;
+      // The honest path first: ask the extension what it can actually see.
+      // The manual mark is a fallback for when the extension is absent, and it
+      // now reports as Unverified rather than Connected.
+      if (typeof EXT_LIVE !== "undefined" && EXT_LIVE) {
+        actions += `<button type="button" class="btn btn-soft btn-sm" onclick="xlConnectVerify('${shop.id}')" data-tip="Asks your extension to look for a live logged-in ${escapeHtml(shop.name)} session. Booleans only — no cookie or password is ever read.">Verify session</button>`;
+      }
+      actions += `<button type="button" class="btn btn-ghost btn-sm" onclick="xlConnectMarkLocal('${shop.id}')" data-tip="Manual mark only. Shows Unverified until the extension confirms a live session.">I've connected</button>`;
     }
     const detail = connected
-      ? (shop.oauth ? "OAuth / local Connected · paste until worker tokens land" : "Local Connected · still paste until API post ships")
+      ? (via === "extension"
+          ? "Extension-verified · a live session was observed in your browser"
+          : (shop.oauth ? "Manually marked · paste until worker tokens land" : "Manually marked · not yet verified"))
       : (shop.oauth
           ? (st === "ready" ? "Keys ready · finish OAuth or paste drafts" : "BYO keys + OAuth guide · or paste drafts")
           : (st === "ready" ? "Guide open · signup → verify → list → paste" : "No public seller OAuth · guide + paste"));
@@ -2679,13 +2703,81 @@ function xlConnectRefresh(){
   if (grid) grid.innerHTML = xlConnectRowsHtml();
   refreshTips();
 }
+/**
+ * MANUAL mark. It no longer claims "Connected": it stores via:"manual" and the
+ * row renders as "Unverified" until the extension confirms a live session.
+ * Kept because the extension can be absent, and the seller still needs a way
+ * to say "yes, I have an account here".
+ */
 function xlConnectMarkLocal(id){
   const state = xlConnectLoad();
-  state[id] = { status: "connected", via: "local", at: new Date().toISOString() };
+  state[id] = { status: "connected", via: "manual", at: new Date().toISOString() };
   xlConnectSave(state);
-  toast(id + " marked Connected — Sell everywhere will post to it next time.");
+  toast(id + " marked manually — shown as Unverified until your extension confirms a live session.");
   xlConnectRefresh();
   try { xlShopPaintStatus(id); } catch {}
+}
+
+/**
+ * VERIFIED mark: ask the extension to probe this shop's live session.
+ *
+ * The answer comes from probeShop() -> probeViaPage(), which inspects a real
+ * rendered page for a logout control / avatar / Sell and for the absence of a
+ * password field, then runs libs/login-detect.js. Booleans only — we never ask
+ * for or receive a cookie, a token or a password — and nothing is probed from
+ * our servers: it runs entirely inside the seller's own logged-in browser.
+ */
+async function xlConnectVerify(id){
+  const r = await extSend({ type: "status" });
+  if (!r || !r.ok) {
+    toast("Extension not reachable — open fashionistas.ai with the extension enabled, then retry.");
+    return { ok: false, reason: "extension_unavailable" };
+  }
+  const sessions = r.sessions || {};
+  const known = Object.prototype.hasOwnProperty.call(sessions, String(id));
+  const on = !!sessions[id];
+  const state = xlConnectLoad();
+  state[id] = on
+    ? { status: "connected", via: "extension", at: new Date().toISOString() }
+    : { status: "needs", via: "extension", at: new Date().toISOString(),
+        reason: known ? "session_absent" : "shop_not_probeable" };
+  xlConnectSave(state);
+  xlConnectRefresh();
+  try { xlShopPaintStatus(id); } catch {}
+  toast(on ? id + ": live session confirmed by the extension."
+           : id + ": no live session found — open the site in a tab while logged in, then verify again.");
+  return { ok: true, connected: on };
+}
+
+/**
+ * Reconcile every row against what the extension actually observes, once the
+ * extension ping succeeds — so the grid reflects reality on load instead of
+ * whatever an older build stored. Only shops we render are touched, and a
+ * "ready" row (guide opened / keys saved) is never downgraded by a negative
+ * probe: that verdict is about the session, not about the account.
+ */
+async function xlConnectSyncFromExtension(ping){
+  const r = ping || await extSend({ type: "status" });
+  if (!r || !r.ok) return false;
+  const sessions = r.sessions || {};
+  const ids = new Set(xlConnectShopsMerged().map(s => s.id));
+  const state = xlConnectLoad();
+  let changed = false;
+  Object.keys(sessions).forEach((shop) => {
+    if (!ids.has(shop)) return;
+    const on = !!sessions[shop];
+    const cur = state[shop];
+    if (!on && cur && cur.status === "ready") return;
+    const next = on
+      ? { status: "connected", via: "extension", at: new Date().toISOString() }
+      : { status: "needs", via: "extension", at: new Date().toISOString(), reason: "session_absent" };
+    if (cur && cur.status === next.status && cur.via === next.via) return;
+    state[shop] = next;
+    changed = true;
+  });
+  if (changed) xlConnectSave(state);
+  xlConnectRefresh();
+  return changed;
 }
 function xlConnectDisconnect(id){
   const state = xlConnectLoad();
@@ -2791,7 +2883,8 @@ function xlShopOpenGuide(id){
     <button type="button" class="btn btn-soft" onclick="xlEbaySaveKeys()" data-tip="Saves Client ID + Secret in this browser only.">Save keys</button>
     <button type="button" class="btn btn-accent" onclick="xlEbayConnectStart()" data-tip="Starts eBay OAuth using saved or typed keys (or Cloudflare env).">Connect OAuth</button>
     <button type="button" class="btn btn-ghost btn-sm" onclick="xlEbayClearKeys()" data-tip="Removes saved keys from this browser.">Clear saved keys</button>
-    <button type="button" class="btn btn-soft btn-sm" onclick="xlConnectMarkLocal('ebay')" data-tip="Marks Connected locally only.">I've connected</button>
+    <button type="button" class="btn btn-soft btn-sm" onclick="xlConnectVerify('ebay')" data-tip="Asks your extension whether a live eBay session is present. Booleans only.">Verify session</button>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="xlConnectMarkLocal('ebay')" data-tip="Manual mark only — displays Unverified until the extension confirms a live session.">I've connected</button>
    </div>
    <p class="shop-cg-foot" id="ebay-cg-status">${escapeHtml(statusTxt)}</p>`;
   } else {
@@ -4267,6 +4360,12 @@ async function extAutoDetect(){
   if (mode) mode.textContent = EXT_LIVE
     ? "Posts through your extension — no API keys."
     : "No extension detected — clipboard handoff.";
+  // Extension is answering: reconcile the Connect grid against what it can
+  // actually see, so a stale "Connected" from an older build is corrected on
+  // load instead of silently persisting. Best effort — never blocks boot.
+  if (EXT_LIVE) {
+    try { await xlConnectSyncFromExtension(r); } catch(e){ /* non-fatal */ }
+  }
   return EXT_LIVE;
 }
 /** Connect is shown only when the ping failed. Never a paste prompt. */
