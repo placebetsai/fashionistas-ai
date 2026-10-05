@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Marketplace Risk Disclosure (DRAFT) — fashionistas.ai</title>
+<meta name="description" content="Draft risk disclosure for fashionistas.ai: Poshmark, Mercari, Depop, Grailed, eBay and Etsy fees, suspension risk, double-sale risk and chargeback risk.">
+<meta name="robots" content="noindex,follow">
+<meta property="og:title" content="Marketplace Risk Disclosure (DRAFT) — fashionistas.ai">
+<meta property="og:description" content="Draft risk disclosure for fashionistas.ai: Poshmark, Mercari, Depop, Grailed, eBay and Etsy fees, suspension risk, double-sale risk and chargeback risk.">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://fashionistas.ai/legal/risk.html">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap">
+<style>
+:root{
+ --bg:#faf7f2; --bg-tint:#f4efe7;
+ --card:#ffffff; --card-2:#fffdfa;
+ --card-glass:rgba(255,255,255,.78);
+ --bar-glass:rgba(255,255,255,.86);
+ --sel-bg:rgba(255,255,255,.94);
+ --line:#e9e2d8; --line-2:#ddd3c5;
+ --ink:#12121a; --mut:#74747e;
+ --soft:#eee9e0; --soft-2:#e6dfd3;
+ --input-bg:#ffffff; --code-bg:#f1ece4; --track:#eee9e0;
+ --solid:#12121a; --solid-fg:#ffffff;
+ --accent:#ff4e3a; --accent2:#7c5cff;
+ --good:#1f7a4d; --good-fg:#ffffff; --good-soft:#e2efe7;
+ --bad:#c0392b; --bad-fg:#ffffff; --bad-soft:#fbe4e1;
+ --gold:#c8860a;
+ --grad:linear-gradient(100deg,#ff8a3d,#ff4e3a 45%,#c05cff);
+ --sheen:rgba(255,255,255,.55);
+ --tint:rgba(0,0,0,.045);
+ --mesh:radial-gradient(40% 34% at 8% 4%,rgba(255,138,61,.22),transparent 62%),
+        radial-gradient(36% 32% at 92% 0%,rgba(124,92,255,.17),transparent 64%),
+        radial-gradient(50% 42% at 60% 100%,rgba(255,78,58,.13),transparent 66%);
+ --sh-1:0 1px 2px rgba(24,16,10,.05);
+ --shadow:0 10px 34px rgba(24,16,10,.09);
+ --sh-2:0 2px 6px rgba(24,16,10,.05),0 16px 38px rgba(24,16,10,.10);
+ --sh-3:0 6px 16px rgba(24,16,10,.07),0 30px 70px rgba(24,16,10,.16);
+ --ring:0 0 0 3px rgba(255,78,58,.18);
+ --r-1:8px; --r-2:12px; --r-3:16px; --r-4:20px; --r-5:26px; --r-full:999px;
+ --radius:18px;
+ --t-xs:11px; --t-sm:12.5px; --t-base:15px; --t-md:17px; --t-lg:22px; --t-xl:26px;
+ --display:"Instrument Serif",Georgia,"Times New Roman",serif;
+ color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+ font-family:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+ font-size:var(--t-base);line-height:1.62;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+/* .wrap / .card / .pill / .mut / .legal-line — the site's own classes,
+   copied from index.html (164-305) rather than restyled here. */
+.wrap{max-width:640px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom))}
+.card{position:relative;background:linear-gradient(165deg,var(--card-2) 0%,var(--card) 52%);
+ border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin:12px 0;box-shadow:var(--sh-2)}
+.pill{display:inline-block;padding:4px 11px;border-radius:var(--r-full);font-size:11.5px;
+ font-weight:700;background:var(--soft);color:var(--ink);margin:2px 3px 2px 0}
+.mut{color:var(--mut);font-size:13px}
+.legal-line{font-size:11px;color:var(--mut);text-align:center;margin:16px 2px 4px;line-height:1.5}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;
+ border-radius:14px;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;
+ text-decoration:none;background:var(--soft);color:var(--ink)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.brand{font-family:var(--display);font-style:italic;font-weight:600;font-size:23px;
+ letter-spacing:-.02em;color:var(--ink)}
+.brand span{color:var(--accent)}
+.topnav{display:flex;align-items:center;justify-content:space-between;gap:16px;
+ padding:18px 0;border-bottom:1px solid var(--line);margin-bottom:24px;flex-wrap:wrap}
+.topnav nav{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;font-weight:600}
+.topnav nav a{color:var(--mut)}
+.topnav nav a:hover,.topnav nav a[aria-current="page"]{color:var(--accent)}
+h1{font-size:clamp(1.6rem,4vw,2.1rem);line-height:1.2;margin:0 0 8px;letter-spacing:-.03em}
+.sub-lede{color:var(--mut);font-size:1.02rem;margin:0 0 20px}
+/* --- the three legal-page-only classes, scoped to main.legal --- */
+.legal .draft-banner{display:flex;gap:12px;align-items:flex-start;background:var(--bad-soft);
+ border:1px solid rgba(192,57,43,.28);border-left:4px solid var(--bad);border-radius:var(--r-3);
+ padding:14px 15px;margin:0 0 8px;color:#5c1a12}
+.legal .draft-banner b{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+ margin-bottom:3px;color:var(--bad)}
+.legal .draft-banner p{margin:0;font-size:13px;line-height:1.5}
+.legal .draft-meta{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 6px}
+.legal .legal-body h2{font-size:var(--t-lg);letter-spacing:-.02em;line-height:1.25;
+ margin:30px 0 8px;padding-top:20px;border-top:1px solid var(--line)}
+.legal .legal-body h3{font-size:var(--t-md);letter-spacing:-.015em;margin:22px 0 6px}
+.legal .legal-body p{margin:0 0 12px}
+.legal .legal-body ul,.legal .legal-body ol{margin:0 0 14px;padding-left:22px}
+.legal .legal-body li{margin:0 0 6px}
+.legal .legal-body li>ul,.legal .legal-body li>ol{margin:6px 0 2px}
+.legal .legal-body hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+.legal .legal-body blockquote{margin:0 0 14px;padding:12px 15px;background:var(--code-bg);
+ border:1px solid var(--line);border-radius:var(--r-2);color:#4a4038;font-size:14px}
+.legal .legal-body blockquote p:last-child{margin-bottom:0}
+.legal .legal-body code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+ font-size:.9em;background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:1px 5px}
+.legal .legal-body strong{font-weight:800}
+.legal .legal-body .tablewrap{overflow-x:auto;margin:0 0 16px;-webkit-overflow-scrolling:touch}
+.legal table{width:100%;border-collapse:collapse;font-size:14px;min-width:380px}
+.legal th,.legal td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.legal th{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+.legal .toc{background:var(--card-2);border:1px solid var(--line);border-radius:var(--r-3);
+ padding:16px 18px;margin:0 0 24px;box-shadow:var(--sh-1)}
+.legal .toc b{display:block;font-size:12px;font-weight:800;letter-spacing:.07em;
+ text-transform:uppercase;color:var(--mut);margin-bottom:8px}
+.legal .toc ol{margin:0;padding-left:20px;columns:2;column-gap:22px;font-size:13.5px}
+.legal .toc li{margin:0 0 4px;break-inside:avoid}
+.legal .toc a{color:var(--mut)}
+.legal .toc a:hover{color:var(--accent)}
+.legal .notes{background:var(--card-2);border:1px dashed var(--line-2);border-radius:var(--r-3);
+ padding:16px 18px;margin:26px 0 0}
+.legal .notes>b{display:block;font-size:12px;font-weight:800;letter-spacing:.07em;
+ text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.legal .site-footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);
+ color:var(--mut);font-size:13px}
+.legal .site-footer nav{display:flex;flex-wrap:wrap;gap:12px 16px;margin-bottom:10px;font-weight:600}
+.legal .site-footer a{color:var(--mut)}
+.legal .site-footer a:hover{color:var(--accent)}
+@media (max-width:640px){.legal .toc ol{columns:1}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important}}
+
+</style>
+</head>
+<body class="legal">
+<div class="wrap">
+
+<header class="topnav">
+  <a class="brand" href="/">fashionistas<span>.ai</span></a>
+  <nav aria-label="Legal">
+    <a href="/legal/terms.html" aria-current="page">Terms</a>
+    <a href="/legal/privacy.html">Privacy</a>
+    <a href="/legal/risk.html">Risk</a>
+    <a href="/">Home</a>
+  </nav>
+</header>
+
+<main class="legal-body">
+<h1>Marketplace Risk Disclosure (DRAFT)</h1>
+<p class="sub-lede">Account-suspension risk, fees, payout timing, double sales, counterfeits and chargebacks — one section per marketplace. Read Section 0 first.</p>
+
+<div class="draft-banner" role="note">
+  <div>
+    <b>Draft &mdash; not legal advice</b>
+    <p>These pages were drafted for review by a licensed lawyer and have <strong>not</strong>
+    been reviewed by counsel. Bracketed items are placeholders that only counsel can fill in.
+    Do not rely on them, and do not publish them as binding terms, until counsel has signed off.</p>
+  </div>
+</div>
+<p class="mut" style="margin:0 0 4px">
+  <strong>Draft date:</strong> 2026-10-05 &middot;
+  <strong>Effective date:</strong> to be set by counsel &middot;
+  <strong>Operator:</strong> fashionistas.ai
+</p>
+<div class="draft-meta">
+  <span class="pill">Draft</span>
+  <span class="pill">Not legal advice</span>
+  <span class="pill">Pending counsel review</span>
+  <span class="pill">2026-10-05</span>
+</div>
+
+<nav class="toc" aria-label="Contents"><b>Contents</b><ol>
+<li><a href="#0-how-to-read-the-numbers-on-this-page">0. How to read the numbers on this page</a></li>
+<li><a href="#1-the-double-sale-problem">1. The double-sale problem</a></li>
+<li><a href="#2-account-suspension-the-general-risk">2. Account suspension: the general risk</a></li>
+<li><a href="#3-poshmark">3. Poshmark</a></li>
+<li><a href="#4-mercari">4. Mercari</a></li>
+<li><a href="#5-depop">5. Depop</a></li>
+<li><a href="#6-grailed">6. Grailed</a></li>
+<li><a href="#7-ebay">7. eBay</a></li>
+<li><a href="#8-etsy">8. Etsy</a></li>
+<li><a href="#9-what-we-are-not-liable-for">9. What we are not liable for</a></li>
+<li><a href="#10-the-one-paragraph-version">10. The one-paragraph version</a></li>
+<li><a href="#drafting-notes-for-counsel-not-part-of-the-disclosure">Drafting notes for counsel — not part of the Disclosure</a></li>
+</ol></nav>
+
+<p># Marketplace Risk Disclosure</p>
+<p><strong>DRAFT — not legal advice, pending counsel review.</strong> <strong>Draft date: 2026-10-05. Effective date: to be set by counsel.</strong></p>
+<blockquote>Drafted by an engineer for review by a licensed lawyer. Bracketed items <code>[LIKE THIS]</code> are placeholders for counsel.  <strong>Read Section 0 before you read anything else.</strong> It explains which numbers on this page we can stand behind and which we cannot.</blockquote>
+<hr>
+<h2 id="0-how-to-read-the-numbers-on-this-page">0. How to read the numbers on this page</h2>
+<p><strong>Every fee figure in Sections 3–8 is an approximate model, not a quote.</strong> They come from the same static catalogue that powers our fee calculator, so the calculator and this page cannot drift apart — but neither is connected to any marketplace's live pricing. When a marketplace changes its fees, we may not know until someone notices.</p>
+<p><strong>The marketplace's own earnings screen is the only authoritative figure.</strong> Check it before you price anything.</p>
+<p><strong>Where this page cannot back a number, it says so instead of guessing.</strong> In particular:</p>
+<ul><li><strong>We publish no payout timing figures.</strong> We do not know each marketplace's payout schedule and will not invent one. Check the payout schedule on the marketplace's own seller page — it varies by payment method, by country, and by whether an item has shipped, and platforms change it without notice.</li><li><strong>We publish no claim about how likely a suspension is.</strong> We cannot quantify another company's enforcement.</li><li><strong>We publish nothing about any marketplace's internal detection systems</strong>, because we do not know them and speculating would be dishonest.</li></ul>
+<p>We are not affiliated with, endorsed by, or sponsored by any marketplace named here. Names are used descriptively, to identify which shop we mean.</p>
+<p><strong>What fashionistas actually is:</strong> a listing assistant. It prepares text and images, and for most shops it fills in a form <strong>in your own logged-in browser session, where you press Post</strong>. For most shops we hold no marketplace credential at all — see <a href="/legal/privacy.html">privacy.html Section 3.1</a>.</p>
+<hr>
+<h2 id="1-the-double-sale-problem">1. The double-sale problem</h2>
+<p>This is the risk that costs sellers the most money, and it is <strong>your</strong> risk.</p>
+<p>If you list the same physical item on several marketplaces, it is possible for a buyer to purchase it on one of them while the listing is still live on the others. That second buyer expects an item you no longer have.</p>
+<p><strong>What fashionistas does about it:</strong></p>
+<ul><li>A browser extension can watch your listings <strong>in your own signed-in session</strong> and report a sale to us. We record the sale in our database with the shop, listing reference, URL, title, price and date.</li><li>On a recorded sale, our <code>/api/delist</code> route attempts to remove the item from the other shops. <strong>The mechanism differs per shop and is not equally reliable</strong> — each shop's section below says how its delisting works.</li></ul>
+<p><strong>What fashionistas does not do, and cannot do:</strong></p>
+<ul><li><strong>We cannot know instantly that something sold.</strong> Detection depends on the extension being installed, enabled, and running in a browser that is signed in to that shop. A closed laptop is a blind spot.</li><li><strong>We cannot guarantee a delist succeeded.</strong> We attempt it and record the attempt. A shop can refuse, fail, rate-limit, or silently ignore a request.</li><li><strong>We cannot reach a buyer</strong>, cancel an order, issue a refund, or reverse a payment. We are not a party to the sale.</li><li><strong>We are not liable for a double sale.</strong> You are the seller. You own the mistake, the refund, the negative feedback, and the cost of a buyer who gets the shock of a cancelled order.</li></ul>
+<p><strong>What we recommend:</strong> delist the moment you accept an offer rather than waiting for the order, and keep only one live listing per physical item where you can.</p>
+<h2 id="2-account-suspension-the-general-risk">2. Account suspension: the general risk</h2>
+<p><strong>Most suspensions on these platforms are not caused by a bug in your listings — they are caused by the <em>shape</em> of your activity.</strong> Every marketplace below prohibits posting or selling through unauthorised third-party tools, and several expressly restrict automation. Account review typically looks at behaviour, not content:</p>
+<ul><li>many listings created or revised in a short window;</li><li>the same photo, title, or price pattern repeated across many listings;</li><li>a new or low-history account behaving like a high-volume shop;</li><li>a sudden jump in listing volume relative to the account's history;</li><li>activity from a network or device the account has never used;</li><li>listings pointing buyers to another marketplace or off-platform payment.</li></ul>
+<p><strong>fashionistas is designed to stay on the right side of this line, and you are responsible for keeping it there:</strong></p>
+<ul><li><strong>We never ask for your marketplace password.</strong> Our servers do not hold Poshmark, Mercari, Depop, Grailed, Facebook Marketplace or Whatnot credentials at all.</li><li><strong>You press Post.</strong> Nothing is published without your action, in your session.</li><li><strong>Terms Section 6 forbids you</strong> from using this product — or anything else — to automate sharing, relisting, following, unfollowing, offers, or any drip or mass-messaging campaign. Doing so is a breach of our Terms and a likely violation of the marketplace's.</li><li><strong>We do not and cannot guarantee your account survives.</strong> Each shop below says what our integration actually does, so you know where the automation boundary is.</li></ul>
+<p><strong>If you are suspended:</strong> you will need to appeal with the marketplace directly. We cannot lift a suspension, restore access, or recover funds held by a marketplace.</p>
+<hr>
+<h2 id="3-poshmark">3. Poshmark</h2>
+<p><strong>How our integration works.</strong> Session-only, in your browser. No Poshmark credential reaches our servers. The extension fills Poshmark's listing form and <strong>you tap Post.</strong></p>
+<p><strong>Fees (approximate model).</strong> A flat <strong>$2.95</strong> on sales under <strong>$15</strong>; <strong>20%</strong> at <strong>$15 and above</strong>. Our model treats these as the two mutually exclusive tiers. <strong>This is an approximation — the actual charge is whatever Poshmark's own earnings preview shows you at the time of the sale.</strong></p>
+<p><strong>Payout timing.</strong> We publish no figure. Poshmark's own seller payout schedule, including any hold period, is the only source.</p>
+<p><strong>Suspension risk.</strong> Listing through a browser tool in your own session, with a human press of Post, is the lowest-activity pattern we offer. Poshmark's risk to you comes from <strong>volume and repetition</strong> — a burst of near-identical listings, or a new account suddenly posting far more than its history. Anything that automates reposting, sharing, or offers is outside what our Terms permit and is a likely ToS breach.</p>
+<p><strong>Delisting on sale.</strong> <strong>Session-only, and it depends on the extension running.</strong> We record the sale and queue a delist task in our database for your other shops; a Poshmark listing is taken down by the extension acting in your signed-in session. If the extension is not running, the listing stays up.</p>
+<p><strong>Counterfeit and authenticity.</strong> Poshmark prohibits counterfeit and replica goods and removes listings and bans sellers who list them. A brand name in a Poshmark title is a claim to the buyer. Generated description text is not evidence — you must be able to stand behind every word.</p>
+<p><strong>Buyer reclaim and chargeback.</strong> A buyer who does not receive the item, or who disputes payment through their bank rather than through Poshmark, loses their money from Poshmark's perspective and the loss can land on you. Disputes raised inside Poshmark's own system follow Poshmark's process. We have no involvement and no ability to reverse anything.</p>
+<p><strong>Changing without notice.</strong> Poshmark can change its fee structure, its prohibited-items list, its Community Guidelines, and its payout schedule at any time. Read the current version before you rely on any figure here.</p>
+<hr>
+<h2 id="4-mercari">4. Mercari</h2>
+<p><strong>How our integration works.</strong> Session-only, in your browser. No Mercari credential reaches our servers. The extension fills Mercari's listing form and <strong>you tap Post.</strong></p>
+<p><strong>Fees (approximate model).</strong> A <strong>10%</strong> selling fee. <strong>Approximate — confirm on Mercari's own earnings screen.</strong> Our model does not attempt to represent Mercari's separate payment-processing charge, promotional-fee rules, or category-specific pricing; treat the 10% as a planning figure, not a quote.</p>
+<p><strong>Payout timing.</strong> We publish no figure. See Mercari's own payout schedule; terms of sale, identity checks and shipping status can all affect when money reaches you.</p>
+<p><strong>Suspension risk.</strong> As with Poshmark, the risk is in volume and repetition rather than in a single session-assisted listing. Mercari's own rules restrict automated posting and scraping. Bulk-identical listings and rapid relisting are the patterns most likely to draw review.</p>
+<p><strong>Delisting on sale.</strong> <strong>Session-only, and it depends on the extension running.</strong> A Mercari listing is taken down by the extension in your signed-in session; we record the sale and queue the attempt. If the extension is not running, the listing stays up.</p>
+<p><strong>Counterfeit and authenticity.</strong> Mercari prohibits counterfeit goods and unauthorised branded replicas, and penalises sellers who mislabel condition or brand. Being accurate about condition is not optional — it is the single most common source of buyer disputes on this platform.</p>
+<p><strong>Buyer reclaim and chargeback.</strong> Mercari's own payment-protection process governs in-platform disputes, and a buyer who disputes through their bank instead removes money from the platform's control and puts the loss on you. We cannot see, contest, or appeal any of it.</p>
+<p><strong>Changing without notice.</strong> Mercari can change fees, payout timing and seller rules at any time, including changing them with limited notice to sellers.</p>
+<hr>
+<h2 id="5-depop">5. Depop</h2>
+<p><strong>How our integration works.</strong> Session-only, in your browser. No Depop credential reaches our servers. The extension fills Depop's product form and <strong>you tap Post.</strong></p>
+<p><strong>Fees (approximate model).</strong> <strong>0% commission</strong> — our model records that Depop removed its commission in 2024 — plus <strong>3.3%</strong> payment processing and <strong>$0.45</strong> per order. <strong>Approximate — the authoritative figure is on Depop's own seller screen.</strong> This is a comparatively low-fee platform, so the shipping you charge matters to your margin more than the fee does.</p>
+<p><strong>Payout timing.</strong> We publish no figure. Depop's payout timing is set by Depop and depends on your payout method and on whether the order has been dispatched and delivered.</p>
+<p><strong>Suspension risk.</strong> Depop enforces its Community Policy strictly and its enforcement is not always first-warning-first. Activity that reads as automated — high-volume listing churn, identical items, or listings edited repeatedly by a tool — is the risk. Single-session, hand-pressed posting is the conservative pattern.</p>
+<p><strong>Delisting on sale.</strong> <strong>Session-only, and it depends on the extension running.</strong> A Depop listing is taken down by the extension in your signed-in session. If it is not running, the listing stays live and a second buyer can buy the same garment.</p>
+<p><strong>Counterfeit and authenticity.</strong> Depop prohibits counterfeit and replica items and requires listing details to be accurate. Depop's standard is a non-counterfeit item: a used garment you own, honestly described.</p>
+<p><strong>Buyer reclaim and chargeback.</strong> A buyer who disputes through their bank instead of Depop's own process strips the dispute from Depop's control. We cannot see the transaction, cannot represent you, and cannot reverse the payment. A second sale of the same garment is exactly the fact pattern that produces these disputes.</p>
+<p><strong>Changing without notice.</strong> Depop can change its fee structure, its Community Policy and its payout terms at any time.</p>
+<hr>
+<h2 id="6-grailed">6. Grailed</h2>
+<p><strong>How our integration works.</strong> Session-only, in your browser. No Grailed credential reaches our servers. The extension fills Grailed's sell form and <strong>you tap Post.</strong></p>
+<p><strong>Fees (approximate model).</strong> <strong>9% commission</strong>, which our model records as <strong>6% under $120</strong>, plus <strong>3.49%</strong> payment processing and <strong>$0.49</strong> per order. <strong>Approximate — confirm on Grailed's own earnings screen.</strong> Note that our model carries a single percentage and a single fixed amount; it does <strong>not</strong> itself compute the reduced-commission tier. Verify the under-$120 rate directly.</p>
+<p><strong>Payout timing.</strong> We publish no figure. Grailed's payout schedule is Grailed's to set and can depend on the item's authentication status.</p>
+<p><strong>Counterfeit and authenticity — read this section twice.</strong> <strong>Grailed is the most consequential of the six platforms on this page for counterfeiting</strong>, and it differs from the others in kind, not just in degree:</p>
+<ul><li>Grailed's <strong>entire premise is authenticated designer and luxury product</strong>. Authentication is not a side condition of listing there — it is what the buyer is paying for. Claims of authenticity are the product.</li><li>Grailed's seller standards for branded items are <strong>specific and strict</strong>, and the platform reserves the right to authenticate, seize, and remove items that fail. Failing authentication is not a small penalty; it can mean losing the item and the sale.</li><li>A <strong>counterfeit or replica listed as authentic is not a listing mistake — it is a serious breach of Grailed's terms and potentially unlawful.</strong> It is also the highest-likelihood route to account suspension on any of these six shops.</li><li><strong>Never let generated text carry an authenticity claim.</strong> Our model produces a brand and a condition field; neither is evidence. You must be able to produce receipts, serial numbers, or provenance for a luxury item you list on Grailed.</li><li>If you are unsure whether an item passes Grailed's authentication, <strong>do not list it there.</strong> List it somewhere authenticity is not the product.</li></ul>
+<p><strong>Delisting on sale.</strong> <strong>Session-only, and it depends on the extension running.</strong> A Grailed listing is taken down by the extension in your signed-in session. On a luxury item the delist window matters most, because a fake sold to a second buyer while your genuine item is gone is a claim against you with no defence.</p>
+<p><strong>Suspension risk.</strong> As elsewhere, the risk is in volume and repetition. On Grailed specifically, <strong>authenticity failure is the dominant suspension trigger.</strong></p>
+<p><strong>Buyer reclaim and chargeback.</strong> Grailed may withhold or delay payout on an item pending authentication. A buyer who disputes through their bank bypasses that process entirely. We can do nothing about either.</p>
+<p><strong>Changing without notice.</strong> Grailed can change its fee structure, its authentication standards, its prohibited-brands list and its payout terms at any time. Authentication standards are tightened more often than fees are.</p>
+<hr>
+<h2 id="7-ebay">7. eBay</h2>
+<p><strong>How our integration works.</strong> <strong>Different from the other shops, and weaker than you may expect.</strong> For eBay there is a server-side path that calls eBay's own developer API. To call an official API we must hold credentials you approved — either an OAuth grant you gave on eBay's own consent screen (stored as a refresh token) or, if you choose the bring-your-own-keys option, your own eBay API <code>clientId</code>/<code>clientSecret</code> (see <a href="/legal/privacy.html">privacy.html Section 3.1</a>).</p>
+<p><strong>Two things to be clear about:</strong></p>
+<ol><li><strong>That path is wired to eBay's sandbox hosts only.</strong> The integration references <code>https://api.sandbox.ebay.com</code> and <code>https://auth.sandbox.ebay.com</code>; eBay's production hosts are not used by this path. Treat it as a development integration and do not assume anything you see there will publish to your live storefront.</li><li><strong>The shipped posting route does not publish live, but the underlying code can be asked to.</strong> The route creates an inventory item and an offer; the offer is published to eBay only when an explicit <code>publish</code> flag is passed, and if publication fails the code tells you to publish manually in Seller Hub instead. The capability flag at <code>/api/marketplaces</code> means <em>code for this path exists</em> — read every such flag as <strong>"the code exists," never "a listing shipped."</strong></li></ol>
+<p><strong>Fees (approximate model).</strong> A <strong>13.6%</strong> final value fee plus <strong>$0.40</strong> per order. <strong>Approximate.</strong> eBay's actual fee varies by <strong>category and by the region of the sale</strong>, and eBay publishes a store- and category-specific table. Our flat 13.6% is a planning figure for a US seller in a typical category — <strong>not</strong> your category's rate.</p>
+<p><strong>Payout timing.</strong> We publish no figure. eBay holds funds until its own release conditions are met and then pays out on a schedule set by eBay and your payout method.</p>
+<p><strong>Suspension risk.</strong> eBay's position on third-party listing tools is stricter than most, and using a tool to post without the account owner's own action is the kind of thing that produces "final notice" suspensions. Our Terms require that <strong>you</strong> act, in <strong>your</strong> session. Any eBay API credential must be one you granted for your own account and must not be shared or reused across accounts.</p>
+<p><strong>Delisting on sale.</strong> <strong>The most reliable of the six.</strong> A recorded sale triggers a <code>Sell Inventory</code> withdraw for offers, or a quantity of zero for an inventory item, called server-side. No browser extension needs to be running. It is still an <em>attempt</em>: eBay can reject it, and you should confirm the item is down.</p>
+<p><strong>Counterfeit and authenticity.</strong> eBay's authenticity programme and its prohibited-items policy are enforced strictly, including on items it authenticates for you — and authentication can be declined. Selling counterfeit goods on eBay carries liability well beyond account suspension.</p>
+<p><strong>Buyer reclaim and chargeback.</strong> eBay has its own dispute flows for unpaid-item, item-not-received and returns cases, and those normally run through eBay. <strong>A chargeback raised at the buyer's bank instead skips that process entirely.</strong> We are not eBay, we are not your payment processor, and we cannot contest, represent you in, or reverse any of it. Undisputed funds held by eBay that are released to you and then clawed back are a loss you carry.</p>
+<p><strong>Changing without notice.</strong> eBay changes final value fees and store/category tables — including in the middle of a calendar quarter for some sellers — and changes its seller policies at any time.</p>
+<hr>
+<h2 id="8-etsy">8. Etsy</h2>
+<p><strong>How our integration works.</strong> Like eBay, there is a server-side path using Etsy's official API, and it therefore requires an OAuth token you granted on Etsy's own authorization screen. We store it so we can act on your listings (see <a href="/legal/privacy.html">privacy.html Section 3.1</a>).</p>
+<p><strong>The shipped posting route creates a draft, not a live listing.</strong> A draft still has to be reviewed and published by you in Etsy. To be precise, because the distinction matters: the route always creates the listing as a draft and never passes an activation flag, but the underlying Etsy module does contain the ability to set a listing <code>ACTIVE</code> when a caller explicitly asks for it. So "fashionistas cannot publish on Etsy" is <strong>not</strong> a safe claim — the accurate claim is that <strong>the route as shipped drafts only, and the final act of publishing is yours.</strong> Read the capability flag at <code>/api/marketplaces</code> as <strong>"the code exists," never "a listing shipped."</strong></p>
+<p><strong>Fees (approximate model).</strong> <strong>6.5%</strong> transaction fee plus <strong>roughly 3%</strong> payment processing plus <strong>$0.25</strong> per order. <strong>Approximate, and approximate in two directions:</strong> our model represents Etsy's processing fee as a rounded percentage rather than the exact charged figure, and Etsy's real fee structure depends on your shop's location, your currency, and any ads or offsite-ads you run. The authoritative figure is on Etsy's own seller dashboard.</p>
+<p><strong>Payout timing.</strong> We publish no figure. Etsy pays out on its own schedule and reserves the right to hold funds while a transaction is open or disputed.</p>
+<p><strong>Suspension risk.</strong> Etsy's rules restrict automation, and Etsy can act against an account for behaviour it judges to be automated or for other conduct. As everywhere else, volume and repetition are the shape of activity that draws review. Because the Etsy path creates a draft, the final act of publishing stays with you.</p>
+<p><strong>Delisting on sale.</strong> <strong>Server-side and reasonably reliable.</strong> A recorded sale sets the Etsy's listing state to <code>INACTIVE</code> through its API, with a delete as a fallback. It does not need a running browser extension. As with eBay, it is an attempt, not a guarantee — confirm the listing is down.</p>
+<p><strong>Counterfeit and authenticity.</strong> Etsy prohibits counterfeit and replica goods and prohibits reselling items you did not make or did not source lawfully. Etsy may also restrict categories and require additional information for some branded items. If you did not make the item and cannot document how you sourced it, do not list it on Etsy.</p>
+<p><strong>Buyer reclaim and chargeback.</strong> Etsy has its own case system for non-delivery, not-as-described and refunds. A buyer who disputes through their bank instead bypasses it. Etsy can also reverse a payout to a seller, and a bank chargeback can arrive after Etsy has already paid you. We are not a party to either and can do nothing about either.</p>
+<p><strong>Changing without notice.</strong> Etsy changes transaction fees, processing fees and its fee schedule on a published annual cycle — and reserves the right to change them at other times — as well as its shop policies and category restrictions at any time.</p>
+<hr>
+<h2 id="9-what-we-are-not-liable-for">9. What we are not liable for</h2>
+<p>Summarising the Terms <a href="/legal/terms.html">Section 12</a>, and stated here plainly because it is where the money is: <strong>we are not liable for</strong> your marketplace account being suspended, restricted or banned; fees or penalties a marketplace assesses; a marketplace delaying or failing to pay you; a chargeback, buyer reclaim or refund you are forced to reverse; a buyer claiming an item was not as described or not authentic; a double sale; lost profit or lost sales; or the difference between your asking price and the price an item actually fetches.</p>
+<p>Our aggregate liability is capped at what you actually paid us in the twelve months before the event giving rise to the claim, and we are not liable for indirect or consequential loss at all.</p>
+<h2 id="10-the-one-paragraph-version">10. The one-paragraph version</h2>
+<p><strong>You own the item, the listing, the accuracy of the description, the account, the tax, the shipping, and the consequences of a double sale. We help you write the listing and press the button; you take the risk of everything that happens after the button.</strong> Check each marketplace's own fee and payout screens — the numbers on this page are planning figures, and the platforms' are the truth.</p>
+<hr>
+<h3 id="drafting-notes-for-counsel-not-part-of-the-disclosure">Drafting notes for counsel — not part of the Disclosure</h3>
+<ol><li><strong>The biggest exposure on this page is Grailed Section 6</strong> — authenticity of luxury goods is a materially different legal and reputational risk from ordinary resale, and counsel should consider whether Grailed needs its own separate consent step or an in-product warning before a user lists there.</li><li><strong>Sections 3–5 and 6 (Depop, Grailed) have no server-side delist.</strong> Any warranty-like assurance about "never double-sell" elsewhere in the marketing is not supportable for those shops. Counsel should check that the marketing copy in <code>index.html</code> and <code>pricing/index.html</code> does not promise more than Section 1 here.</li><li><strong>eBay's path targets a sandbox host and Etsy's creates a draft.</strong> Neither section may describe a live automated listing, and both say so — that wording is deliberate and should survive review.</li><li><strong>Payout timing is deliberately absent</strong> from every section. If the business wants to add payout timings, each one needs a source and a review date; an unsourced payout estimate in a legal document is worse than silence.</li><li><strong>Counterfeit liability is a genuine criminal/civil exposure</strong> in several jurisdictions and is not well covered by the Terms' liability cap. Counsel should consider a specific and prominent counterfeit warning, and whether Section 6 of the Terms (acceptable use) is prominent enough where the user actually sees it — the app, not the Terms.</li></ol>
+
+<div class="notes">
+<b>Also on this page set</b>
+<ul>
+<li><a href="/legal/terms.html">Terms of Service</a> &mdash; ownership, acceptable use, the no-automation rule, billing.</li>
+<li><a href="/legal/privacy.html">Privacy Policy</a> &mdash; what we store in Cloudflare D1 and R2, and what we never store.</li>
+<li><a href="/legal/risk.html">Marketplace Risk Disclosure</a> &mdash; suspension, fees, double sales, counterfeits and chargebacks, per marketplace.</li>
+</ul>
+<p class="mut" style="margin:0">Draft source: <code>legal/risk.md</code> &middot;
+Next in this set: <a href="/legal/terms.html">Terms</a></p>
+</div>
+
+
+</main>
+
+<footer class="site-footer">
+<nav aria-label="Footer">
+<a href="/">Home</a>
+<a href="/pricing/">Pricing</a>
+<a href="/contact/">Contact</a>
+<a href="/privacy/">Privacy</a>
+<a href="/legal/terms.html">Terms</a>
+<a href="/legal/privacy.html">Privacy Policy</a>
+<a href="/legal/risk.html">Risk Disclosure</a>
+</nav>
+<p>fashionistas.ai &mdash; photograph your closet, list it everywhere.
+Email: <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a></p>
+<p class="legal-line">These legal pages are a draft for counsel review and are not legal advice.
+Marketplace names are used descriptively; fashionistas.ai is not affiliated with, endorsed by
+or sponsored by Poshmark, Mercari, Depop, Grailed, eBay or Etsy.</p>
+</footer>
+</div>
+</body>
+</html>

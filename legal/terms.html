@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Terms of Service (DRAFT) — fashionistas.ai</title>
+<meta name="description" content="Draft Terms of Service for fashionistas.ai, pending counsel review. Not a marketplace: we buy and sell nothing.">
+<meta name="robots" content="noindex,follow">
+<meta property="og:title" content="Terms of Service (DRAFT) — fashionistas.ai">
+<meta property="og:description" content="Draft Terms of Service for fashionistas.ai, pending counsel review. Not a marketplace: we buy and sell nothing.">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://fashionistas.ai/legal/terms.html">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap">
+<style>
+:root{
+ --bg:#faf7f2; --bg-tint:#f4efe7;
+ --card:#ffffff; --card-2:#fffdfa;
+ --card-glass:rgba(255,255,255,.78);
+ --bar-glass:rgba(255,255,255,.86);
+ --sel-bg:rgba(255,255,255,.94);
+ --line:#e9e2d8; --line-2:#ddd3c5;
+ --ink:#12121a; --mut:#74747e;
+ --soft:#eee9e0; --soft-2:#e6dfd3;
+ --input-bg:#ffffff; --code-bg:#f1ece4; --track:#eee9e0;
+ --solid:#12121a; --solid-fg:#ffffff;
+ --accent:#ff4e3a; --accent2:#7c5cff;
+ --good:#1f7a4d; --good-fg:#ffffff; --good-soft:#e2efe7;
+ --bad:#c0392b; --bad-fg:#ffffff; --bad-soft:#fbe4e1;
+ --gold:#c8860a;
+ --grad:linear-gradient(100deg,#ff8a3d,#ff4e3a 45%,#c05cff);
+ --sheen:rgba(255,255,255,.55);
+ --tint:rgba(0,0,0,.045);
+ --mesh:radial-gradient(40% 34% at 8% 4%,rgba(255,138,61,.22),transparent 62%),
+        radial-gradient(36% 32% at 92% 0%,rgba(124,92,255,.17),transparent 64%),
+        radial-gradient(50% 42% at 60% 100%,rgba(255,78,58,.13),transparent 66%);
+ --sh-1:0 1px 2px rgba(24,16,10,.05);
+ --shadow:0 10px 34px rgba(24,16,10,.09);
+ --sh-2:0 2px 6px rgba(24,16,10,.05),0 16px 38px rgba(24,16,10,.10);
+ --sh-3:0 6px 16px rgba(24,16,10,.07),0 30px 70px rgba(24,16,10,.16);
+ --ring:0 0 0 3px rgba(255,78,58,.18);
+ --r-1:8px; --r-2:12px; --r-3:16px; --r-4:20px; --r-5:26px; --r-full:999px;
+ --radius:18px;
+ --t-xs:11px; --t-sm:12.5px; --t-base:15px; --t-md:17px; --t-lg:22px; --t-xl:26px;
+ --display:"Instrument Serif",Georgia,"Times New Roman",serif;
+ color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+ font-family:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+ font-size:var(--t-base);line-height:1.62;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+/* .wrap / .card / .pill / .mut / .legal-line — the site's own classes,
+   copied from index.html (164-305) rather than restyled here. */
+.wrap{max-width:640px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom))}
+.card{position:relative;background:linear-gradient(165deg,var(--card-2) 0%,var(--card) 52%);
+ border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin:12px 0;box-shadow:var(--sh-2)}
+.pill{display:inline-block;padding:4px 11px;border-radius:var(--r-full);font-size:11.5px;
+ font-weight:700;background:var(--soft);color:var(--ink);margin:2px 3px 2px 0}
+.mut{color:var(--mut);font-size:13px}
+.legal-line{font-size:11px;color:var(--mut);text-align:center;margin:16px 2px 4px;line-height:1.5}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;
+ border-radius:14px;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;
+ text-decoration:none;background:var(--soft);color:var(--ink)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.brand{font-family:var(--display);font-style:italic;font-weight:600;font-size:23px;
+ letter-spacing:-.02em;color:var(--ink)}
+.brand span{color:var(--accent)}
+.topnav{display:flex;align-items:center;justify-content:space-between;gap:16px;
+ padding:18px 0;border-bottom:1px solid var(--line);margin-bottom:24px;flex-wrap:wrap}
+.topnav nav{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;font-weight:600}
+.topnav nav a{color:var(--mut)}
+.topnav nav a:hover,.topnav nav a[aria-current="page"]{color:var(--accent)}
+h1{font-size:clamp(1.6rem,4vw,2.1rem);line-height:1.2;margin:0 0 8px;letter-spacing:-.03em}
+.sub-lede{color:var(--mut);font-size:1.02rem;margin:0 0 20px}
+/* --- the three legal-page-only classes, scoped to main.legal --- */
+.legal .draft-banner{display:flex;gap:12px;align-items:flex-start;background:var(--bad-soft);
+ border:1px solid rgba(192,57,43,.28);border-left:4px solid var(--bad);border-radius:var(--r-3);
+ padding:14px 15px;margin:0 0 8px;color:#5c1a12}
+.legal .draft-banner b{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+ margin-bottom:3px;color:var(--bad)}
+.legal .draft-banner p{margin:0;font-size:13px;line-height:1.5}
+.legal .draft-meta{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 6px}
+.legal .legal-body h2{font-size:var(--t-lg);letter-spacing:-.02em;line-height:1.25;
+ margin:30px 0 8px;padding-top:20px;border-top:1px solid var(--line)}
+.legal .legal-body h3{font-size:var(--t-md);letter-spacing:-.015em;margin:22px 0 6px}
+.legal .legal-body p{margin:0 0 12px}
+.legal .legal-body ul,.legal .legal-body ol{margin:0 0 14px;padding-left:22px}
+.legal .legal-body li{margin:0 0 6px}
+.legal .legal-body li>ul,.legal .legal-body li>ol{margin:6px 0 2px}
+.legal .legal-body hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+.legal .legal-body blockquote{margin:0 0 14px;padding:12px 15px;background:var(--code-bg);
+ border:1px solid var(--line);border-radius:var(--r-2);color:#4a4038;font-size:14px}
+.legal .legal-body blockquote p:last-child{margin-bottom:0}
+.legal .legal-body code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+ font-size:.9em;background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:1px 5px}
+.legal .legal-body strong{font-weight:800}
+.legal .legal-body .tablewrap{overflow-x:auto;margin:0 0 16px;-webkit-overflow-scrolling:touch}
+.legal table{width:100%;border-collapse:collapse;font-size:14px;min-width:380px}
+.legal th,.legal td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.legal th{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+.legal .toc{background:var(--card-2);border:1px solid var(--line);border-radius:var(--r-3);
+ padding:16px 18px;margin:0 0 24px;box-shadow:var(--sh-1)}
+.legal .toc b{display:block;font-size:12px;font-weight:800;letter-spacing:.07em;
+ text-transform:uppercase;color:var(--mut);margin-bottom:8px}
+.legal .toc ol{margin:0;padding-left:20px;columns:2;column-gap:22px;font-size:13.5px}
+.legal .toc li{margin:0 0 4px;break-inside:avoid}
+.legal .toc a{color:var(--mut)}
+.legal .toc a:hover{color:var(--accent)}
+.legal .notes{background:var(--card-2);border:1px dashed var(--line-2);border-radius:var(--r-3);
+ padding:16px 18px;margin:26px 0 0}
+.legal .notes>b{display:block;font-size:12px;font-weight:800;letter-spacing:.07em;
+ text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.legal .site-footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);
+ color:var(--mut);font-size:13px}
+.legal .site-footer nav{display:flex;flex-wrap:wrap;gap:12px 16px;margin-bottom:10px;font-weight:600}
+.legal .site-footer a{color:var(--mut)}
+.legal .site-footer a:hover{color:var(--accent)}
+@media (max-width:640px){.legal .toc ol{columns:1}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important}}
+
+</style>
+</head>
+<body class="legal">
+<div class="wrap">
+
+<header class="topnav">
+  <a class="brand" href="/">fashionistas<span>.ai</span></a>
+  <nav aria-label="Legal">
+    <a href="/legal/terms.html" aria-current="page">Terms</a>
+    <a href="/legal/privacy.html">Privacy</a>
+    <a href="/legal/risk.html">Risk</a>
+    <a href="/">Home</a>
+  </nav>
+</header>
+
+<main class="legal-body">
+<h1>Terms of Service (DRAFT)</h1>
+<p class="sub-lede">fashionistas.ai is a listing assistant. We are not a marketplace, we do not buy or sell anything, and your marketplace accounts stay yours.</p>
+
+<div class="draft-banner" role="note">
+  <div>
+    <b>Draft &mdash; not legal advice</b>
+    <p>These pages were drafted for review by a licensed lawyer and have <strong>not</strong>
+    been reviewed by counsel. Bracketed items are placeholders that only counsel can fill in.
+    Do not rely on them, and do not publish them as binding terms, until counsel has signed off.</p>
+  </div>
+</div>
+<p class="mut" style="margin:0 0 4px">
+  <strong>Draft date:</strong> 2026-10-05 &middot;
+  <strong>Effective date:</strong> to be set by counsel &middot;
+  <strong>Operator:</strong> fashionistas.ai
+</p>
+<div class="draft-meta">
+  <span class="pill">Draft</span>
+  <span class="pill">Not legal advice</span>
+  <span class="pill">Pending counsel review</span>
+  <span class="pill">2026-10-05</span>
+</div>
+
+<nav class="toc" aria-label="Contents"><b>Contents</b><ol>
+<li><a href="#1-who-we-are">1. Who we are</a></li>
+<li><a href="#2-what-we-are-not-we-are-not-a-marketplace">2. What we are not: we are not a marketplace</a></li>
+<li><a href="#3-your-content-is-yours">3. Your content is yours</a></li>
+<li><a href="#4-your-marketplace-accounts-are-yours">4. Your marketplace accounts are yours</a></li>
+<li><a href="#5-acceptable-use">5. Acceptable use</a></li>
+<li><a href="#6-no-automation-you-press-post-every-time">6. No automation: you press Post, every time</a></li>
+<li><a href="#7-plans-billing-and-cancellation">7. Plans, billing and cancellation</a></li>
+<li><a href="#7-1-free-plan">7.1 Free plan</a></li>
+<li><a href="#7-2-pro-plan">7.2 Pro plan</a></li>
+<li><a href="#7-3-cancellation">7.3 Cancellation</a></li>
+<li><a href="#7-4-payment-and-renewal">7.4 Payment and renewal</a></li>
+<li><a href="#7-5-taxes">7.5 Taxes</a></li>
+<li><a href="#7-6-refunds">7.6 Refunds</a></li>
+<li><a href="#8-ai-output-is-not-a-fact">8. AI output is not a fact</a></li>
+<li><a href="#9-fees-estimates-and-take-home-figures">9. Fees, estimates and take-home figures</a></li>
+<li><a href="#10-your-warranty-of-the-work">10. Your warranty of the work</a></li>
+<li><a href="#11-disclaimers">11. Disclaimers</a></li>
+<li><a href="#12-limitation-of-liability">12. Limitation of liability</a></li>
+<li><a href="#13-term-suspension-and-termination">13. Term, suspension and termination</a></li>
+<li><a href="#14-changes-to-these-terms">14. Changes to these Terms</a></li>
+<li><a href="#15-third-party-services">15. Third-party services</a></li>
+<li><a href="#16-indemnity">16. Indemnity</a></li>
+<li><a href="#17-independent-contractors-and-no-agency">17. Independent contractors and no agency</a></li>
+<li><a href="#18-governing-law-and-disputes">18. Governing law and disputes</a></li>
+<li><a href="#19-notices">19. Notices</a></li>
+<li><a href="#20-general">20. General</a></li>
+<li><a href="#drafting-notes-for-counsel-not-part-of-the-terms">Drafting notes for counsel — not part of the Terms</a></li>
+</ol></nav>
+
+<p># Terms of Service</p>
+<p><strong>DRAFT — not legal advice, pending counsel review.</strong> <strong>Draft date: 2026-10-05. Effective date: to be set by counsel.</strong></p>
+<blockquote>This document was drafted by an engineer for review by a licensed lawyer. It has not been reviewed by counsel. Bracketed items <code>[LIKE THIS]</code> are placeholders that only counsel can fill in. Do not publish this page as binding terms until counsel signs off.</blockquote>
+<hr>
+<h2 id="1-who-we-are">1. Who we are</h2>
+<p>fashionistas.ai ("fashionistas", "we", "us") is a software tool operated by <code>[LEGAL ENTITY NAME]</code>, a <code>[ENTITY TYPE]</code> organised under the laws of <code>[JURISDICTION]</code>, with a registered address at <code>[ADDRESS]</code>.</p>
+<p>You can reach us at <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a>.</p>
+<p>These Terms are a binding agreement between you and <code>fashionistas</code>. If you do not agree with them, do not use the service. If you use the service on behalf of a business, you promise us that you have authority to bind that business, and "you" then means that business.</p>
+<h2 id="2-what-we-are-not-we-are-not-a-marketplace">2. What we are not: we are not a marketplace</h2>
+<p><strong>We are not a marketplace, an auction house, a broker, a payments processor, or a party to any sale of goods.</strong> We do not buy anything. We do not sell anything. We do not take title to, custody, or possession of any item. We do not act as your agent, broker, or consignee.</p>
+<p>Every sale you make happens between you and the buyer, on a marketplace that is operated by a third party. The contract for that sale is between you and that marketplace and that buyer. We are not a party to it and we receive no commission on your sales.</p>
+<p>Your relationship with each marketplace is governed by that marketplace's own terms, which you accept directly with them. Where this document and a marketplace's terms conflict, the marketplace's terms govern your relationship with that marketplace.</p>
+<h2 id="3-your-content-is-yours">3. Your content is yours</h2>
+<p><strong>You own everything you make and everything you bring.</strong> "Your Content" means the photos you upload, the item names, descriptions, prices, tags, hashtags, condition notes, size and brand fields you enter or generate, the AI renders we produce from your photos, and your account information.</p>
+<p>You keep all right, title and interest in Your Content. We claim <strong>no ownership</strong> of it and we do not claim any licence to sell it or to train a model on it. We ask only for the narrow, revocable permission needed to run the service: to store your Content, to process it (including sending it to our infrastructure and AI sub-processor to generate a render or listing draft), and to display it back to you. That permission ends when you delete the Content or close your account.</p>
+<p>You are responsible for having the right to upload what you upload. If a photo of a garment was taken by someone else, or shows a person who has not consented, uploading it may infringe someone else's rights or break a marketplace's rules. Uploading is your decision and your responsibility.</p>
+<h2 id="4-your-marketplace-accounts-are-yours">4. Your marketplace accounts are yours</h2>
+<p>You keep sole ownership and control of your accounts with Poshmark, Mercari, Depop, Grailed, eBay, Etsy and every other shop. You are solely responsible for:</p>
+<ul><li>registering, securing and closing those accounts;</li><li>obeying each marketplace's terms, community rules, and acceptable-use policy;</li><li>the accuracy and legality of everything you list (title, photos, description, condition, price, shipping, and any authenticity claim you make);</li><li>your own tax reporting, income records, and any sales tax or VAT you owe;</li><li>responding to buyers, handling shipping, refunds, and disputes;</li><li><strong>not double-selling an item</strong> and not selling the same physical item twice.</li></ul>
+<p><strong>fashionistas is not responsible for what happens on your marketplace account.</strong> We do not control it, cannot see into it, cannot reverse its decisions, and cannot restore a suspended account. If a marketplace suspends you, restricts your listings, holds your funds, or bans you, that is a dispute between you and that marketplace. See <a href="/legal/risk.html">risk.html</a> for what we can and cannot do about it.</p>
+<p>We may ask you for a refund of any amount we collected while you were circumventing a marketplace's rules.</p>
+<h2 id="5-acceptable-use">5. Acceptable use</h2>
+<p>You agree not to use fashionistas to do any of the following.</p>
+<ol><li><strong>Sell anything unlawful or prohibited.</strong> Counterfeit or replica goods, stolen property, recalled items, items you do not own, items restricted by sanctions or export control, items misrepresented as authentic, and anything else a marketplace or the law forbids.</li><li><strong>Misrepresent an item.</strong> Any condition, brand, or authenticity statement in a listing must be true and yours. Never let generated text stand in for your own knowledge.</li><li><strong>Infringe anyone's rights,</strong> including copyright in photographs, trademark in brand names, and the rights of anyone whose face or body appears in a try-on render.</li><li><strong>Upload unlawful or abusive content,</strong> including sexual content involving minors, content that harasses a person or group, or content that promotes violence or self-harm.</li><li><strong>Impersonate anyone</strong> or misrepresent the origin of an item.</li><li><strong>Attack the service:</strong> probe, scan, overload, or attempt to gain unauthorised access to it, or circumvent rate, quota, or plan limits.</li><li><strong>Reverse engineer, resell, or redistribute the service</strong> as a competing product, or scrape it to build a competing dataset.</li><li><strong>Use the service to build a competing posting tool</strong> or to power a product that lists to marketplaces on another person's behalf.</li><li><strong>Spam or harass</strong> a buyer, a seller, or a marketplace.</li><li><strong>Circumvent a marketplace's access limits</strong> — for example, evading a marketplace's block on third-party posting tools.</li></ol>
+<p>You are responsible for how you use the output. We are not obliged to monitor your listings, and we do not screen them for you.</p>
+<h2 id="6-no-automation-you-press-post-every-time">6. No automation: you press Post, every time</h2>
+<p><strong>This is the most important rule on this page.</strong></p>
+<p>For most shops, fashionistas does not publish anything by itself. The service <strong>prepares</strong> a listing for you — a title, a description, a suggested price, a fee estimate, and images — and hands it to a browser extension that runs <strong>in your own browser, inside your own already-logged-in marketplace session</strong>.</p>
+<ul><li>fashionistas <strong>never</strong> asks for, and you must <strong>never</strong> give it, your marketplace password. Our servers never receive your marketplace credentials.</li><li>The listing is only ever published <strong>in your session, when you tap Post</strong> (or the equivalent button in the extension).</li><li>You review the final text, price and images before it is submitted. Nothing goes live without your action.</li></ul>
+<p><strong>You must not</strong> use fashionistas, or any part of it, to automate any of the following against any marketplace:</p>
+<ul><li>sharing, re-sharing, or reposting a listing;</li><li>relisting, or renewing a listing on a timer;</li><li>following, unfollowing, or any follower action;</li><li>sending, accepting, declining, or countering offers;</li><li>mass messaging, mass following, or any drip campaign;</li><li>scraping a marketplace, or calling a marketplace's API in a way its terms prohibit.</li></ul>
+<p>Doing any of the above can get a seller suspended and is a breach of this Agreement. We may suspend or terminate your account and refund nothing.</p>
+<p>Two shops are handled differently, and even then the service does less than you might think:</p>
+<ul><li><strong>eBay</strong> — the server-side path talks to eBay's developer API in a development/sandbox mode.</li><li><strong>Etsy</strong> — the server-side path creates a <strong>draft</strong>, not a live listing.</li></ul>
+<p>Read <code>/api/marketplaces</code> for the per-shop capability flag. Treat every <code>autoPost: true</code> in that catalogue as <strong>"code for this path exists"</strong>, never as <strong>"a listing was published."</strong></p>
+<h2 id="7-plans-billing-and-cancellation">7. Plans, billing and cancellation</h2>
+<h3 id="7-1-free-plan">7.1 Free plan</h3>
+<p>The free plan includes, per calendar month (UTC):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>Limit</th>
+<th>Free plan per month</th>
+</tr></thead><tbody>
+<tr><td>Listings created</td><td>10</td></tr>
+<tr><td>AI photos</td><td>3</td></tr>
+<tr><td>Stylist messages</td><td>10</td></tr>
+</tbody></table></div>
+<p>Counters reset on the <strong>first day of each calendar month, UTC</strong> — not on the day you signed up. When you hit a limit the service tells you what you used, what the cap is, and the exact instant it resets.</p>
+<h3 id="7-2-pro-plan">7.2 Pro plan</h3>
+<p><strong>Pro costs $14.99 per month</strong>, billed monthly in advance through Stripe. Pro raises or removes the free-tier caps (unlimited listings, and a higher AI-photo and message allowance). The plan does not include any marketplace fees — those are charged to you by each marketplace, separately.</p>
+<h3 id="7-3-cancellation">7.3 Cancellation</h3>
+<p>You may cancel at any time from your account, and we link to Stripe's customer portal for exactly that reason. There is no cancellation fee.</p>
+<p>If you cancel, your Pro access continues to the end of the period you have already paid for, and then stops. We do not pro-rate partial months back to you. After your Pro access ends you drop to the free plan and its caps.</p>
+<p>We may change the price of Pro. We will tell you before a price change takes effect on a renewal. We will never raise the price mid-period you have already paid for.</p>
+<h3 id="7-4-payment-and-renewal">7.4 Payment and renewal</h3>
+<p>Stripe processes the payment; we never see or store your card number. The subscription renews monthly until you cancel. If a renewal payment fails we may suspend paid features until it succeeds.</p>
+<h3 id="7-5-taxes">7.5 Taxes</h3>
+<p>Fees are exclusive of any sales tax, VAT, GST or similar charge, which you are responsible for. If we are required to collect any such charge we will add it at checkout and we may ask for the information needed to comply with tax law.</p>
+<h3 id="7-6-refunds">7.6 Refunds</h3>
+<p>Because you can cancel any time and keep access to the end of the paid period, monthly subscriptions that have been used are generally <strong>not refundable</strong>. Where the law requires a refund, we will give it. If we materially break this Agreement, we will refund the affected period.</p>
+<p>If you delete your account before the end of a paid period, unused prepaid months are not refunded.</p>
+<h2 id="8-ai-output-is-not-a-fact">8. AI output is not a fact</h2>
+<p>Item identification, descriptions, condition notes, and suggested prices are produced by a machine. They can be <strong>wrong</strong>. A render does not prove an item is authentic, does not prove its condition, and does not guarantee the colour or fit matches the real garment.</p>
+<p><strong>You must read and correct every AI-generated field before you publish it.</strong> You are the person asserting the condition and authenticity of the item, and you alone are responsible for that assertion. Never rely on our output as your only basis for an authenticity claim.</p>
+<h2 id="9-fees-estimates-and-take-home-figures">9. Fees, estimates and take-home figures</h2>
+<p>fashionistas shows a take-home estimate for each shop. <strong>Those numbers are an approximate model we publish, not a live quote from any platform.</strong> They change when a marketplace changes its own pricing, and we may not notice the same day.</p>
+<p>Your actual fee is whatever the marketplace charges, calculated on the terms in force at the time of the sale. <strong>The marketplace's own earnings screen is the authoritative figure.</strong> See <a href="/legal/risk.html">risk.html</a> for the per-shop detail we can and cannot stand behind.</p>
+<h2 id="10-your-warranty-of-the-work">10. Your warranty of the work</h2>
+<p>You promise that each listing you publish: accurately describes the item; matches the photographs; is not counterfeit or stolen; carries no condition defect you have concealed; and complies with every applicable law and every marketplace rule. You promise this to the buyer and to the marketplace. We are not a party to that promise and do not make it for you.</p>
+<h2 id="11-disclaimers">11. Disclaimers</h2>
+<p>To the maximum extent the law allows, and except as expressly stated here:</p>
+<ul><li><strong>the service is provided "as is" and "as available"</strong>, with no warranty of merchantability, fitness for a particular purpose, non-infringement, accuracy, or uninterrupted availability;</li><li><strong>we give no warranty that the service will be error-free, or that any listing will sell, or that the fee estimates will match the marketplace's actual charge</strong>;</li><li><strong>we give no warranty about marketplace eligibility</strong>, including that a marketplace will accept the item, will not suspend your account, or will not restrict your listings;</li><li><strong>we give no guarantee about the marketplace accounts or payments</strong> described in Section 4;</li><li>we may change, suspend, or discontinue any feature, and may impose limits on volume or rate to protect the service and other users.</li></ul>
+<p>Nothing in this Agreement excludes a warranty or right that cannot lawfully be excluded, and nothing excludes our liability for death or personal injury caused by negligence, or for fraud or fraudulent misrepresentation.</p>
+<h2 id="12-limitation-of-liability">12. Limitation of liability</h2>
+<p><strong>To the fullest extent permitted by law, we are not liable for your use of a marketplace, and in particular we are not liable for:</strong></p>
+<ul><li>any suspension, restriction, ban, or termination of your marketplace account;</li><li>any fee, charge, penalty, or commission a marketplace assesses;</li><li>any delay or failure of a marketplace to pay you out;</li><li>any chargeback, buyer reclaim, refund demand, or payment you are forced to reverse;</li><li>a buyer claiming the item was not as described, or not authentic;</li><li>lost profit, lost sales, lost opportunity, or loss of goodwill;</li><li>the market value of your item, or any difference between your asking price and the price it actually sells for;</li><li>content of any kind that you publish, or any marketplace's reaction to it.</li></ul>
+<p><strong>In no event is our total liability to you, for all claims in any twelve-month period, greater than the amount you actually paid us in the twelve months before the event giving rise to the claim</strong> — and <strong>in no event shall we be liable for indirect or consequential loss, or for loss of profit, revenue or anticipated savings, even if we were told it was possible.</strong></p>
+<p>These limits apply even if a warranty failed, even if we were negligent, and even if the claim is framed some other way.</p>
+<h2 id="13-term-suspension-and-termination">13. Term, suspension and termination</h2>
+<p>These Terms apply while you use the service. You may stop at any time and close your account; closing your account ends your subscription going forward.</p>
+<p>We may suspend or close an account, and may refuse service, if you breach this Agreement — in particular if you break the no-automation rule in Section 6, sell counterfeit or stolen goods, or infringe anyone's rights. Where the law allows, we will tell you why. We may also act where a marketplace, a payment provider, or a law enforcement body requires it.</p>
+<p>On termination your right to use the service stops. Your Content remains yours. <code>[COUNSEL: state how long we retain Content after account closure and what happens to backups.]</code></p>
+<h2 id="14-changes-to-these-terms">14. Changes to these Terms</h2>
+<p>We may update these Terms. The version on this page is the one that applies. Where a change is material, we will give you notice <code>[COUNSEL: choose the mechanism — in-app banner and/or email]</code>. Continuing to use the service after that notice means you accept the change; if you do not accept it, you can cancel and receive <code>[COUNSEL: state whether a pro-rata refund applies to the change]</code>.</p>
+<h2 id="15-third-party-services">15. Third-party services</h2>
+<p>The service links to, and depends on, third parties including Cloudflare (hosting and databases), Stripe (payments), RunPod (virtual try-on rendering) and the marketplaces themselves. Their own terms govern your use of them, and their availability is outside our control.</p>
+<h2 id="16-indemnity">16. Indemnity</h2>
+<p>You agree to indemnify and hold us harmless from any claim, demand, loss or expense (including reasonable legal fees) arising out of your Content, your use of the service in breach of this Agreement, your breach of a marketplace's terms, your sale of any item, or your infringement of anyone's rights. <code>[COUNSEL: this clause needs review for enforceability and for any applicable cap.]</code></p>
+<h2 id="17-independent-contractors-and-no-agency">17. Independent contractors and no agency</h2>
+<p>Nothing in this Agreement makes either party an agent, employee, partner, franchisee or joint venturer of the other. You are not our agent, and we are not your agent.</p>
+<h2 id="18-governing-law-and-disputes">18. Governing law and disputes</h2>
+<p><strong><code>[COUNSEL: GOVERNING LAW PLACEHOLDER]</code></strong> governs this Agreement, without regard to its conflict-of-laws rules. <code>[COUNSEL: FORUM / VENUE PLACEHOLDER]</code>.</p>
+<p><code>[COUNSEL: decide whether to require arbitration, and if so which rules, whether it is opt-in or mandatory, and the carve-outs (small claims, injunctive relief, unlawful conduct). Class-action and liability-limiting clauses in consumer agreements are unenforceable in some jurisdictions, including under the Magnuson- Moss Warranty Act (US) and the Consumer Rights Act 2015 (UK). This must be checked, not assumed.]</code></p>
+<p>Nothing in this Agreement removes any right to bring proceedings in the court of a place you have a right to use.</p>
+<h2 id="19-notices">19. Notices</h2>
+<p>Notices to us: <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a>. Notices to you: the email address on your account. <code>[COUNSEL: confirm the notice addresses and whether a separate formal notice address is required.]</code></p>
+<h2 id="20-general">20. General</h2>
+<ul><li><strong>Assignment.</strong> We may assign this Agreement on notice. You may not assign it without our written consent.</li><li><strong>Entire agreement.</strong> These Terms and the Privacy Policy are the whole agreement and replace anything earlier.</li><li><strong>No waiver.</strong> A failure to enforce is not a waiver.</li><li><strong>Severability.</strong> If a provision is unenforceable it will be limited to the minimum extent necessary and the rest survives.</li><li><strong>Headings</strong> are for convenience only.</li><li><strong>Survival.</strong> Sections 2, 3, 4, 10, 11, 12, 15, 16 and 18 survive termination.</li></ul>
+<hr>
+<h3 id="drafting-notes-for-counsel-not-part-of-the-terms">Drafting notes for counsel — not part of the Terms</h3>
+<ol><li><strong>Section 7.2 states $14.99/month.</strong> This is the price the codebase enforces (<code>functions/api/billing/checkout.js</code>, <code>PRO_UNIT_AMOUNT = 1499</code> cents) and the price shown site-wide. If the business intends a different price, that number must be changed in the code and the marketing copy together, not here alone.</li><li><strong>Section 6 and Section 4 are the load-bearing clauses.</strong> The whole product premise is that the seller presses Post in their own session. If that changes, Sections 4, 6, 12 and the risk page must all be rewritten.</li><li><strong>Section 12's liability cap is an aggregate over twelve months.</strong> Check it against the mandatory consumer guarantees in every jurisdiction you sell into.</li><li><strong>Section 16's indemnity is unidirectional</strong> (you indemnify us only). Counsel may want a mutual form.</li><li>The seller's own risk disclosure lives at <a href="/legal/risk.html">risk.html</a>, and the Privacy Policy at <a href="/legal/privacy.html">privacy.html</a>.</li></ol>
+
+<div class="notes">
+<b>Also on this page set</b>
+<ul>
+<li><a href="/legal/terms.html">Terms of Service</a> &mdash; ownership, acceptable use, the no-automation rule, billing.</li>
+<li><a href="/legal/privacy.html">Privacy Policy</a> &mdash; what we store in Cloudflare D1 and R2, and what we never store.</li>
+<li><a href="/legal/risk.html">Marketplace Risk Disclosure</a> &mdash; suspension, fees, double sales, counterfeits and chargebacks, per marketplace.</li>
+</ul>
+<p class="mut" style="margin:0">Draft source: <code>legal/terms.md</code> &middot;
+Next in this set: <a href="/legal/privacy.html">Privacy</a></p>
+</div>
+
+
+</main>
+
+<footer class="site-footer">
+<nav aria-label="Footer">
+<a href="/">Home</a>
+<a href="/pricing/">Pricing</a>
+<a href="/contact/">Contact</a>
+<a href="/privacy/">Privacy</a>
+<a href="/legal/terms.html">Terms</a>
+<a href="/legal/privacy.html">Privacy Policy</a>
+<a href="/legal/risk.html">Risk Disclosure</a>
+</nav>
+<p>fashionistas.ai &mdash; photograph your closet, list it everywhere.
+Email: <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a></p>
+<p class="legal-line">These legal pages are a draft for counsel review and are not legal advice.
+Marketplace names are used descriptively; fashionistas.ai is not affiliated with, endorsed by
+or sponsored by Poshmark, Mercari, Depop, Grailed, eBay or Etsy.</p>
+</footer>
+</div>
+</body>
+</html>

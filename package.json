@@ -6,7 +6,9 @@
   "scripts": {
     "start": "npx serve .",
     "test": "node --test \"tests/**/*.test.mjs\" \"apps/**/*.test.mjs\" \"functions/**/*.test.mjs\"",
-    "deploy": "npx wrangler pages deploy . --project-name=fashionistas-ai"
+    "deploy": "bash scripts/deploy-local.sh",
+    "deploy:dry": "bash scripts/deploy-local.sh --dry-run",
+    "zip-extension": "bash scripts/zip-extension.sh"
   },
   "author": "Israel Joffe",
   "license": "MIT"

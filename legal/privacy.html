@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy Policy (DRAFT) — fashionistas.ai</title>
+<meta name="description" content="Draft Privacy Policy for fashionistas.ai, pending counsel review. What we store in Cloudflare D1 and R2, and the marketplace passwords we never ask for.">
+<meta name="robots" content="noindex,follow">
+<meta property="og:title" content="Privacy Policy (DRAFT) — fashionistas.ai">
+<meta property="og:description" content="Draft Privacy Policy for fashionistas.ai, pending counsel review. What we store in Cloudflare D1 and R2, and the marketplace passwords we never ask for.">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://fashionistas.ai/legal/privacy.html">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap">
+<style>
+:root{
+ --bg:#faf7f2; --bg-tint:#f4efe7;
+ --card:#ffffff; --card-2:#fffdfa;
+ --card-glass:rgba(255,255,255,.78);
+ --bar-glass:rgba(255,255,255,.86);
+ --sel-bg:rgba(255,255,255,.94);
+ --line:#e9e2d8; --line-2:#ddd3c5;
+ --ink:#12121a; --mut:#74747e;
+ --soft:#eee9e0; --soft-2:#e6dfd3;
+ --input-bg:#ffffff; --code-bg:#f1ece4; --track:#eee9e0;
+ --solid:#12121a; --solid-fg:#ffffff;
+ --accent:#ff4e3a; --accent2:#7c5cff;
+ --good:#1f7a4d; --good-fg:#ffffff; --good-soft:#e2efe7;
+ --bad:#c0392b; --bad-fg:#ffffff; --bad-soft:#fbe4e1;
+ --gold:#c8860a;
+ --grad:linear-gradient(100deg,#ff8a3d,#ff4e3a 45%,#c05cff);
+ --sheen:rgba(255,255,255,.55);
+ --tint:rgba(0,0,0,.045);
+ --mesh:radial-gradient(40% 34% at 8% 4%,rgba(255,138,61,.22),transparent 62%),
+        radial-gradient(36% 32% at 92% 0%,rgba(124,92,255,.17),transparent 64%),
+        radial-gradient(50% 42% at 60% 100%,rgba(255,78,58,.13),transparent 66%);
+ --sh-1:0 1px 2px rgba(24,16,10,.05);
+ --shadow:0 10px 34px rgba(24,16,10,.09);
+ --sh-2:0 2px 6px rgba(24,16,10,.05),0 16px 38px rgba(24,16,10,.10);
+ --sh-3:0 6px 16px rgba(24,16,10,.07),0 30px 70px rgba(24,16,10,.16);
+ --ring:0 0 0 3px rgba(255,78,58,.18);
+ --r-1:8px; --r-2:12px; --r-3:16px; --r-4:20px; --r-5:26px; --r-full:999px;
+ --radius:18px;
+ --t-xs:11px; --t-sm:12.5px; --t-base:15px; --t-md:17px; --t-lg:22px; --t-xl:26px;
+ --display:"Instrument Serif",Georgia,"Times New Roman",serif;
+ color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+ font-family:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+ font-size:var(--t-base);line-height:1.62;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+/* .wrap / .card / .pill / .mut / .legal-line — the site's own classes,
+   copied from index.html (164-305) rather than restyled here. */
+.wrap{max-width:640px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom))}
+.card{position:relative;background:linear-gradient(165deg,var(--card-2) 0%,var(--card) 52%);
+ border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin:12px 0;box-shadow:var(--sh-2)}
+.pill{display:inline-block;padding:4px 11px;border-radius:var(--r-full);font-size:11.5px;
+ font-weight:700;background:var(--soft);color:var(--ink);margin:2px 3px 2px 0}
+.mut{color:var(--mut);font-size:13px}
+.legal-line{font-size:11px;color:var(--mut);text-align:center;margin:16px 2px 4px;line-height:1.5}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;
+ border-radius:14px;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;
+ text-decoration:none;background:var(--soft);color:var(--ink)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.brand{font-family:var(--display);font-style:italic;font-weight:600;font-size:23px;
+ letter-spacing:-.02em;color:var(--ink)}
+.brand span{color:var(--accent)}
+.topnav{display:flex;align-items:center;justify-content:space-between;gap:16px;
+ padding:18px 0;border-bottom:1px solid var(--line);margin-bottom:24px;flex-wrap:wrap}
+.topnav nav{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;font-weight:600}
+.topnav nav a{color:var(--mut)}
+.topnav nav a:hover,.topnav nav a[aria-current="page"]{color:var(--accent)}
+h1{font-size:clamp(1.6rem,4vw,2.1rem);line-height:1.2;margin:0 0 8px;letter-spacing:-.03em}
+.sub-lede{color:var(--mut);font-size:1.02rem;margin:0 0 20px}
+/* --- the three legal-page-only classes, scoped to main.legal --- */
+.legal .draft-banner{display:flex;gap:12px;align-items:flex-start;background:var(--bad-soft);
+ border:1px solid rgba(192,57,43,.28);border-left:4px solid var(--bad);border-radius:var(--r-3);
+ padding:14px 15px;margin:0 0 8px;color:#5c1a12}
+.legal .draft-banner b{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+ margin-bottom:3px;color:var(--bad)}
+.legal .draft-banner p{margin:0;font-size:13px;line-height:1.5}
+.legal .draft-meta{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 6px}
+.legal .legal-body h2{font-size:var(--t-lg);letter-spacing:-.02em;line-height:1.25;
+ margin:30px 0 8px;padding-top:20px;border-top:1px solid var(--line)}
+.legal .legal-body h3{font-size:var(--t-md);letter-spacing:-.015em;margin:22px 0 6px}
+.legal .legal-body p{margin:0 0 12px}
+.legal .legal-body ul,.legal .legal-body ol{margin:0 0 14px;padding-left:22px}
+.legal .legal-body li{margin:0 0 6px}
+.legal .legal-body li>ul,.legal .legal-body li>ol{margin:6px 0 2px}
+.legal .legal-body hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+.legal .legal-body blockquote{margin:0 0 14px;padding:12px 15px;background:var(--code-bg);
+ border:1px solid var(--line);border-radius:var(--r-2);color:#4a4038;font-size:14px}
+.legal .legal-body blockquote p:last-child{margin-bottom:0}
+.legal .legal-body code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+ font-size:.9em;background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:1px 5px}
+.legal .legal-body strong{font-weight:800}
+.legal .legal-body .tablewrap{overflow-x:auto;margin:0 0 16px;-webkit-overflow-scrolling:touch}
+.legal table{width:100%;border-collapse:collapse;font-size:14px;min-width:380px}
+.legal th,.legal td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.legal th{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+.legal .toc{background:var(--card-2);border:1px solid var(--line);border-radius:var(--r-3);
+ padding:16px 18px;margin:0 0 24px;box-shadow:var(--sh-1)}
+.legal .toc b{display:block;font-size:12px;font-weight:800;letter-spacing:.07em;
+ text-transform:uppercase;color:var(--mut);margin-bottom:8px}
+.legal .toc ol{margin:0;padding-left:20px;columns:2;column-gap:22px;font-size:13.5px}
+.legal .toc li{margin:0 0 4px;break-inside:avoid}
+.legal .toc a{color:var(--mut)}
+.legal .toc a:hover{color:var(--accent)}
+.legal .notes{background:var(--card-2);border:1px dashed var(--line-2);border-radius:var(--r-3);
+ padding:16px 18px;margin:26px 0 0}
+.legal .notes>b{display:block;font-size:12px;font-weight:800;letter-spacing:.07em;
+ text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.legal .site-footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);
+ color:var(--mut);font-size:13px}
+.legal .site-footer nav{display:flex;flex-wrap:wrap;gap:12px 16px;margin-bottom:10px;font-weight:600}
+.legal .site-footer a{color:var(--mut)}
+.legal .site-footer a:hover{color:var(--accent)}
+@media (max-width:640px){.legal .toc ol{columns:1}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important}}
+
+</style>
+</head>
+<body class="legal">
+<div class="wrap">
+
+<header class="topnav">
+  <a class="brand" href="/">fashionistas<span>.ai</span></a>
+  <nav aria-label="Legal">
+    <a href="/legal/terms.html" aria-current="page">Terms</a>
+    <a href="/legal/privacy.html">Privacy</a>
+    <a href="/legal/risk.html">Risk</a>
+    <a href="/">Home</a>
+  </nav>
+</header>
+
+<main class="legal-body">
+<h1>Privacy Policy (DRAFT)</h1>
+<p class="sub-lede">What we store, what we never store, and the two narrow places a marketplace token does reach our servers.</p>
+
+<div class="draft-banner" role="note">
+  <div>
+    <b>Draft &mdash; not legal advice</b>
+    <p>These pages were drafted for review by a licensed lawyer and have <strong>not</strong>
+    been reviewed by counsel. Bracketed items are placeholders that only counsel can fill in.
+    Do not rely on them, and do not publish them as binding terms, until counsel has signed off.</p>
+  </div>
+</div>
+<p class="mut" style="margin:0 0 4px">
+  <strong>Draft date:</strong> 2026-10-05 &middot;
+  <strong>Effective date:</strong> to be set by counsel &middot;
+  <strong>Operator:</strong> fashionistas.ai
+</p>
+<div class="draft-meta">
+  <span class="pill">Draft</span>
+  <span class="pill">Not legal advice</span>
+  <span class="pill">Pending counsel review</span>
+  <span class="pill">2026-10-05</span>
+</div>
+
+<nav class="toc" aria-label="Contents"><b>Contents</b><ol>
+<li><a href="#1-the-short-version">1. The short version</a></li>
+<li><a href="#2-what-we-store">2. What we store</a></li>
+<li><a href="#2-1-account-and-authentication">2.1 Account and authentication</a></li>
+<li><a href="#2-2-cookies">2.2 Cookies</a></li>
+<li><a href="#2-3-your-content">2.3 Your content</a></li>
+<li><a href="#2-4-billing-and-plan">2.4 Billing and plan</a></li>
+<li><a href="#2-5-usage-counters">2.5 Usage counters</a></li>
+<li><a href="#2-6-technical-data">2.6 Technical data</a></li>
+<li><a href="#3-what-we-never-store">3. What we never store</a></li>
+<li><a href="#3-1-two-narrow-exceptions-stated-plainly">3.1 Two narrow exceptions, stated plainly</a></li>
+<li><a href="#4-who-else-sees-your-data-sub-processors">4. Who else sees your data (sub-processors)</a></li>
+<li><a href="#5-fee-estimates">5. Fee estimates</a></li>
+<li><a href="#6-international-transfers">6. International transfers</a></li>
+<li><a href="#7-how-long-we-keep-things">7. How long we keep things</a></li>
+<li><a href="#8-deletion-on-request">8. Deletion on request</a></li>
+<li><a href="#9-security">9. Security</a></li>
+<li><a href="#10-your-rights">10. Your rights</a></li>
+<li><a href="#11-children">11. Children</a></li>
+<li><a href="#12-changes">12. Changes</a></li>
+<li><a href="#drafting-notes-for-counsel-not-part-of-the-policy">Drafting notes for counsel — not part of the Policy</a></li>
+</ol></nav>
+
+<p># Privacy Policy</p>
+<p><strong>DRAFT — not legal advice, pending counsel review.</strong> <strong>Draft date: 2026-10-05. Effective date: to be set by counsel.</strong></p>
+<blockquote>Drafted by an engineer for review by a licensed lawyer. Bracketed items <code>[LIKE THIS]</code> are placeholders for counsel. This policy describes what the software <strong>actually does today</strong> — it was written by reading the deployed code, not by writing what a privacy policy usually says.</blockquote>
+<p><strong>The operator:</strong> <code>fashionistas.ai</code>, operated by <code>[LEGAL ENTITY NAME]</code>, a <code>[ENTITY TYPE]</code> organised under the laws of <code>[JURISDICTION]</code>, at <code>[ADDRESS]</code>. Contact: <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a>.</p>
+<hr>
+<h2 id="1-the-short-version">1. The short version</h2>
+<ul><li>We store your email, a <strong>salted hash</strong> of your password (never the password), your session tokens, your listing text, your photos, your plan status and your monthly usage counters.</li><li><strong>We never ask for your marketplace password, and our servers never receive it.</strong> Listing happens in your own logged-in browser session. There is no field anywhere in this product for a marketplace password, because there is no code path that would accept one.</li><li>We do <strong>not</strong> sell your personal information.</li><li>Email us and we will delete your account data.</li></ul>
+<h2 id="2-what-we-store">2. What we store</h2>
+<h3 id="2-1-account-and-authentication">2.1 Account and authentication</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>What</th>
+<th>Where</th>
+<th>Notes</th>
+</tr></thead><tbody>
+<tr><td>Email address</td><td>Cloudflare D1</td><td>Your login. Unique per account.</td></tr>
+<tr><td>Password hash + salt</td><td>Cloudflare D1</td><td>PBKDF2-HMAC-SHA256, 100,000 iterations, a fresh random 16-byte salt per user. Stored as <code>pbkdf2-sha256$&lt;iterations&gt;$&lt;hex&gt;</code>. <strong>We never store your password itself.</strong></td></tr>
+<tr><td>Session token + expiry</td><td>Cloudflare D1</td><td>A random opaque token, checked on every authenticated request.</td></tr>
+<tr><td>Account creation time</td><td>Cloudflare D1</td><td></td></tr>
+</tbody></table></div>
+<h3 id="2-2-cookies">2.2 Cookies</h3>
+<p>We set two first-party cookies. Both are sent only to fashionistas.ai.</p>
+<div class="tablewrap"><table><thead><tr>
+<th>Cookie</th>
+<th>What it holds</th>
+<th>Lifetime</th>
+</tr></thead><tbody>
+<tr><td><strong><code>fash_session</code></strong></td><td>An opaque session token, and nothing else — no marketplace credential, no profile data.</td><td>While signed in</td></tr>
+<tr><td><strong><code>ebay_byo_sess</code></strong></td><td><strong>Your own eBay API <code>clientId</code> and <code>clientSecret</code></strong>, plus the OAuth redirect URI and which eBay environment you chose. Only ever set if you use the eBay "bring your own keys" option and paste your own eBay keys.</td><td>10 minutes, and only sent to <code>/api/ebay/oauth</code></td></tr>
+</tbody></table></div>
+<p><strong>Be aware of the second one.</strong> The <code>ebay_byo_sess</code> value is <strong>base64url-encoded, not encrypted</strong> — anyone who can read that cookie can decode it and recover your eBay client secret. That is why it is <code>HttpOnly</code> (no JavaScript can read it), restricted to the <code>/api/ebay/oauth</code> path, and capped at ten minutes, but if you would rather not hand us your eBay keys at all, <strong>do not use the bring-your-own keys option</strong> — the ordinary eBay OAuth path in Section 3.1 does not involve this cookie.</p>
+<p><code>[COUNSEL: state the cookie attributes exactly (Secure, HttpOnly, SameSite, Path, Max-Age), and whether consent is required for strictly-necessary cookies in the jurisdictions we operate in.]</code></p>
+<p>A cookie you set yourself on a marketplace's own domain is that marketplace's business. We never receive it.</p>
+<h3 id="2-3-your-content">2.3 Your content</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>What</th>
+<th>Where</th>
+<th>Notes</th>
+</tr></thead><tbody>
+<tr><td>Listing text</td><td>Cloudflare D1</td><td>Title, description, category, condition, brand, colour, size, price, tags, hashtags.</td></tr>
+<tr><td>Fee "breakdown"</td><td>Cloudflare D1</td><td>The computed fee lines for the shops you asked about.</td></tr>
+<tr><td>Which model produced a draft</td><td>Cloudflare D1</td><td>Provider name and model name only — never the prompt text as a stored field.</td></tr>
+<tr><td>Uploaded photos, cutouts, and virtual try-on renders</td><td><strong>Cloudflare R2</strong> (bucket <code>fashionistas-images</code>)</td><td>The image store for the product.</td></tr>
+<tr><td>Closet items you add</td><td>Cloudflare D1</td><td>Name, category, brand, condition, status, price ranges.</td></tr>
+<tr><td>Sale events</td><td>Cloudflare D1</td><td>Shop, listing reference, URL, title, price, currency, sale date, status. Reported by the browser extension while you are signed in.</td></tr>
+<tr><td>Delist queue entries</td><td>Cloudflare D1</td><td>Which item we are trying to pull down, on which shops.</td></tr>
+</tbody></table></div>
+<p><strong>Photos may contain people.</strong> A virtual try-on render places a garment onto a photograph of a person. That image is personal data about whoever is in it. Do not upload a photograph of a person who has not consented, and delete anything you should not have uploaded.</p>
+<h3 id="2-4-billing-and-plan">2.4 Billing and plan</h3>
+<p>Stripe is the processor. We store <strong>only what we need to recognise your subscription</strong>: a Stripe customer id, a Stripe subscription id, a status (<code>active</code>, <code>inactive</code>, …) and the end of the current period. <strong>We never see, receive or store your card number, CVC or expiry</strong> — that happens entirely on Stripe's hosted checkout page.</p>
+<h3 id="2-5-usage-counters">2.5 Usage counters</h3>
+<p>Per user, per calendar month, in Cloudflare D1: how many listings, AI photos and stylist messages you have used. We need these to enforce the free-tier caps, and they reset on the first of each month.</p>
+<h3 id="2-6-technical-data">2.6 Technical data</h3>
+<p>Cloudflare logs request metadata — IP address, timestamp, user agent, requested path, response status — needed to operate and secure the service, and to investigate abuse.</p>
+<h2 id="3-what-we-never-store">3. What we never store</h2>
+<ul><li><strong>Marketplace passwords. We never ask for them, and there is nowhere to put them.</strong> Listing for most shops runs through a browser extension inside your own signed-in session; the extension uses the session you already have.</li><li><strong>Your marketplace session cookies or tokens</strong> for Poshmark, Mercari, Depop, Grailed, Facebook Marketplace or Whatnot. Those stay in your browser. We never receive them.</li><li><strong>Your card number</strong> — see 2.4.</li><li>Your bank details. Your government ID. Your home address, unless you type it into a listing you choose to publish.</li><li>Sell contact details of buyers, unless you yourself write them into a listing.</li></ul>
+<h3 id="3-1-two-narrow-exceptions-stated-plainly">3.1 Two narrow exceptions, stated plainly</h3>
+<p>Two marketplace integrations do require us to hold a marketplace credential, because they use a marketplace's own developer API and there is no way to run an official API without one:</p>
+<ol><li><strong>eBay</strong> — two optional mechanisms, both initiated by you:<li><strong>OAuth grant.</strong> After you complete eBay's own OAuth consent screen we store a <strong>refresh token</strong> for your eBay account. The access token derived from it is short-lived. It can pull a listing down (<code>Sell Inventory</code> withdraw) when an item sells, and it is used against eBay's <strong>development/sandbox</strong> host.</li><li><strong>Bring-your-own-keys.</strong> If you paste your own eBay API <code>clientId</code> and <code>clientSecret</code> instead, they pass through the short-lived <code>ebay_byo_sess</code> cookie described in 2.2 and are used for the OAuth exchange. <strong>They are encoded, not encrypted</strong>, so avoid this route unless you are comfortable with that.</li></li></ol>
+<p>Either way, <strong>you</strong> grant access on eBay's own authorization screen, and <strong>you</strong> can revoke it at any time from eBay's settings. Revoking disconnects us; it does not cancel anything else. Our servers do hold these credentials, so if your eBay account is compromised, treat us as part of your account's trust boundary.</p>
+<ol><li><strong>Etsy</strong> — an Etsy OAuth token granted on Etsy's own authorization screen, so we can set a listing to <code>INACTIVE</code> when an item sells, or create a <strong>draft</strong> listing. This is the only Etsy credential path.</li></ol>
+<p>In both cases <strong>you</strong> grant access, on eBay's or Etsy's own authorization screen, and <strong>you</strong> can revoke it at any time from that marketplace's settings. Revoking disconnects us; it does not cancel anything else. Our servers do hold these tokens, so if your eBay or Etsy account is compromised, treat us as part of your account's trust boundary.</p>
+<p>Everything else — Poshmark, Mercari, Depop, Grailed, Vinted, Facebook Marketplace, Kidizen, Vestiaire, Whatnot — runs <strong>session-only</strong> and involves no credential leaving your browser.</p>
+<h2 id="4-who-else-sees-your-data-sub-processors">4. Who else sees your data (sub-processors)</h2>
+<p>We share the minimum necessary with these providers, all of whom process data on our instructions:</p>
+<div class="tablewrap"><table><thead><tr>
+<th>Provider</th>
+<th>What</th>
+<th>What they get</th>
+</tr></thead><tbody>
+<tr><td><strong>Cloudflare</strong> (Workers, Pages, D1, R2, KV)</td><td>Hosting and storage</td><td>Everything we store: accounts, listings, photos, counters, logs. Bound in <code>wrangler.toml</code>.</td></tr>
+<tr><td><strong>Stripe</strong></td><td>Subscription billing</td><td>Your email, plan, and card details on their own checkout pages. We get only the ids listed in 2.4.</td></tr>
+<tr><td><strong>RunPod</strong> (Serverless GPU, FASHN VTON v1.5)</td><td>Rendering the virtual try-on image</td><td><strong>The image bytes and the prompt for that single render</strong>, in order to return the finished picture. Renders are paid for by us per run.</td></tr>
+</tbody></table></div>
+<p><strong>Text and listing AI — deployment-dependent.</strong> The writing model is chosen by configuration, not hard-coded, so which provider sees your text depends on how this deployment is set up. It can be a local model, or any OpenAI-compatible host (OpenAI, a Cloudflare AI Gateway, or another compatible host). Which one is live is visible in each listing draft: we store the provider name and model name alongside every listing. <strong>If the deployment is unconfigured, the feature refuses to run rather than sending your text anywhere.</strong> <code>[COUNSEL / PRODUCT: identify the specific production text-model provider and name it here, then set the DPA and transfer mechanism before launch.]</code></p>
+<p><strong>We do not send your content to any marketplace.</strong> Posting happens from your own browser session.</p>
+<p>We do not share your personal information with data brokers, and we do not cross-context behavioural advertising.</p>
+<h2 id="5-fee-estimates">5. Fee estimates</h2>
+<p>Fee and take-home figures are computed by arithmetic inside our own code from a static catalogue. <strong>No third party is contacted, and nothing about your sales is sent anywhere, to produce them.</strong> The figures are an approximate model, not a live quote — see <a href="/legal/risk.html">risk.html</a>.</p>
+<h2 id="6-international-transfers">6. International transfers</h2>
+<p>Cloudflare and Stripe process data on infrastructure in multiple countries. If you are outside the United States, your data may be processed outside it. <code>[COUNSEL: add the correct transfer mechanism — Standard Contractual Clauses, an adequacy decision, or equivalent — for each jurisdiction, and name the regions actually used.]</code></p>
+<h2 id="7-how-long-we-keep-things">7. How long we keep things</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>Data</th>
+<th>Kept for</th>
+</tr></thead><tbody>
+<tr><td>Account (email, password hash)</td><td>Until you delete your account</td></tr>
+<tr><td>Session tokens</td><td>Until the session expires or you sign out</td></tr>
+<tr><td>Listings, closet items, sale records</td><td>Until you delete them or your account</td></tr>
+<tr><td>Photos and renders in R2</td><td>Until you delete them or your account</td></tr>
+<tr><td>Usage counters</td><td>Reset monthly; deleted with the account</td></tr>
+<tr><td>Billing records</td><td>As long as the subscription is live, then as long as tax law requires</td></tr>
+<tr><td>Security and access logs</td><td><code>[COUNSEL: set the actual retention period — do not ship an unset promise.]</code></td></tr>
+</tbody></table></div>
+<p>Backups age out on their own cycle: <code>[COUNSEL: state the backup retention window so deletion is described honestly, including the fact that a backup copy can persist until it is overwritten.]</code></p>
+<h2 id="8-deletion-on-request">8. Deletion on request</h2>
+<p><strong>Email <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a> from the address on your account and ask for deletion.</strong> We will verify that you are the account holder, then delete:</p>
+<ul><li>your account row, password hash and sessions;</li><li>your listings, closet items and sale records;</li><li><strong>your photos and renders from Cloudflare R2</strong>, including the bucket objects themselves — not just the database row that points at them;</li><li>your usage counters.</li></ul>
+<p>Cancelling a subscription is not deletion; ask for both if you want both. A marketplace account is not ours, so we cannot delete that — do it with the marketplace. Revoke any eBay or Etsy OAuth grant you gave us at the same time.</p>
+<p><code>[COUNSEL: state the statutory response window (e.g. 30 days), whether we can place an exception for records we must keep for tax or fraud purposes, and who in the company is the privacy contact.]</code></p>
+<h2 id="9-security">9. Security</h2>
+<ul><li>Passwords are salted and stretched with PBKDF2-HMAC-SHA256 at 100,000 iterations; the plaintext password is never stored or logged.</li><li>Session tokens are compared server-side against an expiry, and authenticated routes have no anonymous path.</li><li>Access to stored photos requires a valid session.</li><li>Secrets — the Stripe key, the marketplace API keys, the model API key — are read from environment configuration and are never written into source, logs or listings.</li></ul>
+<p><code>[COUNSEL: this section describes the code, not a security programme. If the product ever needs a compliance attestation (SOC 2, a penetration test), state it here only once it exists — do not promise one.]</code></p>
+<h2 id="10-your-rights">10. Your rights</h2>
+<p>Depending on where you live you may have rights to access, correct, delete, port, or object to the processing of your personal data, and to complain to a regulator. In practice: our databases are keyed to your account, so you can see and change most of your own data from inside the app, and you can ask for the rest. To exercise any right, email <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a>.</p>
+<p><code>[COUNSEL: this section needs the actual jurisdiction-specific rights and supervisory authority for each market you operate in. Do not ship it as-is.]</code></p>
+<h2 id="11-children">11. Children</h2>
+<p>The service is for people who can enter a binding contract and sell on a marketplace. It is not directed at children under 13 (or the equivalent minimum age where you operate), and we do not knowingly collect their data. If you believe a child has given us data, email us and we will delete it.</p>
+<h2 id="12-changes">12. Changes</h2>
+<p>We will update this page when the data we hold changes, and we will post the new version with a new date. Material changes will be announced <code>[COUNSEL: in-app and/or by email to the account address]</code>. Where a change is required by law we will tell you what it is.</p>
+<hr>
+<h3 id="drafting-notes-for-counsel-not-part-of-the-policy">Drafting notes for counsel — not part of the Policy</h3>
+<ol><li><strong>Section 3.1 is the honest version of a commonly-mis-stated claim.</strong> Most boilerplate says "we never hold your marketplace credentials." That is not quite true here: the eBay OAuth refresh token, the optional eBay bring-your-own-keys <code>clientId</code>/<code>clientSecret</code>, and the Etsy OAuth token in Section 3.1 are real and should be disclosed and accepted by counsel, not buried.</li><li><strong>Section 2.2's second cookie is the sharpest issue on this page.</strong> The <code>ebay_byo_sess</code> cookie carries the user's own eBay client secret <strong>base64url encoded rather than encrypted</strong>, so it is recoverable by anyone who can read it. It is <code>HttpOnly</code>, scoped to <code>/api/ebay/oauth</code>, and capped at 600 seconds, which is why Section 2.2 tells users to prefer the ordinary OAuth path. Two options for counsel: (a) keep the bring-your-own-keys feature and accept the disclosure, or (b) drop the feature and remove the cookie from both this page and the code. Do not ship this page while the decision is open — the current wording describes a real weakness without resolving it.</li><li><strong>Section 4's text-model provider is a <code>[PLACEHOLDER]</code> and blocks launch.</strong> The provider is configuration-driven (<code>MODEL_PROVIDER</code>), so the correct answer changes with the deployment. Name it, sign a DPA, and pick a transfer basis before this goes live.</li><li><strong>Retention is largely unset</strong> (logs, backups). Shipping a policy that promises "until we delete it" with no actual schedule is the likeliest inaccuracy on this page.</li><li><strong>Section 7 promises R2 object deletion.</strong> That must be true of the deletion job before launch, not just true of the database.</li><li><strong>"We never see or store your card number"</strong> is accurate: payment happens on Stripe's hosted Checkout page and only the customer and subscription ids come back to us.</li><li>The existing short policy at <code>/privacy/</code> still says "we do not post to Depop, eBay, Poshmark, Mercari, Vinted or Grailed on your behalf." That sentence is inconsistent with the current code and with Section 6 of the Terms. It should be reconciled with this document when counsel approves it.</li></ol>
+
+<div class="notes">
+<b>Also on this page set</b>
+<ul>
+<li><a href="/legal/terms.html">Terms of Service</a> &mdash; ownership, acceptable use, the no-automation rule, billing.</li>
+<li><a href="/legal/privacy.html">Privacy Policy</a> &mdash; what we store in Cloudflare D1 and R2, and what we never store.</li>
+<li><a href="/legal/risk.html">Marketplace Risk Disclosure</a> &mdash; suspension, fees, double sales, counterfeits and chargebacks, per marketplace.</li>
+</ul>
+<p class="mut" style="margin:0">Draft source: <code>legal/privacy.md</code> &middot;
+Next in this set: <a href="/legal/risk.html">Risk</a></p>
+</div>
+
+
+</main>
+
+<footer class="site-footer">
+<nav aria-label="Footer">
+<a href="/">Home</a>
+<a href="/pricing/">Pricing</a>
+<a href="/contact/">Contact</a>
+<a href="/privacy/">Privacy</a>
+<a href="/legal/terms.html">Terms</a>
+<a href="/legal/privacy.html">Privacy Policy</a>
+<a href="/legal/risk.html">Risk Disclosure</a>
+</nav>
+<p>fashionistas.ai &mdash; photograph your closet, list it everywhere.
+Email: <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a></p>
+<p class="legal-line">These legal pages are a draft for counsel review and are not legal advice.
+Marketplace names are used descriptively; fashionistas.ai is not affiliated with, endorsed by
+or sponsored by Poshmark, Mercari, Depop, Grailed, eBay or Etsy.</p>
+</footer>
+</div>
+</body>
+</html>
