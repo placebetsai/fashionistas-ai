@@ -15,13 +15,21 @@
  *                                OPENAI_BASE_URL, OPENAI_MODEL, and OPENAI_API_KEY
  *                                (or MODEL_API_KEY). Works for OpenAI, a Cloudflare
  *                                AI Gateway, Groq, Together, etc.
+ *   MODEL_PROVIDER=groq           free Groq tier. GROQ_API_KEY (+ optional
+ *                                GROQ_BASE_URL, GROQ_MODEL, default
+ *                                openai/gpt-oss-120b). This is the PREFERRED
+ *                                auto-detected runtime: Workers AI on the free
+ *                                plan is queued, not slow to compute — measured
+ *                                26.6s and 46.6s listing calls and intermittent
+ *                                502s on /api/chat, against 0.15s for a Groq
+ *                                probe on the same network path.
  *   MODEL_PROVIDER=workers_ai    Cloudflare Workers AI binding (env.AI). Free,
  *                                no API keys, runs @cf/meta/llama-3.3-70b-instruct-fp8-fast
- *                                on this account. Enabled automatically when
- *                                env.AI && typeof env.AI.run === "function" and
- *                                no explicit MODEL_PROVIDER overrides it.
+ *                                on this account. Auto-detected when there is no
+ *                                GROQ_API_KEY and no explicit MODEL_PROVIDER.
  *   MODEL_PROVIDER=disabled      refuse everything (503), useful as a hard stop.
- *   unset                        503 model_not_configured. FAIL CLOSED BY DEFAULT:
+ *   unset                        auto-detect: groq → workers_ai → 503
+ *                                model_not_configured. FAIL CLOSED BY DEFAULT:
  *                                an unconfigured Pages project must never silently
  *                                reach for 127.0.0.1 on someone's laptop.
  *
@@ -64,6 +72,26 @@ export function modelConfig(env) {
     Number(e.MODEL_TIMEOUT_MS) > 0 ? Number(e.MODEL_TIMEOUT_MS) : DEFAULT_TIMEOUT_MS;
   const strip = (u) => String(u).replace(/\/+$/, "");
 
+  // Groq, free tier. Preferred over Workers AI because the binding is QUEUED
+  // on the free plan (measured: 26.6s / 46.6s listing calls, and intermittent
+  // 502s on /api/chat) while the same account's Groq key answered a models
+  // probe in 0.15s over the same network path. jsonMode:false — parseModelJSON
+  // already tolerates a prose-wrapped object, and not every Groq model accepts
+  // response_format.
+  const groqCfg = () => {
+    const apiKey = String(e.GROQ_API_KEY || "").trim();
+    if (!apiKey) return null;
+    return {
+      configured: true,
+      provider: "groq",
+      baseUrl: strip(e.GROQ_BASE_URL || "https://api.groq.com/openai/v1"),
+      model: String(e.GROQ_MODEL || "openai/gpt-oss-120b"),
+      apiKey,
+      timeoutMs,
+      jsonMode: false,
+    };
+  };
+
   // Explicit MODEL_PROVIDER overrides auto-detection
   if (provider) {
     if (provider === "disabled") {
@@ -98,6 +126,16 @@ export function modelConfig(env) {
         timeoutMs,
       };
     }
+    if (provider === "groq") {
+      const g = groqCfg();
+      if (g) return g;
+      return {
+        configured: false,
+        provider: "groq",
+        timeoutMs,
+        reason: "MODEL_PROVIDER=groq but GROQ_API_KEY is not set.",
+      };
+    }
     if (provider === "workers_ai") {
       // Explicit workers_ai requires the binding to be present
       if (e.AI && typeof e.AI.run === "function") {
@@ -123,7 +161,11 @@ export function modelConfig(env) {
     };
   }
 
-  // No explicit MODEL_PROVIDER: auto-detect Workers AI binding
+  // No explicit MODEL_PROVIDER: groq first (fast, free key), then the
+  // Workers AI binding, then fail closed. Nothing is assumed.
+  const autoGroq = groqCfg();
+  if (autoGroq) return autoGroq;
+
   if (e.AI && typeof e.AI.run === "function") {
     return {
       configured: true,
@@ -221,7 +263,10 @@ async function callOpenAI(cfg, messages, temperature) {
         model: cfg.model,
         messages,
         temperature,
-        response_format: { type: "json_object" },
+        // jsonMode:false (Groq) omits response_format: parseModelJSON already
+        // unwraps a prose-wrapped object, and a 400 from an unsupported
+        // response_format would take the whole route down with it.
+        ...(cfg.jsonMode === false ? {} : { response_format: { type: "json_object" } }),
       }),
       signal: AbortSignal.timeout(cfg.timeoutMs),
     });
@@ -386,8 +431,8 @@ export async function completeJSON(env, { system, prompt, temperature = 0.2 }) {
   const content =
     cfg.provider === "ollama"
       ? await callOllama(cfg, messages, temperature)
-      : cfg.provider === "openai"
-        ? await callOpenAI(cfg, messages, temperature)
-        : await callWorkersAI(cfg, messages, temperature, env);
+      : cfg.provider === "workers_ai"
+        ? await callWorkersAI(cfg, messages, temperature, env)
+        : await callOpenAI(cfg, messages, temperature);
   return parseModelJSON(content);
 }

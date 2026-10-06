@@ -299,3 +299,61 @@ describe("ModelError", () => {
     assert.strictEqual(err.code, "model_error");
   });
 });
+// ---------------------------------------------------------------------------
+// Groq — measured 2026-10-06 against the live site.
+//
+// Workers AI on the free plan is QUEUED, not slow to compute. Numbers from
+// production after the binding landed:
+//   POST /api/listing   26.6s  (mistral-7b)  then  46.6s (llama-3.3-70b-fast)
+//   POST /api/chat      HTTP 502 twice at ~5s, once at 40.6s, then 200 at 10.9s
+//
+// Same account, same zero dollars: Groq answered GET /v1/models in 0.15s over
+// the same network path. So the free Groq key must win the provider race and
+// Workers AI stays as the fallback when the key is absent.
+// ---------------------------------------------------------------------------
+describe("modelConfig() — groq provider (free, preferred over Workers AI)", () => {
+  it("is configured when GROQ_API_KEY is present", () => {
+    const cfg = modelConfig({ GROQ_API_KEY: "gsk_test_not_a_real_key" });
+    assert.strictEqual(cfg.configured, true);
+    assert.strictEqual(cfg.provider, "groq");
+    assert.strictEqual(cfg.model, "openai/gpt-oss-120b");
+    assert.match(cfg.baseUrl, /groq\.com/);
+  });
+
+  it("prefers groq over the Workers AI binding", () => {
+    const cfg = modelConfig({ GROQ_API_KEY: "gsk_test", AI: { run: async () => ({}) } });
+    assert.strictEqual(cfg.provider, "groq");
+  });
+
+  it("an explicit MODEL_PROVIDER=workers_ai still forces the binding", () => {
+    const cfg = modelConfig({
+      MODEL_PROVIDER: "workers_ai",
+      GROQ_API_KEY: "gsk_test",
+      AI: { run: async () => ({}) },
+    });
+    assert.strictEqual(cfg.provider, "workers_ai");
+    assert.strictEqual(cfg.model, "@cf/meta/llama-3.3-70b-instruct-fp8-fast");
+  });
+
+  it("falls back to workers_ai when there is no groq key", () => {
+    const cfg = modelConfig({ AI: { run: async () => ({}) } });
+    assert.strictEqual(cfg.provider, "workers_ai");
+  });
+
+  it("an empty GROQ_API_KEY is not a key", () => {
+    const cfg = modelConfig({ GROQ_API_KEY: "   " });
+    assert.strictEqual(cfg.configured, false);
+  });
+
+  it("MODEL_PROVIDER=disabled refuses even with a groq key", () => {
+    const cfg = modelConfig({ MODEL_PROVIDER: "disabled", GROQ_API_KEY: "gsk_test" });
+    assert.strictEqual(cfg.configured, false);
+    assert.strictEqual(cfg.provider, "disabled");
+  });
+
+  it("unknown MODEL_PROVIDER still refuses loudly", () => {
+    const cfg = modelConfig({ MODEL_PROVIDER: "wat", GROQ_API_KEY: "gsk_test" });
+    assert.strictEqual(cfg.configured, false);
+    assert.match(cfg.reason, /unknown MODEL_PROVIDER/);
+  });
+});
