@@ -8,22 +8,32 @@
  * Cloudflare production path must not depend on a laptop being awake. So the
  * runtime is chosen by config ONLY — no code change to switch:
  *
- *   MODEL_PROVIDER=ollama   local daemon. OLLAMA_BASE_URL (default
- *                           http://127.0.0.1:11434), OLLAMA_MODEL
- *                           (default llama3.2:1b).
- *   MODEL_PROVIDER=openai   any OpenAI-compatible /chat/completions host.
- *                           OPENAI_BASE_URL, OPENAI_MODEL, and OPENAI_API_KEY
- *                           (or MODEL_API_KEY). Works for OpenAI, a Cloudflare
- *                           AI Gateway, Groq, Together, etc.
- *   MODEL_PROVIDER=disabled refuse everything (503), useful as a hard stop.
- *   unset                   503 model_not_configured. FAIL CLOSED BY DEFAULT:
- *                           an unconfigured Pages project must never silently
- *                           reach for 127.0.0.1 on someone's laptop.
+ *   MODEL_PROVIDER=ollama        local daemon. OLLAMA_BASE_URL (default
+ *                                http://127.0.0.1:11434), OLLAMA_MODEL
+ *                                (default llama3.2:1b).
+ *   MODEL_PROVIDER=openai        any OpenAI-compatible /chat/completions host.
+ *                                OPENAI_BASE_URL, OPENAI_MODEL, and OPENAI_API_KEY
+ *                                (or MODEL_API_KEY). Works for OpenAI, a Cloudflare
+ *                                AI Gateway, Groq, Together, etc.
+ *   MODEL_PROVIDER=workers_ai    Cloudflare Workers AI binding (env.AI). Free,
+ *                                no API keys, runs @cf/mistral/mistral-7b-instruct-v0.1
+ *                                on this account. Enabled automatically when
+ *                                env.AI && typeof env.AI.run === "function" and
+ *                                no explicit MODEL_PROVIDER overrides it.
+ *   MODEL_PROVIDER=disabled      refuse everything (503), useful as a hard stop.
+ *   unset                        503 model_not_configured. FAIL CLOSED BY DEFAULT:
+ *                                an unconfigured Pages project must never silently
+ *                                reach for 127.0.0.1 on someone's laptop.
  *
  * `format: "json"` IS NOT OPTIONAL on the Ollama path. Without it llama3.2:1b
  * answers in prose and the caller gets a wall of text where a schema should
  * be; with it, the daemon constrains decoding to JSON. Verified with a real
  * round trip (see TEST.md / the Phase 4 report), not assumed.
+ *
+ * Workers AI instruct models may not emit clean JSON. parseModelJSON() is
+ * tolerant: it extracts the first balanced {...} block. Validation that follows
+ * (validateListing / validateChatAnswer) still REJECTS garbage rather than
+ * silently accepting it.
  *
  * Failures are always a ModelError carrying an HTTP status:
  *   503 model_not_configured   no usable runtime configured
@@ -54,53 +64,82 @@ export function modelConfig(env) {
     Number(e.MODEL_TIMEOUT_MS) > 0 ? Number(e.MODEL_TIMEOUT_MS) : DEFAULT_TIMEOUT_MS;
   const strip = (u) => String(u).replace(/\/+$/, "");
 
-  if (!provider) {
-    return {
-      configured: false,
-      provider: null,
-      timeoutMs,
-      reason:
-        "MODEL_PROVIDER is not set. Set MODEL_PROVIDER=ollama for local dev or " +
-        "MODEL_PROVIDER=openai for a hosted model; nothing is assumed.",
-    };
-  }
-  if (provider === "disabled") {
-    return { configured: false, provider: "disabled", timeoutMs, reason: "MODEL_PROVIDER=disabled." };
-  }
-  if (provider === "ollama") {
-    return {
-      configured: true,
-      provider: "ollama",
-      baseUrl: strip(e.OLLAMA_BASE_URL || "http://127.0.0.1:11434"),
-      model: String(e.OLLAMA_MODEL || "llama3.2:1b"),
-      apiKey: null,
-      timeoutMs,
-    };
-  }
-  if (provider === "openai" || provider === "openai_compatible") {
-    const apiKey = e.OPENAI_API_KEY || e.MODEL_API_KEY || "";
-    if (!apiKey) {
+  // Explicit MODEL_PROVIDER overrides auto-detection
+  if (provider) {
+    if (provider === "disabled") {
+      return { configured: false, provider: "disabled", timeoutMs, reason: "MODEL_PROVIDER=disabled." };
+    }
+    if (provider === "ollama") {
+      return {
+        configured: true,
+        provider: "ollama",
+        baseUrl: strip(e.OLLAMA_BASE_URL || "http://127.0.0.1:11434"),
+        model: String(e.OLLAMA_MODEL || "llama3.2:1b"),
+        apiKey: null,
+        timeoutMs,
+      };
+    }
+    if (provider === "openai" || provider === "openai_compatible") {
+      const apiKey = e.OPENAI_API_KEY || e.MODEL_API_KEY || "";
+      if (!apiKey) {
+        return {
+          configured: false,
+          provider,
+          timeoutMs,
+          reason: "MODEL_PROVIDER=openai but neither OPENAI_API_KEY nor MODEL_API_KEY is set.",
+        };
+      }
+      return {
+        configured: true,
+        provider: "openai",
+        baseUrl: strip(e.OPENAI_BASE_URL || "https://api.openai.com/v1"),
+        model: String(e.OPENAI_MODEL || e.MODEL_NAME || "gpt-4o-mini"),
+        apiKey: String(apiKey),
+        timeoutMs,
+      };
+    }
+    if (provider === "workers_ai") {
+      // Explicit workers_ai requires the binding to be present
+      if (e.AI && typeof e.AI.run === "function") {
+        return {
+          configured: true,
+          provider: "workers_ai",
+          model: "@cf/mistral/mistral-7b-instruct-v0.1",
+          timeoutMs,
+        };
+      }
       return {
         configured: false,
-        provider,
+        provider: "workers_ai",
         timeoutMs,
-        reason: "MODEL_PROVIDER=openai but neither OPENAI_API_KEY nor MODEL_API_KEY is set.",
+        reason: "MODEL_PROVIDER=workers_ai but env.AI binding is not available.",
       };
     }
     return {
+      configured: false,
+      provider,
+      timeoutMs,
+      reason: `unknown MODEL_PROVIDER "${raw}" (expected ollama, openai, workers_ai or disabled).`,
+    };
+  }
+
+  // No explicit MODEL_PROVIDER: auto-detect Workers AI binding
+  if (e.AI && typeof e.AI.run === "function") {
+    return {
       configured: true,
-      provider: "openai",
-      baseUrl: strip(e.OPENAI_BASE_URL || "https://api.openai.com/v1"),
-      model: String(e.OPENAI_MODEL || e.MODEL_NAME || "gpt-4o-mini"),
-      apiKey: String(apiKey),
+      provider: "workers_ai",
+      model: "@cf/mistral/mistral-7b-instruct-v0.1",
       timeoutMs,
     };
   }
+
   return {
     configured: false,
-    provider,
+    provider: null,
     timeoutMs,
-    reason: `unknown MODEL_PROVIDER "${raw}" (expected ollama, openai or disabled).`,
+    reason:
+      "MODEL_PROVIDER is not set. Set MODEL_PROVIDER=ollama for local dev or " +
+      "MODEL_PROVIDER=openai for a hosted model; Workers AI is auto-detected from env.AI; nothing is assumed.",
   };
 }
 
@@ -231,6 +270,50 @@ async function callOpenAI(cfg, messages, temperature) {
   return content;
 }
 
+async function callWorkersAI(cfg, messages, temperature, env) {
+  // Workers AI expects a prompt string, not messages array. Convert messages to a single prompt.
+  const systemMsg = messages.find((m) => m.role === "system");
+  const userMsg = messages.find((m) => m.role === "user");
+  const prompt = [
+    systemMsg ? systemMsg.content : "",
+    userMsg ? userMsg.content : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  let result;
+  try {
+    result = await env.AI.run(cfg.model, {
+      prompt,
+      max_tokens: 2048,
+      temperature,
+    });
+  } catch (err) {
+    const timedOut = err && (err.name === "TimeoutError" || err.name === "AbortError");
+    throw timedOut
+      ? new ModelError(`model timed out after ${cfg.timeoutMs}ms`, {
+          status: 504,
+          code: "model_timeout",
+          cause: err,
+        })
+      : new ModelError(`workers_ai run failed: ${(err && err.message) || err}`, {
+          status: 502,
+          code: "model_unavailable",
+          cause: err,
+        });
+  }
+
+  // Workers AI response shape: { response: "..." }
+  const content = result && result.response;
+  if (typeof content !== "string" || !content.trim()) {
+    throw new ModelError("workers_ai returned an empty response", {
+      status: 502,
+      code: "model_output_invalid",
+    });
+  }
+  return content;
+}
+
 /**
  * Parse a model answer into a JSON object, or fail closed.
  *
@@ -303,6 +386,8 @@ export async function completeJSON(env, { system, prompt, temperature = 0.2 }) {
   const content =
     cfg.provider === "ollama"
       ? await callOllama(cfg, messages, temperature)
-      : await callOpenAI(cfg, messages, temperature);
+      : cfg.provider === "openai"
+        ? await callOpenAI(cfg, messages, temperature)
+        : await callWorkersAI(cfg, messages, temperature, env);
   return parseModelJSON(content);
 }

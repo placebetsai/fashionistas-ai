@@ -35,3 +35,7 @@ id = "2c710998e6d94970bf922643d4955452"
 [[kv_namespaces]]
 binding = "FASHIONISTAS_KV"
 id = "2c710998e6d94970bf922643d4955452"
+
+# Workers AI — free, no API keys, pretrained models
+[ai]
+binding = "AI"

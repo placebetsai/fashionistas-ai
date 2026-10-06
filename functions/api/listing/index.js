@@ -209,49 +209,86 @@ export async function onRequest(context) {
   // unset, which meant a seller could not save a listing they had typed
   // themselves. Every field the schema needs is derivable from their own input
   // and the six-shop breakdown is local math, so no model is required to save.
+  //
+  // If a model IS configured, we try it ONCE with a retry. If it throws or
+  // returns invalid JSON, we fall back to the local seller-written builder
+  // instead of failing the request. A model must never gate listing creation.
   let modelOut = null;
   let writtenBy = "model";
   const cfg = modelConfig(context.env);
-  if (!cfg.configured) {
+
+  async function tryModel() {
+    if (!cfg.configured) return null;
+    // One retry on transient failures
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        return await completeJSON(context.env, {
+          system: LISTING_SYSTEM_PROMPT,
+          prompt: listingUserPrompt(item),
+          temperature: 0.2,
+        });
+      } catch (err) {
+        if (attempt === 0) continue; // retry once
+        console.warn("[listing] model call failed, falling back to local builder:", err.message);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  modelOut = await tryModel();
+
+  // Fallback to local builder if no model configured or model failed
+  if (modelOut === null) {
     const local = localListing(item);
     if (!local.ok) return json(local.body, local.status);
     modelOut = local.value;
     writtenBy = "seller";
-  } else {
-    try {
-      modelOut = await completeJSON(context.env, {
-        system: LISTING_SYSTEM_PROMPT,
-        prompt: listingUserPrompt(item),
-        temperature: 0.2,
-      });
-    } catch (err) {
-      if (err instanceof ModelError) {
-        return json({ ok: false, error: err.code, detail: err.message, model: describeModel(cfg) }, err.status);
-      }
-      return json(
-        { ok: false, error: "model_call_failed", detail: String((err && err.message) || err) },
-        502
-      );
-    }
   }
 
   // --- schema (fail closed on prose / half-JSON) --------------------------
   const checked = validateListing(modelOut);
   if (!checked.ok) {
-    return json(
-      {
-        ok: false,
-        error: writtenBy === "seller" ? "invalid_item" : "model_output_invalid",
-        detail:
-          writtenBy === "seller"
-            ? "Your item fields could not be used as a listing; nothing was saved."
-            : "The model answer did not match the listing schema; nothing was saved.",
-        schema: LISTING_JSON_SCHEMA_FOR_ERROR,
-        errors: checked.errors,
-        model: describeModel(cfg),
-      },
-      writtenBy === "seller" ? 422 : 502
-    );
+    // If model output was invalid, try local builder as last resort
+    if (writtenBy === "model") {
+      console.warn("[listing] model output invalid, falling back to local builder");
+      const local = localListing(item);
+      if (local.ok) {
+        modelOut = local.value;
+        writtenBy = "seller";
+        // Re-validate the local output (should always pass)
+        const rechecked = validateListing(modelOut);
+        if (rechecked.ok) {
+          // Continue with local listing below
+        } else {
+          return json(
+            {
+              ok: false,
+              error: "invalid_item",
+              detail: "Your item fields could not be used as a listing; nothing was saved.",
+              schema: LISTING_JSON_SCHEMA_FOR_ERROR,
+              errors: rechecked.errors,
+              model: describeModel(cfg),
+            },
+            422
+          );
+        }
+      } else {
+        return json(local.body, local.status);
+      }
+    } else {
+      return json(
+        {
+          ok: false,
+          error: "invalid_item",
+          detail: "Your item fields could not be used as a listing; nothing was saved.",
+          schema: LISTING_JSON_SCHEMA_FOR_ERROR,
+          errors: checked.errors,
+          model: describeModel(cfg),
+        },
+        422
+      );
+    }
   }
   const listing = checked.value;
 
