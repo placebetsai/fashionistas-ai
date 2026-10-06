@@ -111,7 +111,14 @@ function modelErrorResponse(err, env) {
   );
 }
 
-export async function onRequest(context) {
+/**
+ * The request body, previously exported straight as onRequest. Split out so the
+ * wrapper below can catch EVERY throw — an exception escaping this function is
+ * what produced Cloudflare's opaque `error code: 502` page (measured: same
+ * request 200 then 502, 1.45s, with no body to read), which is undiagnosable
+ * and reads to a user as "the bot is down".
+ */
+async function handle(context) {
   const { request, env } = context;
   const method = (request.method || "GET").toUpperCase();
 
@@ -268,6 +275,31 @@ export async function onRequest(context) {
     model: describeModel(modelConfig(env)),
     allowedTopics: ALLOWED_TOPICS,
   });
+}
+
+/**
+ * Catch-all: any throw that escapes the handler becomes a readable JSON error
+ * with the message and the top stack frames, never an opaque gateway page.
+ * This is also the probe that tells us WHERE the crash is when it recurs.
+ */
+export async function onRequest(context) {
+  try {
+    return await handle(context);
+  } catch (err) {
+    return json(
+      {
+        ok: false,
+        error: "unhandled_error",
+        detail: String((err && err.message) || err),
+        where: String((err && err.stack) || "")
+          .split("\n")
+          .slice(1, 5)
+          .join(" | ")
+          .slice(0, 500),
+      },
+      500
+    );
+  }
 }
 
 export const onRequestPost = onRequest;
