@@ -355,6 +355,10 @@ def test_image_ships_import_time_files() -> None:
     check("GPU = os.environ.get(\"FASHN_GPU\"" in source,
           "GPU selectable at deploy time via FASHN_GPU")
     check("gpu=GPU," in source, "function uses the deploy-time GPU, not a hardcoded literal")
+    check(
+        "asgi_app(requires_proxy_auth=True)" in source,
+        "web function requires proxy auth (else anyone with the URL burns GPU)",
+    )
 
 
 def main() -> int:

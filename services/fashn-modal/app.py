@@ -606,7 +606,7 @@ def _make_web_app() -> Any:
     # concurrency; two is plenty for a single-product try-on service).
     max_containers=2,
 )
-@modal.asgi_app()
+@modal.asgi_app(requires_proxy_auth=True)
 def api() -> Any:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
