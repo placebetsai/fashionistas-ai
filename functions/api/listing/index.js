@@ -37,6 +37,7 @@
 
 import { json, requireAuth } from "../_lib/auth.js";
 import { COMPARE_NOTE, parsePrice, round2 } from "../_lib/fees.js";
+import { localListing } from "./_lib/local.js";
 import { ModelError, completeJSON, describeModel, modelConfig } from "./_lib/model.js";
 import {
   BREAKDOWN_IDS,
@@ -203,25 +204,35 @@ export async function onRequest(context) {
   const quota = await checkQuota(context.env, userId, "listings");
   if (!quota.ok) return quota.response;
 
-  // --- model --------------------------------------------------------------
-  let modelOut;
-  try {
-    modelOut = await completeJSON(context.env, {
-      system: LISTING_SYSTEM_PROMPT,
-      prompt: listingUserPrompt(item),
-      temperature: 0.2,
-    });
-  } catch (err) {
-    if (err instanceof ModelError) {
+  // --- writer: the model polishes the copy, it never gates the listing -----
+  // This used to hard-503 `model_not_configured` whenever MODEL_PROVIDER was
+  // unset, which meant a seller could not save a listing they had typed
+  // themselves. Every field the schema needs is derivable from their own input
+  // and the six-shop breakdown is local math, so no model is required to save.
+  let modelOut = null;
+  let writtenBy = "model";
+  const cfg = modelConfig(context.env);
+  if (!cfg.configured) {
+    const local = localListing(item);
+    if (!local.ok) return json(local.body, local.status);
+    modelOut = local.value;
+    writtenBy = "seller";
+  } else {
+    try {
+      modelOut = await completeJSON(context.env, {
+        system: LISTING_SYSTEM_PROMPT,
+        prompt: listingUserPrompt(item),
+        temperature: 0.2,
+      });
+    } catch (err) {
+      if (err instanceof ModelError) {
+        return json({ ok: false, error: err.code, detail: err.message, model: describeModel(cfg) }, err.status);
+      }
       return json(
-        { ok: false, error: err.code, detail: err.message, model: describeModel(modelConfig(context.env)) },
-        err.status
+        { ok: false, error: "model_call_failed", detail: String((err && err.message) || err) },
+        502
       );
     }
-    return json(
-      { ok: false, error: "model_call_failed", detail: String((err && err.message) || err) },
-      502
-    );
   }
 
   // --- schema (fail closed on prose / half-JSON) --------------------------
@@ -230,13 +241,16 @@ export async function onRequest(context) {
     return json(
       {
         ok: false,
-        error: "model_output_invalid",
-        detail: "The model answer did not match the listing schema; nothing was saved.",
+        error: writtenBy === "seller" ? "invalid_item" : "model_output_invalid",
+        detail:
+          writtenBy === "seller"
+            ? "Your item fields could not be used as a listing; nothing was saved."
+            : "The model answer did not match the listing schema; nothing was saved.",
         schema: LISTING_JSON_SCHEMA_FOR_ERROR,
         errors: checked.errors,
-        model: describeModel(modelConfig(context.env)),
+        model: describeModel(cfg),
       },
-      502
+      writtenBy === "seller" ? 422 : 502
     );
   }
   const listing = checked.value;
@@ -258,8 +272,22 @@ export async function onRequest(context) {
   }
 
   // --- persist + burn the quota only now that the listing is real ---------
-  const model = describeModel(modelConfig(context.env));
+  const model = describeModel(cfg);
   const id = await insertListing(context.env, userId, listing, breakdown, model);
+  if (id === null) {
+    // This used to return ok:true with listing.id = null, so a failed write looked
+    // like success and the quota was burned anyway. Fail loudly, charge nothing.
+    return json(
+      {
+        ok: false,
+        error: "listing_write_failed",
+        detail: "The listing validated but could not be saved to the database; nothing was charged.",
+        listing,
+        model,
+      },
+      500
+    );
+  }
   const charged = await charge(context.env, userId, "listings");
   if (!charged.ok) {
     // The listing exists; a counter that could not be written must not turn a
@@ -278,6 +306,7 @@ export async function onRequest(context) {
     best: { id: best.id, name: best.name, net: best.net, takeRate: best.takeRate },
     usage,
     model,
+    writer: writtenBy,
     feeNote: COMPARE_NOTE,
   });
 }
