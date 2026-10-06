@@ -49,18 +49,44 @@ VALUES
   (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
-/** Find a D1 binding without depending on its name. */
+/** Binding names the rest of the codebase probes (mirrors _lib/auth.js getDB). */
+const D1_BINDING_NAMES = [
+  "DB",
+  "FASHIONISTAS_DB",
+  "EBAY_DB",
+  "EBAY_TOKENS_DB",
+  "D1",
+  "COST_D1",
+  "FASHIONISTAS_D1",
+];
+
+function isD1(value) {
+  return (
+    value &&
+    typeof value === "object" &&
+    typeof value.prepare === "function" &&
+    typeof value.batch === "function"
+  );
+}
+
+/**
+ * Find a D1 binding.
+ *
+ * Named bindings are probed FIRST, by property access. In production
+ * `Object.values(env)` returns an empty array even though `env.DB` resolves,
+ * so the generic scan below found nothing and this returned null — which
+ * silently disabled every cost_ledger write, made `creditBalance` read 0 (so
+ * every paid try-on was rejected with 402 not_entitled) and left
+ * MAX_MONTHLY_TRYON_SPEND unarmed. The scan remains as the fallback for
+ * bindings named anything else.
+ */
 export function findD1(env) {
   if (!env || typeof env !== "object") return null;
+  for (const name of D1_BINDING_NAMES) {
+    if (isD1(env[name])) return env[name];
+  }
   for (const value of Object.values(env)) {
-    if (
-      value &&
-      typeof value === "object" &&
-      typeof value.prepare === "function" &&
-      typeof value.batch === "function"
-    ) {
-      return value;
-    }
+    if (isD1(value)) return value;
   }
   return null;
 }
