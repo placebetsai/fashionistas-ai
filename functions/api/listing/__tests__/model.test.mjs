@@ -357,3 +357,110 @@ describe("modelConfig() — groq provider (free, preferred over Workers AI)", ()
     assert.match(cfg.reason, /unknown MODEL_PROVIDER/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// PROVIDER FALLBACK — the fix for the outage measured on 2026-10-06.
+//
+// Causal chain, proven 1:1 against production:
+//   Groq call #1                -> 200   chat -> 200 with a real answer
+//   Groq call #2                -> 429 rate_limit_exceeded
+//   Groq #2, #3, #4 (same org)  -> 429   chat -> raw "error code: 502" x3
+//
+// Every Groq model shares ONE tokens-per-minute bucket for this key, so
+// swapping gpt-oss-120b for gpt-oss-20b or qwen3.8-27b bought nothing
+// (measured: 1/6, 1/6, 1/6, 0/6 successes on the four available models while
+// the bucket was empty). Workers AI has a SEPARATE free quota and was always
+// available — just queued. So the chain must be groq -> workers_ai, and a
+// single provider's rate limit must never be able to take the route down.
+// ---------------------------------------------------------------------------
+describe("completeJSON() — provider fallback (never a dead chatbot)", () => {
+  const sys = { system: "You are a stylist.", prompt: "Answer as JSON: {\"answer\":\"x\"}" };
+
+  it("falls back to workers_ai when groq answers 429", async () => {
+    const orig = globalThis.fetch;
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({ error: { code: "rate_limit_exceeded", message: "Rate limit reached" } }),
+        { status: 429, headers: { "content-type": "application/json" } }
+      );
+    try {
+      const meta = {};
+      const out = await completeJSON(
+        { GROQ_API_KEY: "gsk_test", AI: { run: async () => ({ response: '{"answer":"from workers_ai"}' }) } },
+        { ...sys, meta }
+      );
+      assert.strictEqual(out.answer, "from workers_ai");
+      assert.strictEqual(meta.provider, "workers_ai");
+    } finally {
+      globalThis.fetch = orig;
+    }
+  });
+
+  it("prefers groq and records which provider actually served", async () => {
+    const orig = globalThis.fetch;
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ choices: [{ message: { content: '{"answer":"from groq"}' } }] }),
+        { status: 200, headers: { "content-type": "application/json" } });
+    try {
+      const meta = {};
+      const out = await completeJSON(
+        { GROQ_API_KEY: "gsk_test", AI: { run: async () => ({ response: '{"answer":"ai"}' }) } },
+        { ...sys, meta }
+      );
+      assert.strictEqual(out.answer, "from groq");
+      assert.strictEqual(meta.provider, "groq");
+    } finally {
+      globalThis.fetch = orig;
+    }
+  });
+
+  it("fails with BOTH providers named when every one is down", async () => {
+    const orig = globalThis.fetch;
+    globalThis.fetch = async () => new Response("boom", { status: 500 });
+    try {
+      await assert.rejects(
+        () => completeJSON(
+          { GROQ_API_KEY: "gsk_test", AI: { run: async () => { throw new Error("ai unavailable"); } } },
+          sys
+        ),
+        (err) => {
+          assert.strictEqual(err.code, "model_unavailable");
+          assert.match(err.message, /groq/);
+          assert.match(err.message, /workers_ai/);
+          return true;
+        }
+      );
+    } finally {
+      globalThis.fetch = orig;
+    }
+  });
+
+  it("an EXPLICIT MODEL_PROVIDER does not silently fall back", async () => {
+    const orig = globalThis.fetch;
+    globalThis.fetch = async () => new Response("nope", { status: 503 });
+    try {
+      await assert.rejects(
+        () => completeJSON(
+          { MODEL_PROVIDER: "groq", GROQ_API_KEY: "gsk_test", AI: { run: async () => ({ response: '{"answer":"x"}' }) } },
+          sys
+        ),
+        (err) => err instanceof ModelError && err.code === "model_unavailable"
+      );
+    } finally {
+      globalThis.fetch = orig;
+    }
+  });
+
+  it("with only one provider available it still fails loudly", async () => {
+    const orig = globalThis.fetch;
+    globalThis.fetch = async () => new Response("x", { status: 500 });
+    try {
+      await assert.rejects(
+        () => completeJSON({ GROQ_API_KEY: "gsk_test" }, sys),
+        (err) => err.code === "model_unavailable"
+      );
+    } finally {
+      globalThis.fetch = orig;
+    }
+  });
+});

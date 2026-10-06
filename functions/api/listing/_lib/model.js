@@ -63,6 +63,112 @@ export class ModelError extends Error {
 
 const DEFAULT_TIMEOUT_MS = 45000;
 
+const stripUrl = (u) => String(u).replace(/\/+$/, "");
+
+/**
+ * OpenCode Zen — https://opencode.ai/zen/v1. Official docs list it as an
+ * OpenAI-compatible provider (models.dev: npm @ai-sdk/openai-compatible),
+ * 116 models of which 12+ are free (glm-5-free, kimi-k2.5-free,
+ * mimo-v2-pro-free, ling-3.1-flash-free, space-bunny-free).
+ *
+ * Measured 2026-10-06, keyless, from this machine:
+ *   GET  /zen/v1/models                 -> 200 (public catalog)
+ *   POST /zen/v1/chat/completions       -> 401 Model "<id>" is not supported
+ *   POST /zen/v1/chat/completions
+ *        model=ling-3.1-flash-free      -> 403 FreeTierError
+ *        "OpenCode's free tier can only be used from within OpenCode"
+ *   + User-Agent: opencode/1.0          -> 403 (identical)
+ *   + X-OpenCode-Client: cli            -> 403 (identical)
+ *
+ * The gate is server-side, so it cannot be spoofed and it is NOT attempted
+ * here. This provider is FIRST in the chain only once OPENCODE_API_KEY is set
+ * (created at opencode.ai/auth -> Create API Key). Absent a key it is skipped,
+ * never guessed at. jsonMode:false — parseModelJSON already unwraps a
+ * prose-wrapped object and not every model accepts response_format.
+ */
+function opencodeCfg(e, timeoutMs) {
+  const apiKey = String(e.OPENCODE_API_KEY || "").trim();
+  if (!apiKey) return null;
+  return {
+    configured: true,
+    provider: "opencode",
+    baseUrl: stripUrl(e.OPENCODE_BASE_URL || "https://opencode.ai/zen/v1"),
+    model: String(e.OPENCODE_MODEL || "glm-5-free"),
+    apiKey,
+    timeoutMs,
+    jsonMode: false,
+  };
+}
+
+/**
+ * Groq, free tier.
+ *
+ * Measured 2026-10-06 against production: the Workers AI binding is QUEUED on
+ * the free plan (listing 26.6s mistral / 46.6s llama; chat 502 at 40.6s, 5.5s,
+ * 5.0s) while this key answered a probe in 0.15s over the same network path.
+ *
+ * BUT one key = one shared tokens-per-minute bucket for every model on it:
+ * a ~6k-token prompt gets exactly ONE 200 and then
+ * `429 rate_limit_exceeded` for the rest of the window, and fashionistas chat
+ * then answered Cloudflare's raw `error code: 502` x3 in the same window.
+ * Re-measured across all four available models while the bucket was drained:
+ * gpt-oss-120b 1/6, gpt-oss-20b 1/6, qwen3.8-27b 1/6, allam-2-7b 0/6 — so
+ * swapping models does not help; only a different PROVIDER does. That is why
+ * this is a fallback and not the head of the chain.
+ */
+function groqCfg(e, timeoutMs) {
+  const apiKey = String(e.GROQ_API_KEY || "").trim();
+  if (!apiKey) return null;
+  return {
+    configured: true,
+    provider: "groq",
+    baseUrl: stripUrl(e.GROQ_BASE_URL || "https://api.groq.com/openai/v1"),
+    model: String(e.GROQ_MODEL || "openai/gpt-oss-120b"),
+    apiKey,
+    timeoutMs,
+    jsonMode: false,
+  };
+}
+
+/**
+ * Workers AI, free plan, via the `AI` binding. Slow (queued) but it is the
+ * only provider here that is neither key-limited nor token-bucketed by a
+ * third party — so it is the last line of defence before we fail closed.
+ */
+function workersAiCfg(e, timeoutMs) {
+  if (!(e && e.AI && typeof e.AI.run === "function")) return null;
+  return {
+    configured: true,
+    provider: "workers_ai",
+    model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    timeoutMs,
+  };
+}
+
+/**
+ * Ordered list of providers to try, best first.
+ *
+ *   explicit MODEL_PROVIDER -> exactly that one (config means config; a
+ *                              forced provider must never silently fall back)
+ *   otherwise               -> opencode (if OPENCODE_API_KEY) -> groq (if
+ *                              GROQ_API_KEY) -> workers_ai (if AI binding)
+ *
+ * Returns [] when nothing is configured; never throws.
+ */
+export function providerChain(env) {
+  const e = env || {};
+  const raw = e.MODEL_PROVIDER == null ? "" : String(e.MODEL_PROVIDER).trim().toLowerCase();
+  if (raw) {
+    const cfg = modelConfig(e);
+    return cfg.configured ? [cfg] : [];
+  }
+  const timeoutMs =
+    Number(e.MODEL_TIMEOUT_MS) > 0 ? Number(e.MODEL_TIMEOUT_MS) : DEFAULT_TIMEOUT_MS;
+  return [opencodeCfg(e, timeoutMs), groqCfg(e, timeoutMs), workersAiCfg(e, timeoutMs)].filter(
+    Boolean
+  );
+}
+
 /** Resolve runtime config from env. Never throws, never guesses a secret. */
 export function modelConfig(env) {
   const e = env || {};
@@ -72,25 +178,9 @@ export function modelConfig(env) {
     Number(e.MODEL_TIMEOUT_MS) > 0 ? Number(e.MODEL_TIMEOUT_MS) : DEFAULT_TIMEOUT_MS;
   const strip = (u) => String(u).replace(/\/+$/, "");
 
-  // Groq, free tier. Preferred over Workers AI because the binding is QUEUED
-  // on the free plan (measured: 26.6s / 46.6s listing calls, and intermittent
-  // 502s on /api/chat) while the same account's Groq key answered a models
-  // probe in 0.15s over the same network path. jsonMode:false — parseModelJSON
-  // already tolerates a prose-wrapped object, and not every Groq model accepts
-  // response_format.
-  const groqCfg = () => {
-    const apiKey = String(e.GROQ_API_KEY || "").trim();
-    if (!apiKey) return null;
-    return {
-      configured: true,
-      provider: "groq",
-      baseUrl: strip(e.GROQ_BASE_URL || "https://api.groq.com/openai/v1"),
-      model: String(e.GROQ_MODEL || "openai/gpt-oss-120b"),
-      apiKey,
-      timeoutMs,
-      jsonMode: false,
-    };
-  };
+  // Provider builders live at module scope (opencodeCfg / groqCfg /
+  // workersAiCfg) so providerChain() and modelConfig() resolve the SAME
+  // config objects — one list, one order, no second opinion.
 
   // Explicit MODEL_PROVIDER overrides auto-detection
   if (provider) {
@@ -126,8 +216,20 @@ export function modelConfig(env) {
         timeoutMs,
       };
     }
+    if (provider === "opencode") {
+      const oc = opencodeCfg(e, timeoutMs);
+      if (oc) return oc;
+      return {
+        configured: false,
+        provider: "opencode",
+        timeoutMs,
+        reason:
+          "MODEL_PROVIDER=opencode but OPENCODE_API_KEY is not set " +
+          "(create one at opencode.ai/auth -> Create API Key).",
+      };
+    }
     if (provider === "groq") {
-      const g = groqCfg();
+      const g = groqCfg(e, timeoutMs);
       if (g) return g;
       return {
         configured: false,
@@ -138,14 +240,8 @@ export function modelConfig(env) {
     }
     if (provider === "workers_ai") {
       // Explicit workers_ai requires the binding to be present
-      if (e.AI && typeof e.AI.run === "function") {
-        return {
-          configured: true,
-          provider: "workers_ai",
-          model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-          timeoutMs,
-        };
-      }
+      const w = workersAiCfg(e, timeoutMs);
+      if (w) return w;
       return {
         configured: false,
         provider: "workers_ai",
@@ -157,31 +253,28 @@ export function modelConfig(env) {
       configured: false,
       provider,
       timeoutMs,
-      reason: `unknown MODEL_PROVIDER "${raw}" (expected ollama, openai, workers_ai or disabled).`,
+      reason: `unknown MODEL_PROVIDER "${raw}" (expected opencode, groq, ollama, openai, workers_ai or disabled).`,
     };
   }
 
-  // No explicit MODEL_PROVIDER: groq first (fast, free key), then the
-  // Workers AI binding, then fail closed. Nothing is assumed.
-  const autoGroq = groqCfg();
-  if (autoGroq) return autoGroq;
-
-  if (e.AI && typeof e.AI.run === "function") {
-    return {
-      configured: true,
-      provider: "workers_ai",
-      model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-      timeoutMs,
-    };
-  }
+  // No explicit MODEL_PROVIDER: opencode -> groq -> workers_ai -> fail closed.
+  // This returns the FIRST entry (what describeModel() reports as the primary);
+  // providerChain() hands the whole ordered list to completeJSON() so that one
+  // provider's rate limit can never take the route down with it.
+  const auto = [opencodeCfg(e, timeoutMs), groqCfg(e, timeoutMs), workersAiCfg(e, timeoutMs)].filter(
+    Boolean
+  );
+  if (auto.length) return auto[0];
 
   return {
     configured: false,
     provider: null,
     timeoutMs,
     reason:
-      "MODEL_PROVIDER is not set. Set MODEL_PROVIDER=ollama for local dev or " +
-      "MODEL_PROVIDER=openai for a hosted model; Workers AI is auto-detected from env.AI; nothing is assumed.",
+      "MODEL_PROVIDER is not set, and no provider key or binding was found. " +
+        "Set OPENCODE_API_KEY (opencode.ai/auth) and/or GROQ_API_KEY, or bind Workers AI via env.AI; " +
+        "MODEL_PROVIDER=opencode|groq|ollama|openai|workers_ai pins one provider on purpose. " +
+        "Nothing is assumed.",
   };
 }
 
@@ -408,16 +501,25 @@ export function parseModelJSON(content) {
 /**
  * Run one instruction and get back a JSON object.
  *
- * @param {object} env  Pages env (MODEL_* config lives here)
- * @param {{system: string, prompt: string, temperature?: number}} req
+ * Walks providerChain() instead of trusting one provider. This exists because
+ * of a measured production outage, not as a theoretical precaution:
+ *
+ *   Groq call #1 -> 200   fashionistas chat -> 200 with a grounded answer
+ *   Groq call #2 -> 429 rate_limit_exceeded (shared per-key TPM bucket)
+ *   Groq #2-#6   -> 429   fashionistas chat -> raw "error code: 502" x3
+ *
+ * One provider's rate limit used to be able to take the whole route down.
+ * Now: try each in order, remember which one actually served, and only fail
+ * closed when EVERY configured provider has failed.
+ *
+ * @param {object} env  Pages env (OPENCODE_/GROQ_/MODEL_* config lives here)
+ * @param {{system: string, prompt: string, temperature?: number, meta?: object}} req
+ *   `meta` (optional) is filled with {provider, model} of whichever provider
+ *   actually answered, so a response never claims a provider that didn't serve.
  * @returns {Promise<object>} a plain JSON object, never prose
  * @throws {ModelError}
  */
-export async function completeJSON(env, { system, prompt, temperature = 0.2 }) {
-  const cfg = modelConfig(env);
-  if (!cfg.configured) {
-    throw new ModelError(cfg.reason, { status: 503, code: "model_not_configured" });
-  }
+export async function completeJSON(env, { system, prompt, temperature = 0.2, meta } = {}) {
   if (typeof system !== "string" || !system.trim() || typeof prompt !== "string" || !prompt.trim()) {
     throw new ModelError("completeJSON requires non-empty system and prompt", {
       status: 500,
@@ -428,11 +530,50 @@ export async function completeJSON(env, { system, prompt, temperature = 0.2 }) {
     { role: "system", content: system },
     { role: "user", content: prompt },
   ];
-  const content =
-    cfg.provider === "ollama"
-      ? await callOllama(cfg, messages, temperature)
-      : cfg.provider === "workers_ai"
-        ? await callWorkersAI(cfg, messages, temperature, env)
-        : await callOpenAI(cfg, messages, temperature);
-  return parseModelJSON(content);
+
+  const chain = providerChain(env);
+  if (!chain.length) {
+    const cfg = modelConfig(env);
+    throw new ModelError(cfg.reason || "no model provider configured", {
+      status: 503,
+      code: "model_not_configured",
+    });
+  }
+
+  const failures = [];
+  let lastErr = null;
+
+  for (const cfg of chain) {
+    try {
+      const content =
+        cfg.provider === "ollama"
+          ? await callOllama(cfg, messages, temperature)
+          : cfg.provider === "workers_ai"
+            ? await callWorkersAI(cfg, messages, temperature, env)
+            : await callOpenAI(cfg, messages, temperature);
+      const parsed = parseModelJSON(content);
+      if (meta && typeof meta === "object") {
+        meta.provider = cfg.provider;
+        meta.model = cfg.model;
+      }
+      return parsed;
+    } catch (err) {
+      lastErr = err;
+      failures.push(`${cfg.provider}: ${(err && err.message) || String(err)}`);
+      // A pinned provider must fail loudly rather than quietly change identity.
+      if (chain.length === 1) throw err;
+    }
+  }
+
+  // Every provider answered but none produced a JSON object: that is an
+  // output problem, not an availability problem — report it as such.
+  if (lastErr && failures.length && chain.every((c, i) => /model_output_invalid/.test(failures[i]))) {
+    throw lastErr;
+  }
+
+  throw new ModelError(`every configured model provider failed -> ${failures.join(" | ")}`, {
+    status: 502,
+    code: "model_unavailable",
+    cause: lastErr,
+  });
 }
