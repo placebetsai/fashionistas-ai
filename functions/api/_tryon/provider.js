@@ -10,6 +10,7 @@
  *
  * SWITCHING PROVIDERS IS A CONFIG CHANGE
  *
+ *     GPU_PROVIDER=modal       <- implemented, this repo (free $30/mo credit)
  *     GPU_PROVIDER=runpod      <- implemented, this repo
  *     GPU_PROVIDER=vast        <- one new file (_tryon/vast.js) + one line below
  *     GPU_PROVIDER=salad       <- ditto
@@ -48,6 +49,7 @@
 
 import { TryonError } from "./http.js";
 import { runpodProvider } from "./runpod.js";
+import { modalProvider } from "./modal.js";
 
 /**
  * Bump when the cache-key recipe changes — that is, when the SAME four inputs
@@ -72,6 +74,7 @@ export const CACHE_VERSION = "fashn-vton-1.5|runpod|steps20|v2";
  */
 const REGISTRY = Object.freeze(
   Object.assign(Object.create(null), {
+    modal: modalProvider, // free $30/mo credit — the default we deploy with
     runpod: runpodProvider,
     // vast:    vastProvider,     // functions/api/_tryon/vast.js
     // salad:   saladProvider,    // functions/api/_tryon/salad.js
