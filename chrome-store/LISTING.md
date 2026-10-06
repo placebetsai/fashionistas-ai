@@ -113,7 +113,7 @@ marketplace where you already have an account"*.
 
 | Asset | Path | Verified |
 | --- | --- | --- |
-| Extension zip | `chrome-store/fashionistas-extension-v.zip` | `unzip -l` → 54 entries, `manifest.json` present, no tests/`.env`/`node_modules`/`.git` |
+| Extension zip | `chrome-store/fashionistas-extension-v.zip` | `unzip -l` → 59 entries, `manifest.json` present, 4 `icons/icon-*.png` present, no tests/`.env`/`node_modules`/`.git` |
 | Store icon 128×128 | `chrome-store/icons/icon-128.png` | IHDR 128×128, md5 identical to `apps/extension/icon.png` |
 | Store icons 16/32/48 | `chrome-store/icons/icon-16.png`, `icon-32.png`, `icon-48.png` | IHDR verified after round-trip decode |
 | Store icon (action default) | `chrome-store/icons/default_128.png` | IHDR 128×128 |
