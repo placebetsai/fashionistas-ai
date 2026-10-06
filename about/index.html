@@ -19,6 +19,7 @@
 <meta name="twitter:image" content="https://fashionistas.ai/og.png">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/site.css">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7215975042937417" crossorigin="anonymous" data-ad-client="ca-pub-7215975042937417"></script>
 </head>
 <body>
 <div class="wrap">
@@ -61,6 +62,9 @@
 <p style="margin-bottom:0">Most resale tools give you a text box and wish you luck. You photograph an item, and fashionistas.ai does the identifying, the pricing, the fee math and the actual posting — across eleven marketplaces — and then takes it back down again when it sells. The work that used to be an evening is one button.</p>
 </div>
 
+<!-- AdSense: filled at runtime by /site-adsense.js from the [data-ad-slot]
+     mount below. The publisher id is never written into this page by hand. -->
+<div data-ad-slot="inContent"></div>
 </main>
 
 <footer class="site-footer">
@@ -74,5 +78,14 @@
 <p>fashionistas.ai — photograph your closet, list it everywhere. Email: <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a></p>
 </footer>
 </div>
+<script type="module">
+/* AdSense slots are declared in this page's markup as [data-ad-slot] and filled
+   from /site-adsense.js — the single source of truth for the publisher id and
+   the named placements. The library itself is the raw <script async> in this
+   document's head; it must never be deferred or module-loaded, or nothing
+   drains window.adsbygoogle and no impression is ever reported. */
+import { mountAllAdSlots } from "/site-adsense.js";
+mountAllAdSlots();
+</script>
 </body>
 </html>

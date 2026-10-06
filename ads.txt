@@ -1,5 +1,9 @@
 # fashionistas.ai ads.txt
-# No Google AdSense publisher ID is configured for this site yet.
-# When a ca-pub / pub-id is issued for fashionistas.ai, replace this file with lines like:
-# google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
-# Do not serve SPA HTML at /ads.txt.
+# Authorized Digital Sellers. Google AdSense only serves ads to a site when it
+# can read this file at /ads.txt, so the publisher id here MUST match the
+# client id in /site-adsense.js (ca-pub-7215975042937417 -> pub-7215975042937417).
+# Both values are derived from one place: site-adsense.js (ADSENSE_ADS_TXT_LINE),
+# and tests/adsense-wiring.test.mjs fails if the two ever disagree.
+#
+# Do not serve SPA HTML at /ads.txt. _headers pins this path to text/plain.
+google.com, pub-7215975042937417, DIRECT, f08c47fec0942fa0

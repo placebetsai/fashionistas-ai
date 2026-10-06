@@ -1081,6 +1081,7 @@ textarea.input{font-family:inherit}
  color:var(--good);background:color-mix(in srgb,var(--good) 12%,transparent)}
 </style>
 <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7215975042937417" crossorigin="anonymous" data-ad-client="ca-pub-7215975042937417"></script>
 </head>
 <body>
 <div class="wrap">
@@ -1157,10 +1158,12 @@ textarea.input{font-family:inherit}
  </div>
  <div class="posted"><span class="pd"></span>Posted · Poshmark · Mercari · Depop · Vinted · Grailed · eBay · Etsy</div>
  </div>
- </div>
- </div>
+  </div>
+  </div>
+  <!-- AdSense hero slot: first impression, signed-out visitors only (inside #view-auth). -->
+  <div data-ad-slot="hero"></div>
 
- <section class="lsec" id="land-how" aria-labelledby="how-h">
+  <section class="lsec" id="land-how" aria-labelledby="how-h">
   <span class="lsec-kicker">How it works</span>
   <h2 id="how-h">Three steps. The AI does two of them.</h2>
   <div class="steps">
@@ -1247,10 +1250,16 @@ textarea.input{font-family:inherit}
  <p class="mut" style="margin:0 0 6px">Try it now with the demo account</p>
  <button class="btn btn-soft btn-sm" onclick="demoLogin()" data-tip="Signs you in with the shared demo account so you can look around first." title="Signs you in with the shared demo account so you can look around first.">Log in as demo seller</button>
  </div>
- <p class="legal-line">$14.99/mo · Cancel anytime · Your data stays yours<br><a href="/contact/" style="color:inherit">Contact</a> · <a href="/privacy/" style="color:inherit">Privacy</a> · <a href="/about/" style="color:inherit">About</a></p>
+<p class="legal-line">$14.99/mo · Cancel anytime · Your data stays yours<br><a href="/contact/" style="color:inherit">Contact</a> · <a href="/privacy/" style="color:inherit">Privacy</a> · <a href="/about/" style="color:inherit">About</a></p>
  </div>
  </div>
- </section>
+  <!-- AdSense: signed-out visitors only. This sits INSIDE #view-auth, which
+       gets .hidden the moment a session exists (afterAuth/logout/boot), so the
+       seller tool below never has an ad above it. -->
+  <div data-ad-slot="inContent"></div>
+  <!-- AdSense bottom slot: last impression before the app core, same signed-out scope. -->
+  <div data-ad-slot="bottom"></div>
+</section>
 
 
  </main>
@@ -6086,6 +6095,15 @@ else { $("#view-auth").classList.remove("hidden"); $("#view-app").classList.add(
  window.addEventListener("scroll", hide, true);
  window.addEventListener("resize", hide);
 })();
+</script>
+<script type="module">
+/* AdSense slots are declared in this page's markup as [data-ad-slot] and filled
+   from /site-adsense.js — the single source of truth for the publisher id and
+   the named placements. The library itself is the raw <script async> in this
+   document's head; it must never be deferred or module-loaded, or nothing
+   drains window.adsbygoogle and no impression is ever reported. */
+import { mountAllAdSlots } from "/site-adsense.js";
+mountAllAdSlots();
 </script>
 </body>
 </html>

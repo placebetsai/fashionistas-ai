@@ -25,6 +25,7 @@
 "description":"Monthly Pro subscription for fashionistas.ai: cross-list closet items to your connected marketplaces from one button, with real fee take-home pricing.",
 "hasMerchantReturnPolicy":{"@type":"MerchantReturnPolicy","applicableCountry":"US","returnPolicyCategory":"https://schema.org/MerchantReturnFiniteReturnWindow","merchantReturnDays":14,"returnMethod":"https://schema.org/ReturnMethodByMail"}}
 </script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7215975042937417" crossorigin="anonymous" data-ad-client="ca-pub-7215975042937417"></script>
 </head>
 <body>
 <div class="wrap">
@@ -83,6 +84,9 @@
 </div>
 
 <p class="note" style="margin-top:18px">Questions first? <a href="/contact/">Contact us</a> — a person answers.</p>
+<!-- AdSense: filled at runtime by /site-adsense.js from the [data-ad-slot]
+     mount below. The publisher id is never written into this page by hand. -->
+<div data-ad-slot="inContent"></div>
 </main>
 
 <footer class="site-footer">
@@ -214,6 +218,15 @@
     } catch (e) { /* preflight is best-effort; never blocks the page */ }
   })();
 })();
+</script>
+<script type="module">
+/* AdSense slots are declared in this page's markup as [data-ad-slot] and filled
+   from /site-adsense.js — the single source of truth for the publisher id and
+   the named placements. The library itself is the raw <script async> in this
+   document's head; it must never be deferred or module-loaded, or nothing
+   drains window.adsbygoogle and no impression is ever reported. */
+import { mountAllAdSlots } from "/site-adsense.js";
+mountAllAdSlots();
 </script>
 </body>
 </html>
