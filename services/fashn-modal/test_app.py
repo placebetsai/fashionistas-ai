@@ -333,6 +333,30 @@ def test_timeout_and_busy(client: TestClient) -> None:
     check(post(client, valid_body()).status_code == 200, "container recovers after timeout")
 
 
+def test_image_ships_import_time_files() -> None:
+    """`app.py` is re-imported *inside the container* at /root/app.py.
+
+    Module-level code runs there too, so every file it reads must already be in
+    the image. Without this the image builds fine locally (the file exists on
+    the deploying machine) and then crash-loops forever with FileNotFoundError
+    - every call sits Pending with a dead container. That is exactly what
+    happened before the guard below was added.
+    """
+    source = (Path(__file__).resolve().parent / "app.py").read_text(encoding="utf-8")
+
+    check(
+        '.add_local_file(str(HERE / "requirements.txt"), "/root/requirements.txt"' in source,
+        "image ships requirements.txt to /root/requirements.txt (else import crash-loop)",
+    )
+    check(
+        ".add_local_file(str(HERE / \"download_weights.py\"), DOWNLOAD_SCRIPT_REMOTE" in source,
+        "image ships download_weights.py",
+    )
+    check("GPU = os.environ.get(\"FASHN_GPU\"" in source,
+          "GPU selectable at deploy time via FASHN_GPU")
+    check("gpu=GPU," in source, "function uses the deploy-time GPU, not a hardcoded literal")
+
+
 def main() -> int:
     svc._PIPELINE = _StubPipeline()
     client = TestClient(svc._make_web_app())
@@ -345,6 +369,7 @@ def main() -> int:
     test_wrong_method_and_paths(client)
     test_pipeline_failures(client)
     test_timeout_and_busy(client)
+    test_image_ships_import_time_files()
 
     print(f"\n{CHECKS} checks, {len(FAILURES)} failures")
     for name in FAILURES:

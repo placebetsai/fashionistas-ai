@@ -44,6 +44,7 @@ import io
 import json
 import logging
 import math
+import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -85,6 +86,15 @@ MAX_IMAGE_PIXELS = 40_000_000  # decompression-bomb guard
 # the caller gets our JSON body rather than a proxy-level error/redirect.
 INFER_TIMEOUT_S = 120
 WEBP_QUALITY = 90
+
+# Deploy-time GPU selection. Modal refuses to reserve a GPU without a payment
+# method on file, so `FASHN_GPU=none modal deploy ...` publishes the same
+# HTTP contract on CPU (for endpoint/contract verification) while the default
+# stays L4 for real inference. Read at deploy time - it is a property of how
+# the app is deployed, not of the container.
+GPU = os.environ.get("FASHN_GPU", "L4").strip().lower()
+GPU = None if GPU in ("", "none", "cpu", "off") else GPU
+GPU_LABEL = GPU or "cpu"
 
 # Baked into the image by download_weights.py.
 WEIGHTS_DIR = "/fashn/weights"
@@ -141,6 +151,11 @@ image = (
         }
     )
     .add_local_file(str(HERE / "download_weights.py"), DOWNLOAD_SCRIPT_REMOTE, copy=True)
+    # `app.py` is re-imported *inside the container* at /root/app.py, and
+    # _load_requirements() reads HERE/requirements.txt at module import time.
+    # Without this line the image builds fine locally and then crash-loops on
+    # every call with FileNotFoundError. Ship the file the code reads.
+    .add_local_file(str(HERE / "requirements.txt"), "/root/requirements.txt", copy=True)
     # .env() above is an image ENV directive, so it is visible to this RUN too.
     .run_commands(f"python {DOWNLOAD_SCRIPT_REMOTE} --weights-dir {WEIGHTS_DIR}")
 )
@@ -576,7 +591,7 @@ def _make_web_app() -> Any:
     # for CFG batches at 864x576. It is the cheapest Modal GPU that supports
     # bf16 (A10G has the same 24 GB but costs ~40% more; T4 has no bf16 and
     # would fall back to fp32).
-    gpu="L4",
+    gpu=GPU,  # "L4" by default; FASHN_GPU=none at deploy time -> CPU only
     cpu=4,  # DWPose + human parsing run on CPU
     memory=12288,  # MiB - peak RSS during checkpoint load
     timeout=300,  # hard per-input kill; the soft JSON 504 fires at 120s
