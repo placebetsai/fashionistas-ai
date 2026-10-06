@@ -16,7 +16,7 @@
  *                                (or MODEL_API_KEY). Works for OpenAI, a Cloudflare
  *                                AI Gateway, Groq, Together, etc.
  *   MODEL_PROVIDER=workers_ai    Cloudflare Workers AI binding (env.AI). Free,
- *                                no API keys, runs @cf/mistral/mistral-7b-instruct-v0.1
+ *                                no API keys, runs @cf/meta/llama-3.3-70b-instruct-fp8-fast
  *                                on this account. Enabled automatically when
  *                                env.AI && typeof env.AI.run === "function" and
  *                                no explicit MODEL_PROVIDER overrides it.
@@ -104,7 +104,7 @@ export function modelConfig(env) {
         return {
           configured: true,
           provider: "workers_ai",
-          model: "@cf/mistral/mistral-7b-instruct-v0.1",
+          model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
           timeoutMs,
         };
       }
@@ -128,7 +128,7 @@ export function modelConfig(env) {
     return {
       configured: true,
       provider: "workers_ai",
-      model: "@cf/mistral/mistral-7b-instruct-v0.1",
+      model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
       timeoutMs,
     };
   }

@@ -62,7 +62,7 @@ describe("modelConfig() — provider resolution", () => {
     const cfg = modelConfig({ MODEL_PROVIDER: "workers_ai", AI: mockAI });
     assert.strictEqual(cfg.configured, true);
     assert.strictEqual(cfg.provider, "workers_ai");
-    assert.strictEqual(cfg.model, "@cf/mistral/mistral-7b-instruct-v0.1");
+    assert.strictEqual(cfg.model, "@cf/meta/llama-3.3-70b-instruct-fp8-fast");
   });
 
   it("returns unconfigured when MODEL_PROVIDER=workers_ai but no AI binding", () => {
@@ -77,7 +77,7 @@ describe("modelConfig() — provider resolution", () => {
     const cfg = modelConfig({ AI: mockAI });
     assert.strictEqual(cfg.configured, true);
     assert.strictEqual(cfg.provider, "workers_ai");
-    assert.strictEqual(cfg.model, "@cf/mistral/mistral-7b-instruct-v0.1");
+    assert.strictEqual(cfg.model, "@cf/meta/llama-3.3-70b-instruct-fp8-fast");
   });
 
   it("explicit MODEL_PROVIDER overrides auto-detection", () => {
@@ -229,7 +229,7 @@ describe("completeJSON() — integration", () => {
       { AI: mockAI, MODEL_PROVIDER: "workers_ai" },
       { system: "system prompt", prompt: "user prompt", temperature: 0.5 }
     );
-    assert.strictEqual(captured.model, "@cf/mistral/mistral-7b-instruct-v0.1");
+    assert.strictEqual(captured.model, "@cf/meta/llama-3.3-70b-instruct-fp8-fast");
     assert.strictEqual(captured.opts.temperature, 0.5);
     assert.match(captured.opts.prompt, /system prompt/);
     assert.match(captured.opts.prompt, /user prompt/);
