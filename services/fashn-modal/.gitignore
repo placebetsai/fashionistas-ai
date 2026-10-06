@@ -40,6 +40,11 @@ hf/
 *.tar
 *.tar.gz
 
+# ...but the no-person guard's test fixture must be in the repo: the dog photo
+# (24 KB) is the case the guard exists for. Without it the real-detector test
+# skips on every other machine.
+!testdata/*.jpg
+
 # Logs
 *.log
 nohup.out

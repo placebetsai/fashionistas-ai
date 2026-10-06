@@ -458,6 +458,56 @@ def _run_inference(pipeline: Any, request: _TryonRequest) -> Any:
 
 
 # ---------------------------------------------------------------------------
+# No-person guard - runs BEFORE any GPU work
+# ---------------------------------------------------------------------------
+
+# What the caller is told when no human is in the photo. Deliberately
+# encouraging rather than technical: the model would happily spend GPU time
+# compositing a garment onto a dog, a flat-lay or a blank wall and return a
+# useless image (this actually happened with a dog photo).
+NO_PERSON_MSG = "Upload a photo of yourself, head to knees"
+
+# YOLOX weights come with the FASHN image - no extra download, no extra cost.
+YOLOX_PATH = Path(WEIGHTS_DIR) / "dwpose" / "yolox_l.onnx"
+
+_DET_LOCK = threading.Lock()
+_DET_SESSION: Any = None
+
+
+def _person_detector() -> Any:
+    """CPU YOLOX session, built once per container.
+
+    `fashn_vton.dwpose.onnxdet.inference_detector` returns boxes for COCO
+    class 0 (person) at score > 0.3, so a non-empty result means a human was
+    found. This is deliberately the *detector* and not the pose model: given
+    zero detections the pose network still hallucinates a confident body out
+    of a fallback box, which is how a dog photo passed a pose-only check.
+    """
+    global _DET_SESSION
+    with _DET_LOCK:
+        if _DET_SESSION is None:
+            import onnxruntime as ort
+
+            if not YOLOX_PATH.is_file():
+                raise FileNotFoundError(f"{YOLOX_PATH} not found in the image")
+            _DET_SESSION = ort.InferenceSession(
+                str(YOLOX_PATH), providers=["CPUExecutionProvider"]
+            )
+        return _DET_SESSION
+
+
+def _count_persons(pil_image: Any) -> int:
+    """How many people YOLOX finds. CPU only, ~0.5s, never touches the GPU."""
+    import numpy as np
+
+    from fashn_vton.dwpose.onnxdet import inference_detector
+
+    rgb = np.asarray(pil_image.convert("RGB"))
+    boxes = inference_detector(_person_detector(), rgb)
+    return 0 if boxes is None or len(boxes) == 0 else int(len(boxes))
+
+
+# ---------------------------------------------------------------------------
 # HTTP surface
 # ---------------------------------------------------------------------------
 
@@ -527,6 +577,20 @@ def _make_web_app() -> Any:
             parsed = _parse_body(body)
         except _HttpError as exc:
             return _err(exc.status, exc.error, exc.detail)
+
+        # Refuse before anything expensive happens: this runs on CPU and costs
+        # ~0.5s, so a photo with no person in it never loads the pipeline and
+        # never gets a GPU second billed.
+        try:
+            persons = _count_persons(parsed.person)
+        except Exception as exc:  # noqa: BLE001 - weights/session trouble
+            # Fail closed: without the check we cannot promise that GPU seconds
+            # are not wasted, so we would rather answer 503 than spend them.
+            log.error("person check failed: %s", f"{type(exc).__name__}: {exc}")
+            return _err(503, "person check unavailable", "could not inspect the photo")
+        if persons < 1:
+            log.info("rejected photo: no person detected")
+            return _err(400, "no person detected", NO_PERSON_MSG)
 
         if _INFLIGHT.is_set():
             return _err(503, "model is busy with another request", "one generation at a time")

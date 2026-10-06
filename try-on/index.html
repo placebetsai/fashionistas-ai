@@ -513,6 +513,57 @@ import { TryOnPipeline } from "/core/tryon_pipeline.js";
       });
   }
 
+  // ---- No-person guard, browser half -------------------------------------
+  // MediaPipe Pose runs on the visitor's own device, so a photo with no human
+  // in it never leaves the browser and never reaches our GPU. The server runs
+  // its own detector on every request, so if this fails to load (offline, CDN
+  // blocked) we fall through to the server check instead of pretending.
+  var POSE_PKG = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+  var POSE_MODEL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+  var NO_PERSON_MSG = "Upload a photo of yourself, head to knees";
+  var posePromise = null;
+
+  function loadPose(){
+    if (posePromise) return posePromise;
+    posePromise = import(POSE_PKG).then(function(vision){
+      return vision.FilesetResolver.forVisionTasks(POSE_PKG + "/wasm").then(function(fileset){
+        return vision.PoseLandmarker.createFromOptions(fileset, {
+          baseOptions: { modelAssetPath: POSE_MODEL, delegate: "GPU" },
+          runningMode: "IMAGE",
+          numPoses: 1
+        });
+      });
+    }).catch(function(){
+      posePromise = null;          // retry next time rather than caching a failure
+      return null;                 // server re-checks, so allow the request
+    });
+    return posePromise;
+  }
+
+  // true  -> a person is plausibly in frame, go ahead
+  // false -> no usable pose, refuse with the friendly message
+  function personInPhoto(file){
+    return loadPose().then(function(landmarker){
+      if (!landmarker) return true;                     // could not check here
+      return createImageBitmap(file).then(function(bmp){
+        var out;
+        try { out = landmarker.detect(bmp); }
+        catch (e) { return true; }                      // let the server decide
+        finally { if (bmp.close) bmp.close(); }
+        var poses = (out && out.landmarks) || [];
+        if (!poses.length) return false;
+        var pts = poses[0], visible = 0;
+        for (var i = 0; i < pts.length; i++){
+          if ((pts[i].visibility || 0) > 0.5) visible++;
+        }
+        var head = pts[0] && (pts[0].visibility || 0) > 0.3;   // nose
+        var hips = (pts[23] && (pts[23].visibility || 0) > 0.3) ||
+                   (pts[24] && (pts[24].visibility || 0) > 0.3);
+        return visible >= 10 && !!head && !!hips;
+      }).catch(function(){ return true; });
+    });
+  }
+
   // PRO / CREDITS TIER — the in-house Leffa model behind /api/tryon/hd.
   // The server answers 402 when the caller has neither Pro nor a credit, and
   // that error is shown verbatim instead of substituting a fake render.
@@ -558,10 +609,20 @@ import { TryOnPipeline } from "/core/tryon_pipeline.js";
     }
     $("ok").classList.remove("on");
     setBusy(true);
-    say(mode === "hd"
-          ? "Rendering — this takes a few minutes…"
-          : "Making your preview…", false);
-    var job = (mode === "hd") ? runHd() : runDevice();
+    var job;
+    if (mode === "hd"){
+      // Guard first: nothing is uploaded and no GPU second is billed until a
+      // person has actually been found in the photo.
+      say("Checking your photo…", false);
+      job = personInPhoto(files.person).then(function(ok){
+        if (!ok) throw new Error(NO_PERSON_MSG);
+        say("Rendering — sending to the model…", false);
+        return runHd();
+      });
+    } else {
+      say("Making your preview…", false);
+      job = runDevice();
+    }
     job
       .catch(function(err){
         fail(err && err.message ? err.message : "The try-on did not go through. Try again.");

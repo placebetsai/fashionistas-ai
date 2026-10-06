@@ -17,6 +17,7 @@ from __future__ import annotations
 import base64
 import io
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -27,6 +28,10 @@ from PIL import Image  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 import app as svc  # noqa: E402
+
+# Captured at import, before main() stubs svc._count_persons out for the
+# contract tests. The real-detector test needs the real function.
+TRUE_COUNT_PERSONS = svc._count_persons
 
 FAILURES: list[str] = []
 CHECKS = 0
@@ -333,6 +338,119 @@ def test_timeout_and_busy(client: TestClient) -> None:
     check(post(client, valid_body()).status_code == 200, "container recovers after timeout")
 
 
+def _find_yolox():
+    """Path to yolox_l.onnx if real weights exist on this machine, else None.
+
+    The contract tests never need it (the guard is stubbed). This is only for
+    the real-detector test, which is skipped with a message when the weights
+    are not present - a skip is honest, a fake pass is not.
+    """
+    cands = []
+    if os.environ.get("FASHN_YOLOX"):
+        cands.append(Path(os.environ["FASHN_YOLOX"]))
+    if os.environ.get("FASHN_WEIGHTS_DIR"):
+        cands += [
+            Path(os.environ["FASHN_WEIGHTS_DIR"]) / "dwpose" / "yolox_l.onnx",
+            Path(os.environ["FASHN_WEIGHTS_DIR"]) / "yolox_l.onnx",
+        ]
+    cands += [
+        Path(svc.WEIGHTS_DIR) / "dwpose" / "yolox_l.onnx",
+        # local e2e cache used by e2e_local.py (see README)
+        Path("/tmp/opencode/fashn-modal-test/weights/dwpose/yolox_l.onnx"),
+        Path(__file__).resolve().parent / "weights" / "dwpose" / "yolox_l.onnx",
+    ]
+    for c in cands:
+        if c.is_file():
+            return c
+    return None
+
+
+DOG_JPG = Path(__file__).resolve().parent / "testdata" / "dog.jpg"
+PERSON_JPG = Path("/home/billionaremaker/Documents/Default Project/Placebetsai-src/public/israel-joffe/03-firefighter.jpg")
+
+
+def test_no_person_guard(client) -> None:
+    """A photo with no human in it must be refused with no GPU work at all."""
+    use_pipeline(_StubPipeline())
+    previous = svc._count_persons
+    svc._count_persons = lambda _img: 0
+    try:
+        res = post(client, valid_body())
+        expect_error(res, 400, "no person detected")
+        body = _json(res)
+        check(body.get("error") == "no person detected", "guard names the problem")
+        check(body.get("detail") == svc.NO_PERSON_MSG,
+              f"guard gives the friendly message (got {body.get('detail')!r})")
+        check(svc._PIPELINE.calls == [],
+              "no GPU call is made when no person is detected")
+        check(svc._INFLIGHT.is_set() is False, "busy flag not set by a rejected photo")
+    finally:
+        svc._count_persons = previous
+
+
+def test_person_check_unavailable(client) -> None:
+    """If the detector cannot run we fail closed rather than spend GPU."""
+    use_pipeline(_StubPipeline())
+    previous = svc._count_persons
+
+    def _boom(_img):
+        raise RuntimeError("weights missing")
+
+    svc._count_persons = _boom
+    try:
+        expect_error(post(client, valid_body()), 503, "person check unavailable")
+        check(svc._PIPELINE.calls == [], "no GPU call when the check itself fails")
+    finally:
+        svc._count_persons = previous
+
+
+def test_real_detector_rejects_dog(client) -> None:
+    """Run the real YOLOX weights on the dog photo end to end.
+
+    This is the case that started the whole guard: a dog picture is a valid
+    image, passes every shape check, and used to be handed to the GPU, which
+    returned the input resized with no garment applied - a paid, useless render.
+    """
+    yolox = _find_yolox()
+    if yolox is None:
+        print("  skip real detector: yolox_l.onnx not on this machine "
+              "(set FASHN_YOLOX=/path/to/yolox_l.onnx to run it)")
+        return
+    if not DOG_JPG.is_file():
+        print(f"  FAIL missing fixture {DOG_JPG}")
+        FAILURES.append("dog fixture missing")
+        return
+
+    real = svc._count_persons
+    svc._count_persons = TRUE_COUNT_PERSONS
+    saved_path, saved_session = svc.YOLOX_PATH, svc._DET_SESSION
+    svc.YOLOX_PATH, svc._DET_SESSION = yolox, None
+    try:
+        from PIL import Image as _Image
+
+        dog = _Image.open(DOG_JPG).convert("RGB")
+        n = svc._count_persons(dog)
+        check(n == 0, f"real YOLOX finds {n} people in the dog photo (want 0, weights {yolox})")
+
+        use_pipeline(_StubPipeline())
+        payload = valid_body(person=base64.b64encode(DOG_JPG.read_bytes()).decode("ascii"))
+        res = post(client, payload)
+        expect_error(res, 400, "dog photo")
+        check(_json(res).get("detail") == svc.NO_PERSON_MSG, "dog photo gets the friendly message")
+        check(svc._PIPELINE.calls == [], "dog photo never reaches the GPU")
+
+        if PERSON_JPG.is_file():
+            real_persons = svc._count_persons(_Image.open(PERSON_JPG).convert("RGB"))
+            check(real_persons >= 1,
+                  f"real YOLOX still finds {real_persons} person in a human photo (control)")
+        else:
+            print(f"  note: control photo not present at {PERSON_JPG} - accept path stubbed only")
+    finally:
+        svc.YOLOX_PATH, svc._DET_SESSION = saved_path, saved_session
+        svc._count_persons = real
+        use_pipeline(_StubPipeline())
+
+
 def test_image_ships_import_time_files() -> None:
     """`app.py` is re-imported *inside the container* at /root/app.py.
 
@@ -365,6 +483,12 @@ def main() -> int:
     svc._PIPELINE = _StubPipeline()
     client = TestClient(svc._make_web_app())
 
+    # Contract tests upload solid-colour rectangles as the "person", which the
+    # real detector would (correctly) reject. Default the guard to "person
+    # present" so the rest of the suite tests the rest of the contract; the
+    # guard itself is tested separately below, including against real weights.
+    svc._count_persons = lambda _img: 1
+
     test_healthz(client)
     test_contract_fields(client)
     test_defaults_and_passthrough(client)
@@ -373,6 +497,9 @@ def main() -> int:
     test_wrong_method_and_paths(client)
     test_pipeline_failures(client)
     test_timeout_and_busy(client)
+    test_no_person_guard(client)
+    test_person_check_unavailable(client)
+    test_real_detector_rejects_dog(client)
     test_image_ships_import_time_files()
 
     print(f"\n{CHECKS} checks, {len(FAILURES)} failures")
