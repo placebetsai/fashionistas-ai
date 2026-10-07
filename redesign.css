@@ -417,3 +417,16 @@ body:has(#view-app:not(.hidden)) .rd-bcta{display:none!important}
   #topbar .topbar-actions .btn-ghost{padding:0 9px!important;font-size:12.5px!important}
   #mtabbar .mt-tab{font-size:10.5px}
 }
+@media (max-width:899px){
+  /* drawer + veil above the fixed header and tab bar */
+  #drawer-veil{z-index:98!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  #drawer{z-index:99!important;padding-top:calc(16px + env(safe-area-inset-top))!important}
+  /* labels share one baseline; the raised Sell button floats above it */
+  #mtabbar .mt-tab{justify-content:flex-end;padding-bottom:2px}
+  #mtabbar .mt-center .mt-fab{margin-top:-24px;margin-bottom:1px}
+  /* brand link is a 44px target */
+  #topbar .fash-brand{min-height:44px}
+  /* one floating helper in the app: the chat guide, right side above the coach bar; tour lives in the menu */
+  html.mt-app body #hc-fab{display:none!important}
+  html.mt-app body #guide-fab{left:auto!important;right:14px!important}
+}

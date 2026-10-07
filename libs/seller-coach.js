@@ -528,6 +528,8 @@
   function applyHelpChips() {
     HELP_CHIPS.forEach(function (row) {
       document.querySelectorAll(row.sel).forEach(function (el) {
+        // never inject help chips into the phone tab bar
+        if (el.closest && el.closest("#mtabbar")) return;
         if (el.dataset.scChip === "1") return;
         el.dataset.scChip = "1";
         // Prefer placing chip beside the field's label
