@@ -924,3 +924,9 @@ npx wrangler pages deployment list --project-name=fashionistas-ai
 - Live tip: 54b4e84 (merge of redesign-preview + nav alignment), deployment b0d247b3 via scripts/deploy-local.sh, version.txt verified.
 - Rollback: previous production deployment e26c7045-e4f5-4cbe-a18d-f7f77af28e96 (c047b8a).
 - New files: redesign.css, redesign.js, assets/rd/*.webp (Unsplash, see assets/rd/CREDITS.txt). Landing hamburger <=1100px, compact links 1101-1320px.
+
+## 2026-10-07 09:50 ET — launch countdown bar live
+- Live tip: 4e34b0b (deploy-local verified). countdown.js counts to 2026-10-14T09:45:00-04:00, then shows "We're live".
+- Home: appended inside sticky #land-nav (under nav row). /see-in-space/, /try-on/: inserted after header.topnav in normal flow.
+- Remove: delete the countdown.js <script> tags in index.html, see-in-space/index.html, try-on/index.html.
+- Rollback for this change: previous prod = b0d247b3 (54b4e84).
