@@ -320,3 +320,8 @@ body.rd-hero-on #hc-fab{opacity:0;pointer-events:none;transform:scale(.8)}
 #view-auth .ship.posh{background:#b83d17}
 #view-auth .ship.merc{background:#d41f1f}
 #view-auth .ship.vint{background:#0a6f6c}
+/* perf (mobile): static backgrounds — these infinite animations repainted huge layers every frame */
+@media (max-width:767px){
+  body::before,.land-hero .aurora,.land-hero .hero-grid,.rd-scan{animation:none!important}
+}
+.land-site-footer nav a,.land-site-footer p{color:#5c5c66!important}
