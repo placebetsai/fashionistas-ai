@@ -930,3 +930,8 @@ npx wrangler pages deployment list --project-name=fashionistas-ai
 - Home: appended inside sticky #land-nav (under nav row). /see-in-space/, /try-on/: inserted after header.topnav in normal flow.
 - Remove: delete the countdown.js <script> tags in index.html, see-in-space/index.html, try-on/index.html.
 - Rollback for this change: previous prod = b0d247b3 (54b4e84).
+
+## 2026-10-07 09:53 ET — ROLLED BACK: production = e26c7045 (c047b8a, pre-redesign)
+- User reported mobile broken after redesign+countdown. Rolled back via Pages API rollback (wrangler 4.148 has no rollback cmd).
+- WARNING: local main still contains 54b4e84 (redesign) + 4e34b0b (countdown). Running scripts/deploy-local.sh from main WILL re-ship them. Do not deploy main until the user approves redesign v2.
+- v2 fix lives in worktree ../fashionistas-ai-redesign, branch redesign-fix (c645933), preview https://redesign-preview.fashionistas-ai.pages.dev
