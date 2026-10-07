@@ -1,5 +1,26 @@
 # Agent handoff — fashionistas.ai
 
+## LATEST — 2026-10-07 4:45 PM ET (read this first)
+
+**Production:** Pages deployment `0d44887b-acd7-46e4-ac74-77c7896251d8` = commit `2eb3f16` (phone nav: sticky header + bottom tab bar, "What's next" bar Home-only, compact chat button, blinking fix). **Rollback:** `f408459d-5d27-4523-acbd-0d7711c8f6d3` (`1c174ff`), older `45b2aecb-3cf5-4659-9a88-b3090771bbec`. Verified live on Pixel 7 + Galaxy 360, light/dark, no JS errors.
+
+**Rules (user, non-negotiable):**
+- Deploy only from this laptop tree with wrangler (`scripts/deploy-local.sh`). No GitHub pushes.
+- ALL UI/mobile changes go to a preview first (`DEPLOY_BRANCH=<name> scripts/deploy-local.sh`), with self-reviewed Android screenshots (top + scrolled, light + dark). Production only after the user says "ship it". Record the current prod deployment ID as rollback before every prod deploy.
+- Clear `node_modules/.cache/wrangler` and any stray `CF_ACCOUNT_ID` before deploying (wrong-account pitfall). Revert regenerated chrome-store zips after deploy.
+- Zero-install for end users. Try-on is for BUYERS (wearables on their own photo); "See in my space" is for art/furniture/decor.
+- Launch target: Wed 2026-10-14 9:45 AM ET.
+
+**User verdict 2026-10-07 4 PM:** mobile UX as a whole is not acceptable. Specifically: the download-zip extension route is "terrible", the listing fields are bad and the form is far too long on a phone.
+
+**In progress (preview branch `listing-wizard`, NOT prod):**
+1. Stepped listing wizard, one screen per step with progress bar: 1 Photos (AI identifies + prefills) → 2 What is it (title, department/type chips from `functions/_lib/categories.js`, brand, size, condition, color; extras collapsed) → 3 Price (AI price, comps, take-home per shop) → 4 Where to list (shop toggles, preview, one "List it" button). Drafts autosave.
+2. Zero-install posting replacing the zip as the main route: list on fashionistas.ai immediately; direct API post for eBay/Etsy only when keys/OAuth exist; guided "Post to X" (copy fields + Web Share with photos / open the shop's sell page, per-shop done checklist) for Depop, Poshmark, Mercari, Vinted, Grailed. Extension kept only as an optional desktop link in settings. Never show fake "posted" statuses.
+3. Whole-app mobile UX pass vs Depop/Vinted/Poshmark/Whatnot: buyer path (Shop, product, Try it on, See in my space, buy) and seller path. Remove instruction walls and jargon (e.g. Home "First sale path" 6-step card with "Load unpacked").
+QA shots: box `/workspace/fash-wizard-qa/`.
+
+**Still open:** real test post on each shop to verify category paths; Etsy who-made/when-made defaults wrong for resale; Modal cold-start timeout risk (move to submit-then-poll); pants try-on quality; rotate Cloudflare + Modal keys; 44 old deployments awaiting OK to delete; Browser Cache TTL in dashboard; Stripe later; remove `TRYON_TEST_EMAILS` when done; eBay/Etsy API keys missing.
+
 ## TRY-ON / SEE-IN-SPACE — 2026-10-07 ~12:45 PM ET (photoreal live since `791febf`; latest try-on fix live `5b84c2d`)
 
 **Photoreal `/api/tryon/hd` now renders.** Provider order (cheapest first), all in `functions/api/tryon/hd.js` + `functions/api/_tryon/vton-paid.js`:
