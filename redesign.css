@@ -177,8 +177,71 @@
 /* hero: brand lives in the sticky header; keep only the theme toggle from the old lockup */
 .rd-hero .lockup-wm{display:none}
 .rd-hero .lockup{float:right;margin:0 0 0 12px}
-.rd-rot .rotator{min-width:8.5em;text-align:left}
 .rd-art-frame{left:60%;top:12%;width:26%}
 @media (min-width:1024px){.rd-bento > .rd-tile:nth-child(5),.rd-bento > .rd-tile:nth-child(6){grid-column:span 2}}
 @media (min-width:1101px) and (max-width:1320px){#land-nav .ln-links a{padding:8px 7px;font-size:13px}#land-nav .rd-nav-in{gap:10px}#land-nav .ln-acts .btn{padding:0 12px}}
 #land-nav .ln-links .sc-help-chip{flex:none;white-space:nowrap}
+
+/* ===== v2 mobile/premium pass ===== */
+/* headline: bold geometric sans, tight tracking (serif read thin on phones) */
+.rd-hero h1.rd-h1{font-family:Inter,system-ui,sans-serif;font-weight:800;letter-spacing:-.045em;line-height:1.0;font-size:clamp(40px,7vw,96px)}
+.rd-hero h1.rd-h1 .rd-grad{font-style:normal;padding-bottom:.08em}
+.rd-h2{font-family:Inter,system-ui,sans-serif!important;font-weight:800!important;letter-spacing:-.035em!important;font-size:clamp(30px,4vw,56px)!important;line-height:1.06!important}
+.rd-h2 .rd-grad{font-style:normal}
+/* rotating line: static lead + its own pill, no mid-sentence reflow or blank gap */
+.rd-rot{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;font-size:clamp(17px,1.6vw,22px)}
+.rd-rot-pill{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(10px)}
+.rd-rot-pill .pd{width:8px;height:8px;border-radius:50%;background:#48e08b;box-shadow:0 0 10px #48e08b;flex:none}
+.rd-rot .rotator{display:inline-block;height:1.3em;line-height:1.3em;overflow:hidden;padding:0;margin:0;vertical-align:middle}
+.rd-rot .rotator > span{display:block;white-space:nowrap}
+/* seller-coach help chips belong in the nav menu, not orphaned next to hero/showcase buttons */
+.rd-hero .sc-help-chip,.rd-showcard .sc-help-chip{display:none!important}
+/* floating tour button: hidden while the hero is on screen (body.rd-hero-on), lifted clear of content */
+body.rd-hero-on #hc-fab{opacity:0;pointer-events:none;transform:scale(.8)}
+#hc-fab{transition:opacity .25s,transform .25s}
+@media (max-width:767px){body:has(#view-auth:not(.hidden)) #hc-fab{bottom:calc(16px + env(safe-area-inset-bottom));width:44px;height:44px}}
+/* marquee: clean pills */
+#view-auth .rd-sec .dest .ship{height:auto;padding:9px 16px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.04em;margin-right:8px}
+/* tap targets + iOS no-zoom inputs */
+#view-auth .land-card input,#view-auth .land-card select{font-size:16px!important;min-height:48px}
+#view-auth .land-card .btn{min-height:48px}
+#view-auth .land-card .chip{min-height:44px;padding:0 18px}
+.land-site-footer nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 6px}
+@media (max-width:1100px){#land-nav .ln-acts .btn{min-height:44px}}
+/* phones */
+@media (max-width:480px){
+  .rd-nav-in{padding:10px 14px;gap:8px}
+  #land-nav .ln-acts .btn{padding:0 14px;font-size:14px}
+  .rd-hero .lockup{display:none}
+  #view-auth .land-hero.rd-hero{padding:28px 0 44px}
+  .rd-hero h1.rd-h1{font-size:clamp(38px,11.5vw,52px)}
+  .rd-hero .lede{font-size:16px}
+  .rd-hero .hero-acts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .rd-hero .hero-acts .rd-cta{grid-column:1/-1;justify-content:center}
+  .rd-hero .hero-acts .btn{justify-content:center;padding:0 12px;min-height:50px}
+  .rd-hero .stat-card b{font-size:20px}
+  .rd-hero .stat-card span{font-size:10px}
+  .rd-hero-art{aspect-ratio:auto;height:420px;margin-top:8px}
+  .rd-photo{inset:0 0 70px 34%;transform:rotate(2deg)}
+  .rd-phone{width:56%;min-width:180px;left:0;bottom:0;border-radius:30px;padding:7px}
+  .rd-phone-screen{border-radius:24px}
+  .rd-phone-sheet{padding:10px;border-radius:16px;font-size:10px}
+  .rd-phone-sheet b{font-size:11.5px;line-height:1.25}
+  .rd-sheet-row em{font-size:14px}.rd-sheet-row i{font-size:10px}
+  .rd-tag-2,.rd-float-2{display:none}
+  .rd-float-1{right:0;top:6px}
+  .rd-float-3{left:auto;right:0;bottom:16px}
+  .rd-step h3{font-size:20px}
+  .rd-tile-xl{min-height:340px}
+  .rd-tryon{gap:8px;padding:12px}
+  #view-auth .rd-shops .shop-cell{padding:16px 16px 16px 72px}
+}
+@media (max-width:374px){
+  #land-nav .ln-name{display:none}
+  .rd-hero .stat-row{gap:6px}
+  .rd-hero .stat-card{padding:12px 4px}
+  .rd-hero h1.rd-h1{font-size:36px}
+}
+#view-auth .legal-line a{display:inline-flex;align-items:center;min-height:44px;padding:0 6px}
+#land-nav .ln-brand{min-height:44px;display:inline-flex;align-items:center}
+@media (max-width:374px){.rd-hero .hero-acts{grid-template-columns:1fr}}
