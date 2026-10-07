@@ -53,7 +53,7 @@
 5. Without extension: paste kits + optional eBay/Etsy server API (402/503 when Stripe/secrets empty). **Never** toasts Posted on a no-op.
 
 ### Mobile multilist plan (docs only, 2026-10-07)
-Native iOS/Android with zero downloads/extensions: see [MOBILE-MULTILIST-PLAN.md](MOBILE-MULTILIST-PLAN.md) (Tier 1 APIs, Tier 2 in-app session, Tier 3 paste kit).
+Native iOS/Android with zero downloads/extensions: see [MOBILE-MULTILIST-PLAN.md](MOBILE-MULTILIST-PLAN.md) (Tier 1 APIs, Tier 2 in-app session, Tier 3 paste kit). Tech: React Native (likely Expo) is the leading possible route, pending research — not final.
 
 ### Still blocked
 

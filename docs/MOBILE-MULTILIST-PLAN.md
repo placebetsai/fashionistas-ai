@@ -47,16 +47,30 @@ Stays as the **power-user desktop path only**. Not required on mobile. Shares ad
 - Seller coach everywhere: What's next checklist, tooltips on every field, plain-words explanations of failures and what to tap next.
 - Delist-on-sale (later): when one shop sells, offer to delist elsewhere.
 
-## Suggested tech
-- **Recommended: Capacitor** wrapping the existing web app (fastest path, reuses UI + seller coach + AI fill) + native plugins: camera, secure storage, hidden WebView runner (custom plugin; WKWebView / Android WebView), push, background tasks.
-- Alternative: React Native shell + react-native-webview — more native feel, but rewrites UI.
-- Fully native (Swift/Kotlin) — best control, slowest; not justified yet.
-- Ship PWA as interim (camera + AI fill work; Tier 1 + Tier 3 only).
+## Suggested tech (PENDING FURTHER RESEARCH — not final)
+**Leading possible route: React Native (likely Expo).** Why: the user worries web wrappers feel cheap and risk App Store guideline 4.2 (minimum functionality / "repackaged website") rejection; the core features (camera, AR, background posting, in-app shop sessions via WebView) want native APIs. Backend stays the same: reuse the existing Cloudflare Workers/Pages APIs (AI identify/fill, listings, multilist, try-on).
+
+| Option | Pros | Cons |
+|---|---|---|
+| **React Native + Expo** (leading) | Native UI feel; one JS/TS codebase for iOS+Android; good camera (expo-camera / vision-camera); react-native-webview for Tier 2 sessions; EAS build/OTA updates; lower 4.2 risk | UI must be rebuilt (web components don't carry over); AR is weaker than native (needs research); some features need custom native modules / dev builds |
+| Capacitor (wrap web app) | Fastest; reuses current UI, seller coach, AI fill almost as-is; plugins for camera/storage | Can feel like a website; higher 4.2 risk; WebView-in-WebView for Tier 2 is awkward; AR/background limited |
+| Fully native (Swift + Kotlin) | Best performance, ARKit/ARCore, background control | Two codebases; slowest and most expensive; needs native devs |
+
+Interim: PWA stays live (camera + AI fill, Tier 1 + Tier 3).
+
+## Research to do before deciding
+- **AR:** ViroReact (maintained fork status), Expo options (expo-gl/three, react-native-arkit-type modules), or a native ARKit/ARCore module; or reuse model-viewer Quick Look / Scene Viewer handoff.
+- **Tier 2 sessions:** react-native-webview cookie/session persistence across restarts (iOS WKWebView shared cookies vs @react-native-cookies/cookies, Android CookieManager), hidden WebView script injection, captcha handoff.
+- **iOS background limits:** BGTaskScheduler time windows, whether posting must run in foreground with a progress sheet; Android WorkManager/foreground service.
+- **VTON/camera perf:** vision-camera frame performance, image upload sizes to Workers, try-on latency on mid-range phones.
+- **Expo fit:** which needs dev builds / config plugins vs managed workflow.
+- **App Store/Play review:** 4.2 and third-party site automation policies.
+- **Team/cost:** RN skills available, build/maintenance cost vs Capacitor vs native; EAS pricing.
 
 ## Phased roadmap
 0. **Now:** get eBay/Etsy keys + Stripe; apply for Depop partner + Vinted Pro access.
 1. **Tier 1 live on web** (eBay, Etsy server posting) + Tier 3 paste kit for others.
-2. **Capacitor app beta** (TestFlight / Play internal): camera → AI fill → Tier 1 + Tier 3.
+2. **Mobile app beta** (React Native/Expo pending research) (TestFlight / Play internal): camera → AI fill → Tier 1 + Tier 3.
 3. **Tier 2 adapters** one shop at a time (start with highest-demand, e.g. Poshmark), with canaries + kill-switches.
 4. **Hardening:** re-auth/captcha flows, telemetry, delist-on-sale, store review.
 5. **Public launch** after legal/ToS review.
