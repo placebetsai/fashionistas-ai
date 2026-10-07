@@ -12,7 +12,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const html = readFileSync(join(ROOT, "index.html"), "utf8");
 const coach = readFileSync(join(ROOT, "libs/seller-coach.js"), "utf8");
 
-test("index includes libs/seller-coach.js", () => {
+test("index includes /seller-coach.js (public; libs/ blocked by Pages Functions)", () => {
   assert.match(html, /src="\/libs\/seller-coach\.js"/);
   assert.match(html, /SellerCoach\.refresh/);
 });
@@ -61,4 +61,12 @@ test("go() marks photo/multilist without fighting try-on pages", () => {
   assert.match(html, /SellerCoach\.mark\("photo"\)/);
   assert.match(html, /SellerCoach\.mark\("multilist"\)/);
   assert.doesNotMatch(html, /try-on\/index\.html[\s\S]{0,80}SellerCoach/);
+});
+
+test("public /seller-coach.js matches libs/seller-coach.js (libs HTTP is blocked)", () => {
+  const pub = readFileSync(join(ROOT, "seller-coach.js"), "utf8");
+  const lib = readFileSync(join(ROOT, "libs/seller-coach.js"), "utf8");
+  assert.equal(pub, lib);
+  assert.match(html, /src="\/seller-coach\.js"/);
+  assert.doesNotMatch(html, /src="\/libs\/seller-coach\.js"/);
 });

@@ -37,7 +37,7 @@
 2. Lower-left floating **What's next** checklist (Photo → Identify → Fill listing → Multilist → Connect extension → Sell everywhere).
 3. Open **Photo** with no listings for the **First sale path** empty-state banner.
 4. After AI fill, listing form help chips open the stylist with a suggested question.
-5. Progress stored locally as `fash_seller_coach_v1`. Source: `/libs/seller-coach.js`.
+5. Progress stored locally as `fash_seller_coach_v1`. Source: `libs/seller-coach.js` → public `/seller-coach.js` (HTTP `/libs/*` is blocked).
 
 ### Still blocked
 
