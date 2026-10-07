@@ -346,3 +346,8 @@ body.rd-hero-on #hc-fab{opacity:0;pointer-events:none;transform:scale(.8)}
   /* the sticky "Start selling free" bar carries the sign-up CTA on the narrowest phones */
   #land-nav .btn-accent.btn-sm{display:none}
 }
+/* === dock the ? help button inside the sticky CTA bar (no more floating over cards) === */
+@media (max-width:767px){
+  body.rd-bcta-on .rd-bcta{padding-right:72px}
+  body.rd-bcta-on #hc-fab{bottom:calc(12px + env(safe-area-inset-bottom))!important;right:14px;width:48px;height:48px;box-shadow:0 4px 12px rgba(0,0,0,.18);z-index:41}
+}
