@@ -67,8 +67,10 @@ export function buildTexturedPlaneGlb(pngBytes, opts = {}) {
   const normals = new Float32Array([
     0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
   ]);
+  // glTF puts UV (0,0) at the TOP-left of the image (not OpenGL's bottom-left),
+  // so TL gets v=0. The old OpenGL-style UVs rendered every item upside down.
   const uvs = new Float32Array([
-    0, 1, 1, 1, 0, 0, 1, 0,
+    0, 0, 1, 0, 0, 1, 1, 1,
   ]);
   const indices = new Uint16Array([0, 2, 1, 1, 2, 3]);
 
@@ -125,7 +127,9 @@ export function buildTexturedPlaneGlb(pngBytes, opts = {}) {
         roughnessFactor: 1,
       },
       doubleSided: true,
-      alphaMode: "OPAQUE",
+      // Cut-out items carry transparency; MASK keeps edges crisp in AR.
+      alphaMode: opts.alpha ? "MASK" : "OPAQUE",
+      ...(opts.alpha ? { alphaCutoff: 0.4 } : {}),
     }],
     textures: [{ source: 0 }],
     images: [{ mimeType: "image/png", bufferView: 4 }],
@@ -176,11 +180,12 @@ export function buildTexturedPlaneGlb(pngBytes, opts = {}) {
 /**
  * Convenience: image element + cm sizes → object URL for model-viewer.
  */
-export async function listingImageToGlbUrl(img, { widthCm = 50, heightCm = 70, maxEdge = 1024 } = {}) {
+export async function listingImageToGlbUrl(img, { widthCm = 50, heightCm = 70, maxEdge = 1024, alpha = false } = {}) {
   const png = await imageToPngBytes(img, maxEdge);
   const blob = buildTexturedPlaneGlb(png, {
     widthM: Number(widthCm) / 100,
     heightM: Number(heightCm) / 100,
+    alpha,
   });
   return URL.createObjectURL(blob);
 }

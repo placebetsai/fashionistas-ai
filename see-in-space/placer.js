@@ -183,7 +183,8 @@ export function defaultFloorPose(W, H, itemImg) {
   const iw = itemImg.naturalWidth || itemImg.width || 100;
   const ih = itemImg.naturalHeight || itemImg.height || 100;
   const scale = Math.min((W * 0.35) / iw, (H * 0.35) / ih);
-  return { x: W * 0.5, y: H * 0.62, scale, rotation: 0 };
+  // Sit the item on the floor plane (lower third), not floating mid-room.
+  return { x: W * 0.5, y: Math.min(H * 0.78, H - (ih * scale) / 2 - H * 0.04), scale, rotation: 0 };
 }
 
 export function saveRoomDataUrl(dataUrl) {

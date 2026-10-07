@@ -26,6 +26,8 @@
 //             mints short-lived signed URLs. Unsigned public buckets are never
 //             used; no user image is ever left world-readable.
 
+import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
+
 const POSE_MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task";
 const WASM_CDN = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
@@ -141,7 +143,18 @@ export function bodyAnchors(landmarks) {
   const shoulderWidth = Math.hypot(ls.x - rs.x, ls.y - rs.y);
   const torsoLength = Math.hypot((ls.x + rs.x) / 2 - (lh.x + rh.x) / 2,
                                  (ls.y + rs.y) / 2 - (lh.y + rh.y) / 2);
-  const shoulderAngleDeg = Math.atan2(rs.y - ls.y, rs.x - ls.x) * 180 / Math.PI;
+  // Measure the shoulder line from the person's right shoulder to their left.
+  // For someone facing the camera the right shoulder is on the viewer's LEFT,
+  // so the old rs<-ls direction was ~180deg and drew every garment upside down.
+  let shoulderAngleDeg = Math.atan2(ls.y - rs.y, ls.x - rs.x) * 180 / Math.PI;
+  if (shoulderAngleDeg > 90) shoulderAngleDeg -= 180;
+  if (shoulderAngleDeg < -90) shoulderAngleDeg += 180;
+  const vis = (i) => landmarks[i] && (landmarks[i].score == null || landmarks[i].score > 0.5);
+  const ankle = (vis(POSE.LEFT_ANKLE) && vis(POSE.RIGHT_ANKLE))
+    ? { x: (landmarks[27].x + landmarks[28].x) / 2, y: (landmarks[27].y + landmarks[28].y) / 2 } : null;
+  const knee = (vis(POSE.LEFT_KNEE) && vis(POSE.RIGHT_KNEE))
+    ? { x: (landmarks[25].x + landmarks[26].x) / 2, y: (landmarks[25].y + landmarks[26].y) / 2 } : null;
+  const hipWidth = Math.hypot(lh.x - rh.x, lh.y - rh.y);
 
   return {
     shoulderCenter: { x: (ls.x + rs.x) / 2, y: (ls.y + rs.y) / 2 },
@@ -149,6 +162,7 @@ export function bodyAnchors(landmarks) {
     shoulderWidth,
     torsoLength,
     shoulderAngleDeg,
+    hipWidth, ankleCenter: ankle, kneeCenter: knee,
     scale: shoulderWidth,           // 1 unit ~= shoulder width
     leftShoulder: ls, rightShoulder: rs,
     leftHip: lh, rightHip: rh,
@@ -211,7 +225,7 @@ export function drawPoseOverlay(canvas, landmarks, { color = "#7ee787", radius =
  */
 export function composeTryOn({ personImage, garmentImage, width, height,
                               personLandmarks, anchors, cover = 0.62,
-                              rotationDeg = null, opacity = 1 }) {
+                              rotationDeg = null, opacity = 1, kind = "tops" }) {
   if (!personImage || !garmentImage) return { ok: false, error: "missing_layer" };
   if (!anchors) return { ok: false, error: "no_anchors" };
 
@@ -229,19 +243,39 @@ export function composeTryOn({ personImage, garmentImage, width, height,
 
     // Anchor to the shoulder line: width follows shoulder span, so the garment
     // scales with the person rather than with the source photo.
-    const targetW = anchors.shoulderWidth * W * 1.9;
-    const ratio = targetW / gwRaw;
-    const targetH = ghRaw * ratio;
-
-    const cx = anchors.shoulderCenter.x * W;
-    const cy = anchors.shoulderCenter.y * H + (anchors.torsoLength * H) * (cover - 0.5);
     const angle = rotationDeg == null ? (anchors.shoulderAngleDeg * Math.PI) / 180 : (rotationDeg * Math.PI) / 180;
+    const ar = ghRaw / gwRaw;
+    const sw = anchors.shoulderWidth * W;
+    const shY = anchors.shoulderCenter.y * H;
+    const hip = anchors.hipCenter || { x: anchors.shoulderCenter.x, y: anchors.shoulderCenter.y + anchors.torsoLength };
+    const hipY = hip.y * H;
+    let targetW, targetH, cx, cy, topOff;
+    if (kind === "bottoms") {
+      // Waistband just above the hip joints, hem at the ankles when we can see them.
+      const legLen = anchors.ankleCenter ? (anchors.ankleCenter.y - hip.y) * H
+        : anchors.kneeCenter ? (anchors.kneeCenter.y - hip.y) * H * 2 : anchors.torsoLength * H * 2.2;
+      targetH = Math.max(legLen * 1.12, 10);
+      targetW = targetH / ar;
+      const minW = (anchors.hipWidth || anchors.shoulderWidth * 0.6) * W * 2.1;
+      if (targetW < minW) targetW = minW;
+      cx = hip.x * W; cy = hipY; topOff = -targetH * 0.08;
+    } else if (kind === "one-pieces") {
+      targetW = sw * 1.75;
+      targetH = targetW * ar;
+      const toKnee = anchors.kneeCenter ? (anchors.kneeCenter.y * H - shY) * 1.25 : 0;
+      if (toKnee && targetH < toKnee) { targetH = toKnee; targetW = targetH / ar; }
+      cx = anchors.shoulderCenter.x * W; cy = shY; topOff = -targetH * 0.06;
+    } else {
+      targetW = sw * 1.85;
+      targetH = targetW * ar;
+      cx = anchors.shoulderCenter.x * W; cy = shY; topOff = -targetH * 0.1;
+    }
 
     ctx.save();
     ctx.globalAlpha = clamp(opacity, 0, 1);
     ctx.translate(cx, cy);
     ctx.rotate(angle);
-    ctx.drawImage(garmentImage, -targetW / 2, -targetH * 0.22, targetW, targetH);
+    ctx.drawImage(garmentImage, -targetW / 2, topOff, targetW, targetH);
     ctx.restore();
 
     return {
@@ -252,7 +286,8 @@ export function composeTryOn({ personImage, garmentImage, width, height,
         x: round3(cx / W), y: round3(cy / H),
         width: round3(targetW / W), height: round3(targetH / H),
         rotationDeg: round3((angle * 180) / Math.PI),
-        coverage: cover
+        coverage: cover,
+        kind
       }
     };
   } catch (e) {
@@ -423,9 +458,17 @@ export class TryOnPipeline {
     }
 
     // ── stage 2: local composition
+    // Lift the garment off its studio backdrop so it is not a pasted rectangle.
+    let garmentLayer = garmentImage, kind = "tops";
+    try {
+      const cut = cutoutBackground(garmentImage);
+      if (cut) { garmentLayer = cut; kind = garmentKind(cut); stages.cutout = "ok:" + kind; }
+      else stages.cutout = "skipped:not_plain_backdrop";
+    } catch (e) { stages.cutout = `failed:${e.message}`; }
+
     const composed = composeTryOn({
-      personImage, garmentImage, width, height,
-      personLandmarks: landmarks, anchors
+      personImage, garmentImage: garmentLayer, width, height,
+      personLandmarks: landmarks, anchors, kind
     });
     stages.compose = composed.ok ? "ok" : `failed:${composed.error}`;
     if (!composed.ok) return { ok: false, stages, source: "compose", error: composed.error };

@@ -189,6 +189,7 @@ import {
   imageToDataUrl,
 } from "./placer.js";
 import { listingImageToGlbUrl } from "./plane-glb.js";
+import { cutoutBackground, canvasToImage } from "./cutout.js";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -299,8 +300,21 @@ async function setRoom(img) {
   if (itemImg) paint();
 }
 
+let itemCut = false;
 async function setItem(img) {
+  // Product shots on a plain backdrop get the backdrop removed so the item
+  // sits in the room instead of a white rectangle. Real-scene photos are kept.
+  itemCut = false;
+  try {
+    const cut = cutoutBackground(img);
+    if (cut) { img = await canvasToImage(cut); itemCut = true; }
+  } catch (_) {}
   itemImg = img;
+  // Keep the AR plane in the item's real proportions (was a fixed 50x70 cm,
+  // which stretched every non-portrait item).
+  const ar = (img.naturalHeight || 1) / (img.naturalWidth || 1);
+  const wcm = Number($("width-cm").value) || 50;
+  $("height-cm").value = String(Math.max(5, Math.min(400, Math.round(wcm * ar))));
   $("thumb-item").src = img.src;
   $("thumb-item").classList.add("on");
   if (roomImg) {
@@ -319,7 +333,7 @@ async function maybeBuildAr() {
     if (glbUrl) URL.revokeObjectURL(glbUrl);
     const w = Number($("width-cm").value) || 50;
     const h = Number($("height-cm").value) || 70;
-    glbUrl = await listingImageToGlbUrl(itemImg, { widthCm: w, heightCm: h, maxEdge: 1024 });
+    glbUrl = await listingImageToGlbUrl(itemImg, { widthCm: w, heightCm: h, maxEdge: 1024, alpha: itemCut });
     const mv = $("mv");
     mv.setAttribute("src", glbUrl);
     mv.setAttribute("ar-placement", mode === "floor" ? "floor" : "wall");
@@ -365,7 +379,10 @@ $("opacity").oninput = () => { $("opacity-v").textContent = $("opacity").value +
 $("shadow").oninput = () => { $("shadow-v").textContent = $("shadow").value + "%"; if (roomImg && itemImg) paint(); };
 $("scale").oninput = () => { $("scale-v").textContent = $("scale").value + "%"; if (roomImg && itemImg) paint(); };
 $("rot").oninput = () => { $("rot-v").textContent = $("rot").value + "°"; if (roomImg && itemImg) paint(); };
-$("width-cm").onchange = () => maybeBuildAr();
+$("width-cm").onchange = () => {
+  if (itemImg) { const ar = (itemImg.naturalHeight || 1) / (itemImg.naturalWidth || 1); $("height-cm").value = String(Math.max(5, Math.min(400, Math.round((Number($("width-cm").value) || 50) * ar)))); }
+  maybeBuildAr();
+};
 $("height-cm").onchange = () => maybeBuildAr();
 $("btn-ar-refresh").onclick = () => maybeBuildAr();
 
