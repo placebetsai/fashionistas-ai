@@ -980,3 +980,16 @@ npx wrangler pages deployment list --project-name=fashionistas-ai
 - deploy-local.sh: DEPLOY_BRANCH=<name> for previews.
 - Rollback: Pages deployment 39595d7c-c23d-4a9f-a5fe-742d7c97dffe (5b84c2d).
 - Open: verify shop paths with real posts; Etsy who_made/when_made defaults wrong for resale (vintage-only rule).
+
+## 2026-10-07 — Android "blinking" fix (prod, 1c174ff)
+- Causes: countUp re-ran on its own writes, seller-coach banner/panel rewrote identical DOM, #screen observer reacted to coach/count-up mutations, edge cache served stale app.js. ~9k–35k mutations/3s -> ~480.
+- Fixes: idempotent writes (el.__counted, __scSig), filtered observers, bundle renamed to assets/app.<hash>.js + ?v= on css/js. Keep seller-coach.js == libs/seller-coach.js (test enforces).
+- Rollback: 45b2aecb-3cf5-4659-9a88-b3090771bbec (58af13b); older 58175efe-fdbf-475e-a307-c677b5c40dbe (5693f4e).
+
+## 2026-10-07 — Phone header + bottom tab bar (PREVIEW ONLY: https://mobile-nav-preview.fashionistas-ai.pages.dev)
+- NOT on production. Commits 7f667d9, 98b7600, ee1ddb5, 1bc6af3 are local main only; prod is still 1c174ff. Ship only with Iz's explicit OK.
+- Why sticky failed on Android: #topbar was static; #land-nav sticky sat under a clipping/transformed ancestor. Now position:fixed + measured spacer (mobile-nav.js sets --mh header height, --tb tab bar height via ResizeObserver).
+- mobile-nav.js builds #mtabbar (app: Home/Shop/Sell camera/Try on/Account; landing: Home/Try on/Sell/Room/Sign in). Old nav.tabbar stays in DOM (navBuild clones it into drawer/#topnav) but is hidden <900px.
+- redesign.css v16–v19 (<900px): fixed header, no backdrop blur, safe-area insets, 44px targets, one brand lockup (F tile + Instrument Serif wordmark, red italic .ai) in app/landing/drawer, drawer z 99 above header, no help chips in menus, theme toggle moves into the drawer at <375px, light-mode .hero-sub contrast fix.
+- QA (box): /workspace/qa5.py TAG URL devices -> /workspace/fash-mobile-qa5/<TAG>/. Pixel 7 / 360 / 320 / iPhone 13, light+dark, y0/1000/2000/menu: header at top, tab bar at bottom, nothing overlapping it, no JS errors.
+- Known: Playwright WebKit (iPhone) crashes intermittently while scrolling the Shop list — same on prod, pre-existing, not caused by this work; check on a real iPhone.
