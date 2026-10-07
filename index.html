@@ -1119,7 +1119,7 @@ textarea.input{font-family:inherit}
 <main id="main">
 
  <!-- ================= AUTH ================= -->
- <section id="view-auth" class="hidden">
+ <section id="view-auth" class="hidden"><script>/* paint the landing immediately for signed-out visitors (app bundle is deferred) */try{if(!(localStorage.getItem("fash_token")&&localStorage.getItem("fash_user")&&localStorage.getItem("fash_user")!=="null"))document.getElementById("view-auth").classList.remove("hidden")}catch(e){document.getElementById("view-auth").classList.remove("hidden")}</script>
   <header class="land-nav rd-nav" id="land-nav">
   <div class="rd-nav-in">
   <a class="ln-brand" href="javascript:window.scrollTo({top:0,behavior:'smooth'})" data-tip="fashionistas.ai — back to the top." title="fashionistas.ai">
