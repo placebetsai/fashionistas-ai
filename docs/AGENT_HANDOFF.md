@@ -4,7 +4,7 @@
 
 **Laptop repo (preferred):** `/home/billionaremaker/fashionistas-ai`  
 **GitHub:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
-**Live tip:** `version.txt` = **`f66079e`** (`f66079e6275b4519cc9fb10cadac0f815b557294`) — must match `https://fashionistas.ai/version.txt`
+**Live tip:** `version.txt` = **`73f81b3`** (`73f81b35989d2dfaa5b41dd7c634a8362b43e113`) — must match `https://fashionistas.ai/version.txt`
 
 ### Deploy (mandatory — do not get this wrong)
 
@@ -20,7 +20,7 @@
 
 | SHA | What | Proof |
 |---|---|---|
-| *(pending deploy)* | **Photo→AI identify→listing fill quality** — Pages `/api/ai/analyze` (stronger vision prompt + material/sizeHint rules), shared `libs/identify-fill.js` normalize (Outerwear vs Tops, strip Unknown/not visible, material + price anchors), client prefers same-origin analyze then workers.dev fallback; form fills title/desc/brand/size/category/condition/color/material/price | tests `identify-fill` + `ai/__tests__/vision` |
+| `73f81b3` | **Photo→AI identify→listing fill quality** — Pages `/api/ai/analyze` (stronger vision prompt + material/sizeHint rules), shared `libs/identify-fill.js` normalize (Outerwear vs Tops, strip Unknown/not visible, material + price anchors), client prefers same-origin analyze then workers.dev fallback; form fills title/desc/brand/size/category/condition/color/material/price | tests `identify-fill` + `ai/__tests__/vision` |
 | prior (`593418e`…) | Chatbot expand / multilist / try-on pipeline | see git log |
 | `a5da396` | Seller coach layer (Photo → Sell everywhere checklist / help chips) | `libs/seller-coach.js` + tests |
 | `496b09a` | **Free See in my space** — room photo placer (4-corner wall + floor drag/scale/rotate) + optional `<model-viewer>` wall/floor AR from client GLB; CTAs on Shop/Closet detail; `placement_mode` inferred (`clothing`\|`wall`\|`floor`\|`none`); honest Instant/not-photoreal labels | `/see-in-space/` · tests `placement-mode` + `placer-homography` **12/12** · brief `docs/FREE-SEAMLESS-ANYOBJECT.md` |
