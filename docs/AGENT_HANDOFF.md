@@ -948,3 +948,12 @@ npx wrangler pages deployment list --project-name=fashionistas-ai
 - Layout: unfilled AdSense mounts collapse (were ~390px blank gaps); sticky bottom "Start selling free" CTA on phones; shop pills = snap carousel; fluid 16px+ type; 44px sections; countdown height reserved + Inter display=optional → CLS 0.207→0; hero image preloaded.
 - Lighthouse mobile perf 35→49; remaining bottleneck = 447KB index.html + AdSense.
 - Verified live on iPhone SE/13/15PM, Pixel 7, iPad, 1440: no overflow, no JS errors, 8 nav links.
+
+## 2026-10-07 ~11:40 ET — perf + pill + contrast LIVE
+- Production: ed5a83c2 (181d819). Rollback: c48bc4b8 (e17ee64).
+- 308KB inline app script → /assets/app.<hash>.js (defer, immutable cache; tests read it via tests/helpers/index-source.mjs). Rename hash when editing app code (re-run the split or edit the file + update the <script src>).
+- Early inline boot in #view-auth unhides landing for signed-out visitors (otherwise blank first paint until bundle runs).
+- Font CSS non-blocking; mobile static bg layers (meshDrift/aurora/gridPan/rdScan off ≤767px); 3 below-fold imgs lazy.
+- Rotating pill never blank (instant swap + soft settle, min opacity .55); AA contrast fixes (kickers, muted text, shop pills, footer).
+- AdSense loader left as raw <script async> in head (repo test + comment forbid deferring it). Ads verified loading (adsbygoogle.loaded, slots done/unfilled).
+- Lighthouse mobile: perf 51→72–76, a11y 97→100, FCP 5.1→1.1s, LCP 6.5→2.0s, CLS 0. TBT still ~1.1–1.7s (app bundle boot ~1.3s long task).
