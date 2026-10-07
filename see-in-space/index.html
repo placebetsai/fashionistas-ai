@@ -189,7 +189,7 @@ import {
   imageToDataUrl,
 } from "./placer.js";
 import { listingImageToGlbUrl } from "./plane-glb.js";
-import { cutoutBackground, canvasToImage } from "./cutout.js";
+import { cutoutBackground, canvasToImage, aiCutout } from "./cutout.js";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -305,10 +305,29 @@ async function setItem(img) {
   // Product shots on a plain backdrop get the backdrop removed so the item
   // sits in the room instead of a white rectangle. Real-scene photos are kept.
   itemCut = false;
+  const original = img;
+  const token = (setItem.token = (setItem.token || 0) + 1);
   try {
     const cut = cutoutBackground(img);
     if (cut) { img = await canvasToImage(cut); itemCut = true; }
   } catch (_) {}
+  if (!itemCut) {
+    // Real-scene photo (bag on a shelf, shoes on a floor): remove the
+    // background with the in-browser AI model. Show the photo meanwhile.
+    say("Removing the background on this device… (first time loads a 44 MB model, then it's cached)");
+    aiCutout(original, { onProgress: (f) => say(`Loading background remover… ${Math.round(f * 100)}%`) })
+      .then(async (cut) => {
+        if (token !== setItem.token || !cut) { if (!cut) say("Couldn't separate the item from its background — placed the photo as-is."); return; }
+        itemCut = true;
+        await placeItem(await canvasToImage(cut));
+        say(mode === "wall" ? "Background removed. Drag the four corner handles onto your wall." : "Background removed. Drag the item; use scale and rotate sliders.");
+      })
+      .catch(() => { if (token === setItem.token) say("Background remover couldn't load here — placed the photo as-is."); });
+  }
+  return placeItem(img, !itemCut);
+}
+
+async function placeItem(img, aiPending) {
   itemImg = img;
   // Keep the AR plane in the item's real proportions (was a fixed 50x70 cm,
   // which stretched every non-portrait item).
@@ -320,8 +339,8 @@ async function setItem(img) {
   if (roomImg) {
     floorPose = defaultFloorPose(cv.width, cv.height, itemImg);
     paint();
-    say(mode === "wall" ? "Drag the four corner handles onto your wall." : "Drag the item; use scale and rotate sliders.");
-  } else {
+    if (!aiPending) say(mode === "wall" ? "Drag the four corner handles onto your wall." : "Drag the item; use scale and rotate sliders.");
+  } else if (!aiPending) {
     say("Item ready — now add a room photo.");
   }
 }
@@ -329,6 +348,7 @@ async function setItem(img) {
 async function maybeBuildAr() {
   if (!itemImg || arBusy) return;
   arBusy = true;
+  const arFor = itemImg;
   try {
     if (glbUrl) URL.revokeObjectURL(glbUrl);
     const w = Number($("width-cm").value) || 50;
@@ -342,6 +362,7 @@ async function maybeBuildAr() {
     $("ar-status").textContent = "AR plane could not be built on this device — photo placer still works.";
   } finally {
     arBusy = false;
+    if (itemImg && itemImg !== arFor) maybeBuildAr(); // item changed while building
   }
 }
 

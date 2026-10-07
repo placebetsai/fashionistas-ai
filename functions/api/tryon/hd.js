@@ -59,6 +59,7 @@ import { parseTryonForm } from "../_tryon/multipart.js";
 import { requireBucket, putImage, resultKey, publicUrl } from "../_tryon/r2.js";
 import { findD1 } from "../_tryon/ledger.js";
 import { cacheKey, cacheObjectKey, runProvider } from "../_tryon/provider.js";
+import { PAID, pickProviders, paidSubmit, paidPoll, downloadResult, modalReady, modalRun } from "../_tryon/vton-paid.js";
 
 const MODEL_VERSION = "fashn-vton-1.5";
 const DEFAULT_SPACE = "https://fashn-ai-fashn-vton-1-5.hf.space";
@@ -121,12 +122,12 @@ function spaceUrl(env) {
 async function recordRun(env, rec) {
   const record = {
     route: ROUTE,
-    model: "fashn",
-    version: MODEL_VERSION,
+    model: rec.model || "fashn",
+    version: rec.model ? (PAID[rec.model] ? PAID[rec.model].model : rec.model) : MODEL_VERSION,
     runs: Number(rec.runs) || 1,
     previews: 1,
     garments: Number(rec.garments) || 1,
-    estimated_cost_usd: COST_PER_RUN_USD,
+    estimated_cost_usd: Number.isFinite(Number(rec.cost)) ? Number(rec.cost) : COST_PER_RUN_USD,
     run_ms: Number(rec.ms) || 0,
     duration_ms: Number(rec.ms) || 0,
     status: rec.status || "ok",
@@ -192,6 +193,17 @@ async function creditBalance(env, userId) {
   } catch {
     return 0;
   }
+}
+
+async function modalSpendUsd(env) {
+  const d1 = findD1(env);
+  if (!d1) return 0;
+  const now = new Date();
+  try {
+    const row = await d1.prepare(`SELECT COALESCE(SUM(estimated_cost_usd),0) AS s FROM cost_ledger WHERE route = ? AND model = 'modal' AND created_at >= ?`)
+      .bind(ROUTE, Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).first();
+    return Number(row && row.s) || 0;
+  } catch { return 0; }
 }
 
 async function monthSpendUsd(env) {
@@ -507,6 +519,26 @@ export async function onRequestPost(context) {
   const seed = intField(form.seed, 42, { min: 0, max: 2 ** 31 - 1 });
   const bucket = requireBucket(env);
 
+  // --- 4a. self-hosted Modal first: cheapest (free monthly credit) ---------
+  const tried = [];
+  if (modalReady(env)) {
+    const cap = Number(env.MODAL_MONTHLY_CAP_USD);
+    const modalCap = Number.isFinite(cap) && cap >= 0 ? cap : PAID.modal.capDefault;
+    if ((await modalSpendUsd(env)) + PAID.modal.costUsd > modalCap) tried.push("modal:spend_cap");
+    else {
+      const tm = Date.now();
+      try {
+        const out = await modalRun(env, { personBytes: form.person.bytes, garmentBytes: garment.file.bytes, category, seed, steps: 20 });
+        return finalize(env, request, bucket, {
+          bytes: out, ms: Date.now() - tm, via, userId, credits, category, steps: 20, seed, provider: "modal", cost: PAID.modal.costUsd,
+        });
+      } catch (e) {
+        tried.push(`modal:${(e && e.code) || "error"}`);
+        await recordRun(env, { ms: Date.now() - tm, status: (e && e.code) || "provider_error", garments: 1, error: String(e && e.message), model: "modal", cost: 0 });
+      }
+    }
+  }
+
   // --- 5. call FASHN ---------------------------------------------------
   const t0 = Date.now();
   let bytes;
@@ -522,6 +554,36 @@ export async function onRequestPost(context) {
     const ms = Date.now() - t0;
     const code = err && err.code;
     await recordRun(env, { ms, status: code || "upstream_error", garments: 1, error: String(err && err.message) });
+    tried.push(`hf:${code || "error"}`);
+
+    // --- 5b. last resort: pay-per-use APIs, only if a key is configured -----
+  for (const provider of pickProviders(env)) {
+    const cost = PAID[provider].costUsd;
+    if ((await monthSpendUsd(env)) + cost > spendCap(env)) { tried.push(`${provider}:spend_cap`); continue; }
+    const tp = Date.now();
+    try {
+      const r = await paidSubmit(provider, env, {
+        personBytes: form.person.bytes, garmentBytes: garment.file.bytes, category, seed,
+      });
+      if (r.done) {
+        const out = await downloadResult(r.url);
+        return finalize(env, request, bucket, {
+          bytes: out, ms: Date.now() - tp, via, userId, credits, category, steps, seed, provider, cost,
+        });
+      }
+      const job = `${provider}:${r.id}`;
+      await saveJob(env, { job, userId, via, category, steps, seed });
+      return json(
+        { ok: true, pending: true, job, provider, status: r.status || "starting", poll_after_ms: 2500 },
+        202,
+        { "cache-control": "no-store" }
+      );
+    } catch (e) {
+      tried.push(`${provider}:${(e && e.code) || "error"}`);
+      await recordRun(env, { ms: Date.now() - tp, status: (e && e.code) || "provider_error", garments: 1, error: String(e && e.message), model: provider, cost: 0 });
+    }
+  }
+
 
     if (code === "quota_exhausted") {
       return json(
@@ -533,6 +595,7 @@ export async function onRequestPost(context) {
             "The try-on model is at its free-tier capacity right now. Nothing was charged " +
             "and no credit was used. Try again shortly — this route never falls back to a " +
             "lower-quality render.",
+          providers_tried: tried,
         },
         503
       );
@@ -558,7 +621,14 @@ export async function onRequestPost(context) {
   }
 
   const ms = Date.now() - t0;
+  return finalize(env, request, bucket, { bytes, ms, via, userId, credits, category, steps, seed });
+}
 
+async function finalize(env, request, bucket, o) {
+  const { bytes, ms, via, userId, credits, category, steps, seed } = o;
+  const model = o.provider || null;
+  const cost = o.cost || 0;
+  const MODEL_LABEL = model ? PAID[model].model : MODEL_VERSION;
   // --- 6. validate + store the image -----------------------------------
   if (!bytes || !bytes.length) {
     await recordRun(env, { ms, status: "empty_output", garments: 1, error: "empty image body" });
@@ -580,7 +650,7 @@ export async function onRequestPost(context) {
   const uuid = uuidWithExt.replace(/\.[^.]+$/, "");
   const url = extForType(type) === "png" ? `/api/tryon/image/${uuid}` : `/api/tryon/image/${uuidWithExt}`;
 
-  await recordRun(env, { ms, status: "ok", garments: 1, error: null });
+  await recordRun(env, { ms, status: "ok", garments: 1, error: null, model, cost });
 
   if (via === "credits") {
     const d1 = findD1(env);
@@ -606,14 +676,15 @@ export async function onRequestPost(context) {
       url,
       type,
       size: bytes.length,
-      model: MODEL_VERSION,
+      model: MODEL_LABEL,
+      provider: model || "hf",
       category: FASHN_CATEGORY[category],
       steps,
       seed,
       ms,
       entitled_via: via,
       credits_left: via === "credits" ? Math.max(0, credits - 1) : credits,
-      cost_usd: COST_PER_RUN_USD,
+      cost_usd: cost,
       charged: 0,
     },
     200,
@@ -621,11 +692,69 @@ export async function onRequestPost(context) {
   );
 }
 
+const CREATE_JOBS = `CREATE TABLE IF NOT EXISTS tryon_jobs (
+  job TEXT PRIMARY KEY, user_id INTEGER NOT NULL, via TEXT, category TEXT,
+  steps INTEGER, seed INTEGER, status TEXT NOT NULL DEFAULT 'pending',
+  result TEXT, created_at INTEGER NOT NULL)`;
+
+async function saveJob(env, j) {
+  const d1 = findD1(env);
+  if (!d1) return;
+  await d1.prepare(CREATE_JOBS).run();
+  await d1.prepare(`INSERT OR REPLACE INTO tryon_jobs (job,user_id,via,category,steps,seed,status,created_at) VALUES (?,?,?,?,?,?, 'pending', ?)`)
+    .bind(j.job, j.userId, j.via, j.category, j.steps, j.seed, Date.now()).run();
+}
+
+/** GET /api/tryon/hd?job=<provider:id> — the browser polls this until done. */
+export async function onRequestGet(context) {
+  const { request, env } = context;
+  const auth = await requireAuth(request, env);
+  if (!auth.ok) return auth.response;
+  const jobId = new URL(request.url).searchParams.get("job") || "";
+  const d1 = findD1(env);
+  if (!jobId || !d1) return json({ ok: false, error: "missing_job" }, 400);
+  await d1.prepare(CREATE_JOBS).run();
+  const row = await d1.prepare(`SELECT * FROM tryon_jobs WHERE job = ? AND user_id = ? LIMIT 1`).bind(jobId, auth.user.id).first();
+  if (!row) return json({ ok: false, error: "job_not_found" }, 404);
+  if (row.status === "done" && row.result) return json(JSON.parse(row.result), 200, { "cache-control": "no-store" });
+  if (row.status === "failed") return json({ ok: false, error: "tryon_failed", detail: row.result || "failed" }, 502);
+  const [provider, ...rest] = jobId.split(":");
+  const id = rest.join(":");
+  if (!PAID[provider]) return json({ ok: false, error: "bad_job" }, 400);
+  let r;
+  try { r = await paidPoll(provider, env, id); }
+  catch (e) {
+    await d1.prepare(`UPDATE tryon_jobs SET status='failed', result=? WHERE job=?`).bind(String(e && e.message).slice(0, 300), jobId).run();
+    await recordRun(env, { ms: Date.now() - row.created_at, status: (e && e.code) || "provider_error", garments: 1, error: String(e && e.message), model: provider, cost: 0 });
+    return json({ ok: false, error: "tryon_failed", detail: "The photoreal render failed. No credit was used — try again." }, 502);
+  }
+  if (!r.done) {
+    const age = Date.now() - row.created_at;
+    if (age > 5 * 60 * 1000) return json({ ok: false, error: "tryon_timeout", detail: "The render took too long." }, 504);
+    return json({ ok: true, pending: true, job: jobId, provider, status: r.status, poll_after_ms: 2500, elapsed_ms: age }, 202, { "cache-control": "no-store" });
+  }
+  // Claim the job first so two parallel polls can never charge twice.
+  const claim = await d1.prepare(`UPDATE tryon_jobs SET status='finalizing' WHERE job=? AND status='pending'`).bind(jobId).run();
+  if (!claim || !claim.meta || claim.meta.changes !== 1) {
+    return json({ ok: true, pending: true, job: jobId, provider, status: "finalizing", poll_after_ms: 1500 }, 202);
+  }
+  const bytes = await downloadResult(r.url);
+  const credits = row.via === "credits" ? await creditBalance(env, auth.user.id) : 0;
+  const res = await finalize(env, request, requireBucket(env), {
+    bytes, ms: Date.now() - row.created_at, via: row.via, userId: auth.user.id, credits,
+    category: row.category, steps: row.steps, seed: row.seed, provider, cost: PAID[provider].costUsd,
+  });
+  const text = await res.clone().text();
+  await d1.prepare(`UPDATE tryon_jobs SET status=?, result=? WHERE job=?`).bind(res.ok ? "done" : "failed", text.slice(0, 4000), jobId).run();
+  return res;
+}
+
 export async function onRequest(context) {
   const m = methodOf(context.request);
   if (m === "OPTIONS") return onRequestOptions();
+  if (m === "GET") return onRequestGet(context);
   if (m !== "POST") {
-    return json({ ok: false, error: "method_not_allowed", detail: "Use POST." }, 405);
+    return json({ ok: false, error: "method_not_allowed", detail: "Use POST, or GET ?job= to poll." }, 405);
   }
   return onRequestPost(context);
 }

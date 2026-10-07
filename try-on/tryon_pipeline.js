@@ -26,7 +26,7 @@
 //             mints short-lived signed URLs. Unsigned public buckets are never
 //             used; no user image is ever left world-readable.
 
-import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
+import { cutoutBackground, garmentKind, aiCutout } from "/see-in-space/cutout.js";
 
 const POSE_MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task";
@@ -265,6 +265,11 @@ export function composeTryOn({ personImage, garmentImage, width, height,
       const toKnee = anchors.kneeCenter ? (anchors.kneeCenter.y * H - shY) * 1.25 : 0;
       if (toKnee && targetH < toKnee) { targetH = toKnee; targetW = targetH / ar; }
       cx = anchors.shoulderCenter.x * W; cy = shY; topOff = -targetH * 0.06;
+    } else if (kind === "outerwear") {
+      // Jackets/coats: a bit wider than a tee and allowed to run past the hips.
+      targetW = sw * 2.0;
+      targetH = targetW * ar;
+      cx = anchors.shoulderCenter.x * W; cy = shY; topOff = -targetH * 0.08;
     } else {
       targetW = sw * 1.85;
       targetH = targetW * ar;
@@ -432,7 +437,7 @@ export class TryOnPipeline {
    * @returns {Promise<{ok:boolean, canvas?:object, url?:string,
    *   source:"compose"|"generative", stages:object, error?:string}>}
    */
-  async run({ personImage, garmentImage, width, height } = {}) {
+  async run({ personImage, garmentImage, width, height, kindOverride = "auto", onStage = null } = {}) {
     const stages = { pose: null, compose: null, generative: null, cache: null };
 
     // ── stage 1: pose (best-effort; compose can still proceed without it)
@@ -443,6 +448,15 @@ export class TryOnPipeline {
       landmarks = poseRes.landmarks;
       anchors = bodyAnchors(landmarks);
     }
+
+    // How much of the body is in frame. Drives the "too cropped" guidance and
+    // whether bottoms can be placed at all.
+    const vis = (i) => landmarks && landmarks[i] && (landmarks[i].score == null || landmarks[i].score > 0.5);
+    const framing = !landmarks ? "none"
+      : !vis(POSE.NOSE) || !(vis(POSE.LEFT_SHOULDER) && vis(POSE.RIGHT_SHOULDER)) ? "cropped"
+      : !(vis(POSE.LEFT_HIP) || vis(POSE.RIGHT_HIP)) ? "cropped"
+      : (vis(POSE.LEFT_KNEE) || vis(POSE.RIGHT_KNEE)) ? "full" : "half";
+    stages.framing = framing;
 
     if (!anchors) {
       // Honest fallback: a fixed, documented layout rather than a fake body.
@@ -459,12 +473,25 @@ export class TryOnPipeline {
 
     // ── stage 2: local composition
     // Lift the garment off its studio backdrop so it is not a pasted rectangle.
+    // Plain studio backdrop -> instant flood-fill cutout. Anything else (garment
+    // on a bed, a hanger, a person) -> in-browser AI background removal.
     let garmentLayer = garmentImage, kind = "tops";
     try {
-      const cut = cutoutBackground(garmentImage);
-      if (cut) { garmentLayer = cut; kind = garmentKind(cut); stages.cutout = "ok:" + kind; }
-      else stages.cutout = "skipped:not_plain_backdrop";
+      let cut = cutoutBackground(garmentImage);
+      if (!cut) {
+        if (onStage) onStage("cutout_ai");
+        cut = await aiCutout(garmentImage).catch(() => null);
+      }
+      if (cut) { garmentLayer = cut; kind = garmentKind(cut); stages.cutout = (cut.aiCut ? "ai:" : "ok:") + kind; }
+      else stages.cutout = "skipped:no_cutout";
     } catch (e) { stages.cutout = `failed:${e.message}`; }
+    const OVERRIDE = { top: "tops", bottom: "bottoms", dress: "one-pieces", outerwear: "outerwear" };
+    if (OVERRIDE[kindOverride]) kind = OVERRIDE[kindOverride];
+    stages.kind = kind;
+
+    if (kind === "bottoms" && framing !== "full") {
+      return { ok: false, stages, framing, kind, error: "bottoms_need_legs" };
+    }
 
     const composed = composeTryOn({
       personImage, garmentImage: garmentLayer, width, height,
@@ -513,7 +540,7 @@ export class TryOnPipeline {
       stages.cache = "disabled";
     }
 
-    return { ok: true, canvas: finalCanvas, source: "compose", stages, placement: composed.placement };
+    return { ok: true, canvas: finalCanvas, source: "compose", stages, framing, kind, placement: composed.placement };
   }
 
   /** Any image source (element/VideoFrame/canvas) -> JPEG Blob. */

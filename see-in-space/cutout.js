@@ -109,6 +109,16 @@ export function garmentKind(cut) {
   const w = cut.width, h = cut.height;
   const ar = h / w;
   if (ar < 1.45) return "tops";
+  // Trousers are widest at the waistband; dresses/coats flare toward the hem.
+  // Catches flat-lay jeans whose legs touch (no visible gap).
+  const rowW = (fy) => {
+    const y = Math.min(h - 1, Math.floor(h * fy));
+    let a = -1, z = -1;
+    for (let x = 0; x < w; x++) if (!mask[(minY + y) * W + (minX + x)]) { if (a < 0) a = x; z = x; }
+    return a < 0 ? 0 : z - a + 1;
+  };
+  const top = rowW(0.06), hem = rowW(0.94);
+  if (ar >= 2 && top > 0 && top >= hem * 1.15) return "bottoms";
   // Scan the bottom 25% for a background gap in the middle third.
   let gapRows = 0, rows = 0;
   for (let y = Math.floor(h * 0.72); y < h * 0.97; y += 2) {
@@ -121,4 +131,70 @@ export function garmentKind(cut) {
     if (best > w * 0.04) gapRows++;
   }
   return rows && gapRows / rows > 0.5 ? "bottoms" : "one-pieces";
+}
+
+/* ------------------------------------------------------------------ *
+ * AI background removal for ANY photo (real scenes too), in the browser.
+ * Model: ISNet general-use, int8 (xrds/isnet-general-onnx-int8, MIT, ~44 MB),
+ * run by Transformers.js (Apache-2.0). Loaded lazily on first use from the
+ * CDN and then cached by the browser. Nothing is uploaded; costs $0.
+ * ------------------------------------------------------------------ */
+const TJS = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1";
+const BG_MODEL = "xrds/isnet-general-onnx-int8";
+let segPromise = null;
+
+export function loadBackgroundModel(onProgress) {
+  if (segPromise) return segPromise;
+  segPromise = (async () => {
+    const tf = await import(/* @vite-ignore */ TJS);
+    let webgpu = false;
+    try { webgpu = !!(navigator.gpu && (await navigator.gpu.requestAdapter())); } catch (_) { webgpu = false; }
+    const opts = { dtype: "q8", progress_callback: (p) => { if (onProgress && p && p.status === "progress" && p.total) onProgress(p.loaded / p.total); } };
+    try {
+      return await tf.pipeline("background-removal", BG_MODEL, { ...opts, device: webgpu ? "webgpu" : "wasm" });
+    } catch (e) {
+      if (!webgpu) throw e;
+      return await tf.pipeline("background-removal", BG_MODEL, { ...opts, device: "wasm" }); // WebGPU failed -> WASM
+    }
+  })().catch((e) => { segPromise = null; throw e; });
+  return segPromise;
+}
+
+/**
+ * Returns a cropped RGBA canvas of the main object, or null if nothing usable
+ * was found. Works on photos with a real background (bag on a shelf, shoes on
+ * a floor) where cutoutBackground() correctly gives up.
+ */
+export async function aiCutout(img, { onProgress, maxEdge = 1024 } = {}) {
+  const w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height;
+  const s = Math.min(1, maxEdge / Math.max(w0, h0));
+  const W = Math.round(w0 * s), H = Math.round(h0 * s);
+  const src = document.createElement("canvas");
+  src.width = W; src.height = H;
+  src.getContext("2d").drawImage(img, 0, 0, W, H);
+  const seg = await loadBackgroundModel(onProgress);
+  const out = await seg(src.toDataURL("image/png"));
+  const raw = Array.isArray(out) ? out[0] : out;
+  if (!raw || !raw.toCanvas) return null;
+  const c = raw.toCanvas();
+  const ctx = c.getContext("2d", { willReadFrequently: true });
+  const d = ctx.getImageData(0, 0, c.width, c.height).data;
+  let minX = c.width, minY = c.height, maxX = -1, maxY = -1, fg = 0;
+  for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) {
+    if (d[(y * c.width + x) * 4 + 3] > 127) {
+      fg++; if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
+  }
+  const frac = fg / (c.width * c.height);
+  if (maxX < 0 || frac < 0.01 || frac > 0.97) return null;
+  const crop = document.createElement("canvas");
+  crop.width = maxX - minX + 1; crop.height = maxY - minY + 1;
+  crop.getContext("2d").drawImage(c, minX, minY, crop.width, crop.height, 0, 0, crop.width, crop.height);
+  // bgMask for garmentKind(): background = alpha <= 127, in crop-local coords.
+  const cd = crop.getContext("2d").getImageData(0, 0, crop.width, crop.height).data;
+  const mask = new Uint8Array(crop.width * crop.height);
+  for (let p = 0; p < mask.length; p++) mask[p] = cd[p * 4 + 3] <= 127 ? 1 : 0;
+  crop.bgMask = { mask, W: crop.width, H: crop.height, minX: 0, minY: 0 };
+  crop.aiCut = true;
+  return crop;
 }

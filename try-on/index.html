@@ -44,6 +44,16 @@
 .to-mode-opt{display:block;border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;cursor:pointer;background:var(--card);transition:border-color .18s,box-shadow .18s,transform .18s}
 .to-mode-opt:hover{border-color:#d3c6b8;transform:translateY(-1px)}
 .to-mode-opt input{position:absolute;opacity:0;pointer-events:none}
+.to-kind{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0 4px}
+.to-kind-l{font-weight:600;font-size:14px;margin-right:4px;width:100%}
+.to-kind label{position:relative;cursor:pointer}
+.to-kind input{position:absolute;opacity:0;pointer-events:none}
+.to-kind span{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:1.5px solid var(--line);border-radius:999px;background:var(--card);font-size:14px}
+.to-kind input:checked+span{border-color:#b3471f;box-shadow:0 0 0 3px rgba(179,71,31,.14);font-weight:600}
+.to-kind input:focus-visible+span{outline:2px solid #b3471f;outline-offset:2px}
+.to-warn{margin:8px 0 0;padding:10px 12px;border-radius:10px;background:#fff6e5;border:1px solid #f0d49a;color:#6b4a00;font-size:14px;line-height:1.45}
+.to-prog{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin:6px 0 10px}
+.to-prog i{display:block;height:100%;width:0;background:#b3471f;transition:width .4s linear}
 .to-mode-opt.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(179,71,31,.13)}
 .to-mode-t{display:block;font-weight:800;font-size:14px;color:var(--ink);margin-bottom:3px}
 .to-mode-d{display:block;font-size:12.2px;line-height:1.45;color:var(--mut)}
@@ -239,6 +249,16 @@
   </div>
  </div>
 
+ <div class="to-kind" role="radiogroup" aria-label="Garment type">
+  <span class="to-kind-l">Garment type</span>
+  <label><input type="radio" name="to-kind" value="auto" checked><span>Auto</span></label>
+  <label><input type="radio" name="to-kind" value="top"><span>Top</span></label>
+  <label><input type="radio" name="to-kind" value="bottom"><span>Bottom</span></label>
+  <label><input type="radio" name="to-kind" value="dress"><span>Dress</span></label>
+  <label><input type="radio" name="to-kind" value="outerwear"><span>Outerwear</span></label>
+ </div>
+ <p class="to-warn" id="warn" hidden></p>
+
  <div class="to-mode" role="radiogroup" aria-label="Render mode">
  <label class="to-mode-opt on" id="lab-hd">
   <input type="radio" name="to-mode" value="hd" checked>
@@ -261,6 +281,7 @@
  </div>
 
  <p class="to-status" id="status" role="status" aria-live="polite">Add both photos to start.</p>
+ <div class="to-prog" id="prog" hidden><i id="prog-bar"></i></div>
  <div class="to-ok" id="ok">Render ready — download it, save it to this browser, or share it.</div>
 
  <div class="to-out" id="out">
@@ -342,6 +363,7 @@
 
 <script type="module">
 import { TryOnPipeline } from "/try-on/tryon_pipeline.js";
+import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
 
 (function(){
   "use strict";
@@ -350,6 +372,37 @@ import { TryOnPipeline } from "/try-on/tryon_pipeline.js";
   // "hd" is the credit/Pro lane -> /api/tryon/hd (402 if not entitled).
   var API_HD = "/api/tryon/hd";
   var mode = "hd";
+  var kindPick = "auto";
+  var CROP_MSG = "Photo too cropped — we need your head to your knees. Stand back about 2 m (6 ft), hold the phone at chest height, and keep your whole body from head to knees in the frame.";
+  var LEGS_MSG = "Bottoms need your legs in the photo. This one stops above the knees, so we didn't place the bottoms. Use a photo from head to at least the knees, or pick Top / Dress / Outerwear.";
+  function warn(msg){ var w = document.getElementById("warn"); if (!w) return; w.textContent = msg || ""; w.hidden = !msg; }
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="to-kind"]'), function(r){
+    r.addEventListener("change", function(){ if (r.checked) kindPick = r.value; });
+  });
+  function prog(frac){
+    var p = document.getElementById("prog"), b = document.getElementById("prog-bar");
+    if (!p || !b) return;
+    if (frac == null){ p.hidden = true; b.style.width = "0"; return; }
+    p.hidden = false; b.style.width = Math.max(3, Math.min(100, Math.round(frac * 100))) + "%";
+  }
+  // Shrink to a sane upload size: faster, cheaper, and inside provider limits.
+  function shrink(file, maxEdge){
+    return loadImage(file).then(function(img){
+      var w = img.naturalWidth, h = img.naturalHeight, s = Math.min(1, maxEdge / Math.max(w, h));
+      if (s === 1 && file.size < 1.5e6) return file;
+      var c = document.createElement("canvas"); c.width = Math.round(w * s); c.height = Math.round(h * s);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      return new Promise(function(res){ c.toBlob(function(b){ res(b ? new File([b], (file.name || "photo").replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" }) : file); }, "image/jpeg", 0.9); });
+    });
+  }
+  function hdCategory(){
+    var map = { top:"upper_body", outerwear:"upper_body", bottom:"lower_body", dress:"dresses" };
+    if (map[kindPick]) return Promise.resolve(map[kindPick]);
+    return loadImage(files.garment).then(function(img){
+      var cut = cutoutBackground(img), k = cut ? garmentKind(cut) : "tops";
+      return k === "bottoms" ? "lower_body" : k === "one-pieces" ? "dresses" : "upper_body";
+    }).catch(function(){ return "upper_body"; });
+  }
   var files = { person:null, garment:null };
   var last = { dataUrl:null, blobUrl:null, mime:"image/png", at:0 };
   var busy = false;
@@ -508,11 +561,15 @@ import { TryOnPipeline } from "/try-on/tryon_pipeline.js";
         return pipe.run({
           personImage: person,
           garmentImage: garment,
+          kindOverride: kindPick,
+          onStage: function(st){ if (st === "cutout_ai") say("Removing the garment background on this device… (first time loads a 44 MB model)", false); },
           width: person.naturalWidth || person.width || 720,
           height: person.naturalHeight || person.height || 960
         });
       })
       .then(function(out){
+        if (out && out.error === "bottoms_need_legs"){ warn(""); throw new Error(LEGS_MSG); }
+        warn(out && (out.framing === "cropped" || out.framing === "none") ? CROP_MSG : "");
         if (!out || !out.ok || !out.canvas){
           throw new Error("On-device composition failed: " + ((out && out.error) || "no canvas returned"));
         }
@@ -583,11 +640,46 @@ import { TryOnPipeline } from "/try-on/tryon_pipeline.js";
   // PRO / CREDITS TIER — the in-house Leffa model behind /api/tryon/hd.
   // The server answers 402 when the caller has neither Pro nor a credit, and
   // that error is shown verbatim instead of substituting a fake render.
+  function pollJob(job, t0){
+    var EST = 25000;
+    return new Promise(function(resolve, reject){
+      function tick(){
+        var el = Date.now() - t0;
+        prog(Math.min(0.95, el / EST));
+        say("Rendering your photoreal try-on… " + Math.round(el / 1000) + "s (usually 10–30s)", false);
+        fetch(API_HD + "?job=" + encodeURIComponent(job), { credentials:"include", headers:{ Accept:"application/json" } })
+          .then(function(r){
+            if (r.status === 202) return r.json().then(function(j){ setTimeout(tick, (j && j.poll_after_ms) || 2500); });
+            resolve(r);
+          }).catch(function(){ if (Date.now() - t0 < 300000) setTimeout(tick, 4000); else reject(new Error("Lost connection while rendering. Try again.")); });
+      }
+      setTimeout(tick, 1500);
+    });
+  }
+
   function runHd(){
+    var t0 = Date.now();
+    prog(0.04);
+    return Promise.all([shrink(files.person, 1280), shrink(files.garment, 1280), hdCategory()]).then(function(parts){
     var fd = new FormData();
-    fd.append("person", files.person);
-    fd.append("garment", files.garment);
+    fd.append("person", parts[0]);
+    fd.append("garment", parts[1]);
+    fd.append("category", parts[2]);
+    say("Uploading and starting the render…", false);
+    // The render can take 20 s warm, up to ~90 s when the GPU is waking up.
+    var EST = 45000;
+    var ticker = setInterval(function(){
+      var el = Date.now() - t0;
+      prog(Math.min(0.92, el / EST));
+      say("Rendering your photoreal try-on… " + Math.round(el / 1000) + "s" + (el > 30000 ? " (waking up the GPU — first render of the day takes longer)" : ""), false);
+    }, 1000);
+    var stopTick = function(x){ clearInterval(ticker); return x; };
     return fetch(API_HD, { method:"POST", body: fd, credentials:"include", headers: { Accept: "application/json, image/*" } })
+      .then(stopTick, function(e){ stopTick(); throw e; })
+      .then(function(res){
+        if (res.status === 202) return res.json().then(function(j){ return pollJob(j.job, t0); });
+        return res;
+      })
       .then(function(res){
         var ct = (res.headers.get("content-type") || "").toLowerCase();
         if (!res.ok){
@@ -618,9 +710,13 @@ import { TryOnPipeline } from "/try-on/tryon_pipeline.js";
             if (j && typeof j.ms === "number") blobNote += " · " + Math.round(j.ms / 1000) + "s";
           } catch(e){ src = null; }
           if (!src) throw new Error("The photoreal endpoint returned no image.");
-          showResult(null, src, blobNote + " · " + src);
+          if (j && j.provider) blobNote += " · " + j.provider;
+          prog(1);
+          setTimeout(function(){ prog(null); }, 800);
+          showResult(null, src, blobNote);
         });
       });
+    }).catch(function(e){ prog(null); throw e; });
   }
 
   function run(){
