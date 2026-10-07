@@ -463,8 +463,16 @@ export async function onRequestPost(context) {
   let via = null;
   let credits = 0;
 
-  const sub = await subscriptionState(env, userId);
-  if (sub.ok && sub.status === "active") {
+  // QA allow-list (secret TRYON_TEST_EMAILS, comma-separated). Lets a named
+  // test account prove the live photoreal path end to end without Stripe or a
+  // DB write. Unset in normal operation = no effect.
+  const testList = String(env.TRYON_TEST_EMAILS || "").toLowerCase().split(",").map((x) => x.trim()).filter(Boolean);
+  const isTest = !!(auth.user.email && testList.includes(String(auth.user.email).toLowerCase()));
+  const sub = isTest ? { ok: true, status: "active" } : await subscriptionState(env, userId);
+  if (isTest) {
+    entitled = true;
+    via = "test";
+  } else if (sub.ok && sub.status === "active") {
     entitled = true;
     via = "pro";
   } else {
