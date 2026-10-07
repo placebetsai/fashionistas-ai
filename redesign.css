@@ -302,3 +302,7 @@ body.rd-hero-on #hc-fab{opacity:0;pointer-events:none;transform:scale(.8)}
 }
 @media (min-width:768px){.rd-bcta{display:none}}
 @media (prefers-reduced-motion:reduce){.rd-bcta{transition:none}}
+/* reserve the countdown bar's height before countdown.js injects it (was CLS ~0.16 on the hero CTA) */
+#land-nav:not(:has(.lc-bar))::after{content:"";display:block;height:38px}
+.lc-bar{height:38px;min-height:0!important}
+@media (max-width:767px){#land-nav:not(:has(.lc-bar))::after{height:32px}.lc-bar{height:32px}}
