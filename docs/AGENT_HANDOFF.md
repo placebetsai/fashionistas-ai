@@ -943,7 +943,7 @@ npx wrangler pages deployment list --project-name=fashionistas-ai
 - No GitHub push. chrome-store zips reverted after deploy.
 
 ## 2026-10-07 10:55 ET — mobile anti-flicker + layout pass 2/3 LIVE
-- Production: c0e72ef3 (85f0d2f; 99b5b7d9/7f9e906 + countdown-seconds color fix). Rollback target: 6d7a162f (cc7bf2e, flicker fix only); older: 809fc97a (bd2978a).
+- Production: c48bc4b8 (e17ee64; countdown seconds fix on top of 99b5b7d9/7f9e906 + countdown-seconds color fix). Rollback target: 6d7a162f (cc7bf2e, flicker fix only); older: 809fc97a (bd2978a).
 - Flicker: countdown updates text nodes only; rotator pill fixed width; ? fab debounced; no infinite/backdrop anims on phones; reduced-motion honored.
 - Layout: unfilled AdSense mounts collapse (were ~390px blank gaps); sticky bottom "Start selling free" CTA on phones; shop pills = snap carousel; fluid 16px+ type; 44px sections; countdown height reserved + Inter display=optional → CLS 0.207→0; hero image preloaded.
 - Lighthouse mobile perf 35→49; remaining bottleneck = 447KB index.html + AdSense.
