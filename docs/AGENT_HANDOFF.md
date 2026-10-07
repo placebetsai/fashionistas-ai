@@ -1,5 +1,20 @@
 # Agent handoff — fashionistas.ai
 
+> **CURRENT STATE (2026-10-07 night ET):** live tip / `version.txt` = **`593418e`**
+> (chatbot scope expand). Prior tonight: `e768c8f` multilist extension one-click;
+> `c8776cd` try-on pipeline `/try-on/tryon_pipeline.js` 200; `3cfe08b` auth session fix.
+> Federation write-up: `nexus-ai-suite` `handoff.md` §16.8 · `ISSUE_LOG` #45–#47 ·
+> `HANDOFF-2026-10-06.md` §14. Still blocked: Stripe test key, 8 env vars, real Chrome
+> marketplace post (Load unpacked + shop logins), own marketplace deferred.
+>
+> **Deploy:** production is **`scripts/deploy-local.sh` / `npx wrangler pages deploy`** →
+> Cloudflare Pages project `fashionistas-ai`. **No GitHub Actions deploy.** A git push does
+> **not** ship the site — only wrangler does. Trust live `version.txt`, not `git ls-remote`.
+>
+> The header below claiming `main = 5ffba1e` / try-on dead backend is **stale** — ignore it;
+> use this stamp + live `version.txt` instead.
+
+
 **Audience:** Other agents continuing product / deploy / Connect / Multilist UX work  
 **Session covered:** 2026-10-04 — **try-on engine pivot (Leffa → FASHN VTON v1.5)**  
 **Repo:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
