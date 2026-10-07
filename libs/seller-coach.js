@@ -380,6 +380,9 @@
     if (panel.classList.contains("hidden")) panel.classList.remove("hidden");
     // Expand when there is still work, or first open
     var st = loadState();
+    /* Phones: start collapsed — expanded, it covered half the screen. */
+    var isPhone = window.matchMedia && window.matchMedia("(max-width:767px)").matches;
+    if (!st.panelOpened && isPhone) { panel.classList.add("collapsed"); st.panelOpened = true; saveState(st); }
     if (!st.panelOpened) {
       panel.classList.remove("collapsed");
       st.panelOpened = true;
