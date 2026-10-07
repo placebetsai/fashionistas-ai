@@ -21,7 +21,8 @@ DRY_RUN=0
 [ "${1:-}" = "--dry-run" ] && DRY_RUN=1
 
 # --- credentials -----------------------------------------------------------
-if [ ! -f .env.deploy ]; then
+ENV_FILE="${DEPLOY_ENV_FILE:-./.env.deploy}"
+if [ ! -f "$ENV_FILE" ]; then
   echo "deploy-local: .env.deploy is missing." >&2
   echo "  Create it with CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (mode 600)." >&2
   echo "  It is gitignored on purpose — the token never enters the repository." >&2
@@ -30,7 +31,7 @@ fi
 
 set -a
 # shellcheck disable=SC1091
-. ./.env.deploy
+. "$ENV_FILE"
 set +a
 
 if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
@@ -63,8 +64,32 @@ if [ "$DRY_RUN" -eq 1 ]; then
   exit 0
 fi
 
+# --- staging ---------------------------------------------------------------
+# NEVER upload the repo root: it holds .env.deploy / .env.modal / .git. Copy only
+# public files into a temp dir. Functions are still compiled from ./functions
+# and bindings from ./wrangler.toml because wrangler runs from the repo root.
+STAGE="$(mktemp -d "${TMPDIR:-/tmp}/fashionistas-stage.XXXXXX")"
+trap 'rm -rf "$STAGE"' EXIT
+rsync -a --delete \
+  --exclude='.*' \
+  --exclude='node_modules/' \
+  --exclude='docs/' --exclude='tests/' --exclude='scripts/' --exclude='migrations/' \
+  --exclude='functions/' \
+  --exclude='*.env' --exclude='*.pem' --exclude='*.key' --exclude='*.dev.vars' \
+  --exclude='wrangler*.toml' --exclude='package.json' --exclude='package-lock.json' \
+  --exclude='TEST.md' --exclude='NEEDS_ISRAEL.txt' \
+  ./ "$STAGE/"
+# Hard fail if any dotfile or key material made it into the stage.
+leak="$(find "$STAGE" \( -name '.*' -o -name '*.env' -o -name '*.pem' -o -name '*.key' \) -print | head -5)"
+if [ -n "$leak" ]; then
+  echo "deploy-local: refusing to deploy, sensitive files in stage:" >&2
+  echo "$leak" >&2
+  exit 1
+fi
+[ -f "$STAGE/version.txt" ] || { echo "deploy-local: version.txt missing from stage" >&2; exit 1; }
+
 # --- upload ----------------------------------------------------------------
-npx wrangler pages deploy . --project-name=fashionistas-ai --branch=main
+npx wrangler pages deploy "$STAGE" --project-name=fashionistas-ai --branch=main
 
 # --- verify ----------------------------------------------------------------
 echo "deploy-local: verifying https://fashionistas.ai/version.txt == $SHA"
@@ -73,6 +98,11 @@ for i in 1 2 3 4 5 6 7 8 9 10; do
   echo "  attempt $i: live=${live:-<empty>}"
   if [ "$live" = "$SHA" ]; then
     echo "deploy-local: VERIFIED — live == $SHA"
+    for p in /.env.deploy /.env.modal /.env /.git/config /.dev.vars; do
+      code="$(curl -s -o /dev/null -w '%{http_code}' "https://fashionistas.ai$p")"
+      echo "  $p -> $code"
+      [ "$code" = "404" ] || { echo "deploy-local: WARNING $p did not 404" >&2; exit 1; }
+    done
     exit 0
   fi
   sleep 6
