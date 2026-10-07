@@ -261,3 +261,23 @@ body.rd-hero-on #hc-fab{opacity:0;pointer-events:none;transform:scale(.8)}
   #hc-fab{transition:none}
 }
 @media (prefers-reduced-motion:reduce){.rd-grad,.rd-scan,.rd-phone,[class*="rd-float"],.rd-arrow{animation:none!important}}
+/* === mobile layout pass 2 === */
+/* empty/unfilled AdSense mounts were reserving ~390px of blank white between sections */
+#view-auth .fash-ad:has(ins.adsbygoogle:not([data-ad-status="filled"])){min-height:0!important;margin:0!important}
+#view-auth .fash-ad ins.adsbygoogle:not([data-ad-status="filled"]){min-height:0!important;height:0!important}
+#view-auth [data-ad-slot]:not(:has(ins[data-ad-status="filled"])){margin:0!important;padding:0!important}
+@media (max-width:767px){
+  #view-auth .lsec.rd-sec,#view-auth .rd-sec{padding-top:44px!important;padding-bottom:44px!important}
+  .lc-bar{min-height:32px!important;padding:4px 12px!important}
+  .rd-nav-in{padding-top:8px!important;padding-bottom:8px!important}
+  /* legible labels: nothing under 12.5px, body copy >=15px */
+  #view-auth .kicker,#view-auth .lsec-kicker{font-size:12.5px!important;letter-spacing:.08em}
+  #view-auth .rd-tag,#view-auth .rd-float,#view-auth .rd-chip-ai,#view-auth .rd-ba-lbl,#view-auth figcaption,#view-auth small{font-size:12.5px!important}
+  #view-auth .rd-sec .dest .ship{font-size:13px!important;padding:10px 16px!important}
+  #view-auth .rd-sec p,#view-auth .rd-step p,#view-auth .rd-tile p{font-size:15px;line-height:1.55}
+  .lc-bar{font-size:13px!important}
+  /* cards: full width single column, consistent rhythm */
+  #view-auth .rd-step,#view-auth .rd-tile{border-radius:22px}
+  #view-auth .rd-steps,#view-auth .rd-tiles,#view-auth .rd-grid{grid-template-columns:1fr!important;gap:16px!important}
+  #view-auth{padding-bottom:env(safe-area-inset-bottom)}
+}
