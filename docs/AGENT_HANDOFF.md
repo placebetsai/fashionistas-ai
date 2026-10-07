@@ -20,6 +20,7 @@
 
 | SHA | What | Proof |
 |---|---|---|
+| *(pending deploy)* | **Photo→AI identify→listing fill quality** — Pages `/api/ai/analyze` (stronger vision prompt + material/sizeHint rules), shared `libs/identify-fill.js` normalize (Outerwear vs Tops, strip Unknown/not visible, material + price anchors), client prefers same-origin analyze then workers.dev fallback; form fills title/desc/brand/size/category/condition/color/material/price | tests `identify-fill` + `ai/__tests__/vision` |
 | prior (`593418e`…) | Chatbot expand / multilist / try-on pipeline | see git log |
 | `a5da396` | Seller coach layer (Photo → Sell everywhere checklist / help chips) | `libs/seller-coach.js` + tests |
 | `496b09a` | **Free See in my space** — room photo placer (4-corner wall + floor drag/scale/rotate) + optional `<model-viewer>` wall/floor AR from client GLB; CTAs on Shop/Closet detail; `placement_mode` inferred (`clothing`\|`wall`\|`floor`\|`none`); honest Instant/not-photoreal labels | `/see-in-space/` · tests `placement-mode` + `placer-homography` **12/12** · brief `docs/FREE-SEAMLESS-ANYOBJECT.md` |
@@ -39,6 +40,8 @@
 3. Open **Photo** with no listings for the **First sale path** empty-state banner.
 4. After AI fill, listing form help chips open the stylist with a suggested question.
 5. Progress stored locally as `fash_seller_coach_v1`. Source: `libs/seller-coach.js` → public `/seller-coach.js` (HTTP `/libs/*` is blocked).
+
+**Fill quality (this ship):** after identify, `toListingForm()` fills material + sanitized fields and marks coach `listing`. Sample jacket path sends hint `denim jacket product photo` to Pages analyze only.
 6. When **Connect the extension** is next, **Do this →** opens Multilist and the Load unpacked install sheet (`extConnectPrompt`) if the extension is not live.
 
 ### Multilist one-click — UX path

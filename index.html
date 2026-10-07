@@ -3842,13 +3842,39 @@ async function analyzeImage(b64, previewUrl){
  const w = $("#snap-work"); if (!w) return toast("Snap screen isn't ready yet"); w.classList.remove("hidden");
  w.innerHTML = `<div class="card">${showLoader().split("</div>")[0]}<p style="text-align:center" class="mut">Looking at your item…</p></div>`;
  try {
- const d = await api("/api/ai/analyze", { method:"POST", body: JSON.stringify({ image: b64 }) });
- if (d.source === "error") throw new Error(d.error);
- CURRENT.ai = { ...d, _preview: previewUrl, _b64: b64 };
- w.innerHTML = aiResult(d, previewUrl);
+ const d = await identifyPhoto(b64, previewUrl);
+ if (d.source === "error") throw new Error(d.error || "could not read the photo");
+ const norm = (window.IdentifyFill && IdentifyFill.normalizeIdentify)
+   ? IdentifyFill.normalizeIdentify(d)
+   : d;
+ CURRENT.ai = { ...norm, _preview: previewUrl, _b64: b64 };
+ try { if (window.SellerCoach) { SellerCoach.mark("photo"); SellerCoach.mark("identify"); } } catch (e) {}
+ w.innerHTML = aiResult(norm, previewUrl);
  } catch(e){
  w.innerHTML = `<div class="card"><div class="empty" style="padding:12px"><svg class='i20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='7.5' width='16' height='12' rx='3.5'/><path d='M12 4v3.5M9 13v1.6M15 13v1.6'/><path d='M9.5 19.5v1.5M14.5 19.5v1.5'/></svg>We couldn't read that photo: <br><span class="mut">${escapeHtml(e.message)}</span><br><br><button class="btn btn-soft btn-sm" onclick="renderSnap($('#screen'))" data-tip="Starts a fresh photo of an item." title="Starts a fresh photo of an item.">Try again</button></div></div>`;
  }
+}
+/** Pages /api/ai/analyze first (better prompt + fill normalize); workers.dev fallback. */
+async function identifyPhoto(b64, previewUrl){
+  const hint = /sample-jacket/i.test(String(previewUrl || "")) ? "denim jacket product photo" : "";
+  const body = JSON.stringify({ image: b64, ...(hint ? { hint } : {}) });
+  // Same-origin Pages function — does not need the workers.dev session token.
+  try {
+    const r = await fetch("/api/ai/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(TOKEN ? { Authorization: "Bearer " + TOKEN } : {}) },
+      body,
+    });
+    let d = null; try { d = await r.json(); } catch {}
+    if (r.ok && d && d.source !== "error" && (d.type || d.category)) return d;
+    if (r.status && r.status !== 404 && r.status !== 405) {
+      console.warn("pages analyze", r.status, d);
+    }
+  } catch (e) {
+    console.warn("pages analyze failed", e);
+  }
+  // Legacy API worker (auth required)
+  return api("/api/ai/analyze", { method: "POST", body: JSON.stringify({ image: b64 }) });
 }
 function aiResult(d, previewUrl){
  const cat = d.category || "Tops";
@@ -3861,7 +3887,7 @@ function aiResult(d, previewUrl){
  <span class="pill">${escapeHtml(condFull(d.condition)||"Good")}</span>
  <span class="pill conf">${d.confidence||0}% confident</span>
  </div>
- <p class="mut" style="margin:10px 0">Suggesting a resale range of <b>${money(d.priceMin)} – ${money(d.priceMax)}</b> in <b>${escapeHtml(d.category)}</b>. ${d.sizeHint ? "Likely size: "+escapeHtml(d.sizeHint)+". " : ""}${d.note?escapeHtml(d.note):""}</p>
+ <p class="mut" style="margin:10px 0">Suggesting a resale range of <b>${money(d.priceMin)} – ${money(d.priceMax)}</b> in <b>${escapeHtml(d.category)}</b>. ${d.material ? "Material: "+escapeHtml(d.material)+". " : ""}${d.sizeHint ? "Likely size: "+escapeHtml(d.sizeHint)+". " : ""}${d.note?escapeHtml(d.note):""}</p>
  <button class="btn btn-accent" onclick="toListingForm()" data-tip="Opens the full listing form with every detail you can fill in." title="Opens the full listing form with every detail you can fill in.">Fill in the listing →</button>
  <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:6px" onclick="renderSnap($('#screen'))" data-tip="Starts a fresh photo of an item." title="Starts a fresh photo of an item.">⟲ Take a photo of a different item</button>
  </div>`;
@@ -3869,25 +3895,36 @@ function aiResult(d, previewUrl){
 function condFull(c){ return c ? c[0].toUpperCase()+c.slice(1) : ""; }
 
 function toListingForm(){
- const a = CURRENT.ai;
- const brand = a.brand && !/^unknown/i.test(a.brand) ? a.brand : "";
- const lo = Number(a.priceMin) || 0, hi = Number(a.priceMax) || lo;
- // Middle of the AI's range, so the form matches the "$20 – $40" the seller just saw.
- const mid = lo && hi ? Math.round((lo + hi) / 2) : (lo || hi || "");
- const kind = String(a.type || "item").toLowerCase();
- const desc = [
-   [a.color, brand, kind].filter(Boolean).join(" ").replace(/^./, (c) => c.toUpperCase()) + ".",
-   a.sizeHint ? "Size " + a.sizeHint + "." : "",
-   "Condition: " + (condFull(a.condition) || "Good") + ".",
-   a.note || ""
- ].filter(Boolean).join(" ");
+ const a = CURRENT.ai || {};
+ const fields = (window.IdentifyFill && IdentifyFill.listingFieldsFromIdentify)
+   ? IdentifyFill.listingFieldsFromIdentify(a)
+   : null;
+ const payload = fields || {
+   title: titleCase(((a.brand && !/^unknown/i.test(a.brand)) ? a.brand + " " : "") + (a.color ? a.color + " " : "") + (a.type || "Clothing item")),
+   category: a.category || "Tops",
+   condition: a.condition || "Good",
+   price: (Number(a.priceMin) && Number(a.priceMax)) ? Math.round((Number(a.priceMin) + Number(a.priceMax)) / 2) : (Number(a.priceMin) || Number(a.priceMax) || ""),
+   brand: a.brand && !/^unknown/i.test(a.brand) ? a.brand : "",
+   color: a.color || "",
+   material: a.material || "",
+   description: [
+     [a.color, a.brand, String(a.type || "item").toLowerCase()].filter(Boolean).join(" ").replace(/^./, (c) => c.toUpperCase()) + ".",
+     a.material ? "Material: " + a.material + "." : "",
+     a.sizeHint ? "Size " + a.sizeHint + "." : "",
+     "Condition: " + (condFull(a.condition) || "Good") + ".",
+     a.note || ""
+   ].filter(Boolean).join(" "),
+   priceMax: a.priceMax,
+   sizeHint: a.sizeHint || "",
+   _conf: a.confidence,
+ };
  renderListingForm({
- title: titleCase((brand ? brand+" " : "") + (a.color ? a.color+" " : "") + (a.type || "Clothing item")),
- category: a.category || "Tops", condition: a.condition || "Good",
- price: mid, brand, color: a.color || "", description: desc,
- priceMin: undefined, priceMax: a.priceMax, sizeHint: a.sizeHint || "",
- _preview: a._preview, _b64: a._b64, _conf: a.confidence,
+   ...payload,
+   _preview: a._preview,
+   _b64: a._b64,
+   _conf: payload._conf != null ? payload._conf : a.confidence,
  });
+ try { if (window.SellerCoach) SellerCoach.mark("listing"); } catch (e) {}
 }
 
 /* ================= LISTING FORM (create/edit) ================= */
@@ -6372,6 +6409,10 @@ else { $("#view-auth").classList.remove("hidden"); $("#view-app").classList.add(
  window.addEventListener("scroll", hide, true);
  window.addEventListener("resize", hide);
 })();
+</script>
+<script type="module">
+import * as IdentifyFill from "/identify-fill.js";
+window.IdentifyFill = IdentifyFill;
 </script>
 <script src="/seller-coach.js" defer></script>
 <script type="module">
