@@ -919,3 +919,8 @@ npx wrangler pages deployment list --project-name=fashionistas-ai
 > **Not a live URL any more:** the fee take-home page that used to sit in the `fees/` directory was deleted on purpose (removed from `sitemap.xml` and from every nav/footer). Fee take-home now lives in the app via `POST /api/fees/estimate` and `POST /api/fees/compare`.
 
 **End of handoff — 2026-09-26 night ET (complete through Connect #1–#4, P0 #5, kits+listing #6, eBay walkthrough #7 open+live, equal-UX in flight).**
+
+## 2026-10-07 09:45 ET — landing redesign shipped
+- Live tip: 54b4e84 (merge of redesign-preview + nav alignment), deployment b0d247b3 via scripts/deploy-local.sh, version.txt verified.
+- Rollback: previous production deployment e26c7045-e4f5-4cbe-a18d-f7f77af28e96 (c047b8a).
+- New files: redesign.css, redesign.js, assets/rd/*.webp (Unsplash, see assets/rd/CREDITS.txt). Landing hamburger <=1100px, compact links 1101-1320px.
