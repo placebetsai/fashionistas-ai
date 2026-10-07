@@ -24,9 +24,11 @@
  *                                    Etsy). createListing for eBay/Etsy is the
  *                                    "list it" link their own guide page uses.
  *   docsUrl                          only directories that really exist under
- *                                    guide/ — poshmark, ebay, mercari, etsy.
- *                                    Absent means there is no page; we do not
- *                                    link a URL we have not shipped.
+ *                                    guide/ — only paths that really exist
+ *                                    (poshmark, mercari, depop, vinted,
+ *                                    grailed, facebook, ebay, etsy). Absent
+ *                                    means there is no page; we do not link a
+ *                                    URL we have not shipped.
  *   feePct, feeFixed, feeNote        the approximate US-seller fee model this
  *                                    repo publishes. /api/fees/estimate and
  *                                    /api/fees/compare (functions/api/fees/)
@@ -99,6 +101,7 @@ export const MARKETPLACES = [
     method: "extension",
     autoPost: false,
     requiresApiKey: false,
+    docsUrl: "/guide/depop/",
     feePct: 3.3,
     feeFixed: 0.45,
     feeNote: "0% commission (removed 2024) + 3.3% + $0.45 processing",
@@ -111,6 +114,7 @@ export const MARKETPLACES = [
     method: "extension",
     autoPost: false,
     requiresApiKey: false,
+    docsUrl: "/guide/vinted/",
     feePct: 0,
     feeFixed: null,
     feeNote: "0% seller fee in most countries",
@@ -123,6 +127,7 @@ export const MARKETPLACES = [
     method: "extension",
     autoPost: false,
     requiresApiKey: false,
+    docsUrl: "/guide/grailed/",
     feePct: 9,
     feeFixed: 0.49,
     feeNote: "9% commission (6% under $120) + 3.49% + $0.49 processing",
@@ -135,6 +140,7 @@ export const MARKETPLACES = [
     method: "extension",
     autoPost: false,
     requiresApiKey: false,
+    docsUrl: "/guide/facebook/",
     feePct: 10,
     feeFixed: null,
     feeNote: "10% on shipped orders; 0% local pickup",

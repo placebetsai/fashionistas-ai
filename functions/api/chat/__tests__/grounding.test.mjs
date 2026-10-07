@@ -11,11 +11,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  ALLOWED_TOPICS,
   buildRefusal,
   classifyScope,
   extractPrice,
+  extractShopId,
   feeSources,
   mentionsListings,
+  siteSources,
   validateChatAnswer,
 } from "../_lib/grounding.js";
 import { findMarketplace, takeHome } from "../../_lib/fees.js";
@@ -37,7 +40,14 @@ test("an unrelated question is out of scope before any model is involved", () =>
   assert.equal(scope.ok, false);
   assert.equal(scope.reason, "out_of_scope");
   assert.deepEqual(buildRefusal(scope.reason).sources, []);
-  assert.deepEqual(buildRefusal(scope.reason).allowedTopics, ["your_listings", "marketplace_fees"]);
+  assert.deepEqual(buildRefusal(scope.reason).allowedTopics, ALLOWED_TOPICS);
+  assert.ok(ALLOWED_TOPICS.includes("try_on"));
+  assert.ok(ALLOWED_TOPICS.includes("how_to_list"));
+});
+
+test("crypto and medical questions stay out of scope", () => {
+  assert.equal(classifyScope("Should I buy Bitcoin this week?", LISTINGS).reason, "out_of_scope");
+  assert.equal(classifyScope("What dosage of ibuprofen for a headache?", LISTINGS).reason, "out_of_scope");
 });
 
 test("a fee question resolves to the fee topic and pulls out the price", () => {
@@ -45,6 +55,7 @@ test("a fee question resolves to the fee topic and pulls out the price", () => {
   assert.equal(scope.ok, true);
   assert.deepEqual(scope.topics, ["marketplace_fees"]);
   assert.equal(scope.price, 48);
+  assert.equal(scope.shop, "poshmark");
 });
 
 test("a question about the seller's own item resolves to the listing topic", () => {
@@ -59,6 +70,58 @@ test("token overlap catches an item question that never says the word listing", 
   const scope = classifyScope("would the Levi's jeans sell faster at 40?", LISTINGS);
   assert.equal(scope.ok, true);
   assert.ok(scope.topics.includes("your_listings"));
+});
+
+test("Depop how-to is in scope as how_to_list", () => {
+  const scope = classifyScope("How do I list on Depop?", LISTINGS);
+  assert.equal(scope.ok, true);
+  assert.ok(scope.topics.includes("how_to_list"));
+  assert.equal(scope.shop, "depop");
+  assert.equal(extractShopId("Depop how-to please"), "depop");
+});
+
+test("try-on Instant vs Photoreal is in scope", () => {
+  const scope = classifyScope("What's the difference between Instant and Photoreal try-on?", LISTINGS);
+  assert.equal(scope.ok, true);
+  assert.ok(scope.topics.includes("try_on"));
+  const sites = siteSources(scope.topics, "try-on help");
+  assert.ok(sites.some((s) => s.id === "try_on"));
+  assert.ok(sites.find((s) => s.id === "try_on").facts.some((f) => /Photoreal/i.test(f)));
+});
+
+test("Connect shops and Chrome extension / Sell everywhere are in scope", () => {
+  const a = classifyScope("How do I connect my shops?", LISTINGS);
+  assert.ok(a.ok && a.topics.includes("connect_shops"));
+  const b = classifyScope("How do I install the Chrome extension for Sell everywhere?", LISTINGS);
+  assert.ok(b.ok);
+  assert.ok(b.topics.includes("chrome_extension"));
+  const sites = siteSources(b.topics, b.topics.join(" "));
+  assert.ok(sites.some((s) => s.id === "chrome_extension"));
+  const extFacts = sites.find((s) => s.id === "chrome_extension").facts.join("\n");
+  assert.match(extFacts, /Load unpacked/i);
+  assert.match(extFacts, /Stripe/i);
+});
+
+test("listing from photo and $14.99 plan are in scope", () => {
+  const photo = classifyScope("How do I list from a photo?", LISTINGS);
+  assert.ok(photo.ok && photo.topics.includes("listing_from_photo"));
+  const plan = classifyScope("What does the $14.99 plan include?", LISTINGS);
+  assert.ok(plan.ok && plan.topics.includes("pricing_plan"));
+  const sites = siteSources(plan.topics, "pricing");
+  assert.ok(sites.some((s) => s.id === "pricing_plan"));
+  assert.ok(sites.find((s) => s.id === "pricing_plan").facts.some((f) => /14\.99/.test(f)));
+});
+
+test("siteSources for Depop how-to includes catalogue + guide facts, no fake posted claim", () => {
+  const sites = siteSources(["how_to_list"], "How do I list on Depop?");
+  const depop = sites.find((s) => s.id === "shop_depop");
+  assert.ok(depop, "shop_depop site row present");
+  assert.equal(depop.type, "site");
+  assert.ok(depop.facts.some((f) => /first 4/.test(f) || /4–5 words/.test(f) || /4-5 words/.test(f)));
+  assert.ok(depop.facts.some((f) => /3\.3%/.test(f)));
+  assert.ok(depop.urls.some((u) => u.includes("/guide/depop/") || u.includes("depop.com")));
+  const blob = JSON.stringify(sites);
+  assert.equal(/it posted|Stripe_pk|sk_live/i.test(blob), false);
 });
 
 test("extractPrice reads the shapes a phone user actually types", () => {
@@ -104,6 +167,19 @@ test("a cited listing id resolves to OUR row, never the model's echo", () => {
   assert.equal(res.ok, true);
   assert.equal(res.sources.length, 1);
   assert.equal(res.sources[0], LISTINGS[0], "the returned object is the server's own row");
+});
+
+test("a cited site id resolves to the supplied site fact", () => {
+  const sites = siteSources(["try_on"], "try-on help");
+  const res = validateChatAnswer(
+    {
+      answer: "Photoreal needs Pro; Instant is an on-device overlay.",
+      sources: [{ type: "site", id: "try_on" }],
+    },
+    sites
+  );
+  assert.equal(res.ok, true);
+  assert.equal(res.sources[0].id, "try_on");
 });
 
 test("an id the model invented fails closed as ungrounded", () => {

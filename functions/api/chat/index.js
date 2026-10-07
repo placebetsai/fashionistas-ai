@@ -1,6 +1,8 @@
 /**
- * POST /api/chat — the stylist chat, grounded in exactly two things:
- * the caller's own listings, and this repo's fee table.
+ * POST /api/chat — the stylist chat, grounded in:
+ * the caller's own listings, this repo's fee table, and published site facts
+ * (Connect / Multilist / Chrome extension, try-on modes, listing-from-photo,
+ * $14.99 plan, shop how-to guides + marketplaces catalogue).
  *
  * Request:  application/json
  *   { "message": "what should I price the Levi's jacket at?",
@@ -33,6 +35,7 @@ import {
   chatUserPrompt,
   classifyScope,
   feeSources,
+  siteSources,
   validateChatAnswer,
 } from "./_lib/grounding.js";
 
@@ -212,15 +215,16 @@ async function handle(context) {
     }
   }
 
-  const fees = feeSources(scope.price);
+  const fees = scope.topics.includes("marketplace_fees") ? feeSources(scope.price) : [];
   const usableListings = scope.topics.includes("your_listings") ? listings : [];
+  const sites = siteSources(scope.topics, message);
 
   // --- model --------------------------------------------------------------
   let modelOut;
   try {
     modelOut = await completeJSON(env, {
       system: CHAT_SYSTEM_PROMPT,
-      prompt: chatUserPrompt({ message, listings: usableListings, fees, history }),
+      prompt: chatUserPrompt({ message, listings: usableListings, fees, sites, history }),
       temperature: 0,
     });
   } catch (err) {
@@ -238,6 +242,7 @@ async function handle(context) {
       origin: l.origin,
     })),
     ...fees,
+    ...sites,
   ]);
   if (!checked.ok) {
     return json(
