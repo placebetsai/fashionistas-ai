@@ -3,6 +3,7 @@
  * Etsy) without requiring Stripe, and queue ADAPTERS must include every shop
  * SHOPS knows about.
  */
+import { indexSource } from "./helpers/index-source.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -10,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const html = readFileSync(join(ROOT, "index.html"), "utf8");
+const html = indexSource(ROOT);
 const queue = readFileSync(join(ROOT, "apps/extension/queue.js"), "utf8");
 const selectors = readFileSync(join(ROOT, "apps/extension/config/selectors.js"), "utf8");
 const manifest = JSON.parse(readFileSync(join(ROOT, "apps/extension/manifest.json"), "utf8"));

@@ -40,3 +40,8 @@
   new IntersectionObserver(function(e){ heroOn = e[e.length-1].isIntersecting; upd(); }, {rootMargin:'0px 0px -40% 0px'}).observe(hero);
   if (card) new IntersectionObserver(function(e){ cardOn = e[e.length-1].isIntersecting; upd(); }).observe(card);
 })();
+/* rotating pill: replay a soft settle on each word change (word is never hidden) */
+(function(){
+  var w = document.getElementById('rot-word'); if (!w || !('MutationObserver' in window)) return;
+  new MutationObserver(function(){ w.classList.remove('rd-swap'); void w.offsetWidth; w.classList.add('rd-swap'); }).observe(w, {childList:true, characterData:true, subtree:true});
+})();

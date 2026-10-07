@@ -9,6 +9,7 @@
  *
  * Offline: no network, no extension, no DOM.
  */
+import { indexSource } from "./helpers/index-source.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -16,7 +17,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const html = readFileSync(join(ROOT, "index.html"), "utf8");
+const html = indexSource(ROOT);
 
 /** Pull a real function declaration (incl. its `async ` prefix) out of index.html. */
 function grab(name) {

@@ -308,3 +308,15 @@ body.rd-hero-on #hc-fab{opacity:0;pointer-events:none;transform:scale(.8)}
 @media (max-width:767px){#land-nav:not(:has(.lc-bar))::after{height:32px}.lc-bar{height:32px}}
 .lc-bar .lc-s{-webkit-text-fill-color:#e9b8ff;color:#e9b8ff;opacity:.85}
 .lc-bar b{background:none!important;-webkit-text-fill-color:currentColor;color:#ffb37a}.lc-bar .lc-m{background:linear-gradient(95deg,#ffb37a,#ff6a4d 60%,#d990ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+/* rotating pill: never blank — text swaps while visible, then a soft settle (min opacity .55) */
+.rd-rot #rot-word,.rd-rot #rot-word.out{opacity:1!important;transform:none!important;transition:none!important}
+.rd-rot #rot-word.rd-swap{animation:rdSwap .42s cubic-bezier(.2,.8,.2,1)}
+@keyframes rdSwap{from{opacity:.55;transform:translateY(.28em)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.rd-rot #rot-word.rd-swap{animation:none}}
+/* contrast (WCAG AA) — same hues, deeper shades */
+#view-auth .lsec-kicker{color:#b5291a}
+#view-auth .rd-more-shops span,#view-auth .lsec-foot,#view-auth .lsec-foot b,.land-site-footer nav a,.land-site-footer p{color:#5c5c66}
+#view-auth .ship.depop,#view-auth .ship.posh,#view-auth .ship.merc,#view-auth .ship.vint,#view-auth .ship.ebay{color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25)}
+#view-auth .ship.posh{background:#b83d17}
+#view-auth .ship.merc{background:#d41f1f}
+#view-auth .ship.vint{background:#0a6f6c}

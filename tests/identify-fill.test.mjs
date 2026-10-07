@@ -3,6 +3,7 @@
  * Pins the repairs for: jacket misfiled as Tops, "not visible" size,
  * Unknown brand/condition, missing material, absurd Outerwear prices.
  */
+import { indexSource } from "./helpers/index-source.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -17,7 +18,7 @@ import {
 } from "../libs/identify-fill.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const html = readFileSync(join(ROOT, "index.html"), "utf8");
+const html = indexSource(ROOT);
 const pub = readFileSync(join(ROOT, "identify-fill.js"), "utf8");
 const lib = readFileSync(join(ROOT, "libs/identify-fill.js"), "utf8");
 

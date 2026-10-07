@@ -2,6 +2,7 @@
  * Seller coach wiring: libs/seller-coach.js must ship the checklist path,
  * open chat with suggested questions, and be included from index.html.
  */
+import { indexSource } from "./helpers/index-source.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -9,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const html = readFileSync(join(ROOT, "index.html"), "utf8");
+const html = indexSource(ROOT);
 const coach = readFileSync(join(ROOT, "libs/seller-coach.js"), "utf8");
 
 test("index includes /seller-coach.js (public; libs/ blocked by Pages Functions)", () => {
