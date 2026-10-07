@@ -89,6 +89,9 @@ Without the extension: eBay/Etsy hit `/api/list/*` (402 subscribe / 503 env_miss
 
 ## Related docs
 
+- [MOBILE-MULTILIST-PLAN.md](MOBILE-MULTILIST-PLAN.md) — iOS/Android plan, no extension needed
+
+
 - `docs/MULTILIST_CONNECT.md` — Connect status model (`needs` / `ready` / `unverified` / `connected`)  
 - `docs/EBAY_OAUTH.md` — optional BYO OAuth API path  
 - `chrome-store/LISTING.md` — Store listing draft when publishing  

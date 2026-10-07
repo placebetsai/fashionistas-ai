@@ -52,6 +52,9 @@
 4. Pick item → tick shops → **Get ready to post** → **Sell everywhere** queues via extension (no Stripe / no marketplace API keys). Chips: queued → posting → posted (+ View) or failed.
 5. Without extension: paste kits + optional eBay/Etsy server API (402/503 when Stripe/secrets empty). **Never** toasts Posted on a no-op.
 
+### Mobile multilist plan (docs only, 2026-10-07)
+Native iOS/Android with zero downloads/extensions: see [MOBILE-MULTILIST-PLAN.md](MOBILE-MULTILIST-PLAN.md) (Tier 1 APIs, Tier 2 in-app session, Tier 3 paste kit).
+
 ### Still blocked
 
 | Blocker | Notes |
