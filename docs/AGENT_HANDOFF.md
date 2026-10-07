@@ -1,10 +1,10 @@
 # Agent handoff — fashionistas.ai
 
-## CURRENT STATE — 2026-10-07 night ET (read this first — product source of truth)
+## CURRENT STATE — 2026-10-07 late night ET (read this first — product source of truth)
 
 **Laptop repo (preferred):** `/home/billionaremaker/fashionistas-ai`  
 **GitHub:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
-**Live tip:** `version.txt` = **`593418e`** (must match after every ship)
+**Live tip:** `version.txt` = **(set by next wrangler deploy)** — must match `https://fashionistas.ai/version.txt` after ship
 
 ### Deploy (mandatory — do not get this wrong)
 
@@ -12,7 +12,7 @@
 |---|---|
 | GitHub Actions / push to `main` ships the site | **No.** Fashionistas has **no** Actions deploy path for production. |
 | Trust `git ls-remote` as "what's live" | Trust **`https://fashionistas.ai/version.txt`** |
-| — | **Production =** `bash scripts/deploy-local.sh` → `npx wrangler pages deploy . --project-name=fashionistas-ai --branch=main` (Cloudflare Pages project `fashionistas-ai`) |
+| — | **Production =** `bash scripts/deploy-local.sh` → `npx wrangler pages deploy . --project-name=fashionistas-ai --branch=main` |
 
 **A git push does not ship the site. Only wrangler does.**
 
@@ -20,21 +20,15 @@
 
 | SHA | What | Proof |
 |---|---|---|
-| `3cfe08b` | Auth session fix — stop signing users out on every 401 | prior; login stays across reload |
-| `c8776cd` | Try-on: serve pipeline from `/try-on/`, restore Photoreal | `/try-on/tryon_pipeline.js` **200** 20,019 B; `/core/…` **404**; Photoreal + Instant experimental |
-| `e768c8f` | Multilist one-click via Chrome extension **without Stripe** | zip `…/chrome-store/fashionistas-extension-v1.0.1.zip` **200** 109,648 B; `ADAPTERS` has **ebay+etsy**; `docs/MULTILIST-ONE-CLICK.md`; tests **7/7** |
-| `593418e` | Chatbot conversational expand (live tip) | topics `connect_shops`, `chrome_extension`, `try_on`, `listing_from_photo`, `pricing_plan`, `how_to_list` + fees; smoke Depop / try-on / fees → **200 refused=false**; grounding **19/19** |
+| prior | Chatbot expand / multilist / try-on pipeline | see git log |
+| **P0-B/C (this tip)** | **Free See in my space** — room photo placer (4-corner wall + floor drag/scale/rotate) + optional `<model-viewer>` wall/floor AR from client GLB; CTAs on Shop/Closet detail; `placement_mode` inferred (`clothing`\|`wall`\|`floor`\|`none`); honest Instant/not-photoreal labels | `/see-in-space/` · tests `placement-mode` + `placer-homography` **12/12** · brief `docs/FREE-SEAMLESS-ANYOBJECT.md` |
 
-```
-$ curl -sS https://fashionistas.ai/version.txt
-593418e978144a43b79f4a31c316afcd8de58083
-$ curl -sS -o /dev/null -w '%{http_code} %{size_download}\n' https://fashionistas.ai/try-on/tryon_pipeline.js
-200 20019
-$ curl -sS -o /dev/null -w '%{http_code} %{size_download}\n' https://fashionistas.ai/chrome-store/fashionistas-extension-v1.0.1.zip
-200 109648
-```
+### See in my space — how to demo on phone
 
-**Still needs a human for first real post:** Load unpacked the extension + shop logins. No real marketplace post has been executed in Chrome yet. Server `/api/list/*` remains **402** until Stripe (paywall) — extension path is the Stripe-free alternative.
+1. Open `https://fashionistas.ai/see-in-space/` (or Shop item → **See on my wall** / **See in my room**).
+2. Upload room photo → upload listing image → Wall: drag 4 corner handles; Floor: drag + scale/rotate.
+3. Optional AR: rebuild plane → use model-viewer AR (Android Scene Viewer / iOS Quick Look when supported). If AR unsupported, photo placer remains — never a dead end.
+4. Labels: **Instant preview · free forever** / **Not photoreal**. No Stripe / no paid VTON on this path.
 
 ### Still blocked
 
@@ -44,29 +38,15 @@ $ curl -sS -o /dev/null -w '%{http_code} %{size_download}\n' https://fashionista
 | 8 env vars (eBay / Etsy / …) | OAuth + server post |
 | Real Chrome marketplace post | never executed (Load unpacked + shop logins) |
 | Own marketplace | deferred |
+| Photoreal clothing (P1) | metered — not this ship |
+
 
 ### Federation cross-links (secondary)
 
-`nexus-ai-suite` on the same laptop mirrors this night in `handoff.md` §16.8 · `ISSUE_LOG` #45–#47 ·
-`HANDOFF-2026-10-06.md` §14. **This file is the product handoff source of truth**; nexus is the
-federation log.
+`nexus-ai-suite` on the same laptop mirrors product nights in federation logs. **This file is the product handoff source of truth.**
 
-> Header lines below claiming `main = 5ffba1e` / try-on dead backend are **stale historical copy** —
+> Header lines below claiming older tips / try-on dead backend may be **stale historical copy** —
 > ignore them. Use **CURRENT STATE** + live `version.txt` instead.
-
----
-
-**Audience:** Other agents continuing product / deploy / Connect / Multilist UX work  
-**Session covered (historical header):** 2026-10-04 — try-on engine pivot (Leffa → FASHN VTON v1.5)  
-**Repo:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
-**Handoff refreshed:** 2026-10-07 night ET — **read CURRENT STATE first**, then `MISSION`, then older sections  
-
-Read this before changing live Pages, inventing marketplace credentials, merging eBay-centric UX, or assuming GitHub `main` equals production.
-
-> **⚠️ Sections §1–§12 below are the 2026-09-26 record (6 shops / paste-kit era).**
-> They are kept for history. Where they conflict with **§0**, §0 wins — in particular
-> §1's "Shops (6)" is now **11**, and §1's "paste-ready kits / mostly no auto-post" is the
-> **rejected** framing that has been removed from the site.
 
 ---
 

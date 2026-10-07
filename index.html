@@ -1102,6 +1102,7 @@ textarea.input{font-family:inherit}
    <a href="#land-how" onclick="landNavClose()" data-tip="The three steps: photo, price, Sell everywhere to 11 shops.">How it works</a>
    <a href="#land-ai" onclick="landNavClose()" data-tip="What the AI does for you at every step, A to Z.">The AI</a>
    <a href="#land-shops" onclick="landNavClose()" data-tip="The shops we prepare words for.">Shops</a>
+   <a href="/see-in-space/" onclick="landNavClose()" data-tip="Place wall art or furniture in a room photo — Instant preview, free forever.">See in my space</a>
    <a href="/try-on/" onclick="landNavClose()" data-tip="Add a photo of you and a garment and see the AI render it on you.">Try it on</a>
    <a href="/contact/" onclick="landNavClose()" data-tip="Contact fashionistas.ai support.">Contact</a>
    <a href="/about/" onclick="landNavClose()" data-tip="About the product.">About</a>
@@ -1144,7 +1145,7 @@ textarea.input{font-family:inherit}
  <span class="kicker"><span class="dot"></span>Your AI sidekick — A to Z</span>
  <h1><span class="hw" style="--i:0">One</span> <span class="hw" style="--i:1">photo.</span><br><span class="hw" style="--i:2"><em class="rotator"><span id="rot-word">Eleven shops.</span></em></span> <span class="hw" style="--i:3">One</span> <span class="hw" style="--i:4">button.</span></h1>
  <p class="lede">Take one photo of an item and <b>fashionistas.ai</b> works out what it is, sets the price, shows what you keep after every marketplace's fee — then <b>Sell everywhere</b> posts it to eleven shops in one click. You watch each shop move from queued to posted.</p>
- <div class="hero-acts" style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px"><a class="btn btn-accent btn-sm" href="/try-on/" data-tip="Add a photo of you and a garment and see the AI render it on you.">Try it on</a></div>
+ <div class="hero-acts" style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px"><a class="btn btn-accent btn-sm" href="/try-on/" data-tip="Add a photo of you and a garment and see the AI render it on you.">Try it on</a><a class="btn btn-soft btn-sm" href="/see-in-space/" data-tip="Place wall art or furniture in a room photo — Instant preview, free forever.">See in my space</a></div>
  <div class="stat-row">
  <div class="stat-card" data-tip="Poshmark, Mercari, Depop, Vinted, Grailed, eBay, Etsy, Facebook, Kidizen, Vestiaire, Whatnot."><b data-count="11">11</b><span>Shops</span></div>
  <div class="stat-card" data-tip="One photo becomes a live listing on every shop you have connected."><b data-count="1">1</b><span>Photo → listings</span></div>
@@ -1595,9 +1596,9 @@ async function go(v){
   if (v === "home") return renderHome(el);
   if (v === "shop") return renderShop(el);
   if (v === "closet") return renderCloset(el);
-  if (v === "snap") return renderSnap(el);
+  if (v === "snap") { try{ if (window.SellerCoach) SellerCoach.mark("photo"); }catch(e){} return renderSnap(el); }
   if (v === "sell") return renderSell(el);
-  if (v === "xl") return renderXL(el);
+  if (v === "xl") { try{ if (window.SellerCoach) SellerCoach.mark("multilist"); }catch(e){} return renderXL(el); }
   if (v === "map") return renderMap(el);
   if (v === "more") return renderMore(el);
 }
@@ -1613,7 +1614,7 @@ function roleSwitchHtml(){
   + `<button class="chip${r==="shopping"?" on":""}" onclick="setRole('shopping')" data-tip="See what is for sale from other sellers.">I'm shopping</button>`
   + `</div><p class="mut" style="margin:8px 0 0">Pick selling to list your own clothes, or shopping to see what is for sale.</p></div>`;
 }
-function refreshTips(){ try{ if (window.syncTips) window.syncTips(document); }catch(e){} }
+function refreshTips(){ try{ if (window.syncTips) window.syncTips(document); }catch(e){} try{ if (window.SellerCoach) window.SellerCoach.refresh(); }catch(e){} }
 S.market = S.market || []; S.marketCount = S.marketCount || 0;
 S.marketQ = S.marketQ || ""; S.marketCat = S.marketCat || ""; S.marketSort = S.marketSort || "new";
 /* Public Shop feed hygiene (client-side): hide QA/test/bulk + no-photo junk,
@@ -1681,7 +1682,8 @@ const TAX = {
   "Bags & Luggage":    ["Handbags","Backpacks","Totes & Shoppers","Crossbody Bags","Luggage & Suitcases"],
   "Accessories":       ["Jewellery","Watches","Hats & Caps","Belts","Scarves & Wraps","Sunglasses","Wallets & Cardholders"],
   "Vintage & Designer":["Vintage","Designer","Streetwear","Band Merch"],
-  "Sports & Outdoor":  ["Activewear","Camping & Hiking","Cycling","Yoga & Pilates","Water Sports"]
+  "Sports & Outdoor":  ["Activewear","Camping & Hiking","Cycling","Yoga & Pilates","Water Sports"],
+  "Home & Decor":      ["Wall Art & Paintings","Posters & Prints","Mirrors","Rugs","Furniture","Lamps & Lighting","Home Accents"]
 };
 /* Flat values written before the tree existed -> where they live now. */
 const TAX_LEGACY = {
@@ -1696,7 +1698,10 @@ const TAX_LEGACY = {
   "bag":"Bags & Luggage", "bags":"Bags & Luggage", "handbag":"Bags & Luggage/Handbags", "purse":"Bags & Luggage/Handbags",
   "kid":"Kids & Baby", "kids":"Kids & Baby", "baby":"Kids & Baby/Baby & Toddler",
   "vintage":"Vintage & Designer/Vintage", "designer":"Vintage & Designer/Designer",
-  "hat":"Accessories/Hats & Caps", "cap":"Accessories/Hats & Caps", "jewellery":"Accessories/Jewellery", "jewelry":"Accessories/Jewellery", "watch":"Accessories/Watches"
+  "hat":"Accessories/Hats & Caps", "cap":"Accessories/Hats & Caps", "jewellery":"Accessories/Jewellery", "jewelry":"Accessories/Jewellery", "watch":"Accessories/Watches",
+  "painting":"Home & Decor/Wall Art & Paintings", "paintings":"Home & Decor/Wall Art & Paintings", "poster":"Home & Decor/Posters & Prints", "posters":"Home & Decor/Posters & Prints",
+  "print":"Home & Decor/Posters & Prints", "prints":"Home & Decor/Posters & Prints", "wall art":"Home & Decor/Wall Art & Paintings", "furniture":"Home & Decor/Furniture",
+  "rug":"Home & Decor/Rugs", "rugs":"Home & Decor/Rugs", "lamp":"Home & Decor/Lamps & Lighting", "lamps":"Home & Decor/Lamps & Lighting", "mirror":"Home & Decor/Mirrors"
 };
 function taxDepts(){ return Object.keys(TAX); }
 function taxSubs(dept){ return (TAX[dept] || []).slice(); }
@@ -2445,6 +2450,60 @@ function marketCard(m, i){
   + (plats.length ? `<div style="margin-top:5px">` + plats.map(p=>`<span class="pill">${escapeHtml(p)}</span>`).join("") + `</div>` : "")
   + `</div></div>`;
 }
+
+/* ================= PLACEMENT MODE (P0-B/C — free Instant space placer) ================
+   Infer clothing | wall | floor | none from category/title. Wire CTAs to /try-on/
+   or /see-in-space/. Client-side only; placement_mode may also be set on a listing. */
+function inferPlacementMode(item){
+  if (item && typeof item.placement_mode === "string"){
+    const e = item.placement_mode.trim().toLowerCase();
+    if (e === "clothing" || e === "wall" || e === "floor" || e === "none") return e;
+  }
+  const src = [item && item.category, item && item.title, item && item.description].filter(Boolean).join(" ");
+  if (!src.trim()) return "none";
+  if (/\b(paintings?|posters?|prints?|canvas(?:es)?|wall\s*arts?|framed\s+arts?|artworks?|tapestr(?:y|ies)|wall\s*hang(?:ing)?s?|mirrors?|wall\s*decors?|photo\s*frames?|gallery\s*walls?)\b/i.test(src)) return "wall";
+  if (/\b(furniture|sofas?|couches?|chairs?|tables?|desks?|lamps?|rugs?|carpets?|ottomans?|bookshelves?|bookcases?|dressers?|nightstands?|bed\s*frames?|cabinets?|stools?|benches?|wardrobes?|armoires?|coffee\s*tables?|side\s*tables?|floor\s*lamps?)\b/i.test(src)) return "floor";
+  if (/\b(women'?s\s+clothing|men'?s\s+clothing|kids?\s*&?\s*baby|home\s*&\s*decor)\b/i.test(src)){
+    if (/home\s*&\s*decor/i.test(src)){
+      if (/wall\s*art|poster|print|mirror|painting/i.test(src)) return "wall";
+      if (/rug|furniture|lamp/i.test(src)) return "floor";
+    } else return "clothing";
+  }
+  if (/\b(clothing|apparel|garments?|tops?|shirts?|t-?shirts?|tees?|blouses?|bottoms?|pants?|trousers?|jeans?|shorts?|skirts?|dresses?|gowns?|outerwear|jackets?|coats?|parkas?|blazers?|hoodies?|sweaters?|cardigans?|shoes?|sneakers?|boots?|heels?|sandals?|activewear|swimwear|lingerie|suits?|bags?|handbags?|purses?|accessories|jewellery|jewelry)\b/i.test(src)) return "clothing";
+  return "none";
+}
+function placementCtaHtml(item){
+  const mode = inferPlacementMode(item || {});
+  const photo = (item && item.photo_url) ? encodeURIComponent(item.photo_url) : "";
+  const title = encodeURIComponent(String((item && item.title) || "").slice(0, 80));
+  const qs = (m) => {
+    const p = [];
+    if (m) p.push("mode=" + encodeURIComponent(m));
+    if (photo) p.push("item=" + photo);
+    if (title) p.push("title=" + title);
+    return p.length ? ("?" + p.join("&")) : "";
+  };
+  const btn = (href, label, tip) =>
+    `<a class="btn btn-soft" href="${href}" data-tip="${escapeAttr(tip)}" title="${escapeAttr(tip)}">${escapeHtml(label)}</a>`;
+  const bits = [];
+  bits.push(`<p class="mut" style="margin:10px 0 6px"><span class="pill">Instant preview · free</span> <span class="pill">Not photoreal</span></p>`);
+  bits.push(`<div style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px">`);
+  if (mode === "clothing"){
+    bits.push(btn("/try-on/", "Try on", "Instant clothing preview — free. Not photoreal."));
+  } else if (mode === "wall"){
+    bits.push(btn("/see-in-space/" + qs("wall"), "See on my wall", "Instant wall preview — free. Photo overlay, not photoreal."));
+    bits.push(btn("/see-in-space/" + qs("wall"), "See in my space", "Place this listing in a room photo — free forever."));
+  } else if (mode === "floor"){
+    bits.push(btn("/see-in-space/" + qs("floor"), "See in my room", "Instant room preview — free. Photo overlay, not photoreal."));
+    bits.push(btn("/see-in-space/" + qs("floor"), "See in my space", "Place this listing in a room photo — free forever."));
+  } else {
+    bits.push(btn("/see-in-space/" + qs(""), "See in my space", "Place any sellable item in a room photo — free Instant preview."));
+    bits.push(btn("/try-on/", "Try on", "If this is clothing — Instant preview free."));
+  }
+  bits.push(`</div>`);
+  return bits.join("");
+}
+
 async function openMarketItem(id){
   kineticTitle("This item"); $("#view-sub").textContent = "Details from the seller — check it before you buy.";
   const el = $("#screen");
@@ -2476,6 +2535,7 @@ async function openMarketItem(id){
   + (m.description ? `<div class="mut">${escapeHtml(m.description)}</div>` : "")
   + `<p class="mut">Sold by <b>${escapeHtml(seller)}</b>${sellerU?` (@${escapeHtml(sellerU)})`:""}</p>`
   + (plats.length ? `<div style="margin:6px 0"><span class="mut">Also listed on: </span>` + plats.map(p=>`<span class="pill">${escapeHtml(p)}</span>`).join("") + `</div>` : "")
+  + placementCtaHtml(m)
   + `<button class="btn btn-accent" onclick="buySheet(${Number(m.id)})" data-tip="Start checkout for this item. No money moves yet.">Buy this item</button>`
   + `<button class="btn btn-soft btn-sm" onclick="threadScreen('${sellerU||seller}')" data-tip="Open a message thread with this seller." title="Open a message thread with this seller.">Message seller</button>`
   + `</div>`;
@@ -3872,15 +3932,15 @@ function renderListingForm(it){
  <label>Type of item</label>
  <div id="f-sub-wrap">${fSubInner(wantDept, wantSub)}</div>
  <div class="two">
- <div><label>Price ($)</label><input class="input" id="f-price" type="number" min="1" step="1" value="${it.priceMin||it.price||""}" placeholder="Sale price"></div>
- <div><label>Size</label><input class="input" id="f-size" value="${escapeAttr(it.sizeHint||it.size||"")}" placeholder="e.g. M / 10"></div>
+ <div><label>Price ($)</label><input class="input" id="f-price" type="number" min="1" step="1" value="${it.priceMin||it.price||""}" placeholder="Sale price" data-tip="What the buyer pays. Use a number in the AI's range, then check what you keep after fees on Sell."></div>
+ <div><label>Size</label><input class="input" id="f-size" value="${escapeAttr(it.sizeHint||it.size||"")}" placeholder="e.g. M / 10" data-tip="Size buyers filter by. Copy the label in the garment so the right people find it."></div>
  </div>
  <label>Condition</label>
  <div id="f-cond" data-tip="How used does it look? Be honest — buyers trust you more.">${COND_OPTS.map(c=>`<button class="chip ${c===wantCond?"on":""}" onclick="pickCond(this,'${c}')" data-tip="Sets the condition for this listing." title="Sets the condition for this listing.">${c}</button>`).join("")}</div>
  <fieldset class="form-sec" data-tip="These are the fields shoppers filter and search by — filling them in is what gets you found.">
   <legend>What it is</legend>
   <div class="two">
-   <div><label>Brand</label><input class="input" id="f-brand" autocomplete="off" value="${escapeAttr(it.brand||"")}" placeholder="e.g. Levi's"></div>
+   <div><label>Brand</label><input class="input" id="f-brand" autocomplete="off" value="${escapeAttr(it.brand||"")}" placeholder="e.g. Levi's" data-tip="Brand helps search. Leave blank if you are not sure — never guess a designer name."></div>
    <div><label>Colour</label><input class="input" id="f-color" autocomplete="off" value="${escapeAttr(it.color||"")}" placeholder="e.g. Light blue"></div>
   </div>
   <div class="two">
@@ -4001,6 +4061,7 @@ async function openListing(id){
  <div class="mut">${escapeHtml(l.description||"")}</div>
  <div style="margin:10px 0"><span class="pill">${escapeHtml(l.category||"")}</span><span class="pill">${escapeHtml(l.size||"")}</span><span class="pill">${escapeHtml(l.condition||"")}</span></div>
  <h2 style="margin:4px 0">${money(l.price)}</h2>
+ ${placementCtaHtml(l)}
   <div class="two">
   <button class="btn btn-accent ${l.status==='sold'?'hidden':''}" onclick="soldSheet(${id})" data-tip="It sold! Write down the price and we'll do the maths.">Mark sold</button>
   <button class="btn btn-soft" onclick="renderListingForm(${JSON.stringify({id:l.id,title:l.title,category:l.category,condition:l.condition,priceMin:l.price,sizeHint:l.size,description:l.description,brand:l.brand,color:l.color,material:l.material,weight_oz:l.weight_oz,ship_city:l.ship_city,ship_postcode:l.ship_postcode,ship_country:l.ship_country,local_pickup:l.local_pickup,_photo_url:l.photo_url}).replace(/"/g,'&quot;')})" data-tip="Change the words, price or photo.">Edit</button>
@@ -6222,6 +6283,7 @@ else { $("#view-auth").classList.remove("hidden"); $("#view-app").classList.add(
  window.addEventListener("resize", hide);
 })();
 </script>
+<script src="/libs/seller-coach.js" defer></script>
 <script type="module">
 /* AdSense slots are declared in this page's markup as [data-ad-slot] and filled
    from /site-adsense.js — the single source of truth for the publisher id and
