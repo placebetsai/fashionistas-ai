@@ -359,3 +359,11 @@ body:has(#view-app:not(.hidden)) .rd-bcta{display:none!important}
   .fash-word,.hero-tick .ht-dot,.land-card::before,.dest-track,[class*="shimmer"],.sheen::before,.sheen::after{animation:none!important}
   #topbar,#tabbar,.tabbar,.rd-bcta,.land-nav,#screen-head,.seller-coach-banner,[class*="sticky"]{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 }
+/* v13 — narrow phones (≤380px, e.g. Galaxy S-series): wordmark fits instead of "fa…" */
+@media (max-width:380px){
+  #topbar .fash-word{font-size:18px!important;overflow:visible!important;text-overflow:clip!important;max-width:none!important}
+  #topbar .fash-name{overflow:visible!important}
+  #topbar{gap:6px!important}
+  #topbar .topbar-actions .btn{padding-left:10px!important;padding-right:10px!important}
+  #topbar .topbar-actions .btn-ghost{font-size:13px!important}
+}
