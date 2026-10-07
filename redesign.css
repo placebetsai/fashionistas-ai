@@ -478,3 +478,13 @@ body:has(#view-app:not(.hidden)) .rd-bcta{display:none!important}
   #drawer-next small{font-size:12px;font-weight:600;color:var(--mut)}
   #drawer-next svg{flex:none;color:var(--accent)}
 }
+@media (max-width:899px){
+  /* expanded checklist: the chat button steps aside instead of covering it */
+  html.mt-app:has(#seller-coach-panel:not(.collapsed):not(.hidden)) #guide-fab{display:none!important}
+  /* snackbar sits in the chat-button row, left of it — never on top of it or the tab bar */
+  html.mt-app .toast{left:12px!important;right:68px!important;bottom:calc(var(--tb) + 16px)!important;transform:none!important;max-width:none!important;
+    border-radius:14px!important;text-align:left!important;font-size:13.5px!important;line-height:1.35;padding:11px 14px!important}
+  html.mt-app[data-mtv="home"] .toast{bottom:calc(var(--tb) + 70px)!important}
+  html.mt-land .toast{bottom:calc(var(--tb) + 16px)!important}
+  .toast:not(.show){pointer-events:none}
+}
