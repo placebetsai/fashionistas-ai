@@ -4,7 +4,7 @@
 
 **Laptop repo (preferred):** `/home/billionaremaker/fashionistas-ai`  
 **GitHub:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
-**Live tip:** `version.txt` = **`e0135b4`** (`e0135b4e3f054dc3092a8effd052f805aade7f9c`) — must match `https://fashionistas.ai/version.txt`
+**Live tip:** `version.txt` = **`71f0a03`** (`71f0a032957cec56fed2648c6a4a4d53d208bc09`) — must match `https://fashionistas.ai/version.txt`
 
 ### Deploy (mandatory — do not get this wrong)
 
