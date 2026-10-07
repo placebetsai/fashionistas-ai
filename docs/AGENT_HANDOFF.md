@@ -971,3 +971,12 @@ npx wrangler pages deployment list --project-name=fashionistas-ai
 - Rotating pill never blank (instant swap + soft settle, min opacity .55); AA contrast fixes (kickers, muted text, shop pills, footer).
 - AdSense loader left as raw <script async> in head (repo test + comment forbid deferring it). Ads verified loading (adsbygoogle.loaded, slots done/unfilled).
 - Lighthouse mobile: perf 51→72–76, a11y 97→100, FCP 5.1→1.1s, LCP 6.5→2.0s, CLS 0. TBT still ~1.1–1.7s (app bundle boot ~1.3s long task).
+
+## 2026-10-07 12:30 ET — categories launch (prod)
+- Shared table functions/_lib/categories.js: 5 depts (Women/Men/Kids/Home/Art), 69 types, per-shop paths (Depop/Poshmark/Mercari/Vinted/Grailed), eBay leaf ids (verified flag; unverified -> eBay Taxonomy suggestion first), Etsy path -> live taxonomy id (functions/_lib/etsy-taxonomy.js). Regenerate copies: node scripts/gen-categories.mjs
+- Form: dept -> grouped type chips -> per-type size picker. Old flat/old-tree categories resolve via LEGACY.
+- AI vision returns categoryPath from the table. eBay/Etsy/list routes + extension read the table; extension never auto-submits an unconfirmed category (needs_review, tab left open).
+- Try it on / See it in my room: buyer-only (search cards + product page); try-on preloads ?item=.
+- deploy-local.sh: DEPLOY_BRANCH=<name> for previews.
+- Rollback: Pages deployment 39595d7c-c23d-4a9f-a5fe-742d7c97dffe (5b84c2d).
+- Open: verify shop paths with real posts; Etsy who_made/when_made defaults wrong for resale (vintage-only rule).

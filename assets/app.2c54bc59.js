@@ -2521,14 +2521,27 @@ function toListingForm(){
 /* ================= LISTING FORM (create/edit) ================= */
 function fSubInner(dept, sel){
   if (!dept) return `<p class="mut" style="margin:6px 0 0">Choose a department above, then the type of item.</p>`;
+  const chipB = s => `<button type="button" class="chip ${s===sel?"on":""}" onclick="pickSub(this)" data-tip="Files this item under ${escapeAttr(s.toLowerCase())}." title="Files this item under ${escapeAttr(s.toLowerCase())}.">${escapeHtml(s)}</button>`;
+  const subs = taxSubs(dept);
+  /* Long departments (Women, Men) read better split into Clothing / Shoes / Bags & jewelry / Accessories. */
+  if (subs.length > 12) {
+    const GL = { clothing:"Clothing", shoes:"Shoes", bags:"Bags & jewelry", jewelry:"Bags & jewelry", accessory:"Accessories" };
+    const rows = (FCAT.categories||[]).filter(c => c.dept === dept);
+    const order = []; const by = {};
+    rows.forEach(c => { const g = GL[c.group] || "Other"; if (!by[g]) { by[g] = []; order.push(g); } by[g].push(c.sub); });
+    return `<div id="f-sub" data-tip="The type of item inside this department.">`
+      + order.map(g => `<div class="cat-lead" style="margin:10px 0 4px">${escapeHtml(g)}</div><div class="chips">${by[g].map(chipB).join("")}</div>`).join("")
+      + `</div>`;
+  }
   return `<div class="chips" id="f-sub" data-tip="The type of item inside this department.">`
-    + taxSubs(dept).map(s => `<button type="button" class="chip ${s===sel?"on":""}" onclick="pickSub(this)" data-tip="Files this item under ${escapeAttr(s.toLowerCase())}." title="Files this item under ${escapeAttr(s.toLowerCase())}.">${escapeHtml(s)}</button>`).join("")
+    + subs.map(chipB).join("")
     + `</div>`;
 }
 function pickSub(el){
   /* Scope to the chips' own container rather than a fixed id, so the same
      handler works on the main form and the "add by hand" sheet. */
-  const box = el && el.parentNode; if (!box) return;
+  const box0 = el && el.parentNode; if (!box0) return;
+  const box = box0.closest("#f-sub") || box0;
   [...box.querySelectorAll(".chip")].forEach(x => x.classList.toggle("on", x === el));
   const wrap = box.closest("[id$='-sub-wrap']");
   if (wrap) sizeRefresh(wrap.id);
