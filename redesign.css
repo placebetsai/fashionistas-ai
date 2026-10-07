@@ -325,3 +325,24 @@ body.rd-hero-on #hc-fab{opacity:0;pointer-events:none;transform:scale(.8)}
   body::before,.land-hero .aurora,.land-hero .hero-grid,.rd-scan{animation:none!important}
 }
 .land-site-footer nav a,.land-site-footer p{color:#5c5c66!important}
+/* === mobile header lockup: mark + serif wordmark, always both === */
+@media (max-width:480px){
+  #land-nav .rd-nav-in{gap:8px}
+  #land-nav .ln-brand{gap:8px;min-width:0;flex:0 1 auto;align-items:center}
+  #land-nav .ln-mark{flex:none}
+  #land-nav .ln-name{display:inline-block!important;font-family:var(--display,"Instrument Serif",Georgia,serif);font-weight:400;font-style:normal;font-size:23px;line-height:1;letter-spacing:-.015em;white-space:nowrap;color:inherit;transform:translateY(1px)}
+  #land-nav .ln-name .wai{font-family:inherit;font-style:italic;font-weight:400;font-size:1em;letter-spacing:0;margin-left:0;padding:0;vertical-align:baseline;line-height:1;color:#e2412b;opacity:1!important;-webkit-text-fill-color:#e2412b;background:none}
+  #land-nav .btn-accent.btn-sm{font-size:13.5px;padding:0 14px;min-height:40px;white-space:nowrap}
+}
+@media (max-width:389px){
+  #land-nav .rd-nav-in{gap:6px}
+  #land-nav .ln-brand{gap:7px}
+  #land-nav .ln-name{font-size:21px}
+  #land-nav .btn-accent.btn-sm{font-size:12.5px;padding:0 11px}
+}
+@media (max-width:359px){
+  #land-nav .ln-name{font-size:21px}
+  #land-nav .ln-mark{width:30px;height:30px}
+  /* the sticky "Start selling free" bar carries the sign-up CTA on the narrowest phones */
+  #land-nav .btn-accent.btn-sm{display:none}
+}
