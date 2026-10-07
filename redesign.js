@@ -28,3 +28,15 @@
     if (on === state) return; state = on; requestAnimationFrame(function(){ document.body.classList.toggle('rd-hero-on', on); });
   }, { threshold: 0, rootMargin: '0px 0px -55% 0px' }).observe(hero);
 })();
+/* mobile: mark marquee duplicates (carousel shows each shop once) + sticky bottom CTA after hero, hidden near signup card */
+(function(){
+  document.querySelectorAll('.dest-track').forEach(function(t){ var k=t.children, n=k.length/2; if (n%1===0) for (var i=n;i<k.length;i++) k[i].classList.add('rd-dup'); });
+  var src = document.querySelector('.rd-hero .rd-cta'), card = document.querySelector('.land-card'), hero = document.querySelector('.rd-hero');
+  if (!src || !hero || !('IntersectionObserver' in window) || !matchMedia('(max-width:767px)').matches) return;
+  var bar = document.createElement('div'); bar.className = 'rd-bcta'; var b = src.cloneNode(true); b.removeAttribute('data-tip'); bar.appendChild(b);
+  document.body.appendChild(bar);
+  var heroOn = true, cardOn = false;
+  function upd(){ var on = !heroOn && !cardOn; bar.classList.toggle('on', on); document.body.classList.toggle('rd-bcta-on', on); }
+  new IntersectionObserver(function(e){ heroOn = e[e.length-1].isIntersecting; upd(); }, {rootMargin:'0px 0px -40% 0px'}).observe(hero);
+  if (card) new IntersectionObserver(function(e){ cardOn = e[e.length-1].isIntersecting; upd(); }).observe(card);
+})();

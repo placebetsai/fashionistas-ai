@@ -281,3 +281,24 @@ body.rd-hero-on #hc-fab{opacity:0;pointer-events:none;transform:scale(.8)}
   #view-auth .rd-steps,#view-auth .rd-tiles,#view-auth .rd-grid{grid-template-columns:1fr!important;gap:16px!important}
   #view-auth{padding-bottom:env(safe-area-inset-bottom)}
 }
+/* === mobile pass 3: 2026 pro patterns === */
+@media (max-width:767px){
+  #view-auth{font-size:clamp(16px,4.2vw,17px)}
+  #view-auth .rd-sec p,#view-auth .lede{font-size:clamp(16px,4.2vw,17px)!important}
+  #view-auth .rd-sec h2{font-size:clamp(30px,8.4vw,40px);line-height:1.05}
+  /* shop pills: swipeable snap carousel instead of an endlessly moving marquee */
+  #view-auth .dest.marquee{overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-mask-image:none!important;mask-image:none!important;padding:0 16px;margin:0 -16px}
+  #view-auth .dest.marquee::-webkit-scrollbar{display:none}
+  #view-auth .dest-track{animation:none!important;transform:none!important}
+  #view-auth .dest-track > .rd-dup{display:none}
+  #view-auth .dest-track > *{scroll-snap-align:start;flex:none}
+  /* sticky bottom CTA bar */
+  .rd-bcta{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(255,250,246,.94);border-top:1px solid rgba(0,0,0,.08);box-shadow:0 -10px 30px rgba(20,10,5,.08);transform:translateY(110%);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+  .rd-bcta.on{transform:none}
+  .rd-bcta .btn{width:100%;min-height:52px;border-radius:999px;font-size:16px;justify-content:center;display:flex;align-items:center}
+  body.rd-bcta-on #hc-fab{bottom:calc(84px + env(safe-area-inset-bottom))!important}
+  body.rd-bcta-on #view-auth{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+  .rd-hero{min-height:auto}
+}
+@media (min-width:768px){.rd-bcta{display:none}}
+@media (prefers-reduced-motion:reduce){.rd-bcta{transition:none}}
