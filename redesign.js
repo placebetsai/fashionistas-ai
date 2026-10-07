@@ -19,8 +19,12 @@
   els.forEach(function(el){ io.observe(el); });
   window.addEventListener('beforeprint', showAll);
 })();
-/* hide the floating tour button while the hero is visible so it never sits on hero content */
+/* hide the floating tour button while the hero is on screen; single threshold + rAF debounce so
+   iOS address-bar resizes don't make it blink */
 (function(){
   var hero = document.querySelector('.rd-hero'); if (!hero || !('IntersectionObserver' in window)) return;
-  new IntersectionObserver(function(es){ document.body.classList.toggle('rd-hero-on', es[0].isIntersecting && es[0].intersectionRatio > .25); }, { threshold: [0, .25, .5] }).observe(hero);
+  var state = null;
+  new IntersectionObserver(function(es){ var on = es[es.length-1].isIntersecting;
+    if (on === state) return; state = on; requestAnimationFrame(function(){ document.body.classList.toggle('rd-hero-on', on); });
+  }, { threshold: 0, rootMargin: '0px 0px -55% 0px' }).observe(hero);
 })();

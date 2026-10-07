@@ -245,3 +245,19 @@ body.rd-hero-on #hc-fab{opacity:0;pointer-events:none;transform:scale(.8)}
 #view-auth .legal-line a{display:inline-flex;align-items:center;min-height:44px;padding:0 6px}
 #land-nav .ln-brand{min-height:44px;display:inline-flex;align-items:center}
 @media (max-width:374px){.rd-hero .hero-acts{grid-template-columns:1fr}}
+/* === anti-flicker (mobile) === */
+.rd-rot-pill{contain:layout paint}
+.rd-rot .rotator{min-width:17ch;text-align:left}
+.rd-rot .rotator > span{will-change:transform,opacity;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+#land-nav{transform:translateZ(0);-webkit-transform:translateZ(0)}
+.lc-bar{contain:layout paint}
+.lc-bar b{display:inline-block;min-width:13ch;text-align:left}
+@media (max-width:767px){
+  .rd-grad{animation:none;background-position:0 0}
+  .rd-phone,.rd-float-1,.rd-float-2,.rd-float-3,.rd-arrow{animation:none}
+  .rd-tile,.rd-tile-glass,.rd-float-1,.rd-float-2,.rd-float-3{-webkit-backdrop-filter:none;backdrop-filter:none}
+  .rd-tile-glass{background:rgba(18,14,24,.82)}
+  .rd-hero .hw{animation-duration:.55s}
+  #hc-fab{transition:none}
+}
+@media (prefers-reduced-motion:reduce){.rd-grad,.rd-scan,.rd-phone,[class*="rd-float"],.rd-arrow{animation:none!important}}

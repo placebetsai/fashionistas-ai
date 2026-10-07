@@ -22,13 +22,20 @@
   bar.id = "lc-bar"; bar.className = "lc-bar"; bar.setAttribute("role", "status"); bar.setAttribute("aria-live", "off");
   bar.innerHTML = '<span class="lc-dot" aria-hidden="true"></span><span class="lc-txt"></span>';
   if (land) land.appendChild(bar); else sub.parentNode.insertBefore(bar, sub.nextSibling);
-  var txt = bar.querySelector(".lc-txt"), timer;
+  var txt = bar.querySelector(".lc-txt"), timer, nodes = null, last = "";
   function p(n){ return n < 10 ? "0" + n : "" + n; }
   function tick() {
     var ms = DEADLINE - Date.now();
     if (ms <= 0) { txt.innerHTML = "<b>We're live</b> <span class=\"lc-long\">— fashionistas.ai is open to everyone</span>"; clearInterval(timer); return; }
     var s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
-    txt.innerHTML = '<span class="lc-long">Public launch in </span><span class="lc-short-l">Launch in </span><b>' + d + "d " + p(h) + "h " + p(m) + "m <span class=\"lc-s\">" + p(sec) + "s</span></b>";
+    if (!nodes) { /* build once, then only touch text nodes: no re-render flash */
+      txt.innerHTML = '<span class="lc-long">Public launch in </span><span class="lc-short-l">Launch in </span><b><span class="lc-m"></span> <span class="lc-s"></span></b>';
+      nodes = { m: txt.querySelector(".lc-m").firstChild || txt.querySelector(".lc-m").appendChild(document.createTextNode("")),
+                s: txt.querySelector(".lc-s").firstChild || txt.querySelector(".lc-s").appendChild(document.createTextNode("")) };
+    }
+    var main = d + "d " + p(h) + "h " + p(m) + "m";
+    if (main !== last) { nodes.m.nodeValue = main; last = main; }
+    nodes.s.nodeValue = p(sec) + "s";
   }
   css.textContent += ".lc-short-l{display:none}@media (max-width:480px){.lc-short-l{display:inline}}";
   tick(); timer = setInterval(tick, 1000);
