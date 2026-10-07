@@ -16,13 +16,13 @@
   Cache-Control: public, max-age=3600
 
 /site.css
-  Cache-Control: public, max-age=3600
+  Cache-Control: public, max-age=0, must-revalidate
 
 /styles.css
-  Cache-Control: public, max-age=3600
+  Cache-Control: public, max-age=0, must-revalidate
 
 /app.js
-  Cache-Control: public, max-age=3600
+  Cache-Control: public, max-age=0, must-revalidate
 
 /api/*
   Cache-Control: no-store
@@ -32,3 +32,35 @@
 
 /assets/rd/*
   Cache-Control: public, max-age=2592000
+
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  Service-Worker-Allowed: /
+
+
+/redesign.css
+  Cache-Control: public, max-age=0, must-revalidate
+
+/redesign.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/countdown.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/seller-coach.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/topnav.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/site-adsense.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/identify-fill.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/
+  Cache-Control: no-cache
+
+/index.html
+  Cache-Control: no-cache
