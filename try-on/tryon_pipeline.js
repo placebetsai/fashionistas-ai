@@ -451,7 +451,12 @@ export class TryOnPipeline {
 
     // How much of the body is in frame. Drives the "too cropped" guidance and
     // whether bottoms can be placed at all.
-    const vis = (i) => landmarks && landmarks[i] && (landmarks[i].score == null || landmarks[i].score > 0.5);
+    // Visible AND inside the photo: the pose model extrapolates joints that are
+    // out of frame (knees below a waist-up crop) with high visibility scores.
+    const vis = (i) => {
+      const p = landmarks && landmarks[i];
+      return !!p && (p.score == null || p.score > 0.5) && p.x > 0.01 && p.x < 0.99 && p.y > 0.01 && p.y < 0.97;
+    };
     const framing = !landmarks ? "none"
       : !vis(POSE.NOSE) || !(vis(POSE.LEFT_SHOULDER) && vis(POSE.RIGHT_SHOULDER)) ? "cropped"
       : !(vis(POSE.LEFT_HIP) || vis(POSE.RIGHT_HIP)) ? "cropped"
