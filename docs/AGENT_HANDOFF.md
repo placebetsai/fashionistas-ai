@@ -941,3 +941,10 @@ npx wrangler pages deployment list --project-name=fashionistas-ai
 - Main IS now deployable again (supersedes 8fbdd42 warning). Rollback target: previous prod e26c7045 (Pages API rollback).
 - Playwright QA on live (desktop 1440, iPad, iPhone SE/13 WebKit, Pixel 7): rotator pill visible, nav one row desktop / hamburger small, countdown under nav to 2026-10-14T09:45-04:00, 0px overflow, /, /try-on/, /see-in-space/, /about/ 200. Only errors: AdSense 400s + 404 /assets/fashionistas-app-icon-512.svg (pre-existing).
 - No GitHub push. chrome-store zips reverted after deploy.
+
+## 2026-10-07 10:55 ET — mobile anti-flicker + layout pass 2/3 LIVE
+- Production: 99b5b7d9 (7f9e906). Rollback target: 6d7a162f (cc7bf2e, flicker fix only); older: 809fc97a (bd2978a).
+- Flicker: countdown updates text nodes only; rotator pill fixed width; ? fab debounced; no infinite/backdrop anims on phones; reduced-motion honored.
+- Layout: unfilled AdSense mounts collapse (were ~390px blank gaps); sticky bottom "Start selling free" CTA on phones; shop pills = snap carousel; fluid 16px+ type; 44px sections; countdown height reserved + Inter display=optional → CLS 0.207→0; hero image preloaded.
+- Lighthouse mobile perf 35→49; remaining bottleneck = 447KB index.html + AdSense.
+- Verified live on iPhone SE/13/15PM, Pixel 7, iPad, 1440: no overflow, no JS errors, 8 nav links.
