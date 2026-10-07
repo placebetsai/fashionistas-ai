@@ -1824,7 +1824,7 @@ async function renderXL(el){
     <div class="xl-hero">
       <div class="xl-hero-tag">Marketplace lister &amp; admin</div>
       <h2>Write it once. Sell everywhere.</h2>
-      <p>Pick one item, tick the shops, and every one gets its title, description and tags with that shop's fee and title length already worked out. Then Sell everywhere posts it — and the per-shop status stays front and centre below.</p>
+      <p>Pick an item and we walk you through every shop: the title, description and price are written for each one and copied for you, the photos go straight into the shop's app, and you tap Post. It's on fashionistas.ai the moment you list it. Nothing to install.</p>
       <div class="xl-hero-actions">
         <button class="btn btn-accent" onclick="xlPickItem()" data-tip="Pick an item below, choose the shops, and we'll hand you the copy for each.">Start multilisting →</button>
         <button class="btn btn-soft" onclick="go('closet')" data-tip="Open everything you're selling.">See my items</button>
@@ -1837,14 +1837,15 @@ async function renderXL(el){
     </div>
 
     <div class="card" id="xl-connect">
-      <h3 style="margin-top:0">Connect + post</h3>
-      <p class="xl-connect-note"><b>One-click path:</b> install the <b>Fashionistas Crosslister</b> (Load unpacked), log into Depop · Poshmark · Mercari · Vinted · Grailed · eBay (and the rest) in this Chrome, tap <b>Verify session</b>, then <b>Sell everywhere</b>. Every shop is treated equally through your browser — no marketplace API keys and no Stripe for multilist. Paste kits are the honest fallback until the extension is live. Never invent credentials or take marketplace passwords. <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="extConnectPrompt()" data-tip="Install / connect the Crosslister — Load unpacked walkthrough.">Connect extension</button> · <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="hcToggle()" data-tip="Opens Guide A to Z for account setup.">Guide A to Z</button>.</p>
-      <div id="xl-ext-banner" class="xl-ext-banner" style="display:${EXT_LIVE ? "none" : "block"};margin:0 0 12px;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;font-size:13px">
-        <b>Extension not detected.</b> One-click multilist needs it — download the zip, then Chrome → Extensions → Developer mode → <b>Load unpacked</b>. <button type="button" class="btn btn-accent btn-sm" style="margin-left:6px" onclick="extConnectPrompt()" data-tip="Opens the Load unpacked walkthrough.">Set up extension</button>
+      <h3 style="margin-top:0">How posting works</h3>
+      <p class="mut" style="margin-top:0">Works on your phone, nothing to install. Here's exactly what happens for each shop:</p>
+      <div class="xl-how">
+        <div class="xl-mkt"><div class="xl-mkt-name"><b>fashionistas.ai</b><span class="mut">Automatic — live the moment you tap List it.</span></div></div>
+        <div class="xl-mkt"><div class="xl-mkt-name"><b>Depop · Poshmark · Mercari · Vinted · Grailed</b><span class="mut">Guided — about a minute each. Photos go to their app through your share sheet, every field is one tap to copy, you press Post there and tick it off here.</span></div></div>
+        <div class="xl-mkt"><div class="xl-mkt-name"><b>eBay</b><span class="mut">Guided today. Direct posting from here is coming once eBay sign-in is switched on.</span></div></div>
+        <div class="xl-mkt"><div class="xl-mkt-name"><b>Etsy</b><span class="mut">Guided today. Connect is coming soon.</span></div></div>
       </div>
-      ${xlReadyStripHtml()}
-      <div class="xl-connect-grid">${xlConnectRowsHtml()}</div>
-      <p class="xl-connect-foot">Status: Needs account · Ready to guide · Unverified · Connected (extension-verified). Open each shop's <b>Connect</b> → signup / create-listing links → log in → <b>Verify session</b>. Then Multilist → <b>Sell everywhere</b>. See <code>docs/MULTILIST-ONE-CLICK.md</code>.</p>
+      <p class="mut" style="font-size:12.5px;margin:10px 0 0">A shop only shows as Posted after you confirm it — we never mark anything Posted on our own.</p>
     </div>
 
     <div class="card">
@@ -1865,9 +1866,9 @@ async function renderXL(el){
 
     <div class="card" id="xl-hub-items">
       <h3 style="margin-top:0">Pick an item to send out</h3>
-      <p class="mut" style="margin-top:0">Opens the item with the shop picker ready — tick the shops, then take the finished copy.</p>
+      <p class="mut" style="margin-top:0">Opens the step-by-step for that item: photos, copy-paste fields and a checklist per shop.</p>
       ${items.length ? items.slice(0,14).map(x => `
-        <button class="xl-item" onclick="xlOpen(${x.id})" data-tip="Opens this item with the shop picker ready to tick.">
+        <button class="xl-item" onclick="xlOpen(${x.id})" data-tip="Opens the step-by-step posting screen for this item.">
           <span class="xl-item-t">${escapeHtml(x.title || "Untitled")}</span>
           <span class="xl-item-p">${money(x.price)}</span>
         </button>`).join("") : `<div class="empty">Nothing to send yet — add an item first, then it can go to every shop at once.</div>`}
@@ -1899,6 +1900,7 @@ function xlPickItem(){
   if (t) t.scrollIntoView({ behavior:"smooth", block:"start" });
 }
 function xlOpen(id){
+  if (window.LW) return LW.post(id);
   openListing(id).then(() => {
     setTimeout(() => {
       const p = document.getElementById("xl-pick");
@@ -2341,6 +2343,7 @@ const catEmoji = (c)=>"<svg width='46' height='46' viewBox='0 0 64 64' fill='non
 
 /* ================= SNAP (AI identify) ================= */
 function renderSnap(el){
+  if (window.LW) return LW.mount(el);
   CURRENT.ai = null;
   el.innerHTML = roleSwitchHtml() + `
   <div id="snap-pre">
@@ -2432,6 +2435,7 @@ function shoot(){
 }
 document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeCamera(); });
 async function analyzeImage(b64, previewUrl){
+ if (window.LW) { if (!LW.mounted()) go("snap"); return LW.addPhotoB64(b64, previewUrl); }
  // always make sure the Snap screen is mounted before touching it
  if (!document.getElementById("snap-pre")) { go("snap"); if (!document.getElementById("snap-pre")) return toast("Snap screen isn't ready yet"); }
  $("#snap-pre").classList.add("hidden");
@@ -2593,6 +2597,7 @@ function fReadCat(deptId, subWrapId){
   return s ? d + "/" + s : d;
 }
 function renderListingForm(it){
+ if (window.LW) return LW.edit(it);
  const edit = !!it.id;
  CURRENT.form = { ...it, _b64: it._b64||null };
  /* Always resolve to a department + subcategory pair. An item saved before the
@@ -2754,12 +2759,12 @@ async function openListing(id){
   <button id="onsale-btn" class="btn ${onsaleState(l)?"btn-soft":"btn-accent"}" style="width:100%" onclick="toggleOnsale(${id},this)" data-tip="Show this item to buyers in Shop, or hide it again.">${onsaleState(l)?"Stop selling here":"Sell it here too"}</button>
   <p class="mut" style="margin:6px 0 0">When this is on, buyers can see it in Shop.</p>
   </div>
- <div class="card">
+ <div class="card lw-postcard">
  <h3 style="margin-top:0">Post it to my other shops</h3>
- <p class="mut" style="margin-top:0">Tick the shops you use, then <b>Get ready to post</b>. With the Crosslister installed, <b>Sell everywhere</b> queues every shop equally (Depop, Poshmark, Mercari, Vinted, Grailed, eBay…). Until then you get paste kits — never a false Posted toast.</p>
- <div id="xl-pick"></div>
- <button class="btn btn-primary" onclick="crosspost(${id})" data-tip="Copies your listing, saves a draft for each shop and opens the steps — it never posts for you.">Get ready to post \u2192</button>
+ <p class="mut" style="margin-top:0">Depop, Poshmark, Mercari, Vinted, Grailed, eBay and Etsy — about a minute each. We copy the words and send the photos straight into each shop's app; you tap Post there. Nothing to install.</p>
+ <button class="btn btn-accent" style="width:100%" onclick="LW.post(${id})" data-tip="Step by step for each shop: photos, copy-paste fields, then you confirm it's live.">Post to my shops \u2192</button>
  </div>
+ ${(typeof EXT_LIVE !== "undefined" && EXT_LIVE) ? `<details class="card"><summary style="cursor:pointer;font-weight:700">Desktop: Chrome extension (optional)</summary><p class="mut">Your Crosslister extension is connected. Tick shops, then <b>Get ready to post</b>.</p><div id="xl-pick"></div><button class="btn btn-primary" onclick="crosspost(${id})" data-tip="Queues the shops for your extension — it never marks anything Posted by itself.">Get ready to post \u2192</button></details>` : ""}
  <div class="card">
  <h3 style="margin-top:0">How good is this listing?</h3>
  ${qualityBars(l)}
@@ -2770,7 +2775,7 @@ async function openListing(id){
  </div>
  <button class="btn btn-danger btn-sm" style="width:100%" onclick="delListing(${id})" data-tip="Removes it for good.">Delete listing</button>`;
  const pick = $("#xl-pick");
- pick.innerHTML = `<div class="xl-bar">
+ if (pick) pick.innerHTML = `<div class="xl-bar">
  <button type="button" class="btn btn-soft btn-sm" onclick="xlAll(true)" data-tip="Tick every shop at once.">Select all</button>
  <button type="button" class="btn btn-soft btn-sm" onclick="xlAll(false)" data-tip="Untick everything.">Clear</button>
  <span class="mut" id="xl-count">0 shops picked</span></div>`
@@ -4109,6 +4114,11 @@ async function renderMore(el){
  </div>
  <p class="mut" style="margin:8px 0 0">Both are plain files that open in Excel or Google Sheets.</p>
  </div>
+ <details class="card" id="more-ext" data-tip="Only for people listing from a desktop computer in Chrome.">
+ <summary style="cursor:pointer;font-weight:700;min-height:28px">Desktop power users · Chrome extension (optional)</summary>
+ <p class="mut">You don't need this — posting works from your phone without installing anything. If you list from a desktop computer in Chrome, the optional Crosslister extension can fill shop forms for you (Load unpacked, developer mode).</p>
+ <button class="btn btn-soft btn-sm" onclick="extConnectPrompt()" data-tip="Opens the optional desktop extension setup.">Set up the desktop extension</button>
+ </details>
  <footer>fashionistas.ai · everything saved to your account<br><a href="/contact/" style="color:inherit">Contact</a> · <a href="/privacy/" style="color:inherit">Privacy</a> · <a href="/about/" style="color:inherit">About</a><br>Powering the independent resale economy.</footer>`;
 }
 async function exportSafe(e, p){

@@ -59,6 +59,12 @@
 /identify-fill.js
   Cache-Control: public, max-age=0, must-revalidate
 
+/listing-wizard.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/listing-wizard.css
+  Cache-Control: public, max-age=0, must-revalidate
+
 /
   Cache-Control: no-cache
 

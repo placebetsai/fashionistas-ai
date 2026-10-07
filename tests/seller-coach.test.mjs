@@ -32,24 +32,23 @@ test("coach covers seller path steps in plain words", () => {
     "Take a photo",
     "Let AI name it",
     "Fill the listing",
-    "Open Multilist",
-    "Connect the extension",
-    "Sell everywhere",
+    "List it",
+    "Post to your other shops",
   ]) {
     assert.match(coach, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
   assert.match(coach, /What's next/);
-  assert.match(coach, /First sale path/);
-  assert.match(coach, /Photo → Identify → Fill → Sell everywhere/);
-  assert.match(coach, /Load unpacked/);
-  assert.match(coach, /extConnectPrompt/);
+  assert.match(coach, /Sell your first item/);
+  // no install steps / developer jargon in the main seller path (zero-install posting)
+  assert.doesNotMatch(coach, /Load unpacked|chrome:\/\/extensions|Developer mode/);
+  assert.doesNotMatch(coach, /id: "extension"/);
 });
 
 test("coach reuses chatbot via guideToggle / guideSend suggested questions", () => {
   assert.match(coach, /guideToggle/);
   assert.match(coach, /guideSend/);
   assert.match(coach, /How do I list something from a photo\?/);
-  assert.match(coach, /How do I install the Chrome extension\?/);
+  assert.match(coach, /How do I post to my other shops\?/);
   assert.match(coach, /How does Sell everywhere work\?/);
   assert.match(coach, /How does virtual try-on work\?/);
 });

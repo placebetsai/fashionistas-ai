@@ -1,7 +1,7 @@
 /**
  * Seller coach — lightweight, no paid APIs.
  *
- * Guides: Photo → Identify → Fill listing → Multilist → Connect extension → Sell everywhere.
+ * Guides: Photo → Identify → Fill listing → List it → Post to your other shops (no install needed).
  * Mounts a "What's next" checklist, empty-state coaching, help chips / tips on key
  * controls, and one-tap open of the stylist chat with a suggested question.
  *
@@ -22,44 +22,37 @@
     {
       id: "photo",
       label: "Take a photo",
-      tip: "Open Photo and snap (or pick) one item.",
+      tip: "Tap Sell and snap (or pick) one item.",
       go: "snap",
       ask: "How do I list something from a photo?"
     },
     {
       id: "identify",
       label: "Let AI name it",
-      tip: "Wait for the name, brand, size hint and price range.",
+      tip: "AI fills in the name, category, brand and a price range.",
       go: "snap",
       ask: "How does photo identify work?"
     },
     {
       id: "listing",
       label: "Fill the listing",
-      tip: "Check price, size and brand, then save to My clothes.",
+      tip: "Check the details and the price — one short screen each.",
       go: "snap",
       ask: "What should I put in the listing form?"
     },
     {
-      id: "multilist",
-      label: "Open Multilist",
-      tip: "One draft for every shop you sell on.",
-      go: "xl",
-      ask: "How does Multilist work?"
-    },
-    {
-      id: "extension",
-      label: "Connect the extension",
-      tip: "Download the zip → chrome://extensions → Developer mode → Load unpacked → Re-check, then Verify session on each shop.",
-      go: "xl",
-      ask: "How do I install the Chrome extension?"
+      id: "list",
+      label: "List it",
+      tip: "Tap List it — it's on sale on fashionistas.ai straight away.",
+      go: "snap",
+      ask: "How do I list something from a photo?"
     },
     {
       id: "sell",
-      label: "Sell everywhere",
-      tip: "With the extension live, one click queues every shop equally. Watch queued → posted — never a fake Posted toast.",
+      label: "Post to your other shops",
+      tip: "Send the photos to each shop's app, tap to copy each field, press Post there, then tick it off. Nothing to install.",
       go: "xl",
-      ask: "How does Sell everywhere work?"
+      ask: "How do I post to my other shops?"
     }
   ];
 
@@ -69,9 +62,8 @@
     { sel: "#f-brand", tip: "Brand helps search. Leave blank if you are not sure — never guess a designer name." },
     { sel: "#f-title", tip: "Short and searchable — brand + item + colour works best." },
     { sel: "#f-cond", tip: "Be honest. Buyers trust clear condition more than a perfect story." },
-    { sel: 'button[onclick*="handoffSellAll"]', tip: "Posts the finished listing to every shop you ticked, using the Chrome extension." },
-    { sel: 'button[onclick*="extConnectPrompt"]', tip: "Install the Crosslister: download zip → chrome://extensions → Developer mode → Load unpacked → Re-check." },
-    { sel: '#xl-ready-strip button', tip: "Finish Load unpacked so Sell everywhere can one-click post." },
+    { sel: 'button[onclick*="handoffSellAll"]', tip: "Queues the shops you ticked for the optional desktop extension." },
+    { sel: 'button[onclick*="extConnectPrompt"]', tip: "Optional, desktop Chrome only. You don't need it to post from your phone." },
     { sel: 'a[href="/try-on/"]', tip: "Add a photo of a person and a garment to see it on them." },
     { sel: 'button[onclick*="xlConnect"]', tip: "Open Connect for this shop — create an account if needed, stay logged in, then Verify session." }
   ];
@@ -81,7 +73,7 @@
     { sel: "#f-size", label: "Size help", ask: "What size should I put on my listing?" },
     { sel: "#f-brand", label: "Brand help", ask: "What if I do not know the brand?" },
     { sel: 'button[onclick*="handoffSellAll"]', label: "How this works", ask: "How does Sell everywhere work?" },
-    { sel: 'button[onclick*="extConnectPrompt"]', label: "Setup help", ask: "How do I install the Chrome extension?" },
+    { sel: 'button[onclick*="LW.post"]', label: "How this works", ask: "How do I post to my other shops?" },
     { sel: 'a[href="/try-on/"]', label: "Try-on help", ask: "How does virtual try-on work?" }
   ];
 
@@ -176,12 +168,11 @@
       photo: !!(s.photo || hasAiResult() || listingCount() > 0 || onSnapWork()),
       identify: !!(s.identify || hasAiResult() || listingCount() > 0),
       listing: !!(s.listing || listingCount() > 0 || onListingForm()),
-      multilist: !!(s.multilist || onXl() || connectedShopCount() > 0),
-      extension: !!(s.extension || hasExt()),
-      sell: !!(s.sell)
+      list: !!(s.list || listingCount() > 0),
+      sell: !!(s.sell),
+      // kept for older saved progress; no longer a step
+      multilist: !!(s.multilist || onXl() || connectedShopCount() > 0)
     };
-    // Visiting Multilist counts even before extension
-    if (onXl()) done.multilist = true;
     return done;
   }
 
@@ -289,16 +280,6 @@
         if (view === "xl") mark("multilist");
         if (view === "snap") mark("photo");
         goView(view);
-        // Align with Multilist Connect: open Load unpacked walkthrough when that's next
-        if (step === "extension" || (view === "xl" && !hasExt())) {
-          setTimeout(function () {
-            try {
-              if (typeof window.extConnectPrompt === "function" && !window.EXT_LIVE) {
-                window.extConnectPrompt();
-              }
-            } catch (e) {}
-          }, 450);
-        }
         return;
       }
       var askBtn = t.closest && t.closest("[data-sc-ask]");
@@ -346,7 +327,7 @@
         escapeAttr(nxt.ask) +
         '">Ask the guide</button>' +
         "</div></div>"
-      : '<div class="sc-next"><div class="kicker">You\'re set</div><b>All seller steps done</b><div style="margin-top:4px;color:var(--mut,#6b5e55)">Snap more items anytime. Sell everywhere keeps posting to your connected shops.</div></div>';
+      : '<div class="sc-next"><div class="kicker">You\'re set</div><b>All seller steps done</b><div style="margin-top:4px;color:var(--mut,#6b5e55)">Snap more items anytime — each one takes about a minute.</div></div>';
 
     var list = STEPS.map(function (s) {
       var isDone = !!done[s.id];
@@ -415,6 +396,7 @@
       listingCount() === 0 &&
       !done.listing &&
       !st.bannerDismissed &&
+      !document.getElementById("lw") &&
       (document.getElementById("snap-pre") ||
         (screen.querySelector && screen.querySelector(".xl-cta")));
 
@@ -429,25 +411,12 @@
       '<div id="' +
       BANNER_ID +
       '" role="region" aria-label="Seller getting started">' +
-      '<div class="sc-tag">First sale path</div>' +
-      "<h3>Photo → Identify → Fill → Sell everywhere</h3>" +
-      "<p>One photo drafts the listing. Install the Crosslister once (Load unpacked), Verify each shop, then Sell everywhere posts equally.</p>" +
-      "<ol class=\"sc-steps\">" +
-      "<li>Photo — snap the item</li>" +
-      "<li>Identify — AI names it and suggests a price</li>" +
-      "<li>Fill listing — check price, size, brand</li>" +
-      "<li>Multilist — open Connect for each shop</li>" +
-      "<li>Connect extension — Load unpacked Crosslister</li>" +
-      "<li>Sell everywhere — tick shops and post</li>" +
-      "</ol>" +
+      /* First sale path — kept to one line of copy and one primary action (no numbered walls). */
+      "<h3>Sell your first item</h3>" +
+      "<p>Snap a photo. AI fills in the details and a price, and you list it in four short steps.</p>" +
       '<div class="sc-acts">' +
-      '<button type="button" class="sc-go" data-sc-go="' +
-      escapeAttr(nxt.go) +
-      '">' +
-      escapeHtml(nxt.label) +
-      " →</button>" +
-      '<button type="button" class="sc-ask" data-sc-ask="How do I list something from a photo?">Ask the guide</button>' +
-      '<button type="button" class="sc-ask" data-sc-dismiss="1">Hide for now</button>' +
+      '<button type="button" class="sc-go" data-sc-go="snap">Sell an item →</button>' +
+      '<button type="button" class="sc-ask" data-sc-dismiss="1">Not now</button>' +
       "</div></div>";
 
     /* Unchanged banner: do NOT rewrite it. Rewriting #screen children woke the
