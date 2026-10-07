@@ -361,7 +361,7 @@ body:has(#view-app:not(.hidden)) .rd-bcta{display:none!important}
 }
 /* v13 — narrow phones (≤380px, e.g. Galaxy S-series): wordmark fits instead of "fa…" */
 @media (max-width:380px){
-  #topbar .fash-word{font-size:15.5px!important;overflow:visible!important;text-overflow:clip!important;max-width:none!important}
+  #topbar .fash-word{font-size:14.5px!important;overflow:visible!important;text-overflow:clip!important;max-width:none!important}
   #topbar .fash-name{overflow:visible!important}
   #topbar{gap:4px!important}
   #topbar .app-mark{width:34px!important;height:34px!important}
