@@ -481,6 +481,24 @@ nav.tabbar a.on{color:var(--accent)}
  .ln-name{font-size:15.5px}
 }
 @media (max-width:420px){ .ln-acts .btn-ghost{display:none} .ln-mark{width:27px;height:27px} }
+/* nav-widen: header breaks out of the 1040px column so every link fits one row */
+@media (min-width:1101px){
+ .land-nav{width:min(1440px,calc(100vw - 48px));margin-left:calc(50% - min(720px,50vw - 24px));margin-right:0;padding:9px 14px;gap:14px}
+}
+.land-nav .ln-links{align-items:center;flex-wrap:nowrap;min-width:0}
+.land-nav .ln-links .sc-help-chip{flex:none;white-space:nowrap;margin-left:0;padding:6px 10px;font-size:12px;line-height:1}
+@media (min-width:1101px) and (max-width:1320px){ .ln-links a{padding:8px 8px;font-size:13px} .ln-links{gap:0} }
+/* tablet + mobile: hamburger holds all links */
+@media (max-width:1100px){
+ .ln-burger{display:grid}
+ .ln-links{position:absolute;left:0;right:0;top:calc(100% + 8px);margin:0;padding:7px;flex-direction:column;align-items:stretch;
+   gap:3px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh-2);z-index:80;display:none}
+ .ln-links.open{display:flex}
+ .ln-links a{padding:12px 13px;font-size:14.5px;min-height:44px;display:flex;align-items:center}
+ .land-nav .ln-links .sc-help-chip{align-self:flex-start;margin:2px 13px 6px;padding:10px 14px;font-size:13px;min-height:40px}
+ .ln-burger{width:44px;height:44px}
+ .ln-acts .btn{min-height:40px}
+}
 
 /* ---- landing sections: real destinations for the nav ---- */
 .lsec{margin:24px -4px;padding:22px 18px 24px;border-radius:22px;border:1px solid var(--line);
