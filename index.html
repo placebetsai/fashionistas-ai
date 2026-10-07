@@ -1456,7 +1456,20 @@ async function api(path, opts={}) {
  if (TOKEN) headers["Authorization"] = "Bearer " + TOKEN;
  const r = await fetch(API + path, { ...opts, headers });
  let d = null; try { d = await r.json(); } catch {}
- if (r.status === 401) { toast("Session expired — please log in"); setTimeout(()=>logout(), 600); throw new Error("unauthorized"); }
+ if (r.status === 401) {
+  // A 401 from the auth routes means those credentials were wrong — never tear a
+  // working session down over a typo, and never tell an anonymous visitor their
+  // "session expired".
+  if (path.indexOf("/api/auth/") === 0) throw new Error((d && d.error) || "Wrong username or password.");
+  if (!TOKEN) throw new Error("Sign in first to do that.");
+  // Confirm the token itself is dead before signing anyone out: routes answer 401
+  // for plenty of reasons that have nothing to do with the session. The auth gate
+  // runs before routing, so /api/auth/me is 401 only for a dead token.
+  const dead = await fetch(API + "/api/auth/me", { headers: { Authorization: "Bearer " + TOKEN } }).then(x => x.status === 401).catch(() => false);
+  if (dead) { toast("Session expired — sign in again, it only takes seconds.", 4000); setTimeout(()=>logout(), 1200); }
+  else toast("You are signed in — that step is not available on your account yet.", 4000);
+  throw new Error("unauthorized");
+ }
  if (!r.ok) throw new Error(d?.error || "Request failed (" + r.status + ")");
  return d;
 }
@@ -1482,8 +1495,30 @@ async function doSignup(){
  afterAuth(d);
  } catch(e){ toast(e.message); }
 }
-function afterAuth(d){ TOKEN = d.token; USER = d.user; localStorage.setItem("fash_token", TOKEN); localStorage.setItem("fash_user", JSON.stringify(USER)); $("#view-auth").classList.add("hidden"); $("#view-app").classList.remove("hidden"); $("#tabbar").classList.remove("hidden"); $("#guide-fab").classList.remove("hidden"); go("home"); }
+function afterAuth(d){ TOKEN = (d && d.token) || ""; USER = (d && d.user) || (d && d.id ? { id: d.id, email: d.email, username: d.username || d.email } : null); if (TOKEN) localStorage.setItem("fash_token", TOKEN); else localStorage.removeItem("fash_token"); localStorage.setItem("fash_user", JSON.stringify(USER)); $("#view-auth").classList.add("hidden"); $("#view-app").classList.remove("hidden"); $("#tabbar").classList.remove("hidden"); $("#guide-fab").classList.remove("hidden"); go("home"); const who = (USER && (USER.username || USER.email)) || "you"; toast("Signed in as " + who + " — next: Connect your shop, then Sell to post an item.", 6000); }
 function logout(){ TOKEN = ""; USER = null; localStorage.removeItem("fash_token"); localStorage.removeItem("fash_user"); $("#view-app").classList.add("hidden"); $("#tabbar").classList.add("hidden"); $("#guide-fab").classList.add("hidden"); guideToggle(false); $("#view-auth").classList.remove("hidden"); }
+
+/* Session restore: the stored token is checked once at boot so a signed-in user
+   is never silently dumped back at the sign-in screen, and a dead one is
+   explained instead of failing on the first click. */
+async function restoreSession(){
+ if (!TOKEN) return;
+ try {
+  const r = await fetch(API + "/api/auth/me", { headers: { Authorization: "Bearer " + TOKEN } });
+  if (r.status === 401){
+   TOKEN = ""; USER = null;
+   localStorage.removeItem("fash_token"); localStorage.removeItem("fash_user");
+   toast("Your session ended — sign in again to pick up where you left off.", 5000);
+  }
+ } catch(e){ /* offline or the API is unreachable: keep what we have */ }
+}
+
+/* 402 guidance — turn "you need a plan" into the actual next step. */
+function guideSubscribe(what){
+ toast(what + " needs the $14.99/mo plan before it can post.", 4500);
+ const open = confirm(what + " needs an active $14.99/mo plan to post.\n\nOK — open the plan page to start it.\nCancel — keep browsing.");
+ if (open) window.location.href = "/pricing/";
+}
 function showAuth(tab){
   $("#view-app").classList.add("hidden");
   $("#tabbar").classList.add("hidden");
@@ -3048,6 +3083,7 @@ function xlEbayHandleCallbackParams(){
   } catch {}
 }
 document.addEventListener("DOMContentLoaded", () => {
+  try { restoreSession(); } catch {}
   try { xlEbayHandleCallbackParams(); } catch {}
   try {
     document.addEventListener("keydown", (ev) => {
@@ -4533,8 +4569,8 @@ async function handoffApi(shopId, lid){
   }
 
   if (res.status === 401){ handoffSet(shopId, l.id, null); toast("Sign in first — " + name + " needs a session."); }
-  else if (res.status === 402){ handoffSet(shopId, l.id, null); toast("Active $14.99/mo plan required before " + name + " will post."); }
-  else if (res.status === 503 && data && data.error === "env_missing"){ handoffSet(shopId, l.id, null); toast(name + " key missing: " + (data.missing || []).join(", ")); }
+  else if (res.status === 402){ handoffSet(shopId, l.id, null); guideSubscribe(name); }
+  else if (res.status === 503 && data && data.error === "env_missing"){ handoffSet(shopId, l.id, null); toast(name + " cannot post yet — the server is missing " + (data.missing || []).join(", ") + ". This shop is switched off until it is set.", 5500); }
   else if (res.ok && data && data.listingId){ handoffSet(shopId, l.id, "posted"); toast(name + " posted · listing " + data.listingId); }
   else {
     handoffSet(shopId, l.id, "failed");
