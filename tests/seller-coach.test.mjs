@@ -13,7 +13,8 @@ const html = readFileSync(join(ROOT, "index.html"), "utf8");
 const coach = readFileSync(join(ROOT, "libs/seller-coach.js"), "utf8");
 
 test("index includes /seller-coach.js (public; libs/ blocked by Pages Functions)", () => {
-  assert.match(html, /src="\/libs\/seller-coach\.js"/);
+  assert.match(html, /src="\/seller-coach\.js"/);
+  assert.doesNotMatch(html, /src="\/libs\/seller-coach\.js"/);
   assert.match(html, /SellerCoach\.refresh/);
 });
 
