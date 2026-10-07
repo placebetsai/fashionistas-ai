@@ -430,3 +430,18 @@ body:has(#view-app:not(.hidden)) .rd-bcta{display:none!important}
   html.mt-app body #hc-fab{display:none!important}
   html.mt-app body #guide-fab{left:auto!important;right:14px!important}
 }
+@media (max-width:899px){
+  /* one brand lockup on phones: same icon + same serif wordmark in landing and app */
+  #topbar .fash-name{font-family:var(--display,"Instrument Serif",Georgia,serif)}
+  #topbar .fash-word{font-family:inherit!important;font-style:normal!important;font-weight:400!important;font-size:24px!important;letter-spacing:-.015em!important;
+    background:none!important;-webkit-text-fill-color:currentColor!important;color:var(--ink)!important;animation:none!important;transform:translateY(1px)}
+  #topbar .fash-name .wai{font-family:inherit!important;font-style:italic!important;font-weight:400!important;font-size:24px!important;letter-spacing:0;margin-left:0!important;
+    color:#e2412b!important;-webkit-text-fill-color:#e2412b!important;opacity:1!important;background:none!important;transform:translateY(1px)}
+  #topbar .app-mark{border-radius:10px!important;box-shadow:0 4px 12px rgba(255,78,58,.28)!important}
+  #land-nav .ln-mark{width:34px!important;height:34px!important;border-radius:10px!important;background:url(/assets/fashionistas-app-icon-512.svg) center/cover no-repeat!important}
+  #land-nav .ln-mark svg{opacity:0}
+}
+@media (max-width:360px){
+  #topbar .fash-word,#topbar .fash-name .wai{font-size:19px!important}
+  #land-nav .ln-mark{width:30px!important;height:30px!important}
+}
