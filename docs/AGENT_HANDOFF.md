@@ -1,6 +1,6 @@
 # Agent handoff — fashionistas.ai
 
-## TRY-ON / SEE-IN-SPACE — 2026-10-07 ~12:10 PM ET (live `791febf`)
+## TRY-ON / SEE-IN-SPACE — 2026-10-07 ~12:45 PM ET (photoreal live since `791febf`; latest try-on fix live `5b84c2d`)
 
 **Photoreal `/api/tryon/hd` now renders.** Provider order (cheapest first), all in `functions/api/tryon/hd.js` + `functions/api/_tryon/vton-paid.js`:
 1. **Modal self-hosted FASHN VTON 1.5** (Apache-2.0) — app `fashn-vton`, URL `https://fashionistas1979--fashn-vton-api.modal.run` (override `FASHN_MODAL_URL`), L4, `min_containers=0`, `scaledown_window=60`. Auth = Modal proxy headers from Pages secrets **`MODAL_PROXY_KEY` / `MODAL_PROXY_SECRET`** (copied from `.env.modal`; rotate both in Modal + `wrangler pages secret put` when the leaked keys are rotated). Cost ≈ $0.000301/s → ~$0.006 warm render (~20 s), ~$0.05 isolated cold (~110 s boot+render + 60 s idle). Covered by Modal Starter $30/mo; `MODAL_MONTHLY_CAP_USD` (default 30, ledger estimate $0.01/render) stops Modal use past that.
