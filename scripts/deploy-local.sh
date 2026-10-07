@@ -72,12 +72,8 @@ STAGE="$(mktemp -d "${TMPDIR:-/tmp}/fashionistas-stage.XXXXXX")"
 trap 'rm -rf "$STAGE"' EXIT
 rsync -a --delete \
   --exclude='.*' \
-  --exclude='node_modules/' \
-  --exclude='docs/' --exclude='tests/' --exclude='scripts/' --exclude='migrations/' \
-  --exclude='functions/' \
-  --exclude='*.env' --exclude='*.pem' --exclude='*.key' --exclude='*.dev.vars' \
-  --exclude='wrangler*.toml' --exclude='package.json' --exclude='package-lock.json' \
-  --exclude='TEST.md' --exclude='NEEDS_ISRAEL.txt' \
+  --exclude='node_modules/' --exclude='__pycache__/' --exclude='*.pyc' --exclude='*.log' \
+  --exclude='*.env' --exclude='*.pem' --exclude='*.key' \
   ./ "$STAGE/"
 # Hard fail if any dotfile or key material made it into the stage.
 leak="$(find "$STAGE" \( -name '.*' -o -name '*.env' -o -name '*.pem' -o -name '*.key' \) -print | head -5)"
