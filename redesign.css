@@ -445,3 +445,20 @@ body:has(#view-app:not(.hidden)) .rd-bcta{display:none!important}
   #topbar .fash-word,#topbar .fash-name .wai{font-size:19px!important}
   #land-nav .ln-mark{width:30px!important;height:30px!important}
 }
+/* v19 — self-review polish (phones) */
+.hero p.hero-sub{color:var(--mut)}
+#ln-links .sc-help-chip,#drawer .sc-help-chip,#topnav .sc-help-chip{display:none!important}
+.drawer-brand{font-family:var(--display,"Instrument Serif",Georgia,serif)!important;font-style:normal!important;font-weight:400!important;font-size:24px!important;letter-spacing:-.015em!important;
+  background:none!important;color:var(--ink)!important;-webkit-text-fill-color:currentColor!important}
+.drawer-brand .wai{font-family:inherit!important;font-style:italic!important;font-weight:400!important;font-size:1em!important;letter-spacing:0!important;margin:0!important;padding:0!important;background:none!important;color:#e2412b!important;-webkit-text-fill-color:#e2412b!important;animation:none!important}
+#drawer-links a.on::after{display:none!important}
+.drawer-foot .btn{white-space:nowrap}
+@media (max-width:899px){
+  #topbar .app-mark,#land-nav .ln-mark{box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 1px color-mix(in srgb,var(--ink) 8%,transparent)!important}
+}
+@media (max-width:374px){
+  /* theme switch lives in the menu on small phones so the wordmark never touches the actions */
+  #topbar .topbar-actions .theme-btn{display:none!important}
+  .drawer-foot{gap:6px}
+  .drawer-foot .btn{padding-left:8px!important;padding-right:8px!important;font-size:13px!important}
+}
