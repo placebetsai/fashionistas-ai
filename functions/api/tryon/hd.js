@@ -2,7 +2,7 @@
  * POST /api/tryon/hd — photoreal try-on backed by FASHN VTON v1.5.
  *
  * This is the credit/Pro-only lane. The free tier never reaches it: the free
- * tier runs the on-device warp+composite pipeline in core/tryon_pipeline.js,
+ * tier runs the on-device warp+composite pipeline in try-on/tryon_pipeline.js,
  * which makes no network call at all.
  *
  * BACKEND: FASHN VTON v1.5, Apache-2.0 (commercial use allowed).
@@ -469,8 +469,8 @@ export async function onRequestPost(context) {
         error: "payment_required",
         code: "not_entitled",
         detail:
-          "Photoreal try-on (/api/tryon/hd) requires Pro or a try-on credit balance. " +
-          "The free tier uses the on-device warp+composite pipeline and never calls this route.",
+          "Photoreal try-on requires Pro or a try-on credit. Sign in and subscribe, " +
+          "or pick Instant (experimental overlay) which stays on your device.",
         credits: 0,
       },
       402

@@ -19,7 +19,7 @@
 <meta name="twitter:image" content="https://fashionistas.ai/og.png">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/site.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to use the fashionistas.ai virtual try-on","description":"Upload a photo of a person and a garment photo, press Try it on, then download, save or share the render.","step":[{"@type":"HowToStep","name":"Add a photo of yourself","text":"Pick or drop a photo of the person wearing the garment."},{"@type":"HowToStep","name":"Add a garment","text":"Pick or drop a photo of the item you want to see on."},{"@type":"HowToStep","name":"Try it on","text":"Press Try it on. Free mode warps and composites the garment in your own browser with no upload; Photoreal mode posts person and garment to /api/tryon/hd and requires Pro or a try-on credit."},{"@type":"HowToStep","name":"Keep the result","text":"Download, save or share the rendered image."}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to use the fashionistas.ai virtual try-on","description":"Upload a photo of a person and a garment photo, press Try it on, then download, save or share the render.","step":[{"@type":"HowToStep","name":"Add a photo of yourself","text":"Pick or drop a photo of the person wearing the garment."},{"@type":"HowToStep","name":"Add a garment","text":"Pick or drop a photo of the item you want to see on."},{"@type":"HowToStep","name":"Try it on","text":"Press Try it on. Photoreal mode posts person and garment to /api/tryon/hd (Pro or a try-on credit). Instant mode is an experimental on-device overlay for placement only."},{"@type":"HowToStep","name":"Keep the result","text":"Download, save or share the rendered image."}]}</script>
 <style>
 .to-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:640px){.to-grid{grid-template-columns:1fr}}
@@ -97,6 +97,18 @@
   52.5%,66%{transform:translateY(-4.65em)}
   69.5%,83%{transform:translateY(-6.2em)}
   86.5%,100%{transform:translateY(-7.75em)}}
+@keyframes wordIn{from{opacity:0;transform:translateY(.6em) skewY(3deg)}to{opacity:1;transform:none}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes floatUp{0%{transform:translateY(14px);opacity:0}100%{transform:translateY(0);opacity:1}}
+@keyframes wordShimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes marq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes tagPulse{0%,100%{transform:rotate(-4deg) scale(1)}50%{transform:rotate(-6deg) scale(1.05)}}
+@keyframes shineSweep{0%{transform:translateX(-120%)}60%,100%{transform:translateX(220%)}}
+@keyframes auroraMove{0%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-24px) scale(1.15)}100%{transform:translate(0,0) scale(1)}}
+@keyframes meshDrift{0%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-3%,2%,0) scale(1.07)}100%{transform:translate3d(2%,-2%,0) scale(1.03)}}
+@keyframes bgDrift{0%{transform:translate3d(0,0,0) scale(1.06)}50%{transform:translate3d(-1.6%,1.4%,0) scale(1.11)}100%{transform:translate3d(1.4%,-1.2%,0) scale(1.06)}}
+@keyframes gridPan{from{background-position:0 0}to{background-position:24px 48px}}
 .to-badge{opacity:0;animation:fadeUp .6s cubic-bezier(.22,1,.36,1) both}
 .to-lede{opacity:0;animation:fadeUp .7s .28s cubic-bezier(.22,1,.36,1) both}
 
@@ -225,15 +237,15 @@
  </div>
 
  <div class="to-mode" role="radiogroup" aria-label="Render mode">
- <label class="to-mode-opt on" id="lab-device">
-  <input type="radio" name="to-mode" value="device" checked>
-  <span class="to-mode-t">Instant · free</span>
-  <span class="to-mode-d">Right away, in this browser. Good for checking placement and colour. Your photos never leave your device, and there's nothing to sign up for.</span>
- </label>
- <label class="to-mode-opt" id="lab-hd">
-  <input type="radio" name="to-mode" value="hd">
+ <label class="to-mode-opt on" id="lab-hd">
+  <input type="radio" name="to-mode" value="hd" checked>
   <span class="to-mode-t">Photoreal · Pro</span>
-  <span class="to-mode-d">The full render — real fabric, drape and light, not an overlay. Part of Pro or a try-on credit, and it takes a few minutes.</span>
+  <span class="to-mode-d">The full render — real fabric, drape and light, not an overlay. Sign in with Pro or a try-on credit. Takes a minute or two.</span>
+ </label>
+ <label class="to-mode-opt" id="lab-device">
+  <input type="radio" name="to-mode" value="device">
+  <span class="to-mode-t">Instant · experimental overlay</span>
+  <span class="to-mode-d">Quick browser preview that warps the garment onto your photo. Useful for placement only — not photoreal. Photos stay on this device.</span>
  </label>
 </div>
 
@@ -291,7 +303,7 @@
 
 <div class="card to-card" style="margin-top:18px;animation-delay:.76s">
  <div class="to-stats">
-  <div class="to-stat"><b>0</b><span>photos uploaded in Instant mode — your picture stays in this browser</span></div>
+  <div class="to-stat"><b>0</b><span>photos uploaded in Instant overlay — your picture stays in this browser</span></div>
   <div class="to-stat"><b>1</b><span>click to download, save or share the render once you like it</span></div>
   <div class="to-stat"><b>11</b><span>marketplaces priced by the fee engine, so you know what you keep</span></div>
  </div>
@@ -325,7 +337,7 @@
 <div class="to-toast" id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
-import { TryOnPipeline } from "/core/tryon_pipeline.js";
+import { TryOnPipeline } from "/try-on/tryon_pipeline.js";
 
 (function(){
   "use strict";
@@ -333,7 +345,7 @@ import { TryOnPipeline } from "/core/tryon_pipeline.js";
   // costs $0 at any scale and works with no account and no keys.
   // "hd" is the credit/Pro lane -> /api/tryon/hd (402 if not entitled).
   var API_HD = "/api/tryon/hd";
-  var mode = "device";
+  var mode = "hd";
   var files = { person:null, garment:null };
   var last = { dataUrl:null, blobUrl:null, mime:"image/png", at:0 };
   var busy = false;
@@ -478,7 +490,7 @@ import { TryOnPipeline } from "/core/tryon_pipeline.js";
     });
   }
 
-  // FREE TIER — layers 1 and 2 of core/tryon_pipeline.js: canvas warp+composite
+  // INSTANT (experimental) — layers 1 and 2 of /try-on/tryon_pipeline.js: canvas warp+composite
   // using MediaPipe body anchors (or the documented default layout if the pose
   // model is not available). Everything happens inside this tab: no upload, no
   // request, no account, no key. This is why the free tier costs $0 at any
@@ -502,7 +514,7 @@ import { TryOnPipeline } from "/core/tryon_pipeline.js";
         }
         // The caption under the picture is for the person looking at it, not
         // for us: no pose-model names, no stage names.
-        var note = "Instant preview · your photos never left this device";
+        var note = "Instant experimental overlay · your photos never left this device";
         return new Promise(function(res, rej){
           out.canvas.toBlob(function(b){
             if (!b) return rej(new Error("The on-device renderer produced no image."));
@@ -571,7 +583,7 @@ import { TryOnPipeline } from "/core/tryon_pipeline.js";
     var fd = new FormData();
     fd.append("person", files.person);
     fd.append("garment", files.garment);
-    return fetch(API_HD, { method:"POST", body: fd, accept:"application/json, image/*" })
+    return fetch(API_HD, { method:"POST", body: fd, credentials:"include", headers: { Accept: "application/json, image/*" } })
       .then(function(res){
         var ct = (res.headers.get("content-type") || "").toLowerCase();
         if (!res.ok){
@@ -579,7 +591,13 @@ import { TryOnPipeline } from "/core/tryon_pipeline.js";
             var msg = "Photoreal try-on failed (" + res.status + ").";
             try {
               var j = JSON.parse(t);
-              if (j && (j.detail || j.error || j.message)) msg = "Photoreal try-on failed: " + (j.detail || j.error || j.message);
+              if (res.status === 401) {
+                msg = (j && j.detail) || "Sign in to use Photoreal try-on.";
+              } else if (res.status === 402) {
+                msg = (j && j.detail) || "Photoreal needs Pro or a try-on credit. Instant overlay stays free on this device.";
+              } else if (j && (j.detail || j.error || j.message)) {
+                msg = "Photoreal try-on failed: " + (j.detail || j.error || j.message);
+              }
             } catch(e){ if (t) msg = "Photoreal try-on failed (" + res.status + "): " + t.slice(0,160); }
             throw new Error(msg);
           });
@@ -639,8 +657,8 @@ import { TryOnPipeline } from "/core/tryon_pipeline.js";
       if (dev) dev.classList.toggle("on", mode === "device");
       if (hd) hd.classList.toggle("on", mode === "hd");
       say(mode === "hd"
-            ? "Photoreal render. Your photos go to our model, and it takes a few minutes."
-            : "Instant preview. Your photos stay on this device.",
+            ? "Photoreal render. Sign in with Pro or a credit — photos go to our model for about a minute or two."
+            : "Instant experimental overlay. Photos stay on this device; result is a placement preview, not photoreal.",
           false);
     });
   });
