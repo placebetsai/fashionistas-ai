@@ -307,3 +307,4 @@ body.rd-hero-on #hc-fab{opacity:0;pointer-events:none;transform:scale(.8)}
 .lc-bar{height:38px;min-height:0!important}
 @media (max-width:767px){#land-nav:not(:has(.lc-bar))::after{height:32px}.lc-bar{height:32px}}
 .lc-bar .lc-s{-webkit-text-fill-color:#e9b8ff;color:#e9b8ff;opacity:.85}
+.lc-bar b{background:none!important;-webkit-text-fill-color:currentColor;color:#ffb37a}.lc-bar .lc-m{background:linear-gradient(95deg,#ffb37a,#ff6a4d 60%,#d990ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
