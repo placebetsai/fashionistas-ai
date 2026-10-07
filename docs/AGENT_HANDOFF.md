@@ -1,25 +1,65 @@
 # Agent handoff — fashionistas.ai
 
-> **CURRENT STATE (2026-10-07 night ET):** live tip / `version.txt` = **`593418e`**
-> (chatbot scope expand). Prior tonight: `e768c8f` multilist extension one-click;
-> `c8776cd` try-on pipeline `/try-on/tryon_pipeline.js` 200; `3cfe08b` auth session fix.
-> Federation write-up: `nexus-ai-suite` `handoff.md` §16.8 · `ISSUE_LOG` #45–#47 ·
-> `HANDOFF-2026-10-06.md` §14. Still blocked: Stripe test key, 8 env vars, real Chrome
-> marketplace post (Load unpacked + shop logins), own marketplace deferred.
->
-> **Deploy:** production is **`scripts/deploy-local.sh` / `npx wrangler pages deploy`** →
-> Cloudflare Pages project `fashionistas-ai`. **No GitHub Actions deploy.** A git push does
-> **not** ship the site — only wrangler does. Trust live `version.txt`, not `git ls-remote`.
->
-> The header below claiming `main = 5ffba1e` / try-on dead backend is **stale** — ignore it;
-> use this stamp + live `version.txt` instead.
+## CURRENT STATE — 2026-10-07 night ET (read this first — product source of truth)
 
+**Laptop repo (preferred):** `/home/billionaremaker/fashionistas-ai`  
+**GitHub:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
+**Live tip:** `version.txt` = **`593418e`** (must match after every ship)
+
+### Deploy (mandatory — do not get this wrong)
+
+| Wrong | Right |
+|---|---|
+| GitHub Actions / push to `main` ships the site | **No.** Fashionistas has **no** Actions deploy path for production. |
+| Trust `git ls-remote` as "what's live" | Trust **`https://fashionistas.ai/version.txt`** |
+| — | **Production =** `bash scripts/deploy-local.sh` → `npx wrangler pages deploy . --project-name=fashionistas-ai --branch=main` (Cloudflare Pages project `fashionistas-ai`) |
+
+**A git push does not ship the site. Only wrangler does.**
+
+### Tonight's ships (live SHAs)
+
+| SHA | What | Proof |
+|---|---|---|
+| `3cfe08b` | Auth session fix — stop signing users out on every 401 | prior; login stays across reload |
+| `c8776cd` | Try-on: serve pipeline from `/try-on/`, restore Photoreal | `/try-on/tryon_pipeline.js` **200** 20,019 B; `/core/…` **404**; Photoreal + Instant experimental |
+| `e768c8f` | Multilist one-click via Chrome extension **without Stripe** | zip `…/chrome-store/fashionistas-extension-v1.0.1.zip` **200** 109,648 B; `ADAPTERS` has **ebay+etsy**; `docs/MULTILIST-ONE-CLICK.md`; tests **7/7** |
+| `593418e` | Chatbot conversational expand (live tip) | topics `connect_shops`, `chrome_extension`, `try_on`, `listing_from_photo`, `pricing_plan`, `how_to_list` + fees; smoke Depop / try-on / fees → **200 refused=false**; grounding **19/19** |
+
+```
+$ curl -sS https://fashionistas.ai/version.txt
+593418e978144a43b79f4a31c316afcd8de58083
+$ curl -sS -o /dev/null -w '%{http_code} %{size_download}\n' https://fashionistas.ai/try-on/tryon_pipeline.js
+200 20019
+$ curl -sS -o /dev/null -w '%{http_code} %{size_download}\n' https://fashionistas.ai/chrome-store/fashionistas-extension-v1.0.1.zip
+200 109648
+```
+
+**Still needs a human for first real post:** Load unpacked the extension + shop logins. No real marketplace post has been executed in Chrome yet. Server `/api/list/*` remains **402** until Stripe (paywall) — extension path is the Stripe-free alternative.
+
+### Still blocked
+
+| Blocker | Notes |
+|---|---|
+| Stripe **test** key | billing / server list path |
+| 8 env vars (eBay / Etsy / …) | OAuth + server post |
+| Real Chrome marketplace post | never executed (Load unpacked + shop logins) |
+| Own marketplace | deferred |
+
+### Federation cross-links (secondary)
+
+`nexus-ai-suite` on the same laptop mirrors this night in `handoff.md` §16.8 · `ISSUE_LOG` #45–#47 ·
+`HANDOFF-2026-10-06.md` §14. **This file is the product handoff source of truth**; nexus is the
+federation log.
+
+> Header lines below claiming `main = 5ffba1e` / try-on dead backend are **stale historical copy** —
+> ignore them. Use **CURRENT STATE** + live `version.txt` instead.
+
+---
 
 **Audience:** Other agents continuing product / deploy / Connect / Multilist UX work  
-**Session covered:** 2026-10-04 — **try-on engine pivot (Leffa → FASHN VTON v1.5)**  
+**Session covered (historical header):** 2026-10-04 — try-on engine pivot (Leffa → FASHN VTON v1.5)  
 **Repo:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
-**`main` = `5ffba1e`** — pushed & verified (`ls-remote` == `rev-parse`), tree clean  
-**Handoff refreshed:** 2026-10-04 — **read `MISSION` first, then `TRY-ON ENGINE`, then §0**  
+**Handoff refreshed:** 2026-10-07 night ET — **read CURRENT STATE first**, then `MISSION`, then older sections  
 
 Read this before changing live Pages, inventing marketplace credentials, merging eBay-centric UX, or assuming GitHub `main` equals production.
 
