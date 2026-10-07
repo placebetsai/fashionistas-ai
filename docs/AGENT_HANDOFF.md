@@ -4,7 +4,7 @@
 
 **Laptop repo (preferred):** `/home/billionaremaker/fashionistas-ai`  
 **GitHub:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
-**Live tip:** `version.txt` = **`94e095c`** after wrangler deploy — must match `https://fashionistas.ai/version.txt`
+**Live tip:** `version.txt` = **`496b09a`** (feature ship; after wrangler, tip = deploy HEAD) — must match `https://fashionistas.ai/version.txt`
 
 ### Deploy (mandatory — do not get this wrong)
 
@@ -20,19 +20,9 @@
 
 | SHA | What | Proof |
 |---|---|---|
-| prior | Chatbot expand / multilist / try-on pipeline | see git log |
-| `a5da396` | **Seller coach layer** — What's next + empty-state path + help chips/tips + stylist questions (`libs/seller-coach.js`) | Sign in → **What's next**; Photo **First sale path**; form `?` chips; tests **6/6** |
+| prior (`593418e`…) | Chatbot expand / multilist / try-on pipeline | see git log |
+| `a5da396` | Seller coach layer (Photo → Sell everywhere checklist / help chips) | `libs/seller-coach.js` + tests |
 | `496b09a` | **Free See in my space** — room photo placer (4-corner wall + floor drag/scale/rotate) + optional `<model-viewer>` wall/floor AR from client GLB; CTAs on Shop/Closet detail; `placement_mode` inferred (`clothing`\|`wall`\|`floor`\|`none`); honest Instant/not-photoreal labels | `/see-in-space/` · tests `placement-mode` + `placer-homography` **12/12** · brief `docs/FREE-SEAMLESS-ANYOBJECT.md` |
-
-
-### Seller coach — how to see it
-
-1. Sign in (or **Log in as demo seller**).
-2. Lower-left floating **What's next** checklist (Photo → Identify → Fill listing → Multilist → Connect extension → Sell everywhere).
-3. Open **Photo** with no listings for the **First sale path** empty-state banner.
-4. After AI fill, listing form **? Price help / Size help / Brand help** chips open the stylist with a suggested question (reuses chat topics; no new paid APIs).
-5. Tip targets also cover **Sell everywhere**, **Connect extension**, **Try it on**, **See in my space**.
-6. Progress stored locally as `fash_seller_coach_v1`. Source: `/libs/seller-coach.js` (24054 B). Feature SHA: `a5da396` / `a5da396843efc9c263b343f60be262d7aa372c33`. Handoff stamp commit: `94e095c` / `94e095cc0f66d9a498d207ab399dd28e51965f48`.
 
 ### See in my space — how to demo on phone
 
@@ -40,6 +30,14 @@
 2. Upload room photo → upload listing image → Wall: drag 4 corner handles; Floor: drag + scale/rotate.
 3. Optional AR: rebuild plane → use model-viewer AR (Android Scene Viewer / iOS Quick Look when supported). If AR unsupported, photo placer remains — never a dead end.
 4. Labels: **Instant preview · free forever** / **Not photoreal**. No Stripe / no paid VTON on this path.
+
+### Seller coach — how to see it
+
+1. Sign in (or **Log in as demo seller**).
+2. Lower-left floating **What's next** checklist (Photo → Identify → Fill listing → Multilist → Connect extension → Sell everywhere).
+3. Open **Photo** with no listings for the **First sale path** empty-state banner.
+4. After AI fill, listing form help chips open the stylist with a suggested question.
+5. Progress stored locally as `fash_seller_coach_v1`. Source: `/libs/seller-coach.js`.
 
 ### Still blocked
 
