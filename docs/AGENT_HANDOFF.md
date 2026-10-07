@@ -994,3 +994,9 @@ npx wrangler pages deployment list --project-name=fashionistas-ai
 - QA (box): /workspace/qa5.py TAG URL devices -> /workspace/fash-mobile-qa5/<TAG>/. Pixel 7 / 360 / 320 / iPhone 13, light+dark, y0/1000/2000/menu: header at top, tab bar at bottom, nothing overlapping it, no JS errors.
 - Known: Playwright WebKit (iPhone) crashes intermittently while scrolling the Shop list — same on prod, pre-existing, not caused by this work; check on a real iPhone.
 - v20/v21 (preview, 717f279 + 0310eee): "What's next" coach bar shows on Home only on phones (mobile-nav.js sets html[data-mtv]=current view); menu has a "What's next · Checklist" row (mtShowNext → Home + expands it). Chat button 44px, tab bar +16px (Home: +70px above the coach bar), hidden while the checklist is expanded; .wrap bottom padding tb+76px so content scrolls clear; snackbar sits left of the chat button above the tab bar. QA: /tmp/qa6.py-style scan found 0 chat-button/"Try it on" overlaps over the whole Shop page (Pixel 7, 360px).
+
+## 2026-10-07 15:00 ET — SHIPPED: phone header + bottom tab bar + coach bar Home-only (Iz said "Goooo")
+- Production: 0d44887b-acd7-46e4-ac74-77c7896251d8 (2eb3f16 = 0310eee mobile-nav polish + handoff-only commit). Same code as https://mobile-nav-preview.fashionistas-ai.pages.dev (0e293477, 0310eee).
+- Rollback: f408459d-5d27-4523-acbd-0d7711c8f6d3 (1c174ff, flicker fix only). Older: 45b2aecb-3cf5-4659-9a88-b3090771bbec (58af13b).
+- Deployed via scripts/deploy-local.sh (no DEPLOY_BRANCH) after rm -rf node_modules/.cache/wrangler and unsetting CF_ACCOUNT_ID; version.txt verified == 2eb3f16; /.env* /.git/config 404.
+- Live QA (Pixel 7 + Galaxy 360, light+dark, landing + demo app): header pinned (top 0) and tab bar visible at y=0 and y=2000; 0 JS errors; Shop "Try it on" vs chat button overlap 0/26 and 0/27 positions; "What's next" menu row opens the checklist; DOM mutations 13 per 3s (hero word rotators), identical to the rollback deploy; layout shift 0.
