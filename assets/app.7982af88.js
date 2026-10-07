@@ -1998,6 +1998,11 @@ function countUp(root){
    const pre = el.getAttribute("data-pre") || "";
    const dec = parseInt(el.getAttribute("data-dec") || "0", 10);
    if (!isFinite(target)) return;
+   /* Count each number ONCE. countUp's own text writes are DOM mutations, and
+      the #screen observer re-ran countUp on every mutation — so the stats
+      restarted from 0 forever (the "blinking" on phones). */
+   if (el.__counted === target) return;
+   el.__counted = target;
    const fmtV = v => pre + v.toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec});
    if (reduce){ el.textContent = fmtV(target); return; }
    let t0 = 0; const dur = 1100;
@@ -4976,7 +4981,7 @@ else { $("#view-auth").classList.remove("hidden"); $("#view-app").classList.add(
     nodes(root).forEach(function(el){
       var tip = el.getAttribute("data-tip");
       if (!tip) return;
-      if (!CAN_HOVER){ el.setAttribute("title", tip); return; }
+      if (!CAN_HOVER){ if (el.getAttribute("title") !== tip) el.setAttribute("title", tip); return; }
       // hover devices get the bubble instead of a second, delayed native one
       if (el.hasAttribute("title")) el.removeAttribute("title");
       if (!el.getAttribute("aria-label") && !(el.textContent || "").trim()) el.setAttribute("aria-label", tip);

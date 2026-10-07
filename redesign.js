@@ -36,9 +36,12 @@
   var bar = document.createElement('div'); bar.className = 'rd-bcta'; var b = src.cloneNode(true); b.removeAttribute('data-tip'); bar.appendChild(b);
   document.body.appendChild(bar);
   var heroOn = true, cardOn = false;
-  function upd(){ var on = !heroOn && !cardOn; bar.classList.toggle('on', on); document.body.classList.toggle('rd-bcta-on', on); }
+  var auth = document.getElementById('view-auth');
+  function upd(){ var on = !heroOn && !cardOn && !(auth && auth.classList.contains('hidden')); bar.classList.toggle('on', on); document.body.classList.toggle('rd-bcta-on', on); }
   new IntersectionObserver(function(e){ heroOn = e[e.length-1].isIntersecting; upd(); }, {rootMargin:'0px 0px -40% 0px'}).observe(hero);
   if (card) new IntersectionObserver(function(e){ cardOn = e[e.length-1].isIntersecting; upd(); }).observe(card);
+  /* signed in: the landing CTA must never sit over the app tab bar */
+  if (auth && 'MutationObserver' in window) new MutationObserver(upd).observe(auth, {attributes:true, attributeFilter:['class']});
 })();
 /* rotating pill: replay a soft settle on each word change (word is never hidden) */
 (function(){

@@ -351,3 +351,11 @@ body.rd-hero-on #hc-fab{opacity:0;pointer-events:none;transform:scale(.8)}
   body.rd-bcta-on .rd-bcta{padding-right:72px}
   body.rd-bcta-on #hc-fab{bottom:calc(12px + env(safe-area-inset-bottom))!important;right:14px;width:48px;height:48px;box-shadow:0 4px 12px rgba(0,0,0,.18);z-index:41}
 }
+
+/* v12 — mobile calm: no endless motion, no blur repaint on scroll, landing chrome hidden in the app */
+body:has(#view-app:not(.hidden)) .land-site-footer,
+body:has(#view-app:not(.hidden)) .rd-bcta{display:none!important}
+@media (max-width:767px), (prefers-reduced-motion:reduce){
+  .fash-word,.hero-tick .ht-dot,.land-card::before,.dest-track,[class*="shimmer"],.sheen::before,.sheen::after{animation:none!important}
+  #topbar,#tabbar,.tabbar,.rd-bcta,.land-nav,#screen-head,.seller-coach-banner,[class*="sticky"]{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+}
