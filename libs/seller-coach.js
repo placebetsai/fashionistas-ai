@@ -365,7 +365,7 @@
       );
     }).join("");
 
-    body.innerHTML =
+    var bodyHtml =
       nextHtml +
       '<ul class="sc-list">' +
       list +
@@ -375,8 +375,9 @@
       " of " +
       STEPS.length +
       " done · tips stay local on this device</p>";
+    if (body.__scSig !== bodyHtml) { body.innerHTML = bodyHtml; body.__scSig = bodyHtml; }
 
-    panel.classList.remove("hidden");
+    if (panel.classList.contains("hidden")) panel.classList.remove("hidden");
     // Expand when there is still work, or first open
     var st = loadState();
     if (!st.panelOpened) {
@@ -446,6 +447,10 @@
       '<button type="button" class="sc-ask" data-sc-dismiss="1">Hide for now</button>' +
       "</div></div>";
 
+    /* Unchanged banner: do NOT rewrite it. Rewriting #screen children woke the
+       app's #screen observer, which re-ran the entrance animation and called
+       refresh() again — an endless repaint loop ("blinking" on phones). */
+    if (old && old.__scSig === html) return;
     if (old) {
       old.outerHTML = html;
     } else {
@@ -458,6 +463,7 @@
     }
 
     var banner = document.getElementById(BANNER_ID);
+    if (banner) banner.__scSig = html;
     if (!banner || banner._scBound) return;
     banner._scBound = true;
     banner.addEventListener("click", function (e) {

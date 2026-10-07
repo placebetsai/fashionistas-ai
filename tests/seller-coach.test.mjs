@@ -14,7 +14,7 @@ const html = indexSource(ROOT);
 const coach = readFileSync(join(ROOT, "libs/seller-coach.js"), "utf8");
 
 test("index includes /seller-coach.js (public; libs/ blocked by Pages Functions)", () => {
-  assert.match(html, /src="\/seller-coach\.js"/);
+  assert.match(html, /src="\/seller-coach\.js(\?v=\d+)?"/);
   assert.doesNotMatch(html, /src="\/libs\/seller-coach\.js"/);
   assert.match(html, /SellerCoach\.refresh/);
 });
@@ -71,6 +71,6 @@ test("public /seller-coach.js matches libs/seller-coach.js (libs HTTP is blocked
   const pub = readFileSync(join(ROOT, "seller-coach.js"), "utf8");
   const lib = readFileSync(join(ROOT, "libs/seller-coach.js"), "utf8");
   assert.equal(pub, lib);
-  assert.match(html, /src="\/seller-coach\.js"/);
+  assert.match(html, /src="\/seller-coach\.js(\?v=\d+)?"/);
   assert.doesNotMatch(html, /src="\/libs\/seller-coach\.js"/);
 });
