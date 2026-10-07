@@ -4899,6 +4899,17 @@ document.querySelectorAll("#auth-tab-login,#auth-tab-signup").forEach(b=>b.oncli
   function schedule(){ if (t) clearTimeout(t); t = setTimeout(run, 50); }
   if ("MutationObserver" in window){
     new MutationObserver(function(muts){
+      /* Ignore the seller-coach banner and our own count-up text writes —
+         they are not a new screen and must not re-trigger this hook. */
+      const coach = function(n){ return n && n.nodeType === 1 && n.id === "seller-coach-banner"; };
+      muts = muts.filter(function(m){
+        if (m.type === "characterData") return false;
+        const nodes = [].slice.call(m.addedNodes).concat([].slice.call(m.removedNodes));
+        if (nodes.length && nodes.every(function(n){ return coach(n) || n.nodeType === 3; })) return false;
+        if (m.target && m.target.closest && m.target.closest("#seller-coach-banner,[data-count]")) return false;
+        return true;
+      });
+      if (!muts.length) return;
       // Only a swapped-out screen re-runs the entrance; a filter that just
       // rewrites a grid must not re-animate the whole page under the user.
       if (muts.some(function(m){ return m.target === scr; })) freshen();
