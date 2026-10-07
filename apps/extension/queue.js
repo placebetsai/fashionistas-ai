@@ -544,6 +544,7 @@ async function runPublish(job, cfg, adapter, shopKey) {
   const SEL = selectorsFor(shopKey);
 
   const tab = await chrome.tabs.create({ url: cfg.createUrl, active: false });
+  let keepTab = false;
   try {
     await waitForLoad(tab.id);
     await sleep(rand(1200, 3000));
@@ -559,6 +560,13 @@ async function runPublish(job, cfg, adapter, shopKey) {
     const missingCritical = ((fillRes && fillRes.missing) || []).filter((m) => CRITICAL_FIELDS.includes(m));
     if (missingCritical.length) {
       return { status: "failed", error: `missing_fields:${missingCritical.join(",")}` };
+    }
+    // Category could not be confirmed against the shop's own picker: never
+    // auto-submit under a guessed category. Leave the tab open for the seller.
+    if (fillRes && Array.isArray(fillRes.needsConfirm) && fillRes.needsConfirm.length) {
+      keepTab = true;
+      try { await chrome.tabs.update(tab.id, { active: true }); } catch (e) {}
+      return { status: "failed", error: `needs_review:${fillRes.needsConfirm.join(",")}`, hint: `Pick "${payload.category || ""}" in the form, then post.` };
     }
 
     await sleep(rand(700, 1800));
@@ -585,7 +593,7 @@ async function runPublish(job, cfg, adapter, shopKey) {
     }
     return { status: "posted", listing_url: listingUrl };
   } finally {
-    await closeTab(tab.id);
+    if (!keepTab) await closeTab(tab.id);
   }
 }
 

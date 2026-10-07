@@ -85,17 +85,21 @@ fi
 [ -f "$STAGE/version.txt" ] || { echo "deploy-local: version.txt missing from stage" >&2; exit 1; }
 
 # --- upload ----------------------------------------------------------------
-npx wrangler pages deploy "$STAGE" --project-name=fashionistas-ai --branch=main
+BRANCH="${DEPLOY_BRANCH:-main}"
+case "$BRANCH" in *[!a-z0-9-]*) echo "deploy-local: DEPLOY_BRANCH must be lowercase letters, digits, dashes" >&2; exit 1;; esac
+if [ "$BRANCH" = "main" ]; then BASE="https://fashionistas.ai"; else BASE="https://${BRANCH}.fashionistas-ai.pages.dev"; fi
+echo "deploy-local: branch=$BRANCH -> $BASE"
+npx wrangler pages deploy "$STAGE" --project-name=fashionistas-ai --branch="$BRANCH"
 
 # --- verify ----------------------------------------------------------------
-echo "deploy-local: verifying https://fashionistas.ai/version.txt == $SHA"
+echo "deploy-local: verifying $BASE/version.txt == $SHA"
 for i in 1 2 3 4 5 6 7 8 9 10; do
-  live="$(curl -fsS https://fashionistas.ai/version.txt 2>/dev/null | tr -d '[:space:]' || true)"
+  live="$(curl -fsS "$BASE/version.txt" 2>/dev/null | tr -d '[:space:]' || true)"
   echo "  attempt $i: live=${live:-<empty>}"
   if [ "$live" = "$SHA" ]; then
     echo "deploy-local: VERIFIED — live == $SHA"
     for p in /.env.deploy /.env.modal /.env /.git/config /.dev.vars; do
-      code="$(curl -s -o /dev/null -w '%{http_code}' "https://fashionistas.ai$p")"
+      code="$(curl -s -o /dev/null -w '%{http_code}' "$BASE$p")"
       echo "  $p -> $code"
       [ "$code" = "404" ] || { echo "deploy-local: WARNING $p did not 404" >&2; exit 1; }
     done

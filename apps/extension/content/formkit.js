@@ -91,17 +91,31 @@
     return String(el.value) === String(value);
   }
 
-  /** Fill an <input> that has an autocomplete dropdown, then pick a suggestion. */
-  async function setWithSuggestions(el, value, SEL) {
+  /**
+   * Fill an autocomplete input, then CONFIRM the suggestion before clicking it.
+   * value may be a shop path ("Womenswear > Tops > T-shirts"): we type the leaf
+   * and only click a suggestion whose text is the leaf (or contains it, and
+   * contains the parent when the shop shows breadcrumbs). No match -> nothing
+   * is clicked and the field is reported as needing the seller's pick, so the
+   * listing is never filed under whatever happened to be first.
+   * Returns true | false | "unconfirmed".
+   */
+  const nrm = (t) => String(t || "").toLowerCase().replace(/[’']/g, "").replace(/&/g, "and").replace(/\s+/g, " ").trim();
+  async function setWithSuggestions(el, value, SEL, strict) {
     if (!el) return false;
-    setValue(el, value);
+    const parts = String(value).split(">").map((x) => x.trim()).filter(Boolean);
+    const leaf = parts.length ? parts[parts.length - 1] : String(value);
+    const parent = parts.length > 1 ? parts[parts.length - 2] : "";
+    setValue(el, leaf);
     await sleep(rand(450, 1100));
-    const sugg = q(SEL.suggestions);
-    if (sugg && visible(sugg)) {
-      sugg.click();
-      await sleep(rand(250, 700));
-      return true;
-    }
+    const items = qAll(SEL.suggestions).filter(visible).slice(0, 60);
+    const L = nrm(leaf), P = nrm(parent);
+    const exact = items.find((it) => nrm(it.textContent) === L);
+    const withParent = P ? items.find((it) => { const t = nrm(it.textContent); return t.includes(L) && t.includes(P); }) : null;
+    const contains = items.find((it) => nrm(it.textContent).includes(L));
+    const pick = withParent || exact || (strict ? null : contains);
+    if (pick) { pick.click(); await sleep(rand(250, 700)); return true; }
+    if (strict) return "unconfirmed";
     return String(el.value || "") !== "";
   }
 
@@ -188,6 +202,7 @@
     };
     const filled = [];
     const missing = [];
+    const needsConfirm = [];
 
     // 1) photos first — most shops unlock the rest of the form afterwards
     let photoResult = { uploaded: 0 };
@@ -215,8 +230,12 @@
         const el = q(cands);
         if (!el || !visible(el)) continue;
         const ok = SEL.autocomplete && SEL.autocomplete.includes(key)
-          ? await setWithSuggestions(el, String(value), SEL)
+          ? await setWithSuggestions(el, String(value), SEL, key === "category")
           : setValue(el, String(value));
+        if (ok === "unconfirmed") {
+          if (!needsConfirm.includes(key)) needsConfirm.push(key);
+          continue;
+        }
         if (ok) {
           filled.push(key);
           progress = true;
@@ -244,7 +263,7 @@
       if (v !== undefined && v !== null && v !== "" && !filled.includes(k)) missing.push(k);
     }
 
-    return { ok: missing.length === 0, filled, missing, photos: photoResult.uploaded };
+    return { ok: missing.length === 0 && needsConfirm.length === 0, filled, missing, needsConfirm, photos: photoResult.uploaded };
   }
 
   /**

@@ -15,6 +15,8 @@
  */
 
 import { requireActiveSubscriber, json, missingEnv } from "../_lib/auth.js";
+import { resolveCategory } from "../../_lib/categories.js";
+import { etsyTaxonomyFor } from "../../_lib/etsy-taxonomy.js";
 import { publishToEbaySandbox } from "./ebay.js";
 import { createEtsyListing } from "./etsy.js";
 
@@ -57,18 +59,20 @@ export async function onRequestPost(context) {
     );
   }
 
+  const row = resolveCategory(body.category);
+  const etsyTax = body.taxonomyId ? null : await etsyTaxonomyFor(body.category, env.ETSY_API_KEY).catch(() => null);
   const [ebay, etsy] = await Promise.all([
     runOne("ebay", env, EBAY_VARS, () =>
       publishToEbaySandbox(env, {
         ...body,
-        categoryId: body.categoryId || "11483",
+        categoryId: body.categoryId || (row ? row.ebay.id : ""),
         condition: body.condition || "USED_EXCELLENT",
       })
     ),
     runOne("etsy", env, ETSY_VARS, () =>
       createEtsyListing(env, {
         ...body,
-        taxonomyId: body.taxonomyId || 1,
+        taxonomyId: body.taxonomyId || (etsyTax ? etsyTax.id : ""),
         quantity: body.quantity || 1,
       })
     ),

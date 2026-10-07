@@ -12,6 +12,7 @@
  */
 
 import { requireActiveSubscriber, json, missingEnv } from "../_lib/auth.js";
+import { etsyTaxonomyFor } from "../../_lib/etsy-taxonomy.js";
 
 const ETSY_VARS = ["ETSY_API_KEY", "ETSY_SHARED_SECRET"];
 const ETSY_API = "https://openapi.etsy.com/v3";
@@ -59,6 +60,7 @@ export async function onRequestPost(context) {
   let body;
   try {
     body = await request.json();
+    if (body && !body.taxonomyId && body.category) { const t = await etsyTaxonomyFor(body.category, env.ETSY_API_KEY).catch(() => null); if (t) body.taxonomyId = t.id; }
   } catch (err) {
     return json({ ok: false, error: "invalid_json", detail: String((err && err.message) || err) }, 400);
   }

@@ -476,6 +476,20 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
     });
   });
 
+  /* Buyer flow: a product page links here with ?item=<listing photo>&title=…
+     so the shopper only adds their own photo. Falls back to manual pick. */
+  (function preloadItem(){
+    try {
+      var qp = new URLSearchParams(location.search), src = qp.get("item");
+      if (!src || !/^(https?:\/\/|\/)/i.test(src)) return;
+      fetch(src, { credentials: "omit" }).then(function(r){ if (!r.ok) throw 0; return r.blob(); }).then(function(b){
+        if (!/^image\//.test(b.type || "")) throw 0;
+        setFile("garment", new File([b], "listing.jpg", { type: b.type }));
+        var t = qp.get("title"); if (t) say("Item loaded: " + t.slice(0, 80) + ". Now add a photo of yourself.", false);
+      }).catch(function(){ say("Couldn't load the item photo automatically — save it from the listing and add it here.", false); });
+    } catch (e) {}
+  })();
+
   function readAsDataUrl(blob){
     return new Promise(function(res, rej){
       var r = new FileReader();

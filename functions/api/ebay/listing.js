@@ -13,6 +13,7 @@
 
 import { getFreshToken } from "./oauth/callback.js";
 import { requireAuth } from "../_lib/auth.js";
+import { resolveCategory } from "../../_lib/categories.js";
 
 const TOK_COOKIE = "ebay_oauth_tok";
 const BYO_COOKIE = "ebay_byo_sess";
@@ -191,17 +192,25 @@ function mapCondition(raw) {
   return "USED_GOOD";
 }
 
-/** Rough US clothing leaf categories — seller should verify in Seller Hub. */
-function mapCategoryId(category, title) {
-  const c = String(category || "").toLowerCase();
-  const t = String(title || "").toLowerCase();
-  if (/shoe|sneaker|boot|heel/.test(c + " " + t)) return "4675";
-  if (/dress/.test(c + " " + t)) return "63861";
-  if (/outer|jacket|coat|blazer/.test(c + " " + t)) return "63862";
-  if (/bottom|jean|pant|trouser|skirt|short/.test(c + " " + t)) return "63863";
-  if (/accessor|bag|belt|hat|scarf/.test(c + " " + t)) return "4250";
-  if (/top|shirt|blouse|tee|sweater|knit/.test(c + " " + t)) return "53159";
-  return "11450"; // Clothing, Shoes & Accessories root fallback (may need leaf)
+/**
+ * Category from the shared table (functions/_lib/categories.js). Verified leaf
+ * ids are used as-is. For rows not yet verified, eBay's own Taxonomy API is
+ * asked first (getCategorySuggestions, EBAY_US tree 0) and the table id is the
+ * fallback. Never returns a parent like 11450 (eBay rejects non-leaf ids).
+ */
+async function pickCategoryId(host, token, category, title) {
+  const row = resolveCategory(category) || resolveCategory(title);
+  if (row && row.ebay.verified) return { categoryId: row.ebay.id, row, source: "table" };
+  const q = [row ? row.dept + " " + row.sub : "", title].filter(Boolean).join(" ").slice(0, 120);
+  if (q && token) {
+    try {
+      const r = await ebayFetch(host, `/commerce/taxonomy/v1/category_tree/0/get_category_suggestions?q=${encodeURIComponent(q)}`, { method: "GET", token });
+      const hit = r.ok && r.data && Array.isArray(r.data.categorySuggestions) && r.data.categorySuggestions[0];
+      if (hit && hit.category && hit.category.categoryId) return { categoryId: String(hit.category.categoryId), row, source: "ebay_taxonomy" };
+    } catch {}
+  }
+  if (row) return { categoryId: row.ebay.id, row, source: "table_unverified" };
+  return { categoryId: "", row: null, source: "none" };
 }
 
 function skuFromListing(body) {
@@ -487,7 +496,14 @@ export async function onRequestPost(context) {
   const sku = skuFromListing(body);
   const marketplaceId = safeStr(body.marketplaceId) || "EBAY_US";
   const condition = mapCondition(body.condition);
-  const categoryId = safeStr(body.categoryId) || mapCategoryId(body.category, title);
+  const host0 = apiHost(ebayEnv);
+  const picked = safeStr(body.categoryId)
+    ? { categoryId: safeStr(body.categoryId), row: resolveCategory(body.category), source: "caller" }
+    : await pickCategoryId(host0, tok.access_token, body.category, title);
+  const categoryId = picked.categoryId;
+  if (!categoryId) {
+    return json({ ok: false, error: "category_required", message: "Pick a department and type of item so we can choose the right eBay category." }, 400);
+  }
   const brand = safeStr(body.brand);
   const size = safeStr(body.size);
   const color = safeStr(body.color);
@@ -499,7 +515,17 @@ export async function onRequestPost(context) {
   if (brand) aspects.Brand = [brand];
   if (size) aspects.Size = [size];
   if (color) aspects.Color = [color];
-  if (body.category) aspects.Style = [String(body.category)];
+  // Item specifics eBay asks for on fashion leaves (Department, Type, Material…)
+  const row = picked.row;
+  if (row) {
+    if (["Women", "Men"].includes(row.dept)) aspects.Department = [row.dept];
+    if (row.dept === "Kids") aspects.Department = [/^Boys/.test(row.sub) ? "Boys" : /^Girls/.test(row.sub) ? "Girls" : "Unisex Kids"];
+    aspects.Type = [row.sub.replace(/s$/, "")];
+    if (row.group === "clothing" && size) aspects["Size Type"] = ["Regular"];
+  }
+  const material = safeStr(body.material);
+  if (material) aspects.Material = [material];
+  if (body.style) aspects.Style = [safeStr(body.style)];
 
   const inventoryItem = {
     availability: {

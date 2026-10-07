@@ -607,7 +607,7 @@
         title: listing.title,
         description: listing.description,
         price: formatPrice(listing.price, shop.price),
-        category: listing.category,
+        category: String(listing.category || "").split(">").pop().trim(),
         brand: listing.brand,
         size: listing.size,
         condition: listing.condition

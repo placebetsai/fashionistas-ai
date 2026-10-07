@@ -271,35 +271,19 @@ function shopPublicRows(list){
    looked fine until a shopper clicked a category chip — then it threw
    "ReferenceError: canonCat is not defined" and the filter silently did
    nothing. */
-const TAX = {
-  "Women's Clothing": ["Tops & Shirts","Bottoms","Dresses","Outerwear","Activewear","Lingerie & Sleepwear","Swimwear"],
-  "Men's Clothing":    ["Tops & Shirts","Bottoms","Outerwear","Suits & Formal","Activewear","Underwear & Sleepwear"],
-  "Kids & Baby":       ["Girls' Clothing","Boys' Clothing","Baby & Toddler","Kids' Shoes","School Uniform"],
-  "Shoes":             ["Women's Shoes","Men's Shoes","Kids' Shoes","Athletic Shoes","Boots","Sandals & Flip Flops"],
-  "Bags & Luggage":    ["Handbags","Backpacks","Totes & Shoppers","Crossbody Bags","Luggage & Suitcases"],
-  "Accessories":       ["Jewellery","Watches","Hats & Caps","Belts","Scarves & Wraps","Sunglasses","Wallets & Cardholders"],
-  "Vintage & Designer":["Vintage","Designer","Streetwear","Band Merch"],
-  "Sports & Outdoor":  ["Activewear","Camping & Hiking","Cycling","Yoga & Pilates","Water Sports"],
-  "Home & Decor":      ["Wall Art & Paintings","Posters & Prints","Mirrors","Rugs","Furniture","Lamps & Lighting","Home Accents"]
-};
-/* Flat values written before the tree existed -> where they live now. */
-const TAX_LEGACY = {
-  "top":"Women's Clothing/Tops & Shirts", "tops":"Women's Clothing/Tops & Shirts", "shirt":"Women's Clothing/Tops & Shirts", "t-shirt":"Women's Clothing/Tops & Shirts",
-  "bottom":"Women's Clothing/Bottoms", "bottoms":"Women's Clothing/Bottoms", "trousers":"Women's Clothing/Bottoms", "jeans":"Women's Clothing/Bottoms",
-  "dress":"Women's Clothing/Dresses", "dresses":"Women's Clothing/Dresses",
-  "outerwear":"Women's Clothing/Outerwear", "jacket":"Women's Clothing/Outerwear", "coat":"Women's Clothing/Outerwear",
-  "lingerie":"Women's Clothing/Lingerie & Sleepwear", "swimwear":"Women's Clothing/Swimwear",
-  "shoe":"Shoes", "shoes":"Shoes",
-  "accessory":"Accessories", "accessories":"Accessories",
-  "athletic":"Sports & Outdoor/Activewear", "sport":"Sports & Outdoor/Activewear", "sports":"Sports & Outdoor/Activewear",
-  "bag":"Bags & Luggage", "bags":"Bags & Luggage", "handbag":"Bags & Luggage/Handbags", "purse":"Bags & Luggage/Handbags",
-  "kid":"Kids & Baby", "kids":"Kids & Baby", "baby":"Kids & Baby/Baby & Toddler",
-  "vintage":"Vintage & Designer/Vintage", "designer":"Vintage & Designer/Designer",
-  "hat":"Accessories/Hats & Caps", "cap":"Accessories/Hats & Caps", "jewellery":"Accessories/Jewellery", "jewelry":"Accessories/Jewellery", "watch":"Accessories/Watches",
-  "painting":"Home & Decor/Wall Art & Paintings", "paintings":"Home & Decor/Wall Art & Paintings", "poster":"Home & Decor/Posters & Prints", "posters":"Home & Decor/Posters & Prints",
-  "print":"Home & Decor/Posters & Prints", "prints":"Home & Decor/Posters & Prints", "wall art":"Home & Decor/Wall Art & Paintings", "furniture":"Home & Decor/Furniture",
-  "rug":"Home & Decor/Rugs", "rugs":"Home & Decor/Rugs", "lamp":"Home & Decor/Lamps & Lighting", "lamps":"Home & Decor/Lamps & Lighting", "mirror":"Home & Decor/Mirrors"
-};
+/* Tree now comes from the shared category table (functions/_lib/categories.js
+   -> assets/categories.js, window.FASH_CAT). Departments: Women, Men, Kids,
+   Home, Art. Stored value is "Dept/Sub". Every older value (flat "Tops", the
+   previous "Women's Clothing/Tops & Shirts" tree) resolves through LEGACY so
+   existing listings still load and filter. */
+const FCAT = (typeof window !== "undefined" && window.FASH_CAT) || { departments:[], categories:[], sizes:{}, legacy:{} };
+const TAX = {};
+FCAT.departments.forEach(d => { TAX[d] = FCAT.categories.filter(c => c.dept === d).map(c => c.sub); });
+const TAX_LEGACY = FCAT.legacy || {};
+function catRow(raw){ const p = taxPath(raw); if (!p || p.indexOf("/") < 0) return null; return FCAT.categories.find(c => c.path === p) || null; }
+/* Shop's own category path for a stored value ("Womenswear > Tops"), "" if the shop has none. */
+function shopCatPath(raw, shop){ const r = catRow(raw); if (!r) return ""; if (shop === "ebay") return r.ebay.id; if (shop === "etsy") return r.etsy || ""; return (r.shops && r.shops[shop]) || ""; }
+function catSizes(raw){ const r = catRow(raw); return r ? (FCAT.sizes[r.size] || []) : []; }
 function taxDepts(){ return Object.keys(TAX); }
 function taxSubs(dept){ return (TAX[dept] || []).slice(); }
 /* Any stored value -> canonical path ("", "Dept" or "Dept/Sub"). */
@@ -308,6 +292,8 @@ function taxPath(raw){
   /* Tolerate a leading slash: older rows were keyed "/tops", and a value that
      can't be resolved is worse than one resolved one step loosely. */
   const v = raw.trim().replace(/^\/+/, ""); if (!v) return "";
+  const lk = v.toLowerCase().replace(/\s*\/\s*/g, "/");
+  if (TAX_LEGACY[lk]) return TAX_LEGACY[lk];
   if (v.indexOf("/") > -1){
     const parts = v.split("/").map(s => s.trim()).filter(Boolean);
     if (parts.length >= 1 && TAX[parts[0]]) {
@@ -363,6 +349,11 @@ const ICONS = {
   tag:'<path d="M3.5 11.4V4.5h6.9l9.1 9.1-6.9 6.9-9.1-9.1Z"/><circle cx="7.5" cy="8.5" r="1.4"/>'
 };
 const DEPT_ART = {
+  "Women":               { a:"#ff8a3d", b:"#ff3d6e", ic:"dress" },
+  "Men":                 { a:"#4f7cff", b:"#7c5cff", ic:"shirt" },
+  "Kids":                { a:"#24c6a5", b:"#2f80ed", ic:"kid"   },
+  "Home":                { a:"#f7971e", b:"#c84b31", ic:"tag"   },
+  "Art":                 { a:"#c8860a", b:"#8b5cf6", ic:"gem"   },
   "Women's Clothing":    { a:"#ff8a3d", b:"#ff3d6e", ic:"dress" },
   "Men's Clothing":      { a:"#4f7cff", b:"#7c5cff", ic:"shirt" },
   "Kids & Baby":         { a:"#24c6a5", b:"#2f80ed", ic:"kid"   },
@@ -1031,6 +1022,18 @@ function marketClearFilters(){
   marketRefresh();
   refreshTips();
 }
+/* Buyer-only preview button on a search-result card. */
+function marketCardTry(m){
+  const mode = inferPlacementMode(m || {});
+  if (mode !== "clothing" && mode !== "wall" && mode !== "floor") return "";
+  const q = [];
+  if (mode !== "clothing") q.push("mode=" + mode);
+  if (m.photo_url) q.push("item=" + encodeURIComponent(m.photo_url));
+  if (m.title) q.push("title=" + encodeURIComponent(String(m.title).slice(0, 80)));
+  const href = (mode === "clothing" ? "/try-on/" : "/see-in-space/") + (q.length ? "?" + q.join("&") : "");
+  const label = mode === "clothing" ? "Try it on" : "See it in my room";
+  return `<a class="btn btn-soft btn-sm" style="margin:0 2px 10px;align-self:flex-start" href="${escapeAttr(href)}" onclick="event.stopPropagation()" data-tip="${mode === "clothing" ? "See this on you before you buy — free." : "See this in your room before you buy — free."}">${label}</a>`;
+}
 function marketCard(m, i){
   const seller = (m.seller && (m.seller.username || m.seller.display_name)) || "Seller";
   const plats = shopNormalizePlatforms(m.platforms);
@@ -1045,13 +1048,14 @@ function marketCard(m, i){
   + `<div style="padding:8px 2px 10px;cursor:pointer" onclick="openMarketItem(${Number(m.id)})">`
   + `<div class="mut" style="font-size:12.5px">${escapeHtml(m.condition||"")} · ${escapeHtml(m.size||"")} · sold by ${escapeHtml(seller)}</div>`
   + (plats.length ? `<div style="margin-top:5px">` + plats.map(p=>`<span class="pill">${escapeHtml(p)}</span>`).join("") + `</div>` : "")
-  + `</div></div>`;
+  + `</div>` + marketCardTry(m) + `</div>`;
 }
 
 /* ================= PLACEMENT MODE (P0-B/C — free Instant space placer) ================
    Infer clothing | wall | floor | none from category/title. Wire CTAs to /try-on/
    or /see-in-space/. Client-side only; placement_mode may also be set on a listing. */
 function inferPlacementMode(item){
+  { const r = item && catRow(item.category); if (r && r.place) return r.place; }
   if (item && typeof item.placement_mode === "string"){
     const e = item.placement_mode.trim().toLowerCase();
     if (e === "clothing" || e === "wall" || e === "floor" || e === "none") return e;
@@ -1086,16 +1090,13 @@ function placementCtaHtml(item){
   bits.push(`<p class="mut" style="margin:10px 0 6px"><span class="pill">Instant preview · free</span> <span class="pill">Not photoreal</span></p>`);
   bits.push(`<div style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px">`);
   if (mode === "clothing"){
-    bits.push(btn("/try-on/", "Try on", "Instant clothing preview — free. Not photoreal."));
+    bits.push(btn("/try-on/" + qs(""), "Try it on", "See this on you — add a photo of yourself. Free."));
   } else if (mode === "wall"){
-    bits.push(btn("/see-in-space/" + qs("wall"), "See on my wall", "Instant wall preview — free. Photo overlay, not photoreal."));
-    bits.push(btn("/see-in-space/" + qs("wall"), "See in my space", "Place this listing in a room photo — free forever."));
+    bits.push(btn("/see-in-space/" + qs("wall"), "See it in my room", "Add a photo of your wall and hang this on it. Free."));
   } else if (mode === "floor"){
-    bits.push(btn("/see-in-space/" + qs("floor"), "See in my room", "Instant room preview — free. Photo overlay, not photoreal."));
-    bits.push(btn("/see-in-space/" + qs("floor"), "See in my space", "Place this listing in a room photo — free forever."));
+    bits.push(btn("/see-in-space/" + qs("floor"), "See it in my room", "Add a photo of your room and place this item in it. Free."));
   } else {
-    bits.push(btn("/see-in-space/" + qs(""), "See in my space", "Place any sellable item in a room photo — free Instant preview."));
-    bits.push(btn("/try-on/", "Try on", "If this is clothing — Instant preview free."));
+    return "";
   }
   bits.push(`</div>`);
   return bits.join("");
@@ -2529,11 +2530,41 @@ function pickSub(el){
      handler works on the main form and the "add by hand" sheet. */
   const box = el && el.parentNode; if (!box) return;
   [...box.querySelectorAll(".chip")].forEach(x => x.classList.toggle("on", x === el));
+  const wrap = box.closest("[id$='-sub-wrap']");
+  if (wrap) sizeRefresh(wrap.id);
+}
+/* Per-category size picker: the subcategory decides the size system (letter,
+   waist, shoe, kids, one size, none for art/home). Free text always works. */
+function sizeIdFor(wrapId){ return wrapId === "m-sub-wrap" ? "m-size" : "f-size"; }
+function sizeChipsHtml(path, cur){
+  const sizes = catSizes(path);
+  const row = catRow(path);
+  if (row && row.size === "dims") return `<p class="mut" style="margin:6px 0 0;font-size:12.5px">No size for this type — put width × height in the description.</p>`;
+  if (!sizes.length) return "";
+  return `<div class="chips" style="margin:8px 0 0" data-tip="Sizes the shops accept for this type of item. Tap one, or type your own.">`
+    + sizes.map(z => `<button type="button" class="chip ${String(cur||"")===z?"on":""}" style="padding:5px 11px;font-size:12.5px" onclick="pickSize(this)">${escapeHtml(z)}</button>`).join("")
+    + `</div>`;
+}
+function sizeRefresh(wrapId){
+  const sid = sizeIdFor(wrapId);
+  const inp = document.getElementById(sid); const out = document.getElementById(sid + "-chips");
+  if (!inp || !out) return;
+  const deptId = wrapId === "m-sub-wrap" ? "m-dept" : "f-dept";
+  const path = fReadCat(deptId, wrapId);
+  out.innerHTML = sizeChipsHtml(path, inp.value.trim());
+  const row = catRow(path);
+  if (row && row.size === "one_size" && !inp.value.trim()) inp.value = "One size";
+}
+function pickSize(el){
+  const box = el.parentNode; [...box.querySelectorAll(".chip")].forEach(x => x.classList.toggle("on", x === el));
+  const out = box.parentNode; const inp = out && document.getElementById(out.id.replace(/-chips$/, ""));
+  if (inp) { inp.value = el.textContent.trim(); inp.dispatchEvent(new Event("input", { bubbles:true })); }
 }
 function fDeptChange(deptId, wrapId){
   deptId = deptId || "f-dept"; wrapId = wrapId || "f-sub-wrap";
   const box = document.getElementById(wrapId); if (!box) return;
   box.innerHTML = fSubInner(((document.getElementById(deptId)||{}).value || ""), "");
+  sizeRefresh(wrapId);
 }
 /* Current picker state -> stored path, e.g. "Women's Clothing/Tops & Shirts". */
 function fReadCat(deptId, subWrapId){
@@ -2569,7 +2600,7 @@ function renderListingForm(it){
  <div id="f-sub-wrap">${fSubInner(wantDept, wantSub)}</div>
  <div class="two">
  <div><label>Price ($)</label><input class="input" id="f-price" type="number" min="1" step="1" value="${it.priceMin||it.price||""}" placeholder="Sale price" data-tip="What the buyer pays. Use a number in the AI's range, then check what you keep after fees on Sell."></div>
- <div><label>Size</label><input class="input" id="f-size" value="${escapeAttr(it.sizeHint||it.size||"")}" placeholder="e.g. M / 10" data-tip="Size buyers filter by. Copy the label in the garment so the right people find it."></div>
+ <div><label>Size</label><input class="input" id="f-size" value="${escapeAttr(it.sizeHint||it.size||"")}" placeholder="e.g. M / 10" data-tip="Size buyers filter by. Copy the label in the garment so the right people find it."><div id="f-size-chips">${sizeChipsHtml(wantPath, it.sizeHint||it.size||"")}</div></div>
  </div>
  <label>Condition</label>
  <div id="f-cond" data-tip="How used does it look? Be honest — buyers trust you more.">${COND_OPTS.map(c=>`<button class="chip ${c===wantCond?"on":""}" onclick="pickCond(this,'${c}')" data-tip="Sets the condition for this listing." title="Sets the condition for this listing.">${c}</button>`).join("")}</div>
@@ -2697,7 +2728,6 @@ async function openListing(id){
  <div class="mut">${escapeHtml(l.description||"")}</div>
  <div style="margin:10px 0"><span class="pill">${escapeHtml(l.category||"")}</span><span class="pill">${escapeHtml(l.size||"")}</span><span class="pill">${escapeHtml(l.condition||"")}</span></div>
  <h2 style="margin:4px 0">${money(l.price)}</h2>
- ${placementCtaHtml(l)}
   <div class="two">
   <button class="btn btn-accent ${l.status==='sold'?'hidden':''}" onclick="soldSheet(${id})" data-tip="It sold! Write down the price and we'll do the maths.">Mark sold</button>
   <button class="btn btn-soft" onclick="renderListingForm(${JSON.stringify({id:l.id,title:l.title,category:l.category,condition:l.condition,priceMin:l.price,sizeHint:l.size,description:l.description,brand:l.brand,color:l.color,material:l.material,weight_oz:l.weight_oz,ship_city:l.ship_city,ship_postcode:l.ship_postcode,ship_country:l.ship_country,local_pickup:l.local_pickup,_photo_url:l.photo_url}).replace(/"/g,'&quot;')})" data-tip="Change the words, price or photo.">Edit</button>
@@ -2835,7 +2865,7 @@ function xlKitDescription(rules, l){
     if (brand) bits.push("Brand: " + brand);
     if (size) bits.push("Size: " + size);
     if (color) bits.push("Color: " + color);
-    if (cat) bits.push("Category: " + ((rules.cats&&rules.cats[cat])||cat));
+    if (cat) bits.push("Category: " + (shopCatPath(cat, rules.id) || (rules.cats&&rules.cats[cat]) || cat));
     if (cond) bits.push("Condition: " + cond);
     bits.push("");
     bits.push("Keywords: " + xlKitTags(rules, l));
@@ -2905,7 +2935,7 @@ function xlKit(l, shopId){
   const rules = xlKitRules(shopId);
   const title = xlKitTitle(rules, l);
   const price = l.price != null && l.price !== "" ? ("$"+Number(l.price).toFixed(2)) : "";
-  const catLabel = (rules.cats && rules.cats[l.category]) || l.category || "";
+  const catLabel = shopCatPath(l.category, rules.id) || (rules.cats && rules.cats[l.category]) || l.category || "";
   const meta = [l.brand, sizeLine(l), l.condition, catLabel].filter(Boolean).join(" \u00b7 ");
   const desc = xlKitDescription(rules, l);
   const tags = xlKitTags(rules, l);
@@ -3021,7 +3051,8 @@ function handoffPayload(shopId, l){
     condition: l.condition || "",
     brand: l.brand || "",
     size: l.size || "",
-    category: l.category || "",
+    category: shopCatPath(l.category, shopId) || l.category || "",
+    categoryPath: l.category || "",
     hints: rules.fieldHints || m.createHints || "",
     url: (xlConnectShopById(shopId) || {}).createListing || m.createListing || m.sellUrl || m.signup || ""
   };
@@ -3282,6 +3313,9 @@ function extPayload(l, p){
     brand: p.brand || "",
     size: p.size || "",
     category: p.category || "",
+    categoryPath: p.categoryPath || l.category || "",
+    color: l.color || "",
+    material: l.material || "",
     tags: l.tags || "",
     photos: photos.filter(Boolean)
   };
@@ -3390,8 +3424,8 @@ async function handoffApi(shopId, lid){
   if (!l) { toast("No listing selected yet."); return; }
   const name = platformName(shopId);
   const payload = shopId === "etsy"
-    ? { title: l.title, description: l.description || "", price: String(l.price || "0"), photoUrl: l.photo || l.image || "", taxonomyId: 1, quantity: 1 }
-    : { title: l.title, description: l.description || "", price: String(l.price || "0"), photoUrl: l.photo || l.image || "", categoryId: "11483", condition: (l.condition || "USED_EXCELLENT").toUpperCase().replace(/\s+/g, "_") };
+    ? { title: l.title, description: l.description || "", price: String(l.price || "0"), photoUrl: l.photo || l.image || "", category: l.category || "", materials: l.material ? [l.material] : [], quantity: 1 }
+    : { title: l.title, description: l.description || "", price: String(l.price || "0"), photoUrl: l.photo || l.image || "", category: l.category || "", brand: l.brand || "", size: l.size || "", color: l.color || "", material: l.material || "", condition: (l.condition || "USED_EXCELLENT").toUpperCase().replace(/\s+/g, "_") };
 
   handoffSet(shopId, l.id, "posting");
   try { xlSheetRefresh(lid); } catch(e){}
@@ -4209,7 +4243,7 @@ function openAdd(){
  <label>Title</label><input class="input" id="m-title" placeholder="e.g. Levi's Trucker Jacket">
  <div class="two">
  <div><label>Price ($)</label><input class="input" id="m-price" type="number" min="1"></div>
- <div><label>Size</label><input class="input" id="m-size" placeholder="M"></div>
+ <div><label>Size</label><input class="input" id="m-size" placeholder="M"><div id="m-size-chips"></div></div>
  </div>
  <label>Department</label>
  <select class="input" id="m-dept" onchange="fDeptChange('m-dept','m-sub-wrap')" data-tip="Pick which part of the shop this belongs in. Buyers browse departments first, then the type of item." title="Pick which part of the shop this belongs in.">
@@ -4696,7 +4730,7 @@ async function hcBuildPayload(mkt, kind){
  const cond = l.condition || "Good";
  const price = Number(l.price != null ? l.price : (l.priceMin || 0)) || 0;
  const title = l.title || titleCase((brand && brand!=="Unknown" ? brand+" " : "") + (l.type || "Clothing item"));
- const cat = p.cats[l.category] || l.category || "Tops";
+ const cat = shopCatPath(l.category, String(p.id || mkt).toLowerCase()) || p.cats[l.category] || l.category || "Tops";
  const desc = defaultDesc(Object.assign({}, l, { brand, color, sizeHint:size, condition:cond }));
  const payload = {
  marketplace: mkt, title, price, size, category:cat, brand, color, condition:cond,

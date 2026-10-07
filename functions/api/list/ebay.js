@@ -13,6 +13,7 @@
  */
 
 import { requireActiveSubscriber, json, missingEnv } from "../_lib/auth.js";
+import { resolveCategory } from "../../_lib/categories.js";
 
 const EBAY_SANDBOX_VARS = [
   "EBAY_SANDBOX_CLIENT_ID",
@@ -30,6 +31,8 @@ const REQUIRED_BODY = ["title", "description", "price", "photoUrl", "categoryId"
 
 function validate(body) {
   const problems = [];
+  // Category id from the shared table when the caller sent our own path.
+  if (!body.categoryId && body.category) { const r = resolveCategory(body.category); if (r) body.categoryId = r.ebay.id; }
   for (const key of REQUIRED_BODY) {
     const v = body[key];
     if (v === undefined || v === null || String(v).trim() === "") problems.push(key);

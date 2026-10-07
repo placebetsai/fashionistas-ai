@@ -4,8 +4,9 @@
  */
 
 import { normalizeIdentify } from "../../../../libs/identify-fill.js";
+import { promptList, resolveCategory } from "../../../_lib/categories.js";
 
-export const VISION_PROMPT = `You are a fashion resale expert looking at ONE clothing-item photo.
+export const VISION_PROMPT = `You are a resale expert looking at ONE item photo (clothing, shoes, bags, jewelry, accessories, or home decor / art).
 
 Reply with ONLY one raw JSON object using double quotes. No markdown, no code fences, no prose before or after.
 
@@ -14,7 +15,10 @@ Required keys:
   brand       visible brand name, or "" if you cannot read one — never invent a designer
   color       primary colour
   condition   exactly one of: Poor, Fair, Good, Excellent (never Unknown)
-  category    exactly one of: Tops, Bottoms, Dresses, Outerwear, Shoes, Accessories
+  category    exactly one of: Tops, Bottoms, Dresses, Outerwear, Shoes, Accessories (closest broad group; use Accessories for home/art)
+  categoryPath exactly one of these department/type paths (copy it character for character):
+              ${promptList()}
+              Pick Women/Men/Kids from cut, sizing and styling; if truly unisex prefer Women for dresses/skirts, Men for suits. Paintings, prints, posters → Art/…; mirrors, rugs, lamps, furniture → Home/…
   priceMin    number — low end of fair US resale USD
   priceMax    number — high end of fair US resale USD
   confidence  0-100
@@ -188,6 +192,11 @@ export async function identifyFromImage(env, imageB64, opts = {}) {
       const parsed = await fn();
       if (visionOk(parsed)) {
         const value = normalizeIdentify({ source: "ai", ...parsed, note: parsed.note || "" });
+        /* Department/type path from the shared table. Model's pick wins when it
+           is a real path; else derive from the flat group + type words. */
+        const row = resolveCategory(parsed.categoryPath) || resolveCategory(parsed.type) || resolveCategory(value.category);
+        value.categoryPath = row ? row.path : "";
+        if (row) value.category = row.path;
         value.model = name;
         return { ok: true, value };
       }

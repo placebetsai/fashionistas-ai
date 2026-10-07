@@ -10,6 +10,7 @@
  * fabricated success.
  */
 
+import { etsyTaxonomyFor } from "../../_lib/etsy-taxonomy.js";
 import { requireAuth } from "../_lib/auth.js";
 
 const OPEN_API = "https://openapi.etsy.com/v3/application";
@@ -142,7 +143,7 @@ function buildDraftBody(body) {
     who_made: safeStr(body.whoMade) || "i_did",
     when_made: safeStr(body.whenMade) || "2020_2024",
     is_digital: !!body.isDigital,
-    taxonomy_id: Number(body.taxonomyId || body.categoryId) || 2078,
+    taxonomy_id: Number(body.taxonomyId || body.categoryId) || 0,
   };
   const tags = Array.isArray(body.tags)
     ? body.tags.map(safeStr).filter(Boolean).slice(0, 13)
@@ -271,6 +272,13 @@ export async function onRequestPost(context) {
     );
   }
 
+  if (!body.taxonomyId && !body.categoryId && body.category) {
+    const t = await etsyTaxonomyFor(body.category, apiKey).catch(() => null);
+    if (t) body.taxonomyId = t.id;
+  }
+  if (!Number(body.taxonomyId || body.categoryId)) {
+    return json({ ok: false, error: "etsy_category_required", message: "Pick a department and type of item so we can choose the right Etsy category." }, 400);
+  }
   const draftBody = buildDraftBody(body);
   const draft = await etsyFetch("/listings", {
     method: "POST",
