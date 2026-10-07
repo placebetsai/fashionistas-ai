@@ -1,5 +1,19 @@
 # Agent handoff — fashionistas.ai
 
+## TRY-ON / SEE-IN-SPACE — 2026-10-07 ~12:10 PM ET (live `791febf`)
+
+**Photoreal `/api/tryon/hd` now renders.** Provider order (cheapest first), all in `functions/api/tryon/hd.js` + `functions/api/_tryon/vton-paid.js`:
+1. **Modal self-hosted FASHN VTON 1.5** (Apache-2.0) — app `fashn-vton`, URL `https://fashionistas1979--fashn-vton-api.modal.run` (override `FASHN_MODAL_URL`), L4, `min_containers=0`, `scaledown_window=60`. Auth = Modal proxy headers from Pages secrets **`MODAL_PROXY_KEY` / `MODAL_PROXY_SECRET`** (copied from `.env.modal`; rotate both in Modal + `wrangler pages secret put` when the leaked keys are rotated). Cost ≈ $0.000301/s → ~$0.006 warm render (~20 s), ~$0.05 isolated cold (~110 s boot+render + 60 s idle). Covered by Modal Starter $30/mo; `MODAL_MONTHLY_CAP_USD` (default 30, ledger estimate $0.01/render) stops Modal use past that.
+2. **HF FASHN Space** (free, anonymous ZeroGPU) — fallback; usually quota-exhausted for server-side calls.
+3. **Replicate `prunaai/p-image-try-on` ($0.015/img) / FASHN API (`FASHN_API_KEY`)** — last resort, only if the secret exists. `REPLICATE_API_TOKEN` exists in laptop `.env` but the Replicate account has **no credit (402)**, so it is NOT set in Pages. Async: POST may return 202 `{job}`; client polls `GET /api/tryon/hd?job=`; `tryon_jobs` table prevents double charge.
+- **Cold-start risk:** a cold Modal render took 109 s server-side vs Modal's 150 s web limit. If cold starts creep up, raise `min_containers` to 1 at busy hours (~$1.08/h) or move to a spawn+poll Modal function.
+- **QA hook:** Pages secret `TRYON_TEST_EMAILS` = `tryon-proof-20261007@fashionistas.ai` (user 83) is entitled without Stripe. Remove it (`wrangler pages secret delete TRYON_TEST_EMAILS`) before/after launch if not wanted.
+- **Deploy token cannot touch D1** (code 7403) — grant credits some other way.
+
+**Instant (free) try-on:** shoulder-angle fix (no more upside-down), backdrop cutout, Top/Bottom/Dress/Outerwear picker (overrides auto), "Photo too cropped" warning, bottoms refused on half-body photos (joints must be inside the frame). **In-browser AI background removal** (`see-in-space/cutout.js` → Transformers.js 4.3.1 + `xrds/isnet-general-onnx-int8`, MIT, 44 MB, lazy) when the photo isn't a plain backdrop — used by try-on garments and see-in-space items (~15–20 s first run on CPU). See-in-space: GLB UVs flipped (AR was upside down), plane keeps item aspect, alpha MASK.
+
+Proof set: box `/workspace/tryon-proof/` (`contact.png`, `index.html`, `out/after2_*`).
+
 ## CURRENT STATE — 2026-10-07 late night ET (read this first — product source of truth)
 
 **Laptop repo (preferred):** `/home/billionaremaker/fashionistas-ai`  
