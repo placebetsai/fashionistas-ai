@@ -77,6 +77,12 @@ const PUBLIC = {
   "ebay/oauth/callback.js": "OAuth redirect target; verified by the `code` + state, not a session",
   "etsy/oauth/start.js": "OAuth consent redirect; there is no session yet at that point",
   "etsy/oauth/callback.js": "OAuth redirect target; verified by `code` + state cookie",
+  "ai/analyze.js":
+    "the identify/convert funnel (sample jacket + first photo) runs before a Pages session exists, so " +
+    "it must work logged out; it stores no user data — no D1/R2 write, no image kept, the only " +
+    "KV write is a per-IP rate-limit counter — and exposes no key; the sole side effect is a server-side " +
+    "Groq call, capped at 20 requests/minute/IP, proven live: request 21+ answers 429. If that cap " +
+    "ever stops holding, gate it instead.",
   "tryon/image/[uuid].js":
     "the stored image URL is handed to Replicate and to <img> tags, so it cannot require a session; " +
     "it is constrained by a strict id regex instead (asserted below)",
