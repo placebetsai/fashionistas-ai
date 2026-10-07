@@ -19,3 +19,8 @@
   els.forEach(function(el){ io.observe(el); });
   window.addEventListener('beforeprint', showAll);
 })();
+/* hide the floating tour button while the hero is visible so it never sits on hero content */
+(function(){
+  var hero = document.querySelector('.rd-hero'); if (!hero || !('IntersectionObserver' in window)) return;
+  new IntersectionObserver(function(es){ document.body.classList.toggle('rd-hero-on', es[0].isIntersecting && es[0].intersectionRatio > .25); }, { threshold: [0, .25, .5] }).observe(hero);
+})();
