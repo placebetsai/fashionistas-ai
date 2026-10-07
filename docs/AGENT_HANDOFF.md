@@ -4,7 +4,7 @@
 
 **Laptop repo (preferred):** `/home/billionaremaker/fashionistas-ai`  
 **GitHub:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
-**Live tip:** `version.txt` = **(set by next wrangler deploy)** — must match `https://fashionistas.ai/version.txt` after ship
+**Live tip:** `version.txt` = **** () — must match `https://fashionistas.ai/version.txt` after ship
 
 ### Deploy (mandatory — do not get this wrong)
 
@@ -21,7 +21,8 @@
 | SHA | What | Proof |
 |---|---|---|
 | prior | Chatbot expand / multilist / try-on pipeline | see git log |
-| **P0-B/C (this tip)** | **Free See in my space** — room photo placer (4-corner wall + floor drag/scale/rotate) + optional `<model-viewer>` wall/floor AR from client GLB; CTAs on Shop/Closet detail; `placement_mode` inferred (`clothing`\|`wall`\|`floor`\|`none`); honest Instant/not-photoreal labels | `/see-in-space/` · tests `placement-mode` + `placer-homography` **12/12** · brief `docs/FREE-SEAMLESS-ANYOBJECT.md` |
+| `9ba65b0` | Seller coach layer (Photo → Sell everywhere checklist / help chips) | `libs/seller-coach.js` + tests |
+|  | **Free See in my space** — room photo placer (4-corner wall + floor drag/scale/rotate) + optional `<model-viewer>` wall/floor AR from client GLB; CTAs on Shop/Closet detail; `placement_mode` inferred (`clothing`\|`wall`\|`floor`\|`none`); honest Instant/not-photoreal labels | `/see-in-space/` · tests `placement-mode` + `placer-homography` **12/12** · brief `docs/FREE-SEAMLESS-ANYOBJECT.md` |
 
 ### See in my space — how to demo on phone
 

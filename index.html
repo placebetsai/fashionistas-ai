@@ -2463,12 +2463,12 @@ function inferPlacementMode(item){
   if (!src.trim()) return "none";
   if (/\b(paintings?|posters?|prints?|canvas(?:es)?|wall\s*arts?|framed\s+arts?|artworks?|tapestr(?:y|ies)|wall\s*hang(?:ing)?s?|mirrors?|wall\s*decors?|photo\s*frames?|gallery\s*walls?)\b/i.test(src)) return "wall";
   if (/\b(furniture|sofas?|couches?|chairs?|tables?|desks?|lamps?|rugs?|carpets?|ottomans?|bookshelves?|bookcases?|dressers?|nightstands?|bed\s*frames?|cabinets?|stools?|benches?|wardrobes?|armoires?|coffee\s*tables?|side\s*tables?|floor\s*lamps?)\b/i.test(src)) return "floor";
-  if (/\b(women'?s\s+clothing|men'?s\s+clothing|kids?\s*&?\s*baby|home\s*&\s*decor)\b/i.test(src)){
-    if (/home\s*&\s*decor/i.test(src)){
-      if (/wall\s*art|poster|print|mirror|painting/i.test(src)) return "wall";
-      if (/rug|furniture|lamp/i.test(src)) return "floor";
-    } else return "clothing";
+  if (/\bhome\s*&\s*decor\b/i.test(src)){
+    if (/wall|poster|print|mirror|painting/i.test(src)) return "wall";
+    if (/rug|furniture|lamp|lighting|accent/i.test(src)) return "floor";
+    return "none";
   }
+  if (/\b(women'?s\s+clothing|men'?s\s+clothing|kids?\s*&?\s*baby)\b/i.test(src)) return "clothing";
   if (/\b(clothing|apparel|garments?|tops?|shirts?|t-?shirts?|tees?|blouses?|bottoms?|pants?|trousers?|jeans?|shorts?|skirts?|dresses?|gowns?|outerwear|jackets?|coats?|parkas?|blazers?|hoodies?|sweaters?|cardigans?|shoes?|sneakers?|boots?|heels?|sandals?|activewear|swimwear|lingerie|suits?|bags?|handbags?|purses?|accessories|jewellery|jewelry)\b/i.test(src)) return "clothing";
   return "none";
 }
