@@ -359,13 +359,61 @@ body:has(#view-app:not(.hidden)) .rd-bcta{display:none!important}
   .fash-word,.hero-tick .ht-dot,.land-card::before,.dest-track,[class*="shimmer"],.sheen::before,.sheen::after{animation:none!important}
   #topbar,#tabbar,.tabbar,.rd-bcta,.land-nav,#screen-head,.seller-coach-banner,[class*="sticky"]{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 }
-/* v13 — narrow phones (≤380px, e.g. Galaxy S-series): wordmark fits instead of "fa…" */
-@media (max-width:380px){
-  #topbar .fash-word{font-size:14.5px!important;overflow:visible!important;text-overflow:clip!important;max-width:none!important}
-  #topbar .fash-name{overflow:visible!important}
-  #topbar{gap:4px!important}
-  #topbar .app-mark{width:34px!important;height:34px!important}
-  #topbar .theme-btn,#nav-burger{padding-left:8px!important;padding-right:8px!important}
-  #topbar .topbar-actions .btn{padding-left:10px!important;padding-right:10px!important}
-  #topbar .topbar-actions .btn-ghost{font-size:13px!important}
+/* ============ v16 — 2026 phone chrome (<900px) ============
+   Fixed header + measured spacer (sticky breaks on Android under clipping
+   ancestors), 5-tab bottom bar with a raised Sell/camera button, 44px+ targets,
+   safe-area insets, solid surfaces (no backdrop blur). */
+#mtabbar{display:none}
+@media (max-width:899px){
+  :root{--mh:64px;--tb:68px}
+  .wrap{padding-top:0!important;padding-bottom:calc(var(--tb) + 24px)!important}
+  /* headers */
+  #topbar,#land-nav.rd-nav{position:fixed!important;top:0!important;left:0!important;right:0!important;width:auto!important;margin:0!important;z-index:90!important;
+    transform:none!important;-webkit-transform:none!important;background:var(--bg)!important;border-bottom:1px solid var(--line);
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;transition:box-shadow .2s}
+  #topbar{padding:calc(env(safe-area-inset-top) + 8px) max(14px,env(safe-area-inset-right)) 8px max(14px,env(safe-area-inset-left))!important;min-height:60px;gap:8px!important;box-sizing:border-box}
+  .mt-scrolled #topbar,.mt-scrolled #land-nav.rd-nav{box-shadow:0 6px 18px rgba(20,10,5,.10)}
+  html[data-theme="dark"].mt-scrolled #topbar,html[data-theme="dark"].mt-scrolled #land-nav.rd-nav{box-shadow:0 6px 18px rgba(0,0,0,.45)}
+  #view-app{padding-top:calc(var(--mh) + 14px)}
+  #view-auth{padding-top:var(--mh)}
+  #topnav{display:none!important}
+  /* header contents: burger 44, mark, full wordmark, theme 44, sign out */
+  #nav-burger,#topbar .theme-btn{width:44px!important;height:44px!important;min-height:44px;padding:0!important;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;flex:none}
+  #topbar .fash-brand{display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto;text-decoration:none}
+  #topbar .app-mark{width:36px!important;height:36px!important;flex:none}
+  #topbar .fash-name{display:flex;align-items:baseline;white-space:nowrap;min-width:0;overflow:visible}
+  #topbar .fash-word{font-size:21px!important;line-height:1.1;overflow:visible!important;text-overflow:clip!important}
+  #topbar .topbar-actions{display:flex;align-items:center;gap:6px;flex:none}
+  #topbar .topbar-actions .btn-ghost{min-height:40px;padding:0 12px!important;font-size:13.5px!important;white-space:nowrap}
+  /* old 7-item bar replaced by #mtabbar on phones; desktop keeps #topnav */
+  nav.tabbar{display:none!important}
+  .rd-bcta{display:none!important}
+  #mtabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:85;align-items:stretch;justify-content:space-around;
+    background:var(--bg);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(20,10,5,.06);
+    padding:6px max(6px,env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left))}
+  html[data-theme="dark"] #mtabbar{box-shadow:0 -6px 20px rgba(0,0,0,.4)}
+  #mtabbar .mt-tab{flex:1 1 0;min-width:0;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    color:var(--mut);text-decoration:none;font:600 11px/1.1 var(--sans,Inter,system-ui,sans-serif);letter-spacing:.01em;border-radius:14px;-webkit-tap-highlight-color:transparent}
+  #mtabbar .mt-tab svg{flex:none}
+  #mtabbar .mt-tab.on,#mtabbar .mt-tab[aria-current]{color:var(--accent)}
+  #mtabbar .mt-tab:active{background:color-mix(in srgb,var(--accent) 10%,transparent)}
+  #mtabbar .mt-l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  #mtabbar .mt-center .mt-fab{width:48px;height:48px;margin-top:-20px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;
+    box-shadow:0 6px 16px color-mix(in srgb,var(--accent) 40%,transparent);border:3px solid var(--bg)}
+  #mtabbar .mt-center{color:var(--ink)}
+  /* floating helpers sit above the bar, never on it */
+  #seller-coach-panel{bottom:calc(var(--tb) + 8px)!important}
+  #guide-fab{bottom:calc(var(--tb) + 66px)!important}
+  html.mt-app body #hc-fab{bottom:calc(var(--tb) + 66px)!important;right:14px}
+  html.mt-land body #hc-fab,html.mt-land body.rd-bcta-on #hc-fab{bottom:calc(var(--tb) + 12px)!important}
+  html.mt-land body #guide-fab{bottom:calc(var(--tb) + 12px)!important}
+  /* drawer/menus open below the fixed header */
+  #land-nav .ln-links{max-height:calc(100dvh - var(--mh) - var(--tb) - 24px);overflow:auto}
+}
+@media (max-width:360px){
+  #topbar{gap:4px!important;padding-left:10px!important;padding-right:10px!important}
+  #topbar .app-mark{width:32px!important;height:32px!important}
+  #topbar .fash-word{font-size:17px!important}
+  #topbar .topbar-actions .btn-ghost{padding:0 9px!important;font-size:12.5px!important}
+  #mtabbar .mt-tab{font-size:10.5px}
 }
