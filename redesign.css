@@ -462,3 +462,19 @@ body:has(#view-app:not(.hidden)) .rd-bcta{display:none!important}
   .drawer-foot{gap:6px}
   .drawer-foot .btn{padding-left:8px!important;padding-right:8px!important;font-size:13px!important}
 }
+/* v20 — coach bar on Home only; compact chat button clear of content (phones) */
+#drawer-next{display:none}
+@media (max-width:899px){
+  html.mt-app:not([data-mtv="home"]) #seller-coach-panel{display:none!important}
+  html.mt-app #guide-fab{width:44px!important;height:44px!important;right:12px!important;left:auto!important;bottom:calc(var(--tb) + 16px)!important;
+    box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 35%,transparent)!important}
+  html.mt-app #guide-fab svg{width:20px;height:20px}
+  html.mt-app[data-mtv="home"] #guide-fab{bottom:calc(var(--tb) + 70px)!important}
+  /* last row of content can always scroll clear of the chat button */
+  html.mt-app .wrap{padding-bottom:calc(var(--tb) + 76px)!important}
+  #drawer-next{display:flex;align-items:center;gap:11px;width:100%;margin-top:6px;padding:13px;border-radius:13px;border:1px dashed var(--line-2,var(--line));
+    background:transparent;color:var(--ink);font:700 15px/1.2 var(--sans,Inter,system-ui,sans-serif);text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  #drawer-next span{flex:1}
+  #drawer-next small{font-size:12px;font-weight:600;color:var(--mut)}
+  #drawer-next svg{flex:none;color:var(--accent)}
+}

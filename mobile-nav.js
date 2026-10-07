@@ -56,6 +56,9 @@
     if (!bar || mode !== "app") return;
     var on = document.querySelector("nav.tabbar a.on");
     var v = on ? on.getAttribute("data-v") : "";
+    /* current view as an attribute: CSS shows the "What's next" coach bar on Home only */
+    var mv = v || "other";
+    if (root.getAttribute("data-mtv") !== mv) root.setAttribute("data-mtv", mv);
     var map = { home: "home", shop: "shop", snap: "snap", more: "more" };
     [].forEach.call(bar.querySelectorAll("a[data-mt]"), function (a) {
       var hit = a.getAttribute("data-mt") === map[v];
@@ -87,5 +90,15 @@
     var last = false;
     window.addEventListener("scroll", function () { var s = window.scrollY > 4; if (s !== last) { last = s; root.classList.toggle("mt-scrolled", s); } }, { passive: true });
   }
+  /* menu item: open the seller checklist (lives on Home on phones) */
+  window.mtShowNext = function () {
+    try { if (window.navDrawer) navDrawer(false); } catch (x) {}
+    var open = function () {
+      var p = document.getElementById("seller-coach-panel"); if (!p) return;
+      p.classList.remove("collapsed");
+      var b = p.querySelector(".sc-toggle"); if (b) b.textContent = "\u25BE";
+    };
+    try { var r = window.go && go("home"); if (r && r.then) r.then(function () { setTimeout(open, 60); }); else setTimeout(open, 60); } catch (x) { open(); }
+  };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();
