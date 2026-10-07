@@ -65,6 +65,9 @@
 /listing-wizard.css
   Cache-Control: public, max-age=0, must-revalidate
 
+/ux-pass.css
+  Cache-Control: public, max-age=0, must-revalidate
+
 /
   Cache-Control: no-cache
 

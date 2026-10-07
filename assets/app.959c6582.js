@@ -205,11 +205,10 @@ function getRole(){ try{ return localStorage.getItem("fash_role") || "shopping";
 function setRole(r){ try{ localStorage.setItem("fash_role", r); }catch(e){} if (r === "shopping") go("shop"); else go("home"); }
 function roleSwitchHtml(){
   const r = getRole();
-  return `<div class="card" style="margin-top:0">`
-  + `<div style="display:flex;gap:8px;flex-wrap:wrap">`
-  + `<button class="chip${r==="selling"?" on":""}" onclick="setRole('selling')" data-tip="Show your seller tools and your own clothes.">I'm selling</button>`
-  + `<button class="chip${r==="shopping"?" on":""}" onclick="setRole('shopping')" data-tip="See what is for sale from other sellers.">I'm shopping</button>`
-  + `</div><p class="mut" style="margin:8px 0 0">Pick selling to list your own clothes, or shopping to see what is for sale.</p></div>`;
+  return `<div class="ux-seg" role="group" aria-label="Selling or shopping">`
+  + `<button type="button" class="${r==="selling"?"on":""}" aria-pressed="${r==="selling"}" onclick="setRole('selling')">Selling</button>`
+  + `<button type="button" class="${r==="shopping"?"on":""}" aria-pressed="${r==="shopping"}" onclick="setRole('shopping')">Shopping</button>`
+  + `</div>`;
 }
 function refreshTips(){ try{ if (window.syncTips) window.syncTips(document); }catch(e){} try{ if (window.SellerCoach) window.SellerCoach.refresh(); }catch(e){} }
 S.market = S.market || []; S.marketCount = S.marketCount || 0;
@@ -906,10 +905,7 @@ async function renderShop(el){
   if (S.photoPending){ S.photoPending = false; setTimeout(photoSearchGo, 90); }
   stopRolls();
   el.innerHTML = roleSwitchHtml()
-  + buyerHero()
-  + photoSearchCard()
-  + affCard()
-  + `<div class="closet-tools">`
+  + `<div class="closet-tools ux-search">`
   + `<input class="input" id="market-search" placeholder="Search what is for sale…" value="${escapeAttr(S.marketQ||"")}" oninput="marketQ(this.value)" data-tip="Type words to find an item by name or description." style="margin:0">`
   + `<select class="input" id="market-sort" onchange="marketSort(this.value)" data-tip="Change the order of the items you see." style="margin:0">`
   + `<option value="new"${S.marketSort==="new"?" selected":""}>Newest</option>`
@@ -918,7 +914,9 @@ async function renderShop(el){
   + `</select></div>`
   + `<div id="market-nav">${marketNavHtml()}</div>`
   + `<p class="mut" id="market-count" style="margin:2px 0 8px"></p>`
-  + `<div class="grid" id="market-grid"></div>`;
+  + `<div class="grid" id="market-grid"></div>`
+  + photoSearchCard()
+  + affCard();
   refreshTips();
   marketRefresh();
   startRolls(el);
@@ -940,7 +938,7 @@ function marketNavHtml(){
     + (mDept ? `<span style="opacity:.5">›</span><button type="button" class="chip${mDept&&!mSub?" on":""}" aria-pressed="${mDept&&!mSub}" style="font-size:12px" onclick="marketPick(decodeURIComponent('${taxQ(mDept)}'))" data-tip="Everything in ${escapeAttr(mDept)}.">${escapeHtml(mDept)}</button>` : "")
     + (mSub ? `<span style="opacity:.5">›</span><button type="button" class="chip on" aria-pressed="true" style="font-size:12px;cursor:default" data-tip="Currently showing ${escapeAttr(mSub)} only.">${escapeHtml(mSub)}</button>` : "")
     + `</nav>`;
-  const deptRow = `<div class="cat-lead">Browse by department <span style="text-transform:none;letter-spacing:0;font-weight:600;opacity:.72">— swipe sideways for more</span></div>`
+  const deptRow = `<div class="cat-lead">Departments</div>`
     + catRailHtml("market", taxDepts(), d => mCount(d), mDept, "market-rail");
   const subRow = mDept
     ? `<div class="cat-lead">Type of item in ${escapeHtml(mDept)}</div>`
@@ -948,7 +946,7 @@ function marketNavHtml(){
       + `<button type="button" class="chip${!mSub?" on":""}" aria-pressed="${!mSub}" onclick="marketPick(decodeURIComponent('${taxQ(mDept)}'))" data-tip="Everything in ${escapeAttr(mDept)}, whatever type it is.">All ${escapeHtml(mDept)}<b class="cnt">${mCount(mDept)}</b></button>`
       + taxSubs(mDept).map(s => mChip(s, mDept + "/" + s, mSub === s, "Show only " + s.toLowerCase() + " items.")).join("")
       + `</div>`
-    : `<p class="mut" style="margin:2px 0 8px">Pick a department above to narrow the list down by type of item.</p>`;
+    : ``;
   return crumbs + deptRow + subRow;
 }
 function marketQ(v){ S.marketQ = v || ""; marketRefresh(); }
@@ -991,7 +989,7 @@ function marketRefresh(){
     const pub = shopPublicRows(S.market||[]).length;
     const hidden = Math.max(0, raw - pub);
     const base = rows.length ? (rows.length + (rows.length===1?" item":" items") + qbit + where) : "";
-    const note = hidden ? ((base ? base + " · " : "") + "Hiding " + hidden + " QA/test/no-photo listings") : base;
+    const note = base;
     cc.textContent = note;
   }
   if (!rows.length){
@@ -1035,20 +1033,16 @@ function marketCardTry(m){
   return `<a class="btn btn-soft btn-sm" style="margin:0 2px 10px;align-self:flex-start" href="${escapeAttr(href)}" onclick="event.stopPropagation()" data-tip="${mode === "clothing" ? "See this on you before you buy — free." : "See this in your room before you buy — free."}">${label}</a>`;
 }
 function marketCard(m, i){
-  const seller = (m.seller && (m.seller.username || m.seller.display_name)) || "Seller";
-  const plats = shopNormalizePlatforms(m.platforms);
   const photo = m.photo_url
-    ? `<img loading="lazy" src="${escapeAttr(m.photo_url)}" onerror="this.remove()"><div class="badge"></div>`
+    ? `<img loading="lazy" src="${escapeAttr(m.photo_url)}" alt="" onerror="this.remove()">`
     : `<div class="ph"><span class="ph-ico">${catEmoji(m.category||"item")}</span></div>`;
-  return `<div style="display:flex;flex-direction:column;gap:0">`
-  + `<div class="gitem" style="--gi:${Number(i)||0};cursor:pointer" tabindex="0" role="button" onclick="openMarketItem(${Number(m.id)})" onkeydown="if(event.key==='Enter')openMarketItem(${Number(m.id)})" data-tip="Open this item to see details and buy.">`
-  + photo
-  + `<div class="meta"><div class="t">${escapeHtml(m.title||"Untitled")}</div><div class="p">${money(m.price)}</div></div>`
-  + `</div>`
-  + `<div style="padding:8px 2px 10px;cursor:pointer" onclick="openMarketItem(${Number(m.id)})">`
-  + `<div class="mut" style="font-size:12.5px">${escapeHtml(m.condition||"")} · ${escapeHtml(m.size||"")} · sold by ${escapeHtml(seller)}</div>`
-  + (plats.length ? `<div style="margin-top:5px">` + plats.map(p=>`<span class="pill">${escapeHtml(p)}</span>`).join("") + `</div>` : "")
-  + `</div>` + marketCardTry(m) + `</div>`;
+  const sub = [m.size, m.condition].map(v => String(v||"").trim()).filter(v => v && !/^(n\/?a|none|not visible|unknown|-)$/i.test(v)).join(" · ");
+  return `<a class="ux-tile" href="javascript:void 0" onclick="openMarketItem(${Number(m.id)});return false" style="--gi:${Number(i)||0}">`
+  + `<span class="ux-tile-img">${photo}</span>`
+  + `<span class="ux-tile-p">${money(m.price)}</span>`
+  + `<span class="ux-tile-t">${escapeHtml(m.title||"Untitled")}</span>`
+  + (sub ? `<span class="ux-tile-s">${escapeHtml(sub)}</span>` : "")
+  + `</a>`;
 }
 
 /* ================= PLACEMENT MODE (P0-B/C — free Instant space placer) ================
@@ -1087,8 +1081,7 @@ function placementCtaHtml(item){
   const btn = (href, label, tip) =>
     `<a class="btn btn-soft" href="${href}" data-tip="${escapeAttr(tip)}" title="${escapeAttr(tip)}">${escapeHtml(label)}</a>`;
   const bits = [];
-  bits.push(`<p class="mut" style="margin:10px 0 6px"><span class="pill">Instant preview · free</span> <span class="pill">Not photoreal</span></p>`);
-  bits.push(`<div style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px">`);
+  bits.push(`<div class="ux-try">`);
   if (mode === "clothing"){
     bits.push(btn("/try-on/" + qs(""), "Try it on", "See this on you — add a photo of yourself. Free."));
   } else if (mode === "wall"){
@@ -1124,60 +1117,57 @@ async function openMarketItem(id){
   const sellerU = (m.seller && m.seller.username) || "";
   const plats = shopNormalizePlatforms(m.platforms);
   CURRENT.market = m;
-  el.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="go('shop')" data-tip="Back to everything that is for sale.">Back to Shop</button>`
-  + `<div class="card">`
-  + (m.photo_url ? `<img class="detail-img" src="${escapeAttr(m.photo_url)}" onerror="this.remove()"><div style="height:10px"></div>` : "")
-  + `<h3 style="margin:4px 0 2px">${escapeHtml(m.title||"Untitled")}</h3>`
-  + `<h2 style="margin:4px 0">${money(m.price)}</h2>`
-  + `<div style="margin:8px 0"><span class="pill">${escapeHtml(m.condition||"")}</span><span class="pill">${escapeHtml(m.size||"")}</span>${canonCat(m.category) ? `<span class="pill">${escapeHtml(canonCat(m.category))}</span>` : ""}<span class="pill">${escapeHtml(m.status||"for sale")}</span></div>`
-  + (m.description ? `<div class="mut">${escapeHtml(m.description)}</div>` : "")
-  + `<p class="mut">Sold by <b>${escapeHtml(seller)}</b>${sellerU?` (@${escapeHtml(sellerU)})`:""}</p>`
-  + (plats.length ? `<div style="margin:6px 0"><span class="mut">Also listed on: </span>` + plats.map(p=>`<span class="pill">${escapeHtml(p)}</span>`).join("") + `</div>` : "")
+  const clean = v => { v = String(v||"").trim(); return (v && !/^(n\/?a|none|not visible|unknown|-)$/i.test(v)) ? v : ""; };
+  const facts = [["Size", clean(m.size)], ["Condition", clean(m.condition)], ["Category", canonCat(m.category) ? taxLabel(canonCat(m.category)) || canonCat(m.category) : ""]].filter(r => r[1]);
+  kineticTitle(""); $("#view-sub").textContent = "";
+  el.innerHTML = `<div class="ux-item">`
+  + `<button type="button" class="ux-back" onclick="go('shop')" aria-label="Back to Shop"><svg class='i20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M15 5l-7 7 7 7'/></svg></button>`
+  + (m.photo_url ? `<div class="ux-item-img"><img src="${escapeAttr(m.photo_url)}" alt="${escapeAttr(m.title||"")}" onerror="this.parentNode.remove()"></div>` : "")
+  + `<div class="ux-item-body">`
+  + `<div class="ux-item-price">${money(m.price)}</div>`
+  + `<h1 class="ux-item-title">${escapeHtml(m.title||"Untitled")}</h1>`
+  + (facts.length ? `<dl class="ux-facts">` + facts.map(r => `<div><dt>${r[0]}</dt><dd>${escapeHtml(r[1])}</dd></div>`).join("") + `</dl>` : "")
   + placementCtaHtml(m)
-  + `<button class="btn btn-accent" onclick="buySheet(${Number(m.id)})" data-tip="Start checkout for this item. No money moves yet.">Buy this item</button>`
-  + `<button class="btn btn-soft btn-sm" onclick="threadScreen('${sellerU||seller}')" data-tip="Open a message thread with this seller." title="Open a message thread with this seller.">Message seller</button>`
+  + (m.description ? `<p class="ux-item-desc">${escapeHtml(m.description)}</p>` : "")
+  + `<div class="ux-seller"><span class="ux-av">${escapeHtml(String(seller).slice(0,1).toUpperCase())}</span><span><b>${escapeHtml(seller)}</b>${sellerU?`<small>@${escapeHtml(sellerU)}</small>`:""}</span></div>`
+  + `</div>`
+  + `<div class="ux-buybar"><button class="btn btn-soft" onclick="threadScreen('${escapeAttr(sellerU||seller)}')">Message</button><button class="btn btn-accent" onclick="buySheet(${Number(m.id)})">Buy now</button></div>`
   + `</div>`;
   refreshTips();
 }
 function buySheet(id){
   const m = CURRENT.market && Number(CURRENT.market.id)===Number(id) ? CURRENT.market : ((S.market||[]).find(x=>Number(x.id)===Number(id)) || {});
+  const seller = (m.seller&&(m.seller.username||m.seller.display_name))||"the seller";
   openSheet(`
-  <h3 style="margin:0 0 4px">Buy: ${escapeHtml(m.title||"this item")}</h3>
-  <p style="margin:6px 0"><b>${money(m.price)}</b> · sold by ${escapeHtml((m.seller&&(m.seller.username||m.seller.display_name))||"Seller")}</p>
-  <div class="xl-note">This is a DEMO checkout (Stripe/PayPal not live yet) and no money moves.</div>
-  <div style="height:10px"></div>
-  <button class="btn btn-accent" onclick="confirmBuy(${Number(id)},this)" data-tip="Confirm this demo order. No money moves.">Confirm demo order</button>
-  <div id="buy-out" style="margin-top:8px"></div>
+  <div class="ux-buy">
+  ${m.photo_url ? `<img src="${escapeAttr(m.photo_url)}" alt="">` : ""}
+  <div><b>${escapeHtml(m.title||"This item")}</b><span>${money(m.price)} · from ${escapeHtml(seller)}</span></div>
+  </div>
+  <p class="mut" style="margin:12px 0">Card checkout isn't switched on yet, so nothing is charged here. Reserve it and message ${escapeHtml(seller)} to agree payment and delivery.</p>
+  <button class="btn btn-accent" style="width:100%" onclick="confirmBuy(${Number(id)},this)">Reserve it</button>
+  <button class="btn btn-soft" style="width:100%;margin-top:8px" onclick="closeSheet();threadScreen('${escapeAttr((m.seller&&m.seller.username)||seller)}')">Message ${escapeHtml(seller)}</button>
+  <div id="buy-out" style="margin-top:10px"></div>
   `);
   refreshTips();
 }
 async function confirmBuy(id, btn){
   const out = document.getElementById("buy-out");
-  if (btn) btn.disabled = true;
-  if (out) out.innerHTML = `<div class="spinner"></div>`;
-  if (!TOKEN){
-    if (out) out.innerHTML = `<p class="mut">Sign in to buy.</p>`;
-    toast("Sign in to buy");
-    if (btn) btn.disabled = false;
-    return;
-  }
+  if (!TOKEN){ closeSheet(); toast("Sign in to reserve it"); try{ showAuth("login"); }catch(e){} return; }
+  if (btn){ btn.disabled = true; btn.textContent = "Reserving…"; }
   try{
     const r = await fetch(API + "/api/market/" + id + "/buy", { method:"POST", headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+TOKEN } });
-    const st = r.status;
-    let b = null, raw = "";
-    try{ b = await r.json(); raw = JSON.stringify(b); }catch(e){ try{ raw = await r.text(); }catch(e2){ raw = ""; } }
-    if (st === 401){
-      if (out) out.innerHTML = `<p class="mut">Sign in to buy.</p>`;
-      toast("Sign in to buy");
-    } else {
-      if (out) out.innerHTML = `<p class="mut">Status: ${st}</p><pre class="xl-kit">${escapeHtml(raw || ("HTTP " + st))}</pre>`;
-      toast("Order reply: HTTP " + st);
+    if (r.status === 401){ closeSheet(); toast("Sign in to reserve it"); try{ showAuth("login"); }catch(e){} return; }
+    if (r.ok){
+      if (out) out.innerHTML = `<p class="ux-ok">Reserved. No money has moved — message the seller to sort out payment and delivery.</p>`;
+      if (btn) btn.remove();
+      return;
     }
+    let msg = ""; try{ const b = await r.json(); msg = (b && (b.error || b.message)) || ""; }catch(e){}
+    if (out) out.innerHTML = `<p class="ux-err">${escapeHtml(/own|yourself/i.test(msg) ? "That's your own listing." : /sold|not available|unavailable/i.test(msg) ? "Sorry, this item isn't available any more." : "That didn't go through. Please try again, or message the seller.")}</p>`;
   }catch(e){
-    if (out) out.innerHTML = `<p class="mut">${escapeHtml(e.message)}</p>`;
+    if (out) out.innerHTML = `<p class="ux-err">No connection. Check your internet and try again.</p>`;
   }
-  if (btn) btn.disabled = false;
-  refreshTips();
+  if (btn && btn.isConnected){ btn.disabled = false; btn.textContent = "Reserve it"; }
 }
 function onsaleState(l){ return !!((l && (l.onsale ?? l.on_sale)) ?? false); }
 async function toggleOnsale(id, btn){
@@ -1942,23 +1932,7 @@ async function renderHome(el){
  <p>${st.activeListings||0} for sale · ${st.sales||0} sold · ${money(st.profit)} profit</p>
  <div class="hero-tick"><span class="ht-dot"></span><span class="ht-clip"><span id="hero-word">Snap it.</span></span></div>
  </div>
- ${(Number(st.activeListings)||0) === 0 ? `
- <div class="card xl-cta" role="button" tabindex="0" onclick="go('snap')" onkeydown="if(event.key==='Enter')go('snap')" data-tip="Snap your first item — AI writes and posts it to 11 shops.">
-  <div class="xl-cta-tag">Start here</div>
-  <h3 style="margin:0 0 6px">Snap first. Sell everywhere.</h3>
-  <p class="mut" style="margin:0 0 13px">Take one photo — fashionistas.ai IDs it, prices it, and writes the listing. Sell everywhere then posts it to every connected shop. Multilist + Connect are one tap away after you have an item.</p>
-  <span class="btn btn-accent">Take a photo →</span>
- </div>
- <div class="card" role="button" tabindex="0" onclick="go('xl')" onkeydown="if(event.key==='Enter')go('xl')" data-tip="Open Multilist Connect + posting status." style="cursor:pointer">
-  <h3 style="margin:0 0 6px">Or open Multilist</h3>
-  <p class="mut" style="margin:0">Connect and posting for Poshmark, Mercari, Depop, Vinted, Grailed, eBay, Etsy, Facebook, Kidizen, Vestiaire, Whatnot.</p>
- </div>` : `
- <div class="card xl-cta" role="button" tabindex="0" onclick="go('xl')" onkeydown="if(event.key==='Enter')go('xl')" data-tip="One item, every shop — one button, live status everywhere.">
-  <div class="xl-cta-tag">Multilist · Sell everywhere</div>
-  <h3 style="margin:0 0 6px">Write it once. Sell everywhere.</h3>
-  <p class="mut" style="margin:0 0 13px">Pick an item, tick the shops — title, description and tags with fees worked out. Then Sell everywhere posts it. Connect is on Multilist.</p>
-  <span class="btn btn-accent">Open Multilist →</span>
- </div>`}
+ <button type="button" class="btn btn-accent ux-big" onclick="go('snap')"><svg class='i16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='6' width='18' height='14' rx='3'/><path d='M8.5 6 10 3.5h4L15.5 6'/><circle cx='12' cy='13' r='3.8'/></svg> Sell an item</button>
  <div class="three">
  <div class="card" style="margin:0;text-align:center" data-tip="Items you could sell right now — open My clothes to see them."><div class="stat"><b data-count="${Number(st.activeListings)||0}">0</b><span>For sale</span></div></div>
  <div class="card" style="margin:0;text-align:center" data-tip="How many items you've sold so far."><div class="stat"><b data-count="${Number(st.sales)||0}">0</b><span>Sold</span></div></div>
@@ -1973,9 +1947,8 @@ async function renderHome(el){
  ${renderPlatforms(a.byPlatform||[])}
  </div>
  <div class="card">
- <h3 style="margin-top:0">What do you want to do?</h3>
+ <h3 style="margin-top:0">Shortcuts</h3>
  <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
- <button class="btn btn-accent" data-tip="Point the camera at one item and we'll write the listing." onclick="go('snap')"><svg class='i16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='7' width='18' height='13' rx='3'/><path d='M8.5 7 10 4.5h4L15.5 7'/><circle cx='12' cy='13.5' r='3.4'/></svg> Take a photo</button>
  <button class="btn btn-soft" data-tip="Everything you're selling — search it, sort it, fix it." onclick="go('closet')"><svg class='i16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2h7.8A2.5 2.5 0 0 1 21 9.5v7A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5z'/></svg> See my clothes</button>
  <button class="btn btn-soft" data-tip="No camera handy? Type the details in yourself." onclick="openAdd()"><svg class='i16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 5v14M5 12h14'/></svg> Add without a photo</button>
  <button class="btn btn-soft" data-tip="Enter a price and see what's left after each shop takes its cut." onclick="go('sell')"><svg class='i16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3.5v17M7.5 20.5h9M4 8.5h16M7.5 8.5 4.5 15a3 3 0 0 0 6 0zM16.5 8.5l-3 6.5a3 3 0 0 0 6 0z'/></svg> What will I make?</button>
@@ -2068,7 +2041,8 @@ async function renderCloset(el){
  /* If the chosen type no longer exists (you deleted the last pair of shoes),
     closetNavHtml() drops the filter so the closet can't silently show nothing. */
    stopRolls();
-   el.innerHTML = sellerHero() + `
+   const nSale = S.listings.filter(l => l.status !== "sold").length, nSold = S.listings.length - nSale;
+   el.innerHTML = `<div class="ux-closethead"><span><b>${S.listings.length}</b> item${S.listings.length===1?"":"s"}${nSold?` · <b>${nSold}</b> sold`:""}</span><button type="button" class="btn btn-accent btn-sm" onclick="go('snap')">+ Sell an item</button></div>
  <div class="closet-tools">
  <button type="button" class="btn btn-soft closet-select" id="closet-select" data-tip="Tick several items to copy, duplicate or delete together." onclick="closetSelMode()">Select</button>
  <input class="input" id="closet-search" placeholder="Search your clothes\u2026" oninput="closetRefresh()" style="margin:0">
@@ -2085,13 +2059,13 @@ async function renderCloset(el){
  <button type="button" class="chip${S.closetStatus==="sold"?" on":""}" data-tip="Only the ones you've already sold." onclick="closetStatus('sold',this)">Sold</button>
  </div>
   <div id="closet-nav">${closetNavHtml()}</div>
-  <div class="card" id="quality-card" data-tip="Checks your photos, title, description and price before you post it.">
+  <div class="grid" id="closet-grid"></div>
+  <div class="card" id="quality-card" style="margin-top:16px" data-tip="Checks your photos, title, description and price before you post it.">
   <h3 style="margin-top:0">Is this listing ready?</h3>
   <p class="mut" style="margin-top:0">Checks your photos, title, description and price before you post it, and tells you what to fix.</p>
   <button type="button" class="btn btn-ghost" style="width:100%" onclick="qualityCheck()" data-tip="Checks every listing for missing or thin details and tells you what to fix." title="Checks every listing for missing or thin details and tells you what to fix.">Check my listings</button>
   <div id="quality-out"></div>
   </div>
-  <div class="grid" id="closet-grid"></div>
  <div id="closet-bulk" class="hidden"></div>`;
  closetRefresh();
  startRolls(el);
@@ -2120,7 +2094,7 @@ function liGrid(l, i){
    : `<div class="ph${art?" has-img":""}">${art?`<img class="ph-img" src="${art}" alt="" loading="lazy" onerror="this.parentNode.classList.remove('has-img');this.remove()">`:""}<span class="ph-ico">${catEmoji(cat)}</span></div>`;
  return `<div class="gitem${sel?" is-sel":""}" style="--gi:${Number(i)||0}" data-id="${l.id}" onclick="${S.selMode?`closetToggleSel(${l.id},null)`:`openListing(${l.id})`}">
  ${box}${photo}
- <div class="meta"><div class="t">${escapeHtml(l.title||"Untitled")}</div><div class="p">${money(l.price)} <span class="tag ${l.status==='sold'?'sold':'active'}" style="margin-left:4px">${l.status||"active"}</span></div></div>
+ <div class="meta"><div class="t">${escapeHtml(l.title||"Untitled")}</div><div class="p">${money(l.price)}${l.status==='sold'?' <span class="tag sold" style="margin-left:4px">Sold</span>':''}</div></div>
  </div>`;
 }
 function closetStatus(st, btn){
@@ -2309,7 +2283,7 @@ function closetRefresh(){
    return n2(b.id)-n2(a.id);
  });
   grid.innerHTML = rows.length
-    ? rows.map((l,i)=>`<div style="display:flex;flex-direction:column;gap:0;min-width:0">${liGrid(l,i)}<button type="button" class="btn ${onsaleState(l)?"btn-soft":"btn-accent"} btn-sm" style="margin:6px 0 10px;width:100%" onclick="toggleOnsale(${Number(l.id)},this)" data-tip="Show this item to buyers in Shop, or hide it again.">${onsaleState(l)?"Stop selling here":"Sell it here too"}</button></div>`).join("")
+    ? rows.map((l,i)=>liGrid(l,i)).join("")
     : (() => {
         const filtered = !!(S.closetCat || S.closetStatus || q);
         const where = S.closetCat === CLOSET_NONE ? " in Uncategorised"
@@ -4119,6 +4093,7 @@ async function renderMore(el){
  <p class="mut">You don't need this — posting works from your phone without installing anything. If you list from a desktop computer in Chrome, the optional Crosslister extension can fill shop forms for you (Load unpacked, developer mode).</p>
  <button class="btn btn-soft btn-sm" onclick="extConnectPrompt()" data-tip="Opens the optional desktop extension setup.">Set up the desktop extension</button>
  </details>
+ <button class="btn btn-ghost ux-signout" style="width:100%" onclick="logout()">Sign out</button>
  <footer>fashionistas.ai · everything saved to your account<br><a href="/contact/" style="color:inherit">Contact</a> · <a href="/privacy/" style="color:inherit">Privacy</a> · <a href="/about/" style="color:inherit">About</a><br>Powering the independent resale economy.</footer>`;
 }
 async function exportSafe(e, p){
@@ -4131,9 +4106,10 @@ async function ordersScreen(){
  try {
  const d = await api("/api/orders");
  const o = d.orders || [];
+ if (!(S.listings||[]).length) { try { S.listings = (await api("/api/listings")).listings || []; } catch(e){} }
  el.innerHTML = `
  <button class="btn btn-ghost btn-sm" onclick="go('more')" data-tip="Opens the rest of your tools in one place." title="Opens the rest of your tools in one place.">← Back</button>
- ${o.length ? `<div class="card" style="padding:8px 16px"><table><tr><th>Item</th><th>Shop</th><th>Sold for</th><th>Kept</th><th>State</th></tr>${o.map(x=>`<tr onclick="openOrder(${x.id})"><td>${x.listing_id||x.id}</td><td>${platformName(x.platform)}</td><td><b>${money(x.sale_price)}</b></td><td style="color:${x.profit>=0?"var(--good)":"var(--bad)"}">${money(x.profit)}</td><td><span class="tag ${x.status==='sold'?'active':'sold'}">${x.status||"sold"}</span></td></tr>`).join("")}</table></div>`
+ ${o.length ? `<div class="ux-list">${o.map(x=>{ const li=(S.listings||[]).find(y=>Number(y.id)===Number(x.listing_id)); const shop = x.platform && x.platform!=="null" ? platformName(x.platform) : "Other"; return `<button type="button" class="ux-row" onclick="openOrder(${x.id})">${li&&li.photo_url?`<img src="${escapeAttr(li.photo_url)}" alt="">`:`<span class="ux-row-ph"></span>`}<span class="ux-row-m"><b>${escapeHtml((li&&li.title)||("Item #"+(x.listing_id||x.id)))}</b><small>${escapeHtml(shop)} · ${escapeHtml(x.status||"sold")}${x.created_at?" · "+escapeHtml(new Date(String(x.created_at).replace(" ","T")+(/[zZ]|[+-]\d\d:?\d\d$/.test(String(x.created_at))?"":"Z")).toLocaleDateString(undefined,{month:"short",day:"numeric"})):""}</small></span><span class="ux-row-v"><b>${money(x.sale_price)}</b><small style="color:${x.profit>=0?"var(--good)":"var(--bad)"}">kept ${money(x.profit)}</small></span></button>`; }).join("")}</div>`
  : `<div class="empty"><svg class='i20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M12 16.2v-4.6M12 8.2v.01'/></svg>No sales written down yet — mark an item sold to add your first one.</div>`}
  <button class="btn btn-primary" onclick="openOrder(null)" data-tip="Write down a sale that happened outside the app.">+ Add a sale by hand</button>`;
  } catch(e){ el.innerHTML = `<div class="empty"><svg class='i20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 8.5v4.5M12 16.5v.01'/><circle cx='12' cy='12' r='9'/></svg>${escapeHtml(e.message)}</div>`; }

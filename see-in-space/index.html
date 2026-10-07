@@ -22,7 +22,8 @@
 <style>
 .sis-badge{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .sis-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
-@media (max-width:800px){.sis-grid{grid-template-columns:1fr}}
+@media (max-width:800px){.sis-grid{grid-template-columns:1fr}.sis-grid .sis-panel{order:-1}}
+.sis-more{margin-top:12px;border-top:1px solid var(--line,#e5dcd3);padding-top:6px}.sis-more summary{cursor:pointer;font-weight:700;min-height:40px;display:flex;align-items:center}
 .sis-stage{position:relative;background:#1a1410;border-radius:16px;overflow:hidden;border:1px solid var(--line);min-height:280px;touch-action:none;user-select:none}
 .sis-stage canvas{display:block;width:100%;height:auto;max-height:70vh;cursor:crosshair}
 .sis-handle{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:var(--accent);border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.35);z-index:3;touch-action:none;cursor:grab}
@@ -71,27 +72,25 @@
 
 <main id="main">
 <div class="sis-badge">
-  <span class="badge">Instant preview · free forever</span>
-  <span class="badge" style="background:rgba(31,122,69,.12);color:var(--good)">Not photoreal</span>
+  <span class="badge">Free</span>
 </div>
 <h1>See it in my space</h1>
-<p class="lede">Upload a room photo, place any sellable item — painting on the wall, furniture on the floor — then download or try phone AR when your device supports it. Photos stay on this device.</p>
-<p class="sis-honest"><b>Honest label:</b> this is an Instant / placement preview overlay. It is <b>not</b> a photoreal render. Clothing body try-on lives on <a href="/try-on/">Try it on</a>.</p>
+<p class="lede">Add a photo of your room and the item, then drag it into place. A quick preview, not a real photo — and your photos stay on your phone. For clothes, use <a href="/try-on/">Try it on</a>.</p>
 
 <div class="sis-grid">
   <section class="card" style="padding:14px">
     <div class="sis-stage" id="stage">
       <div class="sis-empty" id="stage-empty">
-        <p><b>Add a room photo</b> to start</p>
-        <p>Then drag the corner handles (wall) or move / scale / rotate (floor).</p>
+        <p><b>Your preview shows here</b></p>
+        <p>Add a room photo and an item photo, then drag the item into place.</p>
       </div>
       <canvas id="cv" width="800" height="600" hidden></canvas>
     </div>
     <p class="sis-status" id="status" role="status"></p>
     <div class="sis-row">
-      <button type="button" class="btn btn-accent btn-sm" id="btn-export" disabled>Download preview PNG</button>
+      <button type="button" class="btn btn-accent btn-sm" id="btn-export" disabled>Download</button>
       <button type="button" class="btn btn-soft btn-sm" id="btn-share" disabled>Share</button>
-      <button type="button" class="btn btn-soft btn-sm" id="btn-reset" disabled>Reset placement</button>
+      <button type="button" class="btn btn-soft btn-sm" id="btn-reset" disabled>Reset</button>
     </div>
   </section>
 
@@ -102,19 +101,20 @@
     </div>
 
     <div class="sis-drop" id="drop-room">
-      <p style="margin:0;font-weight:700">1. Room photo</p>
-      <p class="note" style="margin:4px 0 0">Your wall or floor — camera roll is fine</p>
+      <p style="margin:0;font-weight:700">1. Add a room photo</p>
+      <p class="note" style="margin:4px 0 0">Your wall or floor</p>
       <img class="sis-thumb" id="thumb-room" alt="">
       <input type="file" id="file-room" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose room photo">
     </div>
 
     <div class="sis-drop" id="drop-item" style="margin-top:12px">
-      <p style="margin:0;font-weight:700">2. Listing / item photo</p>
-      <p class="note" style="margin:4px 0 0">Painting, furniture, or any sellable object</p>
+      <p style="margin:0;font-weight:700">2. Add the item photo</p>
+      <p class="note" style="margin:4px 0 0">Art, a lamp, a chair…</p>
       <img class="sis-thumb" id="thumb-item" alt="">
       <input type="file" id="file-item" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose item photo">
     </div>
 
+    <details class="sis-more"><summary>Adjust</summary>
     <label for="opacity">Opacity <span id="opacity-v">100%</span></label>
     <input class="range" type="range" id="opacity" min="20" max="100" value="100">
 
@@ -128,14 +128,14 @@
       <input class="range" type="range" id="rot" min="-180" max="180" value="0">
     </div>
 
-    <label for="width-cm">Approx width (cm) — for phone AR scale</label>
+    <label for="width-cm">Real width (cm)</label>
     <input class="input" type="number" id="width-cm" min="5" max="400" value="50" step="1">
-    <label for="height-cm">Approx height (cm)</label>
+    <label for="height-cm">Real height (cm)</label>
     <input class="input" type="number" id="height-cm" min="5" max="400" value="70" step="1">
 
     <div class="sis-ar" id="ar-panel">
-      <p style="margin:0 0 8px;font-weight:800">Phone AR <span class="badge" style="margin:0">when supported</span></p>
-      <p class="muted" style="margin:0 0 8px">Uses a lightweight textured plane from your listing image. If AR is unavailable, keep using the photo placer above — never a dead end.</p>
+      <p style="margin:0 0 8px;font-weight:800">View in your room (AR)</p>
+      <p class="muted" style="margin:0 0 8px">On phones that support it, tap the AR button below to see the item through your camera.</p>
       <model-viewer id="mv"
         ar
         ar-modes="webxr scene-viewer quick-look"
@@ -145,24 +145,15 @@
         shadow-intensity="0.6"
         alt="Listing plane for AR preview">
       </model-viewer>
-      <p class="muted" id="ar-status">Add both photos to build the AR plane (free, on-device).</p>
+      <p class="muted" id="ar-status">Add both photos first.</p>
       <div class="sis-row">
-        <button type="button" class="btn btn-soft btn-sm" id="btn-ar-refresh" disabled>Rebuild AR plane</button>
+        <button type="button" class="btn btn-soft btn-sm" id="btn-ar-refresh" disabled>Refresh</button>
       </div>
     </div>
+    </details>
   </aside>
 </div>
 
-<div class="card" style="margin-top:16px">
-  <h2 style="margin:0 0 8px;font-size:1.15rem">How to demo on a phone</h2>
-  <ol style="margin:0;padding-left:18px;color:var(--mut);font-size:14px;line-height:1.55">
-    <li>Open this page on your phone over HTTPS (fashionistas.ai).</li>
-    <li>Pick <b>Wall</b> for art / posters or <b>Floor</b> for furniture.</li>
-    <li>Upload a room photo → upload the listing photo → drag corners (wall) or scale/rotate (floor).</li>
-    <li>Optional: tap the AR button inside the model viewer (Android Scene Viewer / iOS Quick Look when available).</li>
-    <li>If AR is hidden or fails, the photo placer still works — Instant preview stays free.</li>
-  </ol>
-</div>
 </main>
 
 <footer class="site-footer">
@@ -359,9 +350,9 @@ async function maybeBuildAr() {
     const mv = $("mv");
     mv.setAttribute("src", glbUrl);
     mv.setAttribute("ar-placement", mode === "floor" ? "floor" : "wall");
-    $("ar-status").textContent = "AR plane ready. On a supported phone, use the AR button in the viewer. Otherwise keep the photo placer.";
+    $("ar-status").textContent = "Ready. On a supported phone, tap the AR button above.";
   } catch (e) {
-    $("ar-status").textContent = "AR plane could not be built on this device — photo placer still works.";
+    $("ar-status").textContent = "AR isn't available on this device — the preview above still works.";
   } finally {
     arBusy = false;
     if (itemImg && itemImg !== arFor) maybeBuildAr(); // item changed while building

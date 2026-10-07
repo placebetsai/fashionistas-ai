@@ -1,0 +1,89 @@
+/* ux-pass.css — app-wide mobile clean-up (2026-10). Loaded after redesign.css.
+   One primary action per screen, photos first, short copy, fewer floating layers. */
+
+/* selling / shopping switch: compact segmented control instead of a card + paragraph */
+.ux-seg{display:inline-flex;gap:4px;padding:4px;margin:0 0 14px;border-radius:999px;background:var(--soft);border:1px solid var(--line)}
+.ux-seg button{min-height:38px;padding:0 16px;border:0;border-radius:999px;background:transparent;color:var(--mut);font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.ux-seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+
+/* Home */
+.ux-big{width:100%;min-height:54px;font-size:16.5px!important;margin:0 0 14px;display:flex;align-items:center;justify-content:center;gap:8px}
+
+/* Shop grid tiles — photo first, price, title, one line of facts */
+#market-grid{gap:14px 10px}
+.ux-tile{display:flex;flex-direction:column;gap:2px;min-width:0;color:var(--ink);text-decoration:none;-webkit-tap-highlight-color:transparent}
+.ux-tile-img{position:relative;display:block;aspect-ratio:4/5;border-radius:14px;overflow:hidden;background:var(--soft);margin-bottom:6px}
+.ux-tile-img img{width:100%;height:100%;object-fit:cover;display:block}
+.ux-tile-img .ph{height:100%;display:grid;place-items:center;font-size:30px}
+.ux-tile-p{font-weight:800;font-size:15.5px}
+.ux-tile-t{font-size:13.5px;line-height:1.3;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ux-tile-s{font-size:12.5px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ux-search{margin-bottom:12px}
+.ux-search .input{min-height:46px}
+
+/* Product page */
+.ux-item{position:relative;max-width:640px;margin:0 auto}
+.ux-back{position:absolute;left:10px;top:10px;z-index:2;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.92);color:#111;display:grid;place-items:center;box-shadow:0 2px 10px rgba(0,0,0,.18);cursor:pointer}
+.ux-item:not(:has(.ux-item-img)) .ux-back{position:static;margin:0 0 8px;background:var(--soft);color:var(--ink);box-shadow:none}
+.ux-item-img{margin:0 -16px;background:var(--soft);aspect-ratio:1/1;max-height:58vh;overflow:hidden}
+.ux-item-img img{width:100%;height:100%;object-fit:cover;display:block}
+.ux-item-body{padding:16px 0 0}
+.ux-item-price{font-size:26px;font-weight:800;letter-spacing:-.01em}
+.ux-item-title{font-size:18px;font-weight:600;line-height:1.35;margin:2px 0 14px;font-family:inherit;letter-spacing:0}
+.ux-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin:0 0 14px}
+.ux-facts div{padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
+.ux-facts dt{font-size:11.5px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.ux-facts dd{margin:2px 0 0;font-weight:700;font-size:14.5px}
+.ux-try{display:flex;gap:8px;margin:0 0 14px}
+.ux-try .btn{flex:1}
+.ux-item-desc{white-space:pre-line;line-height:1.55;margin:0 0 16px;color:var(--ink)}
+.ux-seller{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.ux-seller b{display:block}
+.ux-seller small{color:var(--mut)}
+.ux-av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;font-weight:800}
+.ux-buybar{display:flex;gap:10px;position:sticky;bottom:0;padding:12px 0;background:var(--bg);z-index:5}
+.ux-buybar .btn{flex:1;min-height:52px;font-size:16px!important}
+.ux-buybar .btn-accent{flex:2}
+.ux-buy{display:flex;gap:12px;align-items:center}
+.ux-buy img{width:64px;height:64px;border-radius:12px;object-fit:cover}
+.ux-buy b{display:block}
+.ux-buy span{color:var(--mut);font-size:14px}
+.ux-ok{padding:12px;border-radius:12px;background:color-mix(in srgb,#1f9d55 12%,var(--card));font-weight:600;margin:0}
+.ux-err{padding:12px;border-radius:12px;background:color-mix(in srgb,#d23a2a 10%,var(--card));font-weight:600;margin:0}
+
+/* lists (My sales) */
+.ux-list{display:flex;flex-direction:column;gap:8px;margin:0 0 14px}
+.ux-row{display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--card);text-align:left;font:inherit;color:inherit;cursor:pointer}
+.ux-row img,.ux-row-ph{flex:none;width:48px;height:48px;border-radius:10px;object-fit:cover;background:var(--soft)}
+.ux-row-m{flex:1;min-width:0;display:flex;flex-direction:column}
+.ux-row-m b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ux-row-m small,.ux-row-v small{font-size:12.5px;color:var(--mut)}
+.ux-row-v{display:flex;flex-direction:column;align-items:flex-end}
+
+/* My clothes */
+.ux-closethead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;font-size:15px;color:var(--mut)}
+.ux-closethead b{color:var(--ink)}
+.ux-signout{margin:6px 0 14px;color:var(--mut)!important}
+
+@media (max-width:899px){
+  /* sign out lives in Account, not as a red button on every screen */
+  #topbar .topbar-actions .btn[onclick="logout()"]{display:none!important}
+  /* page subtitles repeat the title — drop them on phones; tighter title */
+  #view-sub{display:none!important}
+  #view-title{font-size:22px!important}
+  #screen-head{margin:0 0 10px!important}
+  html:has(.ux-item) #screen-head{display:none!important}
+  .ux-item-img{margin:0 -14px}
+  /* product page: sticky buy bar sits above the tab bar; the chat bubble steps aside */
+  .ux-buybar{position:fixed;left:0;right:0;bottom:var(--tb,0px);margin:0;padding:10px 14px;border-top:1px solid var(--line);z-index:84}
+  html:has(.ux-buybar) .wrap{padding-bottom:calc(var(--tb) + 96px)!important}
+  html:has(.ux-buybar) #guide-fab,html:has(.ux-buybar) #hc-fab{display:none!important}
+  html:has(.sheet) .ux-buybar{display:none!important}
+  /* the floating "What's next" bar covered content on every screen */
+  #seller-coach-panel{display:none!important}
+  html.mt-app[data-mtv="home"] #guide-fab{bottom:calc(var(--tb) + 16px)!important}
+  .ux-closethead .btn{min-height:42px}
+}
+
+/* Multilist hero: the old background was an invalid nested gradient, so white text sat on a pale card */
+.xl-hero{background:var(--grad)!important}

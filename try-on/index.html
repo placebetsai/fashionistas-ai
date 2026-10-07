@@ -200,6 +200,7 @@
 </style>
 <meta name="color-scheme" content="only light">
 <script>if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).catch(function(){});if(window.caches)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})}).catch(function(){})}</script>
+<style>.to-acts .to-btn:disabled{display:none}.to-tips summary{list-style:none}.to-tips summary::-webkit-details-marker{display:none}.to-tips summary::after{content:" +";color:var(--accent,#b3471f)}.to-tips[open] summary::after{content:" –"}</style>
 </head>
 <body>
 <div class="to-sky" aria-hidden="true">
@@ -238,14 +239,14 @@
   <div class="to-zone sheen" id="zone-person">
    <span class="to-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3471f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4"/></svg></span>
    <b style="font-size:14.5px">Person photo</b>
-   <span class="to-name" id="name-person">Drop a selfie or full-body shot here, or click to choose</span>
+   <span class="to-name" id="name-person">Tap to add a full-length photo of you</span>
    <img id="prev-person" alt="Person photo preview" class="hidden" style="display:none">
    <input type="file" id="file-person" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose the person photo">
   </div>
   <div class="to-zone sheen" id="zone-garment">
    <span class="to-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3471f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 3.5 12 5.4l3.5-1.9 4.5 2.4-2.2 4-2.1-1V21H8.3V8.9l-2.1 1-2.2-4z"/></svg></span>
    <b style="font-size:14.5px">Garment photo</b>
-   <span class="to-name" id="name-garment">Drop the item you want to try on here, or click to choose</span>
+   <span class="to-name" id="name-garment">Tap to add the clothing</span>
    <img id="prev-garment" alt="Garment photo preview" class="hidden" style="display:none">
    <input type="file" id="file-garment" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose the garment photo">
   </div>
@@ -264,18 +265,18 @@
  <div class="to-mode" role="radiogroup" aria-label="Render mode">
  <label class="to-mode-opt on" id="lab-hd">
   <input type="radio" name="to-mode" value="hd" checked>
-  <span class="to-mode-t">Photoreal · Pro</span>
-  <span class="to-mode-d">The full render — real fabric, drape and light, not an overlay. Sign in with Pro or a try-on credit. Takes a minute or two.</span>
+  <span class="to-mode-t">Best quality</span>
+  <span class="to-mode-d">Looks like a real photo. Needs Pro or a try-on credit · about a minute.</span>
  </label>
  <label class="to-mode-opt" id="lab-device">
   <input type="radio" name="to-mode" value="device">
-  <span class="to-mode-t">Instant · experimental overlay</span>
-  <span class="to-mode-d">Quick browser preview that warps the garment onto your photo. Useful for placement only — not photoreal. Photos stay on this device.</span>
+  <span class="to-mode-t">Quick preview</span>
+  <span class="to-mode-d">Free and instant, right on your phone. A rough fit, not a real photo.</span>
  </label>
 </div>
 
 <div class="to-acts">
-  <button class="btn btn-accent" id="btn-go" data-tip="Send both photos to the try-on engine and render the result.">Try it on</button>
+  <button class="btn btn-accent" id="btn-go" data-tip="Shows the clothing on your photo.">Try it on</button>
   <button class="to-btn" id="btn-retry" disabled data-tip="Run the try-on again with the same two photos.">Retry</button>
   <button class="to-btn" id="btn-download" disabled data-tip="Save the render as a file on this device.">Download</button>
   <button class="to-btn" id="btn-save" disabled data-tip="Keep the render in this browser so you can come back to it.">Save</button>
@@ -292,59 +293,16 @@
  </div>
 </div>
 
-<div class="card to-card" style="margin-top:18px;animation-delay:.66s">
- <div class="to-cap" style="margin-top:0">List it anywhere you already sell</div>
- <div class="marquee">
-  <div class="to-track">
-   <div class="to-g">
-    <span class="to-chip" style="--c:#e53238"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>eBay</span>
-    <span class="to-chip" style="--c:#f1641e"><svg width="15" height="15" viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8 6.6 19.7l1.2-6.1L3.3 9.4l6.1-.8L12 3Z"/></svg>Etsy</span>
-    <span class="to-chip" style="--c:#ff2300"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M5.8 7h12.4l1 13H4.8l1-13Z"/><path d="M9 7V5.6a3 3 0 0 1 6 0V7"/></svg>Depop</span>
-    <span class="to-chip" style="--c:#7f2b82"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M8.5 3.5 12 5.4l3.5-1.9 4.5 2.4-2.2 4-2.1-1V21H8.3V8.9l-2.1 1-2.2-4Z"/></svg>Poshmark</span>
-    <span class="to-chip" style="--c:#09b1ba"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M5.8 7h12.4l1 13H4.8l1-13Z"/><path d="M9 7V5.6a3 3 0 0 1 6 0V7"/></svg>Vinted</span>
-    <span class="to-chip" style="--c:#2fb9e6"><svg width="15" height="15" viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8 6.6 19.7l1.2-6.1L3.3 9.4l6.1-.8L12 3Z"/></svg>Mercari</span>
-    <span class="to-chip" style="--c:#1a1a1a"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>Grailed</span>
-    <span class="to-chip" style="--c:#1a1a1a"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M8.5 3.5 12 5.4l3.5-1.9 4.5 2.4-2.2 4-2.1-1V21H8.3V8.9l-2.1 1-2.2-4Z"/></svg>Vestiaire Collective</span>
-    <span class="to-chip" style="--c:#ef5b5b"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M5.8 7h12.4l1 13H4.8l1-13Z"/><path d="M9 7V5.6a3 3 0 0 1 6 0V7"/></svg>Kidizen</span>
-    <span class="to-chip" style="--c:#1877f2"><svg width="15" height="15" viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8 6.6 19.7l1.2-6.1L3.3 9.4l6.1-.8L12 3Z"/></svg>Facebook Marketplace</span>
-    <span class="to-chip" style="--c:#e11d48"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>Whatnot</span>
-   </div>
-   <div class="to-g" aria-hidden="true">
-    <span class="to-chip" style="--c:#e53238"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>eBay</span>
-    <span class="to-chip" style="--c:#f1641e"><svg width="15" height="15" viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8 6.6 19.7l1.2-6.1L3.3 9.4l6.1-.8L12 3Z"/></svg>Etsy</span>
-    <span class="to-chip" style="--c:#ff2300"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M5.8 7h12.4l1 13H4.8l1-13Z"/><path d="M9 7V5.6a3 3 0 0 1 6 0V7"/></svg>Depop</span>
-    <span class="to-chip" style="--c:#7f2b82"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M8.5 3.5 12 5.4l3.5-1.9 4.5 2.4-2.2 4-2.1-1V21H8.3V8.9l-2.1 1-2.2-4Z"/></svg>Poshmark</span>
-    <span class="to-chip" style="--c:#09b1ba"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M5.8 7h12.4l1 13H4.8l1-13Z"/><path d="M9 7V5.6a3 3 0 0 1 6 0V7"/></svg>Vinted</span>
-    <span class="to-chip" style="--c:#2fb9e6"><svg width="15" height="15" viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8 6.6 19.7l1.2-6.1L3.3 9.4l6.1-.8L12 3Z"/></svg>Mercari</span>
-    <span class="to-chip" style="--c:#1a1a1a"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>Grailed</span>
-    <span class="to-chip" style="--c:#1a1a1a"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M8.5 3.5 12 5.4l3.5-1.9 4.5 2.4-2.2 4-2.1-1V21H8.3V8.9l-2.1 1-2.2-4Z"/></svg>Vestiaire Collective</span>
-    <span class="to-chip" style="--c:#ef5b5b"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M5.8 7h12.4l1 13H4.8l1-13Z"/><path d="M9 7V5.6a3 3 0 0 1 6 0V7"/></svg>Kidizen</span>
-    <span class="to-chip" style="--c:#1877f2"><svg width="15" height="15" viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8 6.6 19.7l1.2-6.1L3.3 9.4l6.1-.8L12 3Z"/></svg>Facebook Marketplace</span>
-    <span class="to-chip" style="--c:#e11d48"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>Whatnot</span>
-   </div>
-  </div>
- </div>
- <p class="note" style="margin-bottom:0">Every piece you try on here can be listed through the app — titles, fees and shipping worked out for all eleven shops.</p>
-</div>
-
-<div class="card to-card" style="margin-top:18px;animation-delay:.76s">
- <div class="to-stats">
-  <div class="to-stat"><b>0</b><span>photos uploaded in Instant overlay — your picture stays in this browser</span></div>
-  <div class="to-stat"><b>1</b><span>click to download, save or share the render once you like it</span></div>
-  <div class="to-stat"><b>11</b><span>marketplaces priced by the fee engine, so you know what you keep</span></div>
- </div>
-</div>
-
-<div class="card" style="margin-top:18px">
- <h2 style="font-size:1.15rem;margin-top:0">Get a better result</h2>
+<details class="card to-tips" style="margin-top:18px">
+ <summary style="font-size:1.05rem;font-weight:700;cursor:pointer;min-height:28px">Tips for a better result</summary>
  <ul style="margin:0;padding-left:20px;line-height:1.75;font-size:14.5px">
   <li>Stand straight with your whole torso in frame, facing the camera.</li>
   <li>Plain background, even light — no harsh shadows across the body.</li>
   <li>Lay the garment flat, or shoot it on a hanger, so the shape reads clearly.</li>
   <li>Use the biggest photo you have. Small, blurry shots give small, blurry results.</li>
  </ul>
- <p style="margin-bottom:0">Want the colour side of it too? <a href="/contact/">Ask us about colour analysis</a> — it reads undertone and contrast from your photo and hands back a palette. &nbsp; <a href="/">Open the fashionistas.ai app</a></p>
-</div>
+ <p style="margin-bottom:0"><a href="/">Open the fashionistas.ai app</a></p>
+</details>
 
 </main>
 
@@ -592,7 +550,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
         }
         // The caption under the picture is for the person looking at it, not
         // for us: no pose-model names, no stage names.
-        var note = "Instant experimental overlay · your photos never left this device";
+        var note = "Quick preview · your photos stayed on your phone";
         return new Promise(function(res, rej){
           out.canvas.toBlob(function(b){
             if (!b) return rej(new Error("The on-device renderer produced no image."));
@@ -701,25 +659,25 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
         var ct = (res.headers.get("content-type") || "").toLowerCase();
         if (!res.ok){
           return res.text().then(function(t){
-            var msg = "Photoreal try-on failed (" + res.status + ").";
+            var msg = "Best quality didn't work this time. Try again, or use Quick preview.";
             try {
               var j = JSON.parse(t);
               if (res.status === 401) {
-                msg = (j && j.detail) || "Sign in to use Photoreal try-on.";
+                msg = (j && j.detail) || "Sign in to use Best quality.";
               } else if (res.status === 402) {
-                msg = (j && j.detail) || "Photoreal needs Pro or a try-on credit. Instant overlay stays free on this device.";
+                msg = (j && j.detail) || "Best quality needs Pro or a try-on credit. Quick preview is free.";
               } else if (j && (j.detail || j.error || j.message)) {
-                msg = "Photoreal try-on failed: " + (j.detail || j.error || j.message);
+                msg = "Best quality didn't work: " + (j.detail || j.error || j.message);
               }
-            } catch(e){ if (t) msg = "Photoreal try-on failed (" + res.status + "): " + t.slice(0,160); }
+            } catch(e){ if (t) msg = "Best quality didn't work this time. Try again, or use Quick preview."; }
             throw new Error(msg);
           });
         }
         if (ct.indexOf("image/") === 0){
-          return res.blob().then(function(b){ showResult(b, null, "Photoreal render · " + Math.round(b.size/1024) + " KB"); });
+          return res.blob().then(function(b){ showResult(b, null, "Best quality"); });
         }
         return res.text().then(function(t){
-          var src = null, blobNote = "Photoreal render";
+          var src = null, blobNote = "Best quality";
           try {
             var j = JSON.parse(t);
             src = j && j.url ? j.url : pickImage(j);
@@ -774,8 +732,8 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
       if (dev) dev.classList.toggle("on", mode === "device");
       if (hd) hd.classList.toggle("on", mode === "hd");
       say(mode === "hd"
-            ? "Photoreal render. Sign in with Pro or a credit — photos go to our model for about a minute or two."
-            : "Instant experimental overlay. Photos stay on this device; result is a placement preview, not photoreal.",
+            ? "Best quality: looks like a real photo. Needs Pro or a try-on credit — takes about a minute."
+            : "Quick preview: free, made on your phone. A rough fit, not a real photo.",
           false);
     });
   });

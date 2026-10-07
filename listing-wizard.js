@@ -181,7 +181,7 @@
     $id("lw-stepname").textContent = STEPS[n - 1];
     $id("lw-bar-i").style.width = (n * 25) + "%";
     $id("lw-bar").setAttribute("aria-valuenow", String(n));
-    $id("lw-back").style.visibility = n > 1 ? "visible" : "hidden";
+    $id("lw-back").hidden = n < 2;
     var body = $id("lw-body");
     body.innerHTML = n === 1 ? step1() : n === 2 ? step2() : n === 3 ? step3() : step4();
     if (n === 2) afterStep2();
@@ -218,15 +218,15 @@
     h += '<div class="lw-grid" id="lw-grid">' + PHOTOS.map(function (p, i) {
       return '<button type="button" class="lw-thumb' + (i === W.sel ? " on" : "") + '" onclick="LW.sel(' + i + ')" aria-label="Photo ' + (i + 1) + (i === 0 ? ", cover" : "") + '">' +
         '<img src="' + esc(p.src || p.url) + '" alt="" decoding="async">' + (i === 0 ? '<span class="lw-cover">Cover</span>' : '<span class="lw-num">' + (i + 1) + '</span>') + '</button>';
-    }).join("") + (PHOTOS.length < MAXP ? '<button type="button" class="lw-thumb lw-add" onclick="LW.pick(\'gal\')" aria-label="Add photos"><span>+</span><small>Add</small></button>' : "") + '</div>';
+    }).join("") + (PHOTOS.length < MAXP ? '<button type="button" class="lw-thumb lw-add" onclick="LW.pick(\'cam\')" aria-label="Take another photo">' + ICON.cam + '<small>Camera</small></button><button type="button" class="lw-thumb lw-add" onclick="LW.pick(\'gal\')" aria-label="Add from gallery">' + ICON.img + '<small>Gallery</small></button>' : "") + '</div>';
     var s = Math.min(W.sel, PHOTOS.length - 1), last = PHOTOS.length - 1;
-    h += '<div class="lw-tools" id="lw-tools"><span class="lw-tools-l">Photo ' + (s + 1) + ' of ' + PHOTOS.length + '</span>' +
+    h += '<div class="lw-tools" id="lw-tools"><span class="lw-tools-l">' + (PHOTOS.length > 1 ? 'Photo ' + (s + 1) + ' of ' + PHOTOS.length + ' · tap a photo to pick it' : 'Add the label, back and any flaws too') + '</span>' +
       (s > 0 ? '<button type="button" class="lw-chipbtn" onclick="LW.cover()">Make cover</button>' : "") +
-      '<button type="button" class="lw-chipbtn lw-sq" onclick="LW.move(-1)"' + (s === 0 ? " disabled" : "") + ' aria-label="Move left">◀</button>' +
-      '<button type="button" class="lw-chipbtn lw-sq" onclick="LW.move(1)"' + (s === last ? " disabled" : "") + ' aria-label="Move right">▶</button>' +
+      (last > 0 ? '<button type="button" class="lw-chipbtn lw-sq" onclick="LW.move(-1)"' + (s === 0 ? " disabled" : "") + ' aria-label="Move left">◀</button>' +
+      '<button type="button" class="lw-chipbtn lw-sq" onclick="LW.move(1)"' + (s === last ? " disabled" : "") + ' aria-label="Move right">▶</button>' : "") +
       (PHOTOS[s] && PHOTOS[s].src ? '<button type="button" class="lw-chipbtn" id="lw-clean" onclick="LW.clean()">' + ICON.spark + ' Clean background</button>' : "") +
       '<button type="button" class="lw-chipbtn lw-danger" onclick="LW.remove()">Remove</button></div>' +
-      '<div class="lw-moreph"><button type="button" class="lw-btn lw-btn-soft lw-btn-sm" onclick="LW.pick(\'cam\')">' + ICON.cam + ' Take another</button><button type="button" class="lw-btn lw-btn-soft lw-btn-sm" onclick="LW.pick(\'gal\')">' + ICON.img + ' Gallery</button></div>';
+      '';
     h += '<div id="lw-ai">' + aiCard() + '</div>';
     return h;
   }
@@ -397,7 +397,7 @@
     h += '<div class="lw-field" id="lw-sizebox">' + sizeBox() + '</div>';
     h += '<div class="lw-field"><div class="lw-lab"><span class="lw-labt">Condition</span>' + aiTag("cond") + '</div><div class="lw-chips" id="lw-conds" role="radiogroup" aria-label="Condition">' + condChips() +
       '</div><p class="lw-hint" id="lw-condtip">' + esc((condBy(f.cond) || {}).tip || "Pick the closest — buyers trust honest condition.") + '</p></div>';
-    h += '<div class="lw-field"><div class="lw-lab"><span class="lw-labt">Colour</span>' + aiTag("color") + '</div><div class="lw-chips lw-colors" role="radiogroup" aria-label="Colour">' + colorChips() + '</div></div>';
+    h += '<div class="lw-field"><div class="lw-lab"><span class="lw-labt">Colour</span>' + aiTag("color") + '<span class="lw-opt" id="lw-colname">' + esc(W.f.color || "") + '</span></div><div class="lw-chips lw-colors" role="radiogroup" aria-label="Colour">' + colorChips() + '</div></div>';
     h += '<details class="lw-more" id="lw-more"><summary><b>More details</b><span>description · material</span>' + ICON.chev + '</summary>' +
       '<div class="lw-field"><div class="lw-lab"><label for="lw-desc">Description</label><span class="lw-opt">' + (W.touched.desc ? "edited by you" : "written for you") + '</span></div>' +
       '<textarea class="lw-in" id="lw-desc" rows="5" oninput="LW.set(\'desc\',this.value)">' + esc(f.desc || autoDesc()) + '</textarea>' +
@@ -475,7 +475,7 @@
   function colorChips() {
     var cur = W.f.color, known = COLORS.some(function (c) { return c[0] === cur; });
     return COLORS.map(function (c) {
-      return '<button type="button" role="radio" aria-checked="' + (cur === c[0]) + '" class="lw-chip lw-col' + (cur === c[0] ? " on" : "") + '" data-v="' + c[0] + '" onclick="LW.color(this.getAttribute(\'data-v\'))"><i style="background:' + c[1] + '"></i>' + c[0] + '</button>';
+      return '<button type="button" role="radio" aria-checked="' + (cur === c[0]) + '" class="lw-sw' + (cur === c[0] ? " on" : "") + '" data-v="' + c[0] + '" aria-label="' + c[0] + '" title="' + c[0] + '" onclick="LW.color(this.getAttribute(\'data-v\'))"><i style="background:' + c[1] + '"></i></button>';
     }).join("") + (cur && !known ? '<button type="button" role="radio" aria-checked="true" class="lw-chip lw-col on" data-v="' + esc(cur) + '" onclick="LW.color(this.getAttribute(\'data-v\'))">' + esc(cur) + '</button>' : "");
   }
   function set(k, v) {
@@ -492,7 +492,7 @@
   }
   function size(z) { W.f.size = z; W.touched.size = true; if (!W.touched.desc) W.f.desc = autoDesc(); save(); var sb = $id("lw-sizebox"); if (sb) sb.innerHTML = sizeBox(); syncDesc(); }
   function sizeOther() { var i = $id("lw-sizein"); if (!i) return; i.hidden = false; i.focus(); [].forEach.call(document.querySelectorAll(".lw-sz"), function (b) { b.classList.remove("on"); b.setAttribute("aria-checked", "false"); }); }
-  function color(c) { W.f.color = (W.f.color === c) ? "" : c; W.touched.color = true; if (!W.touched.desc) W.f.desc = autoDesc(); save(); var box = document.querySelector(".lw-colors"); if (box) box.innerHTML = colorChips(); syncDesc(); }
+  function color(c) { W.f.color = (W.f.color === c) ? "" : c; W.touched.color = true; if (!W.touched.desc) W.f.desc = autoDesc(); save(); var box = document.querySelector(".lw-colors"); if (box) box.innerHTML = colorChips(); var cn = $id("lw-colname"); if (cn) cn.textContent = W.f.color || ""; syncDesc(); }
 
   /* ================= STEP 3 — PRICE ================= */
   var SHIP = [

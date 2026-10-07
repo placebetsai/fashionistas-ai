@@ -60,10 +60,11 @@
 .lw-thumb.on{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
 .lw-cover,.lw-num{position:absolute;left:6px;top:6px;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:800;background:rgba(0,0,0,.66);color:#fff}
 .lw-add{display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px dashed var(--line-2,var(--line));background:transparent;color:var(--mut)}
-.lw-add span{font-size:30px;line-height:1;font-weight:300}
+.lw-add svg{width:24px;height:24px}
+.lw-add{gap:4px}
 .lw-add small{font-weight:700;font-size:12.5px}
 .lw-tools{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:12px 0 0}
-.lw-tools-l{font-size:12.5px;font-weight:800;color:var(--mut);margin-right:auto;text-transform:uppercase;letter-spacing:.04em;width:100%}
+.lw-tools-l{font-size:13px;font-weight:600;color:var(--mut);width:100%}
 .lw-moreph{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
 .lw-ai{display:flex;align-items:flex-start;gap:12px;margin:14px 0 0;padding:14px;border-radius:16px;border:1.5px solid var(--line);background:var(--card)}
 .lw-ai > div{flex:1;min-width:0}
@@ -103,8 +104,11 @@ textarea.lw-in{min-height:120px;line-height:1.45;resize:vertical}
 .lw-dept.on{background:var(--accent);color:#fff}
 .lw-group{margin:12px 0 6px;font-size:12px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
 .lw-sizes .lw-chip{min-width:52px;justify-content:center;padding:0 12px}
-.lw-colors .lw-chip{padding:0 13px 0 9px}
-.lw-colors i{width:20px;height:20px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.18)}
+.lw-colors{gap:6px}
+.lw-sw{width:44px;height:44px;border-radius:50%;border:2px solid transparent;background:transparent;padding:0;display:grid;place-items:center;cursor:pointer}
+.lw-sw i{width:32px;height:32px;border-radius:50%;box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.18)}
+.lw-sw.on{border-color:var(--ink)}
+#lw-colname{color:var(--ink);font-weight:800}
 .lw-more{border:1.5px solid var(--line);border-radius:16px;background:var(--card);margin:4px 0 0}
 .lw-more summary{list-style:none;display:flex;align-items:center;gap:8px;min-height:54px;padding:0 14px;cursor:pointer}
 .lw-more summary::-webkit-details-marker{display:none}
@@ -238,4 +242,10 @@ p.lw-range{margin-top:0}
 @media (prefers-reduced-motion:reduce){
   .lw-bar i,.lw-tgl,.lw-tgl i,.lw-track i,.lw-pc-st,.lw-more summary svg{transition:none}
   .lw-spin{animation-duration:2.4s}
+}
+.lw [hidden]{display:none!important}
+/* keyboard open: give the screen back — hide the tab bar while typing, Next sits at the bottom */
+@media (max-width:899px){
+  html.lw-on:has(.lw input:focus,.lw textarea:focus) #mtabbar{display:none!important}
+  html.lw-on:has(.lw input:focus,.lw textarea:focus) .lw-foot{bottom:0!important}
 }
