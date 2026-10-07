@@ -4,7 +4,7 @@
 
 **Laptop repo (preferred):** `/home/billionaremaker/fashionistas-ai`  
 **GitHub:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
-**Live tip:** `version.txt` = **`TIP_AFTER_DEPLOY`** — must match `https://fashionistas.ai/version.txt` (stamped after wrangler)
+**Live tip:** `version.txt` = **`f66079e`** (`f66079e6275b4519cc9fb10cadac0f815b557294`) — must match `https://fashionistas.ai/version.txt`
 
 ### Deploy (mandatory — do not get this wrong)
 
@@ -23,7 +23,7 @@
 | prior (`593418e`…) | Chatbot expand / multilist / try-on pipeline | see git log |
 | `a5da396` | Seller coach layer (Photo → Sell everywhere checklist / help chips) | `libs/seller-coach.js` + tests |
 | `496b09a` | **Free See in my space** — room photo placer (4-corner wall + floor drag/scale/rotate) + optional `<model-viewer>` wall/floor AR from client GLB; CTAs on Shop/Closet detail; `placement_mode` inferred (`clothing`\|`wall`\|`floor`\|`none`); honest Instant/not-photoreal labels | `/see-in-space/` · tests `placement-mode` + `placer-homography` **12/12** · brief `docs/FREE-SEAMLESS-ANYOBJECT.md` |
-| `TIP_AFTER_DEPLOY` | **Multilist one-click polish** — readiness strip (Load unpacked → Verify → Sell everywhere); equal shop treatment (Depop/Poshmark/Mercari/Vinted/Grailed/eBay); honest no-op toasts (never false Posted); Connect + seller-coach Load unpacked hooks | Multilist Connect · `xlOneClickGate` · tests multilist/connect/coach **25/25** · `docs/MULTILIST-ONE-CLICK.md` |
+| `f66079e` | **Multilist one-click polish** — readiness strip (Load unpacked → Verify → Sell everywhere); equal shop treatment (Depop/Poshmark/Mercari/Vinted/Grailed/eBay); honest no-op toasts (never false Posted); Connect + seller-coach Load unpacked hooks | Multilist Connect · `xlOneClickGate` · tests multilist/connect/coach **25/25** · `docs/MULTILIST-ONE-CLICK.md` |
 
 ### See in my space — how to demo on phone
 
