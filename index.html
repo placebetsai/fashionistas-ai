@@ -1092,6 +1092,7 @@ textarea.input{font-family:inherit}
 </style>
 <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7215975042937417" crossorigin="anonymous" data-ad-client="ca-pub-7215975042937417"></script>
+<link rel="stylesheet" href="/redesign.css">
 </head>
 <body>
 <div class="wrap">
@@ -1099,12 +1100,12 @@ textarea.input{font-family:inherit}
 
  <!-- ================= AUTH ================= -->
  <section id="view-auth" class="hidden">
- <header class="land-nav" id="land-nav">
+  <header class="land-nav rd-nav" id="land-nav">
+  <div class="rd-nav-in">
   <a class="ln-brand" href="javascript:window.scrollTo({top:0,behavior:'smooth'})" data-tip="fashionistas.ai — back to the top." title="fashionistas.ai">
    <span class="ln-mark" aria-hidden="true"><svg width="19" height="19" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"><path d="M32 30v-5a6.5 6.5 0 1 1 6.5-6.5"/><path d="M9 46.5 32 30l23 16.5"/></svg></span>
    <span class="ln-name">fashionistas<span class="wai">.ai</span></span>
   </a>
-  <button class="ln-burger" id="ln-burger" onclick="landNavToggle()" aria-label="Open the menu" aria-expanded="false" aria-controls="ln-links" data-tip="Opens the menu so you can jump to any part of this page."><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   <nav class="ln-links" id="ln-links" aria-label="Main navigation">
    <a href="#land-how" onclick="landNavClose()" data-tip="The three steps: photo, price, Sell everywhere to 11 shops.">How it works</a>
    <a href="#land-ai" onclick="landNavClose()" data-tip="What the AI does for you at every step, A to Z.">The AI</a>
@@ -1118,13 +1119,17 @@ textarea.input{font-family:inherit}
   <span class="ln-acts">
    <button class="btn btn-ghost btn-sm" onclick="authTab('login');var c=document.querySelector('.land-card');if(c)c.scrollIntoView({behavior:'smooth',block:'center'})" data-tip="Come back to an account you already made.">Log in</button>
    <button class="btn btn-accent btn-sm" onclick="authTab('signup');var c=document.querySelector('.land-card');if(c)c.scrollIntoView({behavior:'smooth',block:'center'})" data-tip="Make a free account — username, email, password.">Create account</button>
+   <button class="ln-burger" id="ln-burger" onclick="landNavToggle()" aria-label="Open the menu" aria-expanded="false" aria-controls="ln-links" data-tip="Opens the menu so you can jump to any part of this page."><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </span>
+  </div>
  </header>
- <div class="land-hero">
- <div class="aurora"></div>
- <div class="hero-grid" aria-hidden="true"></div>
- <div class="inner">
- <div class="lockup">
+
+ <div class="land-hero rd-hero">
+  <div class="aurora"></div>
+  <div class="hero-grid" aria-hidden="true"></div>
+  <div class="rd-c rd-hero-grid">
+   <div class="rd-hero-copy">
+    <div class="lockup">
  <span class="lockup-wm" role="img" aria-label="fashionistas.ai"><svg class="wm-art" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 405 96" color="#1E1A18" role="img" aria-labelledby="fashionistas-t fashionistas-d">
    <title id="fashionistas-t">fashionistas.ai wordmark</title>
    <desc id="fashionistas-d">Horizontal lockup: slab-serif F monogram with a thread curl, hairline rule, serif wordmark and letterspaced tagline.</desc>
@@ -1149,64 +1154,87 @@ textarea.input{font-family:inherit}
  </svg><span class="wm-ai" aria-hidden="true">.ai</span></span>
  <button class="theme-btn" data-tip="Switch between light and dark." onclick="toggleTheme()" title="Switch between light and dark theme" aria-label="Switch between light and dark theme"><svg class="ic-sun" aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg><svg class="ic-moon" aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.8A8.7 8.7 0 0 1 9.2 3.5a8.7 8.7 0 1 0 11.3 11.3z"/></svg></button>
  </div>
- <span class="kicker"><span class="dot"></span>Your AI sidekick — A to Z</span>
- <h1><span class="hw" style="--i:0">One</span> <span class="hw" style="--i:1">photo.</span><br><span class="hw" style="--i:2"><em class="rotator"><span id="rot-word">Eleven shops.</span></em></span> <span class="hw" style="--i:3">One</span> <span class="hw" style="--i:4">button.</span></h1>
- <p class="lede">Take one photo of an item and <b>fashionistas.ai</b> works out what it is, sets the price, shows what you keep after every marketplace's fee — then <b>Sell everywhere</b> posts it to eleven shops in one click. You watch each shop move from queued to posted.</p>
- <div class="hero-acts" style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px"><a class="btn btn-accent btn-sm" href="/try-on/" data-tip="Add a photo of you and a garment and see the AI render it on you.">Try it on</a><a class="btn btn-soft btn-sm" href="/see-in-space/" data-tip="Place wall art or furniture in a room photo — Instant preview, free forever.">See in my space</a></div>
- <div class="stat-row">
- <div class="stat-card" data-tip="Poshmark, Mercari, Depop, Vinted, Grailed, eBay, Etsy, Facebook, Kidizen, Vestiaire, Whatnot."><b data-count="11">11</b><span>Shops</span></div>
- <div class="stat-card" data-tip="One photo becomes a live listing on every shop you have connected."><b data-count="1">1</b><span>Photo → listings</span></div>
- <div class="stat-card" data-tip="$14.99/mo — cancel anytime. No card needed to browse."><b data-count="14.99" data-pre="$" data-dec="2">$14.99</b><span>Per month</span></div>
- </div>
- <div class="mock">
- <div class="row">
- <div class="thumb"><svg width="30" height="30" viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"><path d="M32 28v-4.5a6 6 0 1 1 6-6"/><path d="M10 46 32 28l22 18z"/></svg></div>
- <div style="flex:1;min-width:0">
- <div class="mt">Vintage Levi's Denim Jacket</div>
- <div class="ms">Size M - Excellent - 4 photos</div>
- </div>
- <span class="price">$64</span>
- </div>
- <div class="posted"><span class="pd"></span>Posted · Poshmark · Mercari · Depop · Vinted · Grailed · eBay · Etsy</div>
- </div>
+    <span class="kicker"><span class="dot"></span>Your AI sidekick — A to Z</span>
+    <h1 class="rd-h1"><span class="hw" style="--i:0">Snap it.</span> <span class="hw" style="--i:1">List it.</span><br><span class="hw rd-grad" style="--i:2">Sell it everywhere.</span></h1>
+    <p class="rd-rot">One photo. <em class="rotator"><span id="rot-word">Eleven shops.</span></em> One button.</p>
+    <p class="lede">Take one photo of an item and <b>fashionistas.ai</b> works out what it is, sets the price, shows what you keep after every marketplace's fee — then <b>Sell everywhere</b> posts it to eleven shops in one click. You watch each shop move from queued to posted.</p>
+    <div class="hero-acts"><button class="btn btn-accent rd-cta" onclick="authTab('signup');var c=document.querySelector('.land-card');if(c)c.scrollIntoView({behavior:'smooth',block:'center'})" data-tip="Make a free account — username, email, password.">Start selling free</button><a class="btn btn-soft rd-ghost" href="/try-on/" data-tip="Add a photo of you and a garment and see the AI render it on you.">Try it on</a><a class="btn btn-soft rd-ghost" href="/see-in-space/" data-tip="Place wall art or furniture in a room photo — Instant preview, free forever.">See in my space</a></div>
+    <div class="stat-row">
+     <div class="stat-card" data-tip="Poshmark, Mercari, Depop, Vinted, Grailed, eBay, Etsy, Facebook, Kidizen, Vestiaire, Whatnot."><b data-count="11">11</b><span>Shops</span></div>
+     <div class="stat-card" data-tip="One photo becomes a live listing on every shop you have connected."><b data-count="1">1</b><span>Photo → listings</span></div>
+     <div class="stat-card" data-tip="$14.99/mo — cancel anytime. No card needed to browse."><b data-count="14.99" data-pre="$" data-dec="2">$14.99</b><span>Per month</span></div>
+    </div>
+   </div>
+   <div class="rd-hero-art" aria-hidden="true">
+    <figure class="rd-photo rd-photo-back"><img src="/assets/rd/thrift-hands.webp" alt="" width="900" height="600" fetchpriority="high"></figure>
+    <div class="rd-phone">
+     <div class="rd-phone-notch"></div>
+     <div class="rd-phone-screen">
+      <img src="/assets/rd/flatlay.webp" alt="" width="900" height="600">
+      <div class="rd-scan"></div>
+      <div class="rd-tag rd-tag-1">Levi's · denim · M</div>
+      <div class="rd-tag rd-tag-2">Excellent</div>
+      <div class="rd-phone-sheet">
+       <b>Vintage Levi's Denim Jacket</b>
+       <span>Size M · Excellent · 4 photos</span>
+       <div class="rd-sheet-row"><em>$64</em><i>You keep $52.10</i></div>
+      </div>
+     </div>
+    </div>
+    <div class="rd-float rd-float-1"><span class="pd"></span>Posted · Poshmark</div>
+    <div class="rd-float rd-float-2"><span class="pd"></span>Posted · Depop · Mercari</div>
+    <div class="rd-float rd-float-3">✦ AI priced in 3s</div>
+   </div>
   </div>
-  </div>
+ </div>
   <!-- AdSense hero slot: first impression, signed-out visitors only (inside #view-auth). -->
   <div data-ad-slot="hero"></div>
 
-  <section class="lsec" id="land-how" aria-labelledby="how-h">
+ <section class="lsec rd-sec" id="land-how" aria-labelledby="how-h">
+  <div class="rd-c">
   <span class="lsec-kicker">How it works</span>
-  <h2 id="how-h">Three steps. The AI does two of them.</h2>
-  <div class="steps">
-   <div class="step-card reveal" style="--d:0ms"><div class="n">01</div><div class="t">Take a photo</div><div class="d">Point at the item</div></div>
-   <div class="step-card reveal" style="--d:90ms"><div class="n">02</div><div class="t">The AI works it out</div><div class="d">What it is · size · price</div></div>
-   <div class="step-card reveal" style="--d:180ms"><div class="n">03</div><div class="t">Sell everywhere</div><div class="d">One button, 11 shops</div></div>
+  <h2 id="how-h" class="rd-h2">Three steps. <span class="rd-grad">The AI does two of them.</span></h2>
+  <div class="rd-steps">
+   <article class="rd-step reveal" style="--d:0ms">
+    <div class="rd-step-img"><img src="/assets/rd/flatlay.webp" alt="A denim jacket, knit hat and sweater laid flat, ready to photograph" loading="lazy" width="900" height="600"><span class="rd-step-n">01</span></div>
+    <h3>Take a photo <small>Point at the item</small></h3>
+    <p><b>Snap it once.</b> One photo is enough. The AI reads the item, the colour, the brand and the condition off the picture.</p>
+   </article>
+   <article class="rd-step reveal" style="--d:90ms">
+    <div class="rd-step-img"><img src="/assets/rd/tees.webp" alt="T-shirts on wooden hangers" loading="lazy" width="900" height="600"><span class="rd-step-n">02</span><span class="rd-chip-ai">What it is · size · price</span></div>
+    <h3>The AI works it out <small>We write it</small></h3>
+    <p>Title, description, tags and a price — plus what you actually keep after each shop takes its cut.</p>
+   </article>
+   <article class="rd-step reveal" style="--d:180ms">
+    <div class="rd-step-img"><img src="/assets/rd/rack-color.webp" alt="A rail of colourful clothes in a shop" loading="lazy" width="900" height="600"><span class="rd-step-n">03</span><span class="rd-chip-ai">One button, 11 shops</span></div>
+    <h3>Sell everywhere <small>Queued → posting → posted</small></h3>
+    <p>Multilist posts the finished listing to every shop you have connected and shows queued, posting or posted for each one — with a Retry if a shop refuses.</p>
+   </article>
   </div>
-  <div class="lsec-list">
-   <div class="lsec-row"><span class="k">1</span><span class="v"><b>Snap it once</b>One photo is enough. The AI reads the item, the colour, the brand and the condition off the picture.</span></div>
-   <div class="lsec-row"><span class="k">2</span><span class="v"><b>We write it</b>Title, description, tags and a price — plus what you actually keep after each shop takes its cut.</span></div>
-   <div class="lsec-row"><span class="k">3</span><span class="v"><b>Sell everywhere</b>Multilist posts the finished listing to every shop you have connected and shows queued, posting or posted for each one — with a Retry if a shop refuses.</span></div>
   </div>
  </section>
 
- <section class="lsec lsec-tint" id="land-ai" aria-labelledby="ai-h">
+ <section class="lsec lsec-tint rd-sec" id="land-ai" aria-labelledby="ai-h">
+  <div class="rd-c">
   <span class="lsec-kicker">The AI</span>
-  <h2 id="ai-h">With you from A to Z.</h2>
+  <h2 id="ai-h" class="rd-h2">With you from <span class="rd-grad">A to Z.</span></h2>
   <p class="lsec-lede">No setup, no keys, no cost. The agent team sits behind every screen — here is exactly what it handles.</p>
-  <div class="lsec-list">
-   <div class="lsec-row"><span class="k">A</span><span class="v"><b>Analyses your photo</b>Names the item straight from the picture, so you never have to type a title first.</span></div>
-   <div class="lsec-row"><span class="k">C</span><span class="v"><b>Checks the details</b>Category, colour, size and condition, guessed from what it can actually see.</span></div>
-   <div class="lsec-row"><span class="k">D</span><span class="v"><b>Drafts the listing</b>Title, description and tags written in the style each shop expects.</span></div>
-   <div class="lsec-row"><span class="k">P</span><span class="v"><b>Prices it</b>A resale range based on what similar items are going for, not a number you have to guess.</span></div>
-   <div class="lsec-row"><span class="k">S</span><span class="v"><b>Shows what you keep</b>Fees, postage and your costs taken off, so the take-home is never a surprise.</span></div>
-   <div class="lsec-row"><span class="k">Z</span><span class="v"><b>Tracks it to the sale</b>Sold, paid, profit — logged against your closet and your profit screen.</span></div>
+  <div class="rd-bento">
+   <div class="rd-tile rd-tile-xl reveal" style="--d:0ms"><img src="/assets/rd/rack-neutral.webp" alt="" loading="lazy" width="900" height="675"><div class="rd-tile-glass"><span class="k">A</span><b>Analyses your photo</b><p>Names the item straight from the picture, so you never have to type a title first.</p></div></div>
+   <div class="rd-tile reveal" style="--d:60ms"><span class="k">C</span><b>Checks the details</b><p>Category, colour, size and condition, guessed from what it can actually see.</p><div class="rd-mini-chips"><i>Denim</i><i>Blue</i><i>M</i><i>Excellent</i></div></div>
+   <div class="rd-tile reveal" style="--d:120ms"><span class="k">D</span><b>Drafts the listing</b><p>Title, description and tags written in the style each shop expects.</p></div>
+   <div class="rd-tile rd-tile-wide reveal" style="--d:180ms"><span class="k">P</span><b>Prices it</b><p>A resale range based on what similar items are going for, not a number you have to guess.</p><div class="rd-range"><span style="--a:22%;--b:74%"></span><em>$48</em><em>$64</em><em>$82</em></div></div>
+   <div class="rd-tile reveal" style="--d:240ms"><span class="k">S</span><b>Shows what you keep</b><p>Fees, postage and your costs taken off, so the take-home is never a surprise.</p></div>
+   <div class="rd-tile reveal" style="--d:300ms"><span class="k">Z</span><b>Tracks it to the sale</b><p>Sold, paid, profit — logged against your closet and your profit screen.</p></div>
   </div>
   <p class="lsec-foot">Stuck? The <b>Guide A to Z</b> button walks the whole app with you, one letter at a time.</p>
+  </div>
  </section>
 
- <section class="lsec" id="land-shops" aria-labelledby="shops-h">
+ <section class="lsec rd-sec" id="land-shops" aria-labelledby="shops-h">
+  <div class="rd-c">
   <span class="lsec-kicker">Shops</span>
-  <h2 id="shops-h">Eleven shops. One button. You watch it post.</h2>
+  <h2 id="shops-h" class="rd-h2">Eleven shops. One button. <span class="rd-grad">You watch it post.</span></h2>
   <div class="dest marquee" aria-label="Prepares text drafts for Depop, eBay, Poshmark, Mercari, Vinted and Grailed">
    <div class="dest-track">
     <span class="ship depop">DEPOP</span>
@@ -1217,17 +1245,54 @@ textarea.input{font-family:inherit}
     <span class="ship grail">GRAILED</span>
    </div>
   </div>
-  <div class="shop-grid">
-   <div class="shop-cell"><b>Depop</b><span>Fashion-led buyers. Bold photos and honest descriptions sell best.</span></div>
-   <div class="shop-cell"><b>eBay</b><span>The biggest audience. Fixed price or auction, worldwide postage.</span></div>
-   <div class="shop-cell"><b>Poshmark</b><span>A social closet — sharing your listing is how it gets seen.</span></div>
-   <div class="shop-cell"><b>Mercari</b><span>Quick, simple sales. List it and let it sit until it sells.</span></div>
-   <div class="shop-cell"><b>Vinted</b><span>No seller fees in most countries — you keep the whole price.</span></div>
-   <div class="shop-cell"><b>Grailed</b><span>Menswear and streetwear, with buyers who know their brands.</span></div>
+  <div class="shop-grid rd-shops">
+   <div class="shop-cell reveal"><i class="rd-logo" style="--c:#ff2300">D</i><b>Depop</b><span>Fashion-led buyers. Bold photos and honest descriptions sell best.</span></div>
+   <div class="shop-cell reveal"><i class="rd-logo" style="--c:#0064d2">e</i><b>eBay</b><span>The biggest audience. Fixed price or auction, worldwide postage.</span></div>
+   <div class="shop-cell reveal"><i class="rd-logo" style="--c:#7f0353">P</i><b>Poshmark</b><span>A social closet — sharing your listing is how it gets seen.</span></div>
+   <div class="shop-cell reveal"><i class="rd-logo" style="--c:#5356ee">M</i><b>Mercari</b><span>Quick, simple sales. List it and let it sit until it sells.</span></div>
+   <div class="shop-cell reveal"><i class="rd-logo" style="--c:#09b1ba">V</i><b>Vinted</b><span>No seller fees in most countries — you keep the whole price.</span></div>
+   <div class="shop-cell reveal"><i class="rd-logo" style="--c:#111">G</i><b>Grailed</b><span>Menswear and streetwear, with buyers who know their brands.</span></div>
+  </div>
+  <div class="rd-more-shops" aria-label="Also posts to">
+   <span>Also:</span><i>Etsy</i><i>Facebook Marketplace</i><i>Kidizen</i><i>Vestiaire Collective</i><i>Whatnot</i>
   </div>
   <p class="lsec-foot">One item, one photo — a finished listing for all eleven, with each shop's fee and title limit worked out before <b>it</b> posts.</p>
+  </div>
  </section>
 
+ <section class="rd-sec rd-show" id="land-showcase" aria-labelledby="show-h">
+  <div class="rd-c">
+  <span class="lsec-kicker">Preview it</span>
+  <h2 id="show-h" class="rd-h2">See it before it's <span class="rd-grad">yours.</span></h2>
+  <div class="rd-show-grid">
+   <article class="rd-showcard reveal">
+    <div class="rd-ba" style="--pos:55%">
+     <img class="rd-ba-img" src="/assets/rd/room.webp" alt="A bright living room with a yellow armchair" loading="lazy" width="900" height="794">
+     <div class="rd-ba-after"><img class="rd-ba-img" src="/assets/rd/room.webp" alt="" loading="lazy" width="900" height="794"><div class="rd-art-frame"><img src="/assets/rd/gallery-wall.webp" alt="" loading="lazy" width="900" height="600"></div></div>
+     <span class="rd-ba-lbl l">Before</span><span class="rd-ba-lbl r">After</span>
+     <input class="rd-ba-range" type="range" min="0" max="100" value="55" aria-label="Drag to compare the room before and after placing wall art">
+    </div>
+    <div class="rd-showcard-txt"><h3>See in my space</h3><p>Place wall art or furniture in a room photo — instant preview, free forever. Phone AR puts it on your real wall.</p><a class="btn btn-accent btn-sm" href="/see-in-space/">Open See in my space →</a></div>
+   </article>
+   <article class="rd-showcard reveal" style="--d:90ms">
+    <div class="rd-tryon">
+     <figure><img src="/assets/rd/rack-white.webp" alt="A clothing rail with jackets and denim" loading="lazy" width="600" height="900"><figcaption>Garment</figcaption></figure>
+     <span class="rd-arrow" aria-hidden="true">→</span>
+     <figure class="rd-glow"><img src="/assets/rd/tryon-model.webp" alt="A person modelling a yellow outfit" loading="lazy" width="650" height="900"><figcaption>On you</figcaption></figure>
+    </div>
+    <div class="rd-showcard-txt"><h3>Try it on</h3><p>Add a photo of the person and a photo of the garment, and fashionistas.ai renders the piece on that photo. Download, save or share it in one click.</p><a class="btn btn-accent btn-sm" href="/try-on/" data-tip="Add a photo of you and a garment and see the AI render it on you.">Try it on →</a></div>
+   </article>
+  </div>
+  </div>
+ </section>
+
+ <section class="rd-sec rd-start" id="land-start" aria-labelledby="start-h">
+  <div class="rd-c rd-start-grid">
+   <div class="rd-start-copy reveal">
+    <span class="lsec-kicker">Get started</span>
+    <h2 id="start-h" class="rd-h2">Your closet, <span class="rd-grad">listed everywhere.</span></h2>
+    <ul class="rd-checks"><li>One photo → finished listing</li><li>Real take-home after every fee</li><li>Sold on one shop? Pulled from the rest in minutes</li><li>$14.99/mo · cancel anytime</li></ul>
+   </div>
  <div class="land-card">
  <div class="card window">
  <div class="auth-head">
@@ -1264,6 +1329,8 @@ textarea.input{font-family:inherit}
 <p class="legal-line">$14.99/mo · Cancel anytime · Your data stays yours<br><a href="/contact/" style="color:inherit">Contact</a> · <a href="/privacy/" style="color:inherit">Privacy</a> · <a href="/about/" style="color:inherit">About</a></p>
  </div>
  </div>
+  </div>
+ </section>
   <!-- AdSense: signed-out visitors only. This sits INSIDE #view-auth, which
        gets .hidden the moment a session exists (afterAuth/logout/boot), so the
        seller tool below never has an ad above it. -->
@@ -6415,6 +6482,7 @@ import * as IdentifyFill from "/identify-fill.js";
 window.IdentifyFill = IdentifyFill;
 </script>
 <script src="/seller-coach.js" defer></script>
+<script src="/redesign.js" defer></script>
 <script type="module">
 /* AdSense slots are declared in this page's markup as [data-ad-slot] and filled
    from /site-adsense.js — the single source of truth for the publisher id and
