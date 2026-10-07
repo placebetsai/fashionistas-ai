@@ -35,6 +35,8 @@ import * as facebook from "./adapters/facebook.js";
 import * as kidizen from "./adapters/kidizen.js";
 import * as vestiaire from "./adapters/vestiaire.js";
 import * as whatnot from "./adapters/whatnot.js";
+import * as ebay from "./adapters/ebay.js";
+import * as etsy from "./adapters/etsy.js";
 
 export const ADAPTERS = {
   poshmark,
@@ -45,7 +47,9 @@ export const ADAPTERS = {
   facebook,
   kidizen,
   vestiaire,
-  whatnot
+  whatnot,
+  ebay,
+  etsy
 };
 
 const RETRY_PREFIX = "fash-retry:";

@@ -50,6 +50,11 @@ fi
 SHA="$(git rev-parse HEAD)"
 echo "deploy-local: deploying $SHA from $(pwd)"
 
+# --- extension zip (served from /chrome-store/*.zip on Pages) ----------------
+bash scripts/zip-extension.sh
+EXT_VER="$(node -p "JSON.parse(require('fs').readFileSync('apps/extension/manifest.json','utf8')).version")"
+cp -f "chrome-store/fashionistas-extension-v${EXT_VER}.zip" chrome-store/fashionistas-extension-v.zip
+
 # --- version.txt -----------------------------------------------------------
 GITHUB_SHA="$SHA" bash scripts/gen-version.sh
 

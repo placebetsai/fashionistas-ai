@@ -1077,6 +1077,9 @@ textarea.input{font-family:inherit}
 .handoff-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
  letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:999px;
  border:1px solid var(--line);color:var(--mut);background:var(--soft);white-space:nowrap}
+.handoff-chip-bad{border-color:color-mix(in srgb,var(--bad,#c44) 55%,transparent);
+  color:var(--bad,#c44);background:color-mix(in srgb,var(--bad,#c44) 10%,transparent)}
+.handoff-url{color:inherit;text-decoration:underline;font-weight:800;margin-left:2px}
 .handoff-chip-ok{border-color:color-mix(in srgb,var(--good) 55%,transparent);
  color:var(--good);background:color-mix(in srgb,var(--good) 12%,transparent)}
 </style>
@@ -2936,10 +2939,13 @@ function xlShopOpenGuide(id){
    <div class="shop-cg-actions">
     <a class="btn btn-accent" href="${escapeHtml(shop.createListing)}" target="_blank" rel="noopener noreferrer" data-tip="Opens ${escapeHtml(shop.name)} create-listing.">Open create listing</a>
     <a class="btn btn-soft" href="${escapeHtml(shop.signup)}" target="_blank" rel="noopener noreferrer" data-tip="Opens ${escapeHtml(shop.name)} signup.">Open signup</a>
-    <button type="button" class="btn btn-soft" onclick="xlConnectMarkLocal('${shop.id}')" data-tip="Marks Connected locally — does not grant API post.">I've connected</button>
+    ${(typeof EXT_LIVE !== "undefined" && EXT_LIVE)
+      ? `<button type="button" class="btn btn-accent" onclick="xlConnectVerify('${shop.id}')" data-tip="Asks your extension for a live ${escapeHtml(shop.name)} session. Booleans only.">Verify session</button>`
+      : `<button type="button" class="btn btn-soft" onclick="extConnectPrompt()" data-tip="Install the Crosslister so Verify session and Sell everywhere work.">Connect extension first</button>`}
+    <button type="button" class="btn btn-ghost btn-sm" onclick="xlConnectMarkLocal('${shop.id}')" data-tip="Manual mark only — shows Unverified until the extension confirms a live session.">I've connected</button>
     <button type="button" class="btn btn-ghost btn-sm" onclick="xlShopCloseGuide();xlConnectOpenGuide('${escapeHtml(shop.name)}')" data-tip="Also opens Guide A to Z for ${escapeHtml(shop.name)}.">Guide A to Z</button>
    </div>
-   <p class="shop-cg-foot" id="shop-cg-foot">No API credentials to paste — ${escapeHtml(shop.name)} connect posts through your own browser session.</p>`;
+   <p class="shop-cg-foot" id="shop-cg-foot">No API keys. Create the ${escapeHtml(shop.name)} account → stay logged in in Chrome → Verify session → Multilist → Sell everywhere.</p>`;
   }
 
   body.innerHTML = `
@@ -3173,9 +3179,12 @@ async function renderXL(el){
 
     <div class="card" id="xl-connect">
       <h3 style="margin-top:0">Connect + post</h3>
-      <p class="xl-connect-note"><b>Honest status:</b> eBay and Etsy post through their own API once connected; the other nine post through the extension in your browser. Tap <b>Connect</b> on each shop to set it up. fashionistas.ai only API-creates when <b>eBay</b> shows <b>Connected</b> with a valid OAuth token + sell scopes (sandbox recommended). We never invent API credentials or take marketplace passwords. Paste multilist always works — or open <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="hcToggle()" data-tip="Opens Guide A to Z for account setup.">Guide A to Z</button>.</p>
+      <p class="xl-connect-note"><b>One-click path:</b> install the <b>Fashionistas Crosslister</b> Chrome extension, log into each shop in this Chrome, tap <b>Verify session</b>, then <b>Sell everywhere</b>. Posts run in your browser — no marketplace API keys and no Stripe required for multilist. Optional eBay OAuth API create still exists for developers; it is separate. Never invent credentials or take marketplace passwords. <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="extConnectPrompt()" data-tip="Install / connect the Crosslister extension.">Connect extension</button> · <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="hcToggle()" data-tip="Opens Guide A to Z for account setup.">Guide A to Z</button>.</p>
+      <div id="xl-ext-banner" class="xl-ext-banner" style="display:${EXT_LIVE ? "none" : "block"};margin:0 0 12px;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;font-size:13px">
+        <b>Extension not detected.</b> One-click multilist needs it. <button type="button" class="btn btn-accent btn-sm" style="margin-left:6px" onclick="extConnectPrompt()">Set up extension</button>
+      </div>
       <div class="xl-connect-grid">${xlConnectRowsHtml()}</div>
-      <p class="xl-connect-foot">Every shop has a <b>Connect</b> guidance panel (status: Needs account · Ready to guide · Connected). <b>eBay</b>: BYO keys + OAuth + optional <b>Create on eBay</b> (Inventory/Offer; needs business policies + sell scopes). Other shops: guide + paste only. See <code>docs/EBAY_OAUTH.md</code>.</p>
+      <p class="xl-connect-foot">Status: Needs account · Ready to guide · Unverified · Connected (extension-verified). Open each shop's <b>Connect</b> → signup / create-listing links → log in → <b>Verify session</b>. Then Multilist → <b>Sell everywhere</b>. See <code>docs/MULTILIST-ONE-CLICK.md</code>.</p>
     </div>
 
     <div class="card">
@@ -4267,12 +4276,18 @@ function handoffStateOf(shopId, lid){
   const per = all[String(lid)] || {};
   return per[shopId] || null;
 }
-function handoffSet(shopId, lid, status){
+function handoffSet(shopId, lid, status, extra){
   const all = handoffLoad();
   const key = String(lid);
   all[key] = all[key] || {};
-  if (status) all[key][shopId] = { status: status, at: new Date().toISOString() };
-  else delete all[key][shopId];
+  if (status) {
+    const row = { status: status, at: new Date().toISOString() };
+    if (extra && typeof extra === "object") {
+      if (extra.url) row.url = String(extra.url);
+      if (extra.error) row.error = String(extra.error);
+    }
+    all[key][shopId] = row;
+  } else delete all[key][shopId];
   handoffSave(all);
 }
 function handoffLabel(status){
@@ -4281,14 +4296,21 @@ function handoffLabel(status){
   if (status === "awaiting_publish") return "Open in shop";
   if (status === "posting") return "Posting…";
   if (status === "failed") return "Failed";
+  if (status === "capped") return "Rate limited";
   return null;
 }
 function handoffChip(shopId, lid){
   const st = handoffStateOf(shopId, lid);
   const label = handoffLabel(st && st.status);
   if (!label) return "";
-  const cls = (st.status === "posted") ? "handoff-chip handoff-chip-ok" : "handoff-chip";
-  return `<span class="${cls}">${label}</span>`;
+  const cls = (st.status === "posted") ? "handoff-chip handoff-chip-ok"
+    : (st.status === "failed" || st.status === "capped") ? "handoff-chip handoff-chip-bad"
+    : "handoff-chip";
+  const urlBit = (st.status === "posted" && st.url)
+    ? ` <a class="handoff-url" href="${escapeHtml(st.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">View</a>`
+    : "";
+  const tip = st.error ? ` title="${escapeHtml(st.error)}"` : "";
+  return `<span class="${cls}"${tip}>${label}${urlBit}</span>`;
 }
 
 /** Everything needed to paste into one shop's form, formatted for that shop. */
@@ -4333,11 +4355,11 @@ function handoffPayload(shopId, l){
    clipboard handoff, so the button always does something honest.          */
 const FASH_EXT_KEY = "fash_ext_id";
 
-/* ── Web Store extension ID — the ONE place it is written down.
-   Empty until the extension is actually published to the Web Store; it is
-   deliberately not invented here. Users never paste anything either way:
-   content/announce.js posts the live chrome.runtime.id to this page, it is
-   persisted automatically, and a ping on load confirms it.               */
+/* ── Web Store extension ID — the ONE place a published ID is baked in.
+   Empty until Chrome Web Store publish (do NOT invent). Until then sellers
+   use Load unpacked: content/announce.js posts chrome.runtime.id to this
+   page, localStorage (fash_ext_id / extSetId) keeps it, and Connect →
+   Advanced paste covers the rare case announce.js cannot run.            */
 const FASH_EXT_IDS = [];
 
 /** True only after a ping to the extension has actually succeeded. */
@@ -4401,10 +4423,12 @@ async function extAutoDetect(){
   EXT_LIVE = !!(r && r.ok);
   const btn = document.querySelector("#xl-ext-connect");
   if (btn) btn.style.display = EXT_LIVE ? "none" : "";
+  const banner = document.querySelector("#xl-ext-banner");
+  if (banner) banner.style.display = EXT_LIVE ? "none" : "block";
   const mode = document.querySelector("#xl-handoff-mode");
   if (mode) mode.textContent = EXT_LIVE
-    ? "Posts through your extension — no API keys."
-    : "No extension detected — clipboard handoff.";
+    ? "Posts through your extension — no API keys, no Stripe."
+    : "No extension detected — clipboard handoff (API path needs Stripe + keys).";
   // Extension is answering: reconcile the Connect grid against what it can
   // actually see, so a stale "Connected" from an older build is corrected on
   // load instead of silently persisting. Best effort — never blocks boot.
@@ -4421,11 +4445,52 @@ function extConnectBtnHtml(){
     ` style="display:${EXT_LIVE ? "none" : ""}" onclick="extConnectPrompt()"` +
     ` data-tip="Confirms the Fashionistas Crosslister is installed and enabled.">Connect extension</button>`;
 }
-/** Re-check only. The ID is never asked for — announce.js supplies it. */
+/** Re-check first; if still dark, open the install / ID panel so a seller can finish alone. */
 async function extConnectPrompt(){
   const live = await extAutoDetect();
   if (live) { toast("Connected — extension detected automatically."); return; }
-  toast("Extension not detected. Enable \"Fashionistas Crosslister\" at chrome://extensions, then reload this page.");
+  extInstallSheet();
+}
+/** Full setup sheet: zip → Load unpacked → auto-detect, with optional ID paste. */
+function extInstallSheet(){
+  const known = extId();
+  openSheet(`
+ <h3 style="margin:0 0 4px">Install Fashionistas Crosslister</h3>
+ <p class="mut" style="margin-top:0">One-click Sell everywhere needs this Chrome extension. No marketplace API keys. No Stripe required for posting.</p>
+ <ol style="margin:8px 0 12px;padding-left:1.2em;line-height:1.55;font-size:13.5px">
+  <li>Download the extension zip (or use an already-unzipped <code>apps/extension</code> folder).</li>
+  <li>Open <code>chrome://extensions</code> → turn on <b>Developer mode</b> → <b>Load unpacked</b> → pick the unzipped folder (the one with <code>manifest.json</code>).</li>
+  <li>Stay on <b>fashionistas.ai</b> in this Chrome profile and tap <b>Re-check</b> below. The extension announces its ID automatically.</li>
+  <li>Log into each shop you sell on in this same Chrome, then Multilist → <b>Verify session</b> → <b>Sell everywhere</b>.</li>
+ </ol>
+ <div class="xl-row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px">
+  <a class="btn btn-accent btn-sm" href="/chrome-store/fashionistas-extension-v1.0.1.zip" download data-tip="Downloads the packaged Crosslister zip.">Download extension zip</a>
+  <button type="button" class="btn btn-soft btn-sm" onclick="toast('Paste chrome://extensions in the address bar — browsers block links to it.');" data-tip="Open chrome://extensions yourself.">chrome://extensions tip</button>
+  <button type="button" class="btn btn-soft btn-sm" onclick="extConnectRecheck()" data-tip="Pings the extension again.">Re-check</button>
+ </div>
+ <details style="margin:8px 0 4px">
+  <summary style="cursor:pointer;font-weight:700;font-size:13px">Advanced · paste extension ID</summary>
+  <p class="mut" style="font-size:12px;margin:6px 0">Only needed if auto-detect fails (unpacked ID changes per machine). Chrome → Extensions → Details → ID (32 characters).</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+   <input id="ext-id-input" type="text" spellcheck="false" autocomplete="off" placeholder="32-character extension id" value="${escapeHtml(known)}" style="flex:1;min-width:180px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit"/>
+   <button type="button" class="btn btn-accent btn-sm" onclick="extSaveIdFromInput()" data-tip="Saves the ID in this browser and pings the extension.">Save &amp; connect</button>
+  </div>
+ </details>
+ <p class="mut" style="font-size:12px;margin-top:10px">Chrome Web Store listing is optional later — until then, <b>Load unpacked</b> is the supported path. See <code>docs/MULTILIST-ONE-CLICK.md</code>.</p>
+ <button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="closeSheet()">Done</button>`);
+}
+async function extConnectRecheck(){
+  const live = await extAutoDetect();
+  if (live) { toast("Connected — extension is live."); try { closeSheet(); } catch(e){} }
+  else toast("Still not detected — confirm Developer mode + Load unpacked, then reload this tab.");
+}
+function extSaveIdFromInput(){
+  const el = document.getElementById("ext-id-input");
+  const v = el ? String(el.value || "").trim() : "";
+  if (!/^[a-p]{32}$/i.test(v)) { toast("That does not look like a Chrome extension ID (32 letters a–p)."); return; }
+  extSetId(v);
+  EXT_DETECTED = v;
+  extConnectRecheck();
 }
 
 async function extAvailable(){ const r = await extSend({ type: "status" }); return !!(r && r.ok); }
@@ -4452,7 +4517,7 @@ function extPayload(l, p){
   };
 }
 
-/** Poll the extension for outcomes of jobs we queued; flip queued -> posted/failed. */
+/** Poll the extension for outcomes of jobs we queued; flip queued/posting -> posted/failed. */
 let EXT_POLL_TIMER = null;
 function extPollStart(lid){
   if (EXT_POLL_TIMER) clearInterval(EXT_POLL_TIMER);
@@ -4461,26 +4526,34 @@ function extPollStart(lid){
     ticks++;
     const results = await extResults();
     let changed = false;
-    if (results.length) {
-      const all = handoffLoad();
-      Object.keys(all).forEach(key => {
-        Object.keys(all[key] || {}).forEach(shop => {
-          const st = all[key][shop];
-          if (!st || st.status !== "queued") return;
-          const hit = results.find(r => r && r.shop === shop && r.reported_at && r.reported_at >= (st.at || ""));
-          if (!hit) return;
-          all[key][shop] = {
-            status: hit.status === "posted" ? "posted" : "failed",
-            at: hit.reported_at,
-            url: hit.listing_url || null,
-            error: hit.error || null
-          };
+    const all = handoffLoad();
+    Object.keys(all).forEach(key => {
+      Object.keys(all[key] || {}).forEach(shop => {
+        const st = all[key][shop];
+        if (!st) return;
+        // After the first tick with no result yet, show posting so the sheet moves.
+        if ((st.status === "queued") && ticks >= 1) {
+          all[key][shop] = Object.assign({}, st, { status: "posting" });
           changed = true;
-        });
+        }
+        const live = all[key][shop];
+        if (!live || (live.status !== "queued" && live.status !== "posting")) return;
+        const hit = results.find(r => r && r.shop === shop && r.reported_at && r.reported_at >= (st.at || ""));
+        if (!hit) return;
+        const ok = hit.status === "posted";
+        const capped = hit.status === "capped";
+        all[key][shop] = {
+          status: ok ? "posted" : (capped ? "capped" : "failed"),
+          at: hit.reported_at,
+          url: hit.listing_url || null,
+          error: hit.error || null
+        };
+        changed = true;
       });
-      if (changed) { handoffSave(all); try { xlSheetRefresh(lid); } catch(e){} }
-    }
-    if (changed || ticks >= 40) { clearInterval(EXT_POLL_TIMER); EXT_POLL_TIMER = null; }
+    });
+    if (changed) { handoffSave(all); try { xlSheetRefresh(lid); } catch(e){} }
+    // ~3 min of polling so slow CAPTCHA / multi-shop runs still surface a URL.
+    if (ticks >= 60) { clearInterval(EXT_POLL_TIMER); EXT_POLL_TIMER = null; }
   }, 3000);
 }
 
@@ -4580,9 +4653,12 @@ async function handoffApi(shopId, lid){
 }
 
 /**
- * Sell everywhere: real API post for eBay/Etsy, mark the rest awaiting_publish,
- * then open the FIRST remaining shop. Browsers block stacked popups, so the
- * rest are opened one tap at a time from their own buttons — never silently.
+ * Sell everywhere: prefer the Chrome extension for EVERY shop (including eBay /
+ * Etsy). That path needs no Stripe subscription and no server API secrets —
+ * the extension posts from the seller's own logged-in Chrome session.
+ *
+ * Without the extension: eBay/Etsy still try the server API (may 402/503 when
+ * Stripe or keys are empty); the other shops get clipboard + open-form handoff.
  */
 async function handoffSellAll(lid){
   const picks = xlChecks().filter(c=>c.checked).map(c=>c.value);
@@ -4591,28 +4667,32 @@ async function handoffSellAll(lid){
   const api  = picks.filter(p => HANDOFF_API_HOSTS[p]);
   const rest = picks.filter(p => !HANDOFF_API_HOSTS[p]);
 
-  // Extension present: EVERY shop queues through it — no keys, no manual taps.
+  // Extension present: EVERY picked shop queues through it — no Stripe, no API keys.
   if (await extAvailable()) {
     let ok = 0, bad = [];
-    for (const shop of rest) {
+    for (const shop of picks) {
       const p = handoffPayload(shop, l || {});
       handoffSet(shop, lid, "queued");
       const r = await extPublish(shop, extPayload(l || {}, p));
-      if (r && r.ok) ok++; else { bad.push(shop); handoffSet(shop, lid, "failed"); }
+      if (r && r.ok) ok++;
+      else {
+        bad.push(shop);
+        handoffSet(shop, lid, "failed", { error: (r && r.error) || "no response from the extension" });
+      }
     }
-    for (const shop of api) await handoffApi(shop, lid);
     try { xlSheetRefresh(lid); } catch(e){}
     if (ok) extPollStart(lid);
-    toast(ok + " queued to the extension · " + api.length + " via API" + (bad.length ? " · " + bad.length + " failed" : "") + ".");
+    toast(ok + " queued to the extension" + (bad.length ? " · " + bad.length + " failed" : "") + " — watch queued → posting → posted.");
     return;
   }
 
-  // No extension: eBay/Etsy still post server-side; the rest need one tap each.
+  // No extension: eBay/Etsy still try server-side (needs Stripe + secrets);
+  // the rest need one tap each (clipboard handoff).
   for (const p of api) await handoffApi(p, lid);
   rest.forEach(p => handoffSet(p, lid, "awaiting_publish"));
   if (l && rest.length) await handoffOpen(rest[0], lid);
   try { xlSheetRefresh(lid); } catch(e){}
-  toast(api.length + " posted via API · " + (rest.length ? 1 : 0) + " opened · " + Math.max(0, rest.length - 1) + " waiting on their buttons.");
+  toast(api.length + " via API · " + (rest.length ? 1 : 0) + " opened · " + Math.max(0, rest.length - 1) + " waiting — install the extension for true one-click.");
 }
 
 /** Re-render the sheet's handoff rows without reopening it. */
@@ -4623,12 +4703,22 @@ function xlSheetRefresh(lid){
   if (!l) return;
   box.querySelectorAll("[data-handoff]").forEach(row => {
     const shopId = row.getAttribute("data-handoff");
-    const chip = row.querySelector(".handoff-chip");
     const st = handoffStateOf(shopId, l.id);
-    const label = handoffLabel(st && st.status);
-    if (chip) {
-      if (!label) { chip.textContent = ""; chip.className = "handoff-chip"; }
-      else { chip.textContent = label; chip.className = (st.status === "posted") ? "handoff-chip handoff-chip-ok" : "handoff-chip"; }
+    const host = row.querySelector(".xl-kit-head > div") || row.querySelector(".xl-kit-head");
+    let chip = row.querySelector(".handoff-chip");
+    const html = handoffChip(shopId, l.id);
+    if (html) {
+      if (chip) {
+        const wrap = document.createElement("span");
+        wrap.innerHTML = html;
+        const next = wrap.firstElementChild;
+        chip.replaceWith(next);
+        chip = next;
+      } else if (host) {
+        host.insertAdjacentHTML("afterbegin", html);
+      }
+    } else if (chip) {
+      chip.remove();
     }
     const confirmBtn = row.querySelector("[data-handoff-confirm]");
     if (confirmBtn) confirmBtn.style.display = (st && st.status === "awaiting_publish") ? "" : "none";
@@ -4677,12 +4767,12 @@ function xlSheet(l, picks, copied, kits, allKit){
 
  openSheet(`
  <h3 style="margin:0 0 4px">Ready to post \u2014 ${picks.length} shop${picks.length===1?"":"s"}</h3>
- <p class="mut" style="margin-top:0">Each shop keeps its own title rules, tags and tone below. One tap per shop copies that payload and opens their form.</p>
- <div class="xl-note"><b>What actually happens:</b> every shop posts through its own path. <b>eBay</b> and <b>Etsy</b> create the listing through their API. The other shops expose no seller API and refuse cross-origin requests, so the app copies the finished payload and opens that shop's form in one tap — you tap Publish there, and the app records it as Posted. We never take a marketplace password.</div>
+ <p class="mut" style="margin-top:0">Each shop keeps its own title rules, tags and tone. With the extension connected, <b>Sell everywhere</b> queues real posts and shows queued → posting → posted (with a View link when the listing URL is captured).</p>
+ <div class="xl-note"><b>What actually happens:</b> the Chrome extension posts from your logged-in sessions — all 11 shops, no Stripe, no API keys. Without the extension, eBay/Etsy still try the server API (needs subscription + secrets), and other shops fall back to clipboard + open-form. We never take a marketplace password.</div>
  ${ebayBanner}
  <div style="max-height:48vh;overflow:auto;margin-top:10px">${rows}</div>
  <div class="xl-row" style="border-top:1px solid var(--line);margin-top:6px;padding-top:10px">
- <div class="mut" style="font-size:12px" id="xl-handoff-mode">${extId()?"Posts through your extension — no API keys.":"No extension yet — clipboard handoff."}</div>
+ <div class="mut" style="font-size:12px" id="xl-handoff-mode">${EXT_LIVE?"Posts through your extension — no API keys, no Stripe.":"No extension yet — Set up extension for one-click (clipboard fallback available)."}</div>
  <div style="display:flex;gap:8px;flex-wrap:wrap">
  <button class="btn btn-accent btn-sm" onclick="handoffSellAll(${Number(l.id)||0})" data-tip="Queues every selected shop to your extension (or opens the first one with its payload copied).">Sell everywhere</button>
  ${extConnectBtnHtml()}</div>
