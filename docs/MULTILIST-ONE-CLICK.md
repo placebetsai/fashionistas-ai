@@ -8,6 +8,14 @@
 
 ## Promise
 
+**UI gate:** Multilist shows a **one-click readiness strip** (`xlOneClickGate` / `xlReadyStripHtml`):
+1. Install Crosslister (Load unpacked) → extension ping live
+2. Log in + **Verify session** per shop
+3. Tick shops → **Sell everywhere**
+
+Until step 1, Sell everywhere is honest about clipboard / optional API fallback and **never** toasts Posted on a no-op.
+
+
 1. Guidance to create / open each shop account  
 2. One **Sell everywhere** click once accounts are ready  
 3. Live per-shop status: `queued` → `posting` → `posted` (with listing **View** URL when captured) or `failed` / `capped`

@@ -40,6 +40,8 @@ test("coach covers seller path steps in plain words", () => {
   assert.match(coach, /What's next/);
   assert.match(coach, /First sale path/);
   assert.match(coach, /Photo → Identify → Fill → Sell everywhere/);
+  assert.match(coach, /Load unpacked/);
+  assert.match(coach, /extConnectPrompt/);
 });
 
 test("coach reuses chatbot via guideToggle / guideSend suggested questions", () => {

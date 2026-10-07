@@ -4,7 +4,7 @@
 
 **Laptop repo (preferred):** `/home/billionaremaker/fashionistas-ai`  
 **GitHub:** [placebetsai/fashionistas-ai](https://github.com/placebetsai/fashionistas-ai)  
-**Live tip:** `version.txt` = **`4e4f61a`** (`4e4f61ac6f01453a9098e09da0345a42cb0960e6`) — must match `https://fashionistas.ai/version.txt`
+**Live tip:** `version.txt` = **`TIP_AFTER_DEPLOY`** — must match `https://fashionistas.ai/version.txt` (stamped after wrangler)
 
 ### Deploy (mandatory — do not get this wrong)
 
@@ -23,6 +23,7 @@
 | prior (`593418e`…) | Chatbot expand / multilist / try-on pipeline | see git log |
 | `a5da396` | Seller coach layer (Photo → Sell everywhere checklist / help chips) | `libs/seller-coach.js` + tests |
 | `496b09a` | **Free See in my space** — room photo placer (4-corner wall + floor drag/scale/rotate) + optional `<model-viewer>` wall/floor AR from client GLB; CTAs on Shop/Closet detail; `placement_mode` inferred (`clothing`\|`wall`\|`floor`\|`none`); honest Instant/not-photoreal labels | `/see-in-space/` · tests `placement-mode` + `placer-homography` **12/12** · brief `docs/FREE-SEAMLESS-ANYOBJECT.md` |
+| `TIP_AFTER_DEPLOY` | **Multilist one-click polish** — readiness strip (Load unpacked → Verify → Sell everywhere); equal shop treatment (Depop/Poshmark/Mercari/Vinted/Grailed/eBay); honest no-op toasts (never false Posted); Connect + seller-coach Load unpacked hooks | Multilist Connect · `xlOneClickGate` · tests multilist/connect/coach **25/25** · `docs/MULTILIST-ONE-CLICK.md` |
 
 ### See in my space — how to demo on phone
 
@@ -38,6 +39,15 @@
 3. Open **Photo** with no listings for the **First sale path** empty-state banner.
 4. After AI fill, listing form help chips open the stylist with a suggested question.
 5. Progress stored locally as `fash_seller_coach_v1`. Source: `libs/seller-coach.js` → public `/seller-coach.js` (HTTP `/libs/*` is blocked).
+6. When **Connect the extension** is next, **Do this →** opens Multilist and the Load unpacked install sheet (`extConnectPrompt`) if the extension is not live.
+
+### Multilist one-click — UX path
+
+1. **Multilist → Connect + post** — readiness strip: (1) Load unpacked Crosslister (2) Verify session per shop (3) Sell everywhere.
+2. **Set up extension** → download `/chrome-store/fashionistas-extension-v1.0.1.zip` → `chrome://extensions` → Developer mode → **Load unpacked** → Re-check.
+3. Log into Depop / Poshmark / Mercari / Vinted / Grailed / eBay (equal) in the same Chrome → **Verify session**.
+4. Pick item → tick shops → **Get ready to post** → **Sell everywhere** queues via extension (no Stripe / no marketplace API keys). Chips: queued → posting → posted (+ View) or failed.
+5. Without extension: paste kits + optional eBay/Etsy server API (402/503 when Stripe/secrets empty). **Never** toasts Posted on a no-op.
 
 ### Still blocked
 

@@ -97,3 +97,25 @@ test("MULTILIST-ONE-CLICK doc covers zero → one click and gaps", () => {
   assert.match(doc, /Human Chrome/i);
   assert.match(doc, /Sell everywhere/);
 });
+
+test("xlOneClickGate + ready strip coach Load unpacked / equal shops", () => {
+  assert.match(html, /function xlOneClickGate\(/);
+  assert.match(html, /function xlReadyStripHtml\(/);
+  assert.match(html, /One-click blocked/);
+  assert.match(html, /Load unpacked/);
+  assert.match(html, /equal with every shop|treated equally|posts Depop, Poshmark/i);
+});
+
+test("handoffSellAll never toasts Posted on zero queue / no extension", () => {
+  const fn = grab("handoffSellAll");
+  assert.match(fn, /Nothing queued/);
+  assert.match(fn, /nothing was marked Posted/i);
+  assert.match(fn, /One-click blocked/);
+  // Must not claim success when ok is 0
+  assert.doesNotMatch(fn, /if \(ok\) extPollStart[^}]*toast\(ok \+ " queued/);
+});
+
+test("Guide A→Z prepare step does not claim auto-posted", () => {
+  assert.match(html, /Nothing is marked Posted automatically|never toast/);
+  assert.doesNotMatch(html, /Get ready to post' — the app posts to each shop/);
+});

@@ -733,6 +733,13 @@ nav.tabbar a.on{color:var(--accent)}
 .tag.connected{background:var(--good-soft);color:var(--good)}
 .tag.soon{background:rgba(124,92,255,.12);color:var(--accent2)}
 .xl-connect-foot{margin:12px 0 0;font-size:12.5px;color:var(--mut);line-height:1.5}
+.xl-ready-strip{margin:0 0 12px;padding:10px 12px;border-radius:10px;font-size:13px;line-height:1.5;border:1px solid var(--line);background:var(--soft)}
+.xl-ready-strip.ok{border-color:color-mix(in srgb,var(--good) 45%,transparent);background:var(--good-soft)}
+.xl-ready-strip.warn{border-color:color-mix(in srgb,var(--accent,#ff4e3a) 35%,transparent);background:rgba(255,78,58,.06)}
+.xl-ready-strip .xl-ready-steps{margin:6px 0 0;padding-left:1.15em;font-size:12.5px;color:var(--mut)}
+.xl-ready-strip .xl-ready-steps li{margin:2px 0}
+.xl-ready-strip .xl-ready-steps .done{color:var(--good);font-weight:700}
+.xl-ready-strip .xl-ready-steps .todo{color:var(--ink)}
 /* ---- multilist shop connect guidance panel (all shops) ---- */
 .tag.ready{background:rgba(124,92,255,.12);color:var(--accent2)}
 #shop-connect-overlay{position:fixed;inset:0;z-index:97;background:rgba(20,12,6,.58);backdrop-filter:blur(3px);display:flex;align-items:flex-end;justify-content:center;padding:12px;animation:fadeUp .2s ease}
@@ -2808,6 +2815,7 @@ function xlConnectShopsMerged(){
 function xlConnectRefresh(){
   const grid = document.querySelector("#xl-connect .xl-connect-grid");
   if (grid) grid.innerHTML = xlConnectRowsHtml();
+  try { xlReadyStripRefresh(); } catch(e){}
   refreshTips();
 }
 /**
@@ -3239,10 +3247,11 @@ async function renderXL(el){
 
     <div class="card" id="xl-connect">
       <h3 style="margin-top:0">Connect + post</h3>
-      <p class="xl-connect-note"><b>One-click path:</b> install the <b>Fashionistas Crosslister</b> Chrome extension, log into each shop in this Chrome, tap <b>Verify session</b>, then <b>Sell everywhere</b>. Posts run in your browser — no marketplace API keys and no Stripe required for multilist. Optional eBay OAuth API create still exists for developers; it is separate. Never invent credentials or take marketplace passwords. <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="extConnectPrompt()" data-tip="Install / connect the Crosslister extension.">Connect extension</button> · <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="hcToggle()" data-tip="Opens Guide A to Z for account setup.">Guide A to Z</button>.</p>
+      <p class="xl-connect-note"><b>One-click path:</b> install the <b>Fashionistas Crosslister</b> (Load unpacked), log into Depop · Poshmark · Mercari · Vinted · Grailed · eBay (and the rest) in this Chrome, tap <b>Verify session</b>, then <b>Sell everywhere</b>. Every shop is treated equally through your browser — no marketplace API keys and no Stripe for multilist. Paste kits are the honest fallback until the extension is live. Never invent credentials or take marketplace passwords. <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="extConnectPrompt()" data-tip="Install / connect the Crosslister — Load unpacked walkthrough.">Connect extension</button> · <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="hcToggle()" data-tip="Opens Guide A to Z for account setup.">Guide A to Z</button>.</p>
       <div id="xl-ext-banner" class="xl-ext-banner" style="display:${EXT_LIVE ? "none" : "block"};margin:0 0 12px;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;font-size:13px">
-        <b>Extension not detected.</b> One-click multilist needs it. <button type="button" class="btn btn-accent btn-sm" style="margin-left:6px" onclick="extConnectPrompt()">Set up extension</button>
+        <b>Extension not detected.</b> One-click multilist needs it — download the zip, then Chrome → Extensions → Developer mode → <b>Load unpacked</b>. <button type="button" class="btn btn-accent btn-sm" style="margin-left:6px" onclick="extConnectPrompt()" data-tip="Opens the Load unpacked walkthrough.">Set up extension</button>
       </div>
+      ${xlReadyStripHtml()}
       <div class="xl-connect-grid">${xlConnectRowsHtml()}</div>
       <p class="xl-connect-foot">Status: Needs account · Ready to guide · Unverified · Connected (extension-verified). Open each shop's <b>Connect</b> → signup / create-listing links → log in → <b>Verify session</b>. Then Multilist → <b>Sell everywhere</b>. See <code>docs/MULTILIST-ONE-CLICK.md</code>.</p>
     </div>
@@ -4072,7 +4081,7 @@ async function openListing(id){
   </div>
  <div class="card">
  <h3 style="margin-top:0">Post it to my other shops</h3>
- <p class="mut" style="margin-top:0">Tick the shops you use and press Sell everywhere — the extension posts the finished listing to each one.</p>
+ <p class="mut" style="margin-top:0">Tick the shops you use, then <b>Get ready to post</b>. With the Crosslister installed, <b>Sell everywhere</b> queues every shop equally (Depop, Poshmark, Mercari, Vinted, Grailed, eBay…). Until then you get paste kits — never a false Posted toast.</p>
  <div id="xl-pick"></div>
  <button class="btn btn-primary" onclick="crosspost(${id})" data-tip="Copies your listing, saves a draft for each shop and opens the steps — it never posts for you.">Get ready to post \u2192</button>
  </div>
@@ -4489,7 +4498,8 @@ async function extAutoDetect(){
   const mode = document.querySelector("#xl-handoff-mode");
   if (mode) mode.textContent = EXT_LIVE
     ? "Posts through your extension — no API keys, no Stripe."
-    : "No extension detected — clipboard handoff (API path needs Stripe + keys).";
+    : "One-click blocked — Set up extension (Load unpacked). Clipboard paste kits remain as fallback; server eBay/Etsy needs Stripe + secrets.";
+  try { xlReadyStripRefresh(); } catch(e){}
   // Extension is answering: reconcile the Connect grid against what it can
   // actually see, so a stale "Connected" from an older build is corrected on
   // load instead of silently persisting. Best effort — never blocks boot.
@@ -4501,6 +4511,78 @@ async function extAutoDetect(){
 /** Connect is shown only when the ping failed. Never a paste prompt. */
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => extAutoDetect(), { once: true });
 else setTimeout(() => extAutoDetect(), 600);
+/** Readiness for true one-click multilist (extension path — no Stripe / API keys). */
+function xlConnectedShopCount(){
+  try {
+    const state = xlConnectLoad();
+    let n = 0;
+    Object.keys(state || {}).forEach((id) => {
+      if (xlConnectStatus(id) === "connected") n++;
+    });
+    return n;
+  } catch(e){ return 0; }
+}
+/**
+ * Gate for one-click Sell everywhere.
+ * ready = extension answering. connected shops are coached but not a hard block
+ * (extension can still queue if the seller is logged in).
+ */
+function xlOneClickGate(){
+  const ext = !!(typeof EXT_LIVE !== "undefined" && EXT_LIVE);
+  const connected = xlConnectedShopCount();
+  if (!ext) {
+    return {
+      ready: false,
+      ext: false,
+      connected,
+      reason: "Install the Fashionistas Crosslister (Load unpacked) — one-click needs it. Paste kits stay available as a fallback.",
+      next: "Set up extension"
+    };
+  }
+  if (connected < 1) {
+    return {
+      ready: true,
+      ext: true,
+      connected: 0,
+      reason: "Extension live. Log into each shop in this Chrome → Verify session → then Sell everywhere. Until verified, posts may fail if you are not logged in.",
+      next: "Verify session"
+    };
+  }
+  return {
+    ready: true,
+    ext: true,
+    connected,
+    reason: null,
+    next: null
+  };
+}
+function xlReadyStripHtml(){
+  const g = xlOneClickGate();
+  const cls = g.ready && g.connected > 0 ? "ok" : "warn";
+  const title = g.ready && g.connected > 0
+    ? `<b>One-click ready.</b> Extension live · ${g.connected} shop${g.connected===1?"":"s"} Connected. Sell everywhere posts Depop, Poshmark, Mercari, Vinted, Grailed, eBay and the rest equally — no API keys, no Stripe.`
+    : (g.ext
+      ? `<b>Almost there.</b> ${escapeHtml(g.reason)}`
+      : `<b>One-click blocked.</b> ${escapeHtml(g.reason)}`);
+  const s1 = g.ext ? "done" : "todo";
+  const s2 = g.connected > 0 ? "done" : "todo";
+  const s3 = (g.ext && g.connected > 0) ? "done" : "todo";
+  const setupBtn = g.ext ? "" : ` <button type="button" class="btn btn-accent btn-sm" style="margin-left:6px" onclick="extConnectPrompt()" data-tip="Download zip → chrome://extensions → Developer mode → Load unpacked.">Set up extension</button>`;
+  return `<div id="xl-ready-strip" class="xl-ready-strip ${cls}" role="status">${title}${setupBtn}
+  <ol class="xl-ready-steps">
+   <li class="${s1}">1. Install Crosslister (Load unpacked)${g.ext?" ✓":""}</li>
+   <li class="${s2}">2. Log in + Verify session on each shop${g.connected?(" · "+g.connected+" Connected"):""}</li>
+   <li class="${s3}">3. Tick shops → Sell everywhere</li>
+  </ol></div>`;
+}
+function xlReadyStripRefresh(){
+  const el = document.getElementById("xl-ready-strip");
+  if (!el) return;
+  const wrap = document.createElement("div");
+  wrap.innerHTML = xlReadyStripHtml();
+  const next = wrap.firstElementChild;
+  if (next) el.replaceWith(next);
+}
 function extConnectBtnHtml(){
   return `<button id="xl-ext-connect" type="button" class="btn btn-soft btn-sm"` +
     ` style="display:${EXT_LIVE ? "none" : ""}" onclick="extConnectPrompt()"` +
@@ -4742,18 +4824,22 @@ async function handoffSellAll(lid){
       }
     }
     try { xlSheetRefresh(lid); } catch(e){}
-    if (ok) extPollStart(lid);
-    toast(ok + " queued to the extension" + (bad.length ? " · " + bad.length + " failed" : "") + " — watch queued → posting → posted.");
+    if (ok) {
+      extPollStart(lid);
+      toast(ok + " queued to the extension" + (bad.length ? " · " + bad.length + " failed" : "") + " — watch queued → posting → posted (View when a URL is captured). Nothing is marked Posted until the extension reports it.");
+    } else {
+      toast("Nothing queued — extension did not accept any shop. Stay logged in on each marketplace tab, tap Verify session, then retry. We did not mark anything Posted.");
+    }
     return;
   }
 
   // No extension: eBay/Etsy still try server-side (needs Stripe + secrets);
-  // the rest need one tap each (clipboard handoff).
+  // the rest need one tap each (clipboard handoff). Never claim Posted here.
   for (const p of api) await handoffApi(p, lid);
   rest.forEach(p => handoffSet(p, lid, "awaiting_publish"));
   if (l && rest.length) await handoffOpen(rest[0], lid);
   try { xlSheetRefresh(lid); } catch(e){}
-  toast(api.length + " via API · " + (rest.length ? 1 : 0) + " opened · " + Math.max(0, rest.length - 1) + " waiting — install the extension for true one-click.");
+  toast("One-click blocked — extension not detected. " + api.length + " shop(s) tried the server API (needs Stripe + secrets when empty) · " + (rest.length ? 1 : 0) + " opened with paste kit · " + Math.max(0, rest.length - 1) + " waiting. Set up extension (Load unpacked) for true multilist — nothing was marked Posted.");
 }
 
 /** Re-render the sheet's handoff rows without reopening it. */
@@ -4820,22 +4906,26 @@ function xlSheet(l, picks, copied, kits, allKit){
 </div>`;
  }).join("");
 
+ const gate = xlOneClickGate();
  const ebayBanner = picks.includes("ebay") ? (
-  ebayConnected
-   ? `<div class="xl-ebay-create" id="xl-ebay-create-box"><p><b>eBay API:</b> Connected locally. <b>Create on eBay</b> calls Sell Inventory / Offer with your OAuth cookie (sandbox unless you chose production). Needs sell.inventory + business policies. Refresh token is cookie best-effort — durable KV on fashionistas-api still needed.</p><div id="xl-ebay-create-msg" class="mut" style="font-size:12px"></div></div>`
-   : `<div class="xl-ebay-create"><p><b>eBay API:</b> Not connected. Paste the eBay kit, or <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="xlShopOpenGuide('ebay')">Connect OAuth</button> then retry Create. Production scopes may block — use Sandbox first.</p></div>`
+  EXT_LIVE
+   ? `<div class="xl-ebay-create"><p><b>eBay · equal with every shop:</b> Sell everywhere queues eBay through the extension like Depop, Poshmark, Mercari, Vinted and Grailed — no eBay API keys required. Optional developer <b>Create on eBay</b> (OAuth) stays available separately${ebayConnected ? "" : " after Connect OAuth"}.</p></div>`
+   : (ebayConnected
+     ? `<div class="xl-ebay-create" id="xl-ebay-create-box"><p><b>Optional eBay API:</b> Connected locally. Without the extension, <b>Create on eBay</b> needs OAuth + server secrets. Prefer <b>Set up extension</b> for one-click with every other shop.</p><div id="xl-ebay-create-msg" class="mut" style="font-size:12px"></div></div>`
+     : `<div class="xl-ebay-create"><p><b>eBay:</b> One-click uses the extension (same as every shop). Optional API create needs <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="xlShopOpenGuide('ebay')">Connect OAuth</button> + secrets — or paste the kit.</p></div>`)
  ) : "";
 
  openSheet(`
  <h3 style="margin:0 0 4px">Ready to post \u2014 ${picks.length} shop${picks.length===1?"":"s"}</h3>
- <p class="mut" style="margin-top:0">Each shop keeps its own title rules, tags and tone. With the extension connected, <b>Sell everywhere</b> queues real posts and shows queued → posting → posted (with a View link when the listing URL is captured).</p>
- <div class="xl-note"><b>What actually happens:</b> the Chrome extension posts from your logged-in sessions — all 11 shops, no Stripe, no API keys. Without the extension, eBay/Etsy still try the server API (needs subscription + secrets), and other shops fall back to clipboard + open-form. We never take a marketplace password.</div>
+ <p class="mut" style="margin-top:0">Each shop keeps its own title rules, tags and tone. With the extension live, <b>Sell everywhere</b> queues real posts to every ticked shop equally and shows queued → posting → posted (View when a listing URL is captured). Nothing is marked Posted until that happens or you confirm a paste-kit publish.</p>
+ ${xlReadyStripHtml()}
+ <div class="xl-note"><b>What actually happens:</b> the Chrome extension posts from your logged-in sessions — Depop, Poshmark, Mercari, Vinted, Grailed, eBay and the rest — no Stripe, no API keys. Without the extension, one-click is blocked: eBay/Etsy may try the server API (needs subscription + secrets), and other shops fall back to clipboard + open-form. We never take a marketplace password and never toast “posted” on a no-op.</div>
  ${ebayBanner}
  <div style="max-height:48vh;overflow:auto;margin-top:10px">${rows}</div>
  <div class="xl-row" style="border-top:1px solid var(--line);margin-top:6px;padding-top:10px">
- <div class="mut" style="font-size:12px" id="xl-handoff-mode">${EXT_LIVE?"Posts through your extension — no API keys, no Stripe.":"No extension yet — Set up extension for one-click (clipboard fallback available)."}</div>
+ <div class="mut" style="font-size:12px" id="xl-handoff-mode">${gate.ext?"Posts through your extension — no API keys, no Stripe.":(gate.reason||"One-click blocked — Set up extension for one-click (clipboard fallback available).")}</div>
  <div style="display:flex;gap:8px;flex-wrap:wrap">
- <button class="btn btn-accent btn-sm" onclick="handoffSellAll(${Number(l.id)||0})" data-tip="Queues every selected shop to your extension (or opens the first one with its payload copied).">Sell everywhere</button>
+ <button class="btn btn-accent btn-sm" onclick="handoffSellAll(${Number(l.id)||0})" data-tip="${gate.ext?"Queues every selected shop to your extension — equal treatment, no API keys.":"Extension missing — will open paste kits / optional API. Set up extension for true one-click."}" ${gate.ext?"":'aria-describedby="xl-handoff-mode"'}>Sell everywhere</button>
  ${extConnectBtnHtml()}</div>
  <button class="btn btn-primary" style="width:100%" onclick="closeSheet()" data-tip="Closes this panel." title="Closes this panel.">Done</button>`);
 }
@@ -5595,8 +5685,8 @@ const GUIDE_STEPS = [
  body:"No integrations, no developer tools. Pick a marketplace below to see exactly how to open your account, then tap 'Generate listing content' — it builds real JSON + CSV from your current listing for anything you'd rather list by hand.",
  action:null },
  { title:"Prepare the listing copy", emoji:"<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='#ff4e3a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-3px;margin-right:6px'><path d='M12 3.2 20 7.6v8.8L12 20.8 4 16.4V7.6z'/></svg>",
- body:"From any listing, tick the shops and tap 'Get ready to post' — the app posts to each shop and reports queued, posting or posted so you know exactly what happened where. The button below does that for the listing you're looking at now. It reports queued, posting or posted for every connected shop.",
- action:{ label:"Sell everywhere for this listing →", fn:()=>guideCrosspost() } },
+ body:"From any listing, tick the shops and tap Get ready to post — that opens per-shop kits (honest paste fallback). With the Crosslister installed, Sell everywhere queues real posts and shows queued → posting → posted only when the extension reports it. Without the extension, nothing is marked Posted automatically.",
+ action:{ label:"Prepare Sell everywhere for this listing →", fn:()=>guideCrosspost() } },
  { title:"Mark sold & track profit", emoji:"<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='#ff4e3a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-3px;margin-right:6px'><path d='M12 3.2 20 7.6v8.8L12 20.8 4 16.4V7.6z'/></svg>",
  body:"When an item sells, write down what it sold for, the shop's cut, the postage and what it cost you — the profit screen works out what you kept automatically. One tap opens the real 'Mark it as sold' sheet on your current listing.",
  action:{ label:"Open 'Mark it as sold' →", fn:()=>guideMarkSold() } },
@@ -6055,7 +6145,7 @@ function hcListing(){
 }
 function hcCrossPost(){
  if (!HC_LID) return toast("List an item first — the panel appears on its detail screen");
- hcSuspend(); openListing(HC_LID); toast("Tick a shop, then Sell everywhere — it posts and shows queued, posting or posted for each one.");
+ hcSuspend(); openListing(HC_LID); toast("Tick shops → Sell everywhere. With the extension: queued → posting → posted. Without it: paste kits open — nothing is marked Posted until you confirm or the extension reports it.");
 }
 async function hcSold(){
  if (!HC_LID) return toast("Need a real listing first");

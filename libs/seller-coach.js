@@ -50,14 +50,14 @@
     {
       id: "extension",
       label: "Connect the extension",
-      tip: "Install Fashionistas Crosslister, then Verify session on each shop.",
+      tip: "Download the zip → chrome://extensions → Developer mode → Load unpacked → Re-check, then Verify session on each shop.",
       go: "xl",
       ask: "How do I install the Chrome extension?"
     },
     {
       id: "sell",
       label: "Sell everywhere",
-      tip: "Tick the shops and press Sell everywhere. Watch queued → posted.",
+      tip: "With the extension live, one click queues every shop equally. Watch queued → posted — never a fake Posted toast.",
       go: "xl",
       ask: "How does Sell everywhere work?"
     }
@@ -70,7 +70,8 @@
     { sel: "#f-title", tip: "Short and searchable — brand + item + colour works best." },
     { sel: "#f-cond", tip: "Be honest. Buyers trust clear condition more than a perfect story." },
     { sel: 'button[onclick*="handoffSellAll"]', tip: "Posts the finished listing to every shop you ticked, using the Chrome extension." },
-    { sel: 'button[onclick*="extConnectPrompt"]', tip: "Install or reconnect the Crosslister so posts can run in your Chrome." },
+    { sel: 'button[onclick*="extConnectPrompt"]', tip: "Install the Crosslister: download zip → chrome://extensions → Developer mode → Load unpacked → Re-check." },
+    { sel: '#xl-ready-strip button', tip: "Finish Load unpacked so Sell everywhere can one-click post." },
     { sel: 'a[href="/try-on/"]', tip: "Add a photo of a person and a garment to see it on them." },
     { sel: 'button[onclick*="xlConnect"]', tip: "Open Connect for this shop — create an account if needed, stay logged in, then Verify session." }
   ];
@@ -133,6 +134,7 @@
   function hasExt() {
     try {
       if (window.EXT_LIVE) return true;
+      // Soft: ID saved after announce / paste — coach can advance, Multilist still shows Re-check until ping
       var id = (localStorage.getItem("fash_ext_id") || "").trim();
       return id.length >= 16;
     } catch (e) {
@@ -283,9 +285,20 @@
       var goBtn = t.closest && t.closest("[data-sc-go]");
       if (goBtn) {
         var view = goBtn.getAttribute("data-sc-go");
+        var step = goBtn.getAttribute("data-sc-step") || "";
         if (view === "xl") mark("multilist");
         if (view === "snap") mark("photo");
         goView(view);
+        // Align with Multilist Connect: open Load unpacked walkthrough when that's next
+        if (step === "extension" || (view === "xl" && !hasExt())) {
+          setTimeout(function () {
+            try {
+              if (typeof window.extConnectPrompt === "function" && !window.EXT_LIVE) {
+                window.extConnectPrompt();
+              }
+            } catch (e) {}
+          }, 450);
+        }
         return;
       }
       var askBtn = t.closest && t.closest("[data-sc-ask]");
@@ -326,6 +339,8 @@
         '</div><div class="sc-acts">' +
         '<button type="button" class="sc-go" data-sc-go="' +
         escapeAttr(nxt.go) +
+        '" data-sc-step="' +
+        escapeAttr(nxt.id) +
         '">Do this →</button>' +
         '<button type="button" class="sc-ask" data-sc-ask="' +
         escapeAttr(nxt.ask) +
@@ -412,13 +427,13 @@
       '" role="region" aria-label="Seller getting started">' +
       '<div class="sc-tag">First sale path</div>' +
       "<h3>Photo → Identify → Fill → Sell everywhere</h3>" +
-      "<p>One photo drafts the listing. Connect the Chrome extension once, then Sell everywhere posts to your shops.</p>" +
+      "<p>One photo drafts the listing. Install the Crosslister once (Load unpacked), Verify each shop, then Sell everywhere posts equally.</p>" +
       "<ol class=\"sc-steps\">" +
       "<li>Photo — snap the item</li>" +
       "<li>Identify — AI names it and suggests a price</li>" +
       "<li>Fill listing — check price, size, brand</li>" +
       "<li>Multilist — open Connect for each shop</li>" +
-      "<li>Connect extension — Crosslister in Chrome</li>" +
+      "<li>Connect extension — Load unpacked Crosslister</li>" +
       "<li>Sell everywhere — tick shops and post</li>" +
       "</ol>" +
       '<div class="sc-acts">' +
