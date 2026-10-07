@@ -935,3 +935,9 @@ npx wrangler pages deployment list --project-name=fashionistas-ai
 - User reported mobile broken after redesign+countdown. Rolled back via Pages API rollback (wrangler 4.148 has no rollback cmd).
 - WARNING: local main still contains 54b4e84 (redesign) + 4e34b0b (countdown). Running scripts/deploy-local.sh from main WILL re-ship them. Do not deploy main until the user approves redesign v2.
 - v2 fix lives in worktree ../fashionistas-ai-redesign, branch redesign-fix (c645933), preview https://redesign-preview.fashionistas-ai.pages.dev
+
+## 2026-10-07 ~10:35 ET — redesign v2 SHIPPED to prod
+- Merged `redesign-fix` (c645933) into main → ba08a59; deployed via scripts/deploy-local.sh → Pages deployment a3447cbb (version.txt verified).
+- Main IS now deployable again (supersedes 8fbdd42 warning). Rollback target: previous prod e26c7045 (Pages API rollback).
+- Playwright QA on live (desktop 1440, iPad, iPhone SE/13 WebKit, Pixel 7): rotator pill visible, nav one row desktop / hamburger small, countdown under nav to 2026-10-14T09:45-04:00, 0px overflow, /, /try-on/, /see-in-space/, /about/ 200. Only errors: AdSense 400s + 404 /assets/fashionistas-app-icon-512.svg (pre-existing).
+- No GitHub push. chrome-store zips reverted after deploy.
