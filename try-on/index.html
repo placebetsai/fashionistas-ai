@@ -492,7 +492,9 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
   }
 
   function loadItem(item){
-    return fetch(item.photo_url, { credentials: "omit" })
+    // cache:"no-store" — a single transient failure gets cached by Chromium and
+    // then blocks this cross-origin image read on the next visit too.
+    return fetch(item.photo_url, { credentials: "omit", cache: "no-store" })
       .then(function(r){ if (!r.ok) throw new Error("photo " + r.status); return r.blob(); })
       .then(function(b){
         if (!/^image\//.test(b.type || "")) throw new Error("not an image");
