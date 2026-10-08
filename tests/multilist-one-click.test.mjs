@@ -99,12 +99,23 @@ test("MULTILIST-ONE-CLICK doc covers zero → one click and gaps", () => {
   assert.match(doc, /Sell everywhere/);
 });
 
-test("xlOneClickGate + ready strip coach Load unpacked / equal shops", () => {
+test("ready strip stays one line — install jargon lives only in the install sheet", () => {
   assert.match(html, /function xlOneClickGate\(/);
   assert.match(html, /function xlReadyStripHtml\(/);
   assert.match(html, /One-click blocked/);
   assert.match(html, /Load unpacked/);
   assert.match(html, /equal with every shop|treated equally|posts Depop, Poshmark/i);
+  // The strip must not re-teach the dev install: no numbered steps, no zip,
+  // no chrome:// or Developer mode in the strip markup.
+  const strip = grab("xlReadyStripHtml");
+  assert.doesNotMatch(strip, /xl-ready-steps|<ol|\.zip|chrome:\/\/|Developer mode/i);
+  // …and it must point at the path that works today.
+  assert.match(strip, /kit/i);
+  // Install jargon is allowed only inside the install sheet, once, tersely.
+  const sheet = grab("extInstallSheet");
+  assert.match(sheet, /Load unpacked/);
+  assert.match(sheet, /fashionistas-extension-v1\.0\.1\.zip/);
+  assert.equal((sheet.match(/<a [^>]*download/g) || []).length, 1, "exactly one download button");
 });
 
 test("handoffSellAll never toasts Posted on zero queue / no extension", () => {
@@ -117,6 +128,6 @@ test("handoffSellAll never toasts Posted on zero queue / no extension", () => {
 });
 
 test("Guide A→Z prepare step does not claim auto-posted", () => {
-  assert.match(html, /Nothing is marked Posted automatically|never toast/);
+  assert.match(html, /Nothing is marked Posted (automatically|until it really is)|never toast/);
   assert.doesNotMatch(html, /Get ready to post' — the app posts to each shop/);
 });

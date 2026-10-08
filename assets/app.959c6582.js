@@ -9,7 +9,7 @@ let CURRENT = {};
 const $ = (s) => document.querySelector(s);
 const view = (name) => { document.querySelectorAll("body > section[id^=view-], nav.tabbar").forEach(el => el.classList.toggle("hidden", el.id !== "view-"+name && el.id !== "tabbar")); };
 const toast = (m, ms=2200) => { const t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove("show"), ms); };
-const money = (n) => "$" + (Number(n)||0).toFixed(n % 1 === 0 ? 0 : 2);
+const money = (n) => "$" + (Number(n)||0).toLocaleString("en-US", { minimumFractionDigits: (Number(n)||0) % 1 === 0 ? 0 : 2, maximumFractionDigits: (Number(n)||0) % 1 === 0 ? 0 : 2 });
 const fmt = (d) => { if(!d) return ""; const x = new Date(d); return isNaN(x) ? d : x.toLocaleDateString(undefined,{month:"short",day:"numeric"}); };
 
 /* ---- theme: OS preference by default, explicit choice wins and persists ---- */
@@ -182,7 +182,23 @@ function navDrawer(open){
   document.body.style.overflow = open ? "hidden" : "";
 }
 document.addEventListener("keydown", e => { if (e.key === "Escape") navDrawer(false); });
-const TITLES = { home:["Home","Your listings, your sales and what to do next."], shop:["Shop","See what is for sale from other sellers."], closet:["My clothes","Everything you're selling. Search it, sort it, fix anything that's not ready."], snap:["Take a photo","Snap one item — we'll name it, size it and suggest a price."], sell:["Selling tools","Work out what you'll keep, what postage costs and what to charge."], xl:["Multilist","One item, every shop — fees and copy worked out for each."], map:["Near you","Pop-up shops and sellers close to you, on a map."], more:["More","Your sales, profit, shopping trips, replies and downloads."] };
+const TITLES = { home:["Home",""], shop:["Shop",""], closet:["My clothes",""], snap:["Sell",""], sell:["Sell",""], xl:["Shops",""], map:["Near you",""], more:["More",""] };
+function syncSessionChrome(){
+  var on = !!(TOKEN && USER);
+  document.querySelectorAll("button").forEach(function(b){
+    if ((b.getAttribute("onclick") || "").indexOf("logout(") !== -1) b.style.display = on ? "" : "none";
+  });
+}
+function enterBrowse(v){
+  var auth = document.getElementById("view-auth");
+  var app = document.getElementById("view-app");
+  var bar = document.getElementById("tabbar");
+  if (auth) auth.classList.add("hidden");
+  if (app) app.classList.remove("hidden");
+  if (bar) bar.classList.remove("hidden");
+  syncSessionChrome();
+  go(v || "shop");
+}
 async function go(v){
   document.querySelectorAll("nav.tabbar a, #topnav a, #drawer-links a").forEach(a => a.classList.toggle("on", a.dataset.v === v));
   navDrawer(false);
@@ -879,7 +895,7 @@ function photoResultsHtml(d, secs){
 }
 
 async function renderShop(el){
-  el.innerHTML = roleSwitchHtml() + showLoader("<p class='mut' style='text-align:center'>Loading what is for sale…</p>");
+  el.innerHTML = showLoader("<p class='mut' style='text-align:center'>Loading what is for sale…</p>");
   refreshTips();
   let httpStatus = 0, body = null, failMsg = "";
   try{
@@ -894,8 +910,7 @@ async function renderShop(el){
     S.marketCount = (body && body.count != null) ? body.count : m.length;
   }catch(e){ failMsg = e.message || ("Could not load what is for sale (HTTP " + httpStatus + ")."); }
   if (failMsg){
-    el.innerHTML = roleSwitchHtml()
-    + `<div class="empty"><svg class='i20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 8.5v4.5M12 16.5v.01'/><circle cx='12' cy='12' r='9'/></svg>`
+    el.innerHTML = `<div class="empty"><svg class='i20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 8.5v4.5M12 16.5v.01'/><circle cx='12' cy='12' r='9'/></svg>`
     + `<p>${escapeHtml(failMsg)}</p>`
     + `<button class="btn btn-soft" onclick="renderShop($('#screen'))" data-tip="Try loading what is for sale again.">Try again</button></div>`;
     refreshTips();
@@ -904,9 +919,8 @@ async function renderShop(el){
   if (S.photoPending){ S.photoPending = false; setTimeout(photoSearchGo, 90); }
   if (S.photoPending){ S.photoPending = false; setTimeout(photoSearchGo, 90); }
   stopRolls();
-  el.innerHTML = roleSwitchHtml()
-  + `<div class="closet-tools ux-search">`
-  + `<input class="input" id="market-search" placeholder="Search what is for sale…" value="${escapeAttr(S.marketQ||"")}" oninput="marketQ(this.value)" data-tip="Type words to find an item by name or description." style="margin:0">`
+  el.innerHTML = `<div class="closet-tools ux-search">`
+  + `<input class="input" id="market-search" placeholder="Search" value="${escapeAttr(S.marketQ||"")}" oninput="marketQ(this.value)" aria-label="Search" style="margin:0">`
   + `<select class="input" id="market-sort" onchange="marketSort(this.value)" data-tip="Change the order of the items you see." style="margin:0">`
   + `<option value="new"${S.marketSort==="new"?" selected":""}>Newest</option>`
   + `<option value="price-lo"${S.marketSort==="price-lo"?" selected":""}>Price low to high</option>`
@@ -926,28 +940,11 @@ async function renderShop(el){
    picking a department repaints the nav in place instead of refetching the
    whole feed (which also would have thrown away whatever the shopper typed). */
 function marketNavHtml(){
-  if (S.marketCat && !taxPath(S.marketCat)) S.marketCat = "";
-  const mDept = taxDept(S.marketCat), mSub = taxSub(S.marketCat);
-  const mCount = sel => shopPublicRows(S.market||[]).filter(m => taxMatches(m.category, sel)).length;
-  const mChip = (label, path, on, tip) => {
-    const n = mCount(path);
-    return `<button type="button" class="chip${on?" on":""}" aria-pressed="${on?"true":"false"}" onclick="marketPick(decodeURIComponent('${taxQ(path)}'))" data-tip="${escapeAttr(tip)}" title="${escapeAttr(tip)}">${escapeHtml(label)}<b class="cnt">${n}</b></button>`;
-  };
-  const crumbs = `<nav aria-label="Where you are in the shop" data-tip="Where you are in the catalogue. Click a step to go back up." style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 8px;font-size:13px">`
-    + `<button type="button" class="chip${!S.marketCat?" on":""}" aria-pressed="${!S.marketCat}" style="font-size:12px" onclick="marketPick('')" data-tip="Back to every department.">All departments</button>`
-    + (mDept ? `<span style="opacity:.5">›</span><button type="button" class="chip${mDept&&!mSub?" on":""}" aria-pressed="${mDept&&!mSub}" style="font-size:12px" onclick="marketPick(decodeURIComponent('${taxQ(mDept)}'))" data-tip="Everything in ${escapeAttr(mDept)}.">${escapeHtml(mDept)}</button>` : "")
-    + (mSub ? `<span style="opacity:.5">›</span><button type="button" class="chip on" aria-pressed="true" style="font-size:12px;cursor:default" data-tip="Currently showing ${escapeAttr(mSub)} only.">${escapeHtml(mSub)}</button>` : "")
-    + `</nav>`;
-  const deptRow = `<div class="cat-lead">Departments</div>`
-    + catRailHtml("market", taxDepts(), d => mCount(d), mDept, "market-rail");
-  const subRow = mDept
-    ? `<div class="cat-lead">Type of item in ${escapeHtml(mDept)}</div>`
-      + `<div class="chips" id="market-subs" aria-label="Types of item" data-tip="Types of item inside this department.">`
-      + `<button type="button" class="chip${!mSub?" on":""}" aria-pressed="${!mSub}" onclick="marketPick(decodeURIComponent('${taxQ(mDept)}'))" data-tip="Everything in ${escapeAttr(mDept)}, whatever type it is.">All ${escapeHtml(mDept)}<b class="cnt">${mCount(mDept)}</b></button>`
-      + taxSubs(mDept).map(s => mChip(s, mDept + "/" + s, mSub === s, "Show only " + s.toLowerCase() + " items.")).join("")
-      + `</div>`
-    : ``;
-  return crumbs + deptRow + subRow;
+  const kinds = [["","All"],["Women/Tops","Tops"],["Women/Jeans","Jeans"],["Women/Dresses","Dresses"],["Women/Coats & Jackets","Jackets"],["Women/Bags & Handbags","Bags"]];
+  return `<div class="chips" id="market-subs" aria-label="Find">` + kinds.map(([path, label]) => {
+    const on = (S.marketCat || "") === path;
+    return `<button type="button" class="chip${on?" on":""}" aria-pressed="${on?"true":"false"}" onclick="marketPick(decodeURIComponent('${taxQ(path)}'))">${escapeHtml(label)}</button>`;
+  }).join("") + `</div>`;
 }
 function marketQ(v){ S.marketQ = v || ""; marketRefresh(); }
 function marketSort(v){ S.marketSort = v || "new"; marketRefresh(); }
@@ -1030,19 +1027,22 @@ function marketCardTry(m){
   if (m.title) q.push("title=" + encodeURIComponent(String(m.title).slice(0, 80)));
   const href = (mode === "clothing" ? "/try-on/" : "/see-in-space/") + (q.length ? "?" + q.join("&") : "");
   const label = mode === "clothing" ? "Try it on" : "See it in my room";
-  return `<a class="btn btn-soft btn-sm" style="margin:0 2px 10px;align-self:flex-start" href="${escapeAttr(href)}" onclick="event.stopPropagation()" data-tip="${mode === "clothing" ? "See this on you before you buy — free." : "See this in your room before you buy — free."}">${label}</a>`;
+  return `<a class="btn btn-accent btn-sm ux-try-link" href="${escapeAttr(href)}">${label}</a>`;
 }
 function marketCard(m, i){
   const photo = m.photo_url
     ? `<img loading="lazy" src="${escapeAttr(m.photo_url)}" alt="" onerror="this.remove()">`
     : `<div class="ph"><span class="ph-ico">${catEmoji(m.category||"item")}</span></div>`;
   const sub = [m.size, m.condition].map(v => String(v||"").trim()).filter(v => v && !/^(n\/?a|none|not visible|unknown|-)$/i.test(v)).join(" · ");
-  return `<a class="ux-tile" href="javascript:void 0" onclick="openMarketItem(${Number(m.id)});return false" style="--gi:${Number(i)||0}">`
+  return `<div class="ux-tile" style="--gi:${Number(i)||0}">`
+  + `<button type="button" class="ux-tile-open" onclick="openMarketItem(${Number(m.id)})">`
   + `<span class="ux-tile-img">${photo}</span>`
   + `<span class="ux-tile-p">${money(m.price)}</span>`
   + `<span class="ux-tile-t">${escapeHtml(m.title||"Untitled")}</span>`
   + (sub ? `<span class="ux-tile-s">${escapeHtml(sub)}</span>` : "")
-  + `</a>`;
+  + `</button>`
+  + marketCardTry(m)
+  + `</div>`;
 }
 
 /* ================= PLACEMENT MODE (P0-B/C — free Instant space placer) ================
@@ -1083,7 +1083,7 @@ function placementCtaHtml(item){
   const bits = [];
   bits.push(`<div class="ux-try">`);
   if (mode === "clothing"){
-    bits.push(btn("/try-on/" + qs(""), "Try it on", "See this on you — add a photo of yourself. Free."));
+    bits.push(`<a class="btn btn-accent" href="/try-on/${qs("")}">Try it on</a>`);
   } else if (mode === "wall"){
     bits.push(btn("/see-in-space/" + qs("wall"), "See it in my room", "Add a photo of your wall and hang this on it. Free."));
   } else if (mode === "floor"){
@@ -1143,7 +1143,7 @@ function buySheet(id){
   ${m.photo_url ? `<img src="${escapeAttr(m.photo_url)}" alt="">` : ""}
   <div><b>${escapeHtml(m.title||"This item")}</b><span>${money(m.price)} · from ${escapeHtml(seller)}</span></div>
   </div>
-  <p class="mut" style="margin:12px 0">Card checkout isn't switched on yet, so nothing is charged here. Reserve it and message ${escapeHtml(seller)} to agree payment and delivery.</p>
+  <p class="mut" style="margin:12px 0">No charge. Reserve it, then message ${escapeHtml(seller)}.</p>
   <button class="btn btn-accent" style="width:100%" onclick="confirmBuy(${Number(id)},this)">Reserve it</button>
   <button class="btn btn-soft" style="width:100%;margin-top:8px" onclick="closeSheet();threadScreen('${escapeAttr((m.seller&&m.seller.username)||seller)}')">Message ${escapeHtml(seller)}</button>
   <div id="buy-out" style="margin-top:10px"></div>
@@ -1169,7 +1169,13 @@ async function confirmBuy(id, btn){
   }
   if (btn && btn.isConnected){ btn.disabled = false; btn.textContent = "Reserve it"; }
 }
-function onsaleState(l){ return !!((l && (l.onsale ?? l.on_sale)) ?? false); }
+function onsaleState(l){
+  if (!l) return false;
+  if (l.onsale || l.on_sale) return true;
+  var p = l.platforms;
+  if (typeof p === "string") { try { p = JSON.parse(p); } catch (e) { p = []; } }
+  return Array.isArray(p) && p.indexOf("fashionistas") >= 0;
+}
 async function toggleOnsale(id, btn){
   try{ if (window.event) window.event.stopPropagation(); }catch(e){}
   const l = (S.listings || []).find(x=>Number(x.id)===Number(id)) || ((CURRENT.listing && Number(CURRENT.listing.id)===Number(id)) ? CURRENT.listing : null);
@@ -2684,9 +2690,11 @@ async function saveListing(){
    weight_oz: numOrNull("f-weight"),
    ship_city: val("f-city"), ship_postcode: val("f-postcode"), ship_country: val("f-country"),
    local_pickup: !!(pickup && pickup.checked),
+   status: "active", platforms: ["fashionistas"],
  };
+ if (c._b64 && !photo_url) return toast("The photo didn't upload, so this isn't in Shop yet. Try again.");
  const d = await api(c.id ? `/api/listings/${c.id}` : "/api/listings", { method: c.id?"PUT":"POST", body: JSON.stringify(body) });
- toast(c.id ? "Listing updated ✓" : "Added to your closet ✓");
+ toast(c.id ? "Listing updated ✓" : "Listed on fashionistas ✓");
  openListing(d.listing ? d.listing.id : c.id || d.listing?.id);
  } catch(e){ toast(e.message); }
 }
@@ -3153,7 +3161,7 @@ async function extAutoDetect(){
   const mode = document.querySelector("#xl-handoff-mode");
   if (mode) mode.textContent = EXT_LIVE
     ? "Posts through your extension — no API keys, no Stripe."
-    : "One-click blocked — Set up extension (Load unpacked). Clipboard paste kits remain as fallback; server eBay/Etsy needs Stripe + secrets.";
+    : "No Crosslister yet — each shop opens with its kit ready to paste.";
   try { xlReadyStripRefresh(); } catch(e){}
   // Extension is answering: reconcile the Connect grid against what it can
   // actually see, so a stale "Connected" from an older build is corrected on
@@ -3190,7 +3198,7 @@ function xlOneClickGate(){
       ready: false,
       ext: false,
       connected,
-      reason: "Install the Fashionistas Crosslister (Load unpacked) — one-click needs it. Paste kits stay available as a fallback.",
+      reason: "Install the Crosslister to post by itself.",
       next: "Set up extension"
     };
   }
@@ -3199,7 +3207,7 @@ function xlOneClickGate(){
       ready: true,
       ext: true,
       connected: 0,
-      reason: "Extension live. Log into each shop in this Chrome → Verify session → then Sell everywhere. Until verified, posts may fail if you are not logged in.",
+      reason: "Log into each shop in this Chrome, then Verify session.",
       next: "Verify session"
     };
   }
@@ -3215,20 +3223,12 @@ function xlReadyStripHtml(){
   const g = xlOneClickGate();
   const cls = g.ready && g.connected > 0 ? "ok" : "warn";
   const title = g.ready && g.connected > 0
-    ? `<b>One-click ready.</b> Extension live · ${g.connected} shop${g.connected===1?"":"s"} Connected. Sell everywhere posts Depop, Poshmark, Mercari, Vinted, Grailed, eBay and the rest equally — no API keys, no Stripe.`
+    ? `<b>Ready.</b> ${g.connected} shop${g.connected===1?"":"s"} connected — Sell everywhere posts to every ticked shop equally.`
     : (g.ext
       ? `<b>Almost there.</b> ${escapeHtml(g.reason)}`
-      : `<b>One-click blocked.</b> ${escapeHtml(g.reason)}`);
-  const s1 = g.ext ? "done" : "todo";
-  const s2 = g.connected > 0 ? "done" : "todo";
-  const s3 = (g.ext && g.connected > 0) ? "done" : "todo";
-  const setupBtn = g.ext ? "" : ` <button type="button" class="btn btn-accent btn-sm" style="margin-left:6px" onclick="extConnectPrompt()" data-tip="Download zip → chrome://extensions → Developer mode → Load unpacked.">Set up extension</button>`;
-  return `<div id="xl-ready-strip" class="xl-ready-strip ${cls}" role="status">${title}${setupBtn}
-  <ol class="xl-ready-steps">
-   <li class="${s1}">1. Install Crosslister (Load unpacked)${g.ext?" ✓":""}</li>
-   <li class="${s2}">2. Log in + Verify session on each shop${g.connected?(" · "+g.connected+" Connected"):""}</li>
-   <li class="${s3}">3. Tick shops → Sell everywhere</li>
-  </ol></div>`;
+      : `<b>One-click blocked.</b> No Crosslister yet — each shop still posts from its own kit.`);
+  const setupBtn = g.ext ? "" : ` <button type="button" class="btn btn-soft btn-sm" style="margin-left:6px" onclick="extConnectPrompt()" data-tip="Installs the optional Crosslister so posts go out by themselves.">Get one-click</button>`;
+  return `<div id="xl-ready-strip" class="xl-ready-strip ${cls}" role="status">${title}${setupBtn}</div>`;
 }
 function xlReadyStripRefresh(){
   const el = document.getElementById("xl-ready-strip");
@@ -3253,28 +3253,27 @@ async function extConnectPrompt(){
 function extInstallSheet(){
   const known = extId();
   openSheet(`
- <h3 style="margin:0 0 4px">Install Fashionistas Crosslister</h3>
- <p class="mut" style="margin-top:0">One-click Sell everywhere needs this Chrome extension. No marketplace API keys. No Stripe required for posting.</p>
+ <h3 style="margin:0 0 4px">Get one-click posting</h3>
+ <p class="mut" style="margin-top:0">Optional — without it, each shop still posts from its own kit.</p>
  <ol style="margin:8px 0 12px;padding-left:1.2em;line-height:1.55;font-size:13.5px">
-  <li>Download the extension zip (or use an already-unzipped <code>apps/extension</code> folder).</li>
-  <li>Open <code>chrome://extensions</code> → turn on <b>Developer mode</b> → <b>Load unpacked</b> → pick the unzipped folder (the one with <code>manifest.json</code>).</li>
-  <li>Stay on <b>fashionistas.ai</b> in this Chrome profile and tap <b>Re-check</b> below. The extension announces its ID automatically.</li>
-  <li>Log into each shop you sell on in this same Chrome, then Multilist → <b>Verify session</b> → <b>Sell everywhere</b>.</li>
+  <li>Download and unzip the extension.</li>
+  <li>In Chrome open <code>chrome://extensions</code>, turn on <b>Developer mode</b>, then <b>Load unpacked</b> and pick the unzipped folder.</li>
+  <li>Stay on <b>fashionistas.ai</b> and tap <b>Re-check</b>.</li>
  </ol>
  <div class="xl-row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px">
-  <a class="btn btn-accent btn-sm" href="/chrome-store/fashionistas-extension-v1.0.1.zip" download data-tip="Downloads the packaged Crosslister zip.">Download extension zip</a>
-  <button type="button" class="btn btn-soft btn-sm" onclick="toast('Paste chrome://extensions in the address bar — browsers block links to it.');" data-tip="Open chrome://extensions yourself.">chrome://extensions tip</button>
+  <a class="btn btn-accent btn-sm" href="/chrome-store/fashionistas-extension-v1.0.1.zip" download data-tip="Downloads the Crosslister zip.">Download extension</a>
   <button type="button" class="btn btn-soft btn-sm" onclick="extConnectRecheck()" data-tip="Pings the extension again.">Re-check</button>
  </div>
  <details style="margin:8px 0 4px">
-  <summary style="cursor:pointer;font-weight:700;font-size:13px">Advanced · paste extension ID</summary>
-  <p class="mut" style="font-size:12px;margin:6px 0">Only needed if auto-detect fails (unpacked ID changes per machine). Chrome → Extensions → Details → ID (32 characters).</p>
+  <summary style="cursor:pointer;font-weight:700;font-size:13px">Trouble?</summary>
+  <p class="mut" style="font-size:12px;margin:6px 0">Browsers block links to <code>chrome://extensions</code> — type it in the address bar yourself.</p>
+  <p class="mut" style="font-size:12px;margin:6px 0">If Re-check finds nothing, paste the ID from Chrome → Extensions → Details (32 characters).</p>
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
    <input id="ext-id-input" type="text" spellcheck="false" autocomplete="off" placeholder="32-character extension id" value="${escapeHtml(known)}" style="flex:1;min-width:180px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit"/>
    <button type="button" class="btn btn-accent btn-sm" onclick="extSaveIdFromInput()" data-tip="Saves the ID in this browser and pings the extension.">Save &amp; connect</button>
   </div>
  </details>
- <p class="mut" style="font-size:12px;margin-top:10px">Chrome Web Store listing is optional later — until then, <b>Load unpacked</b> is the supported path. See <code>docs/MULTILIST-ONE-CLICK.md</code>.</p>
+ <p class="mut" style="font-size:12px;margin-top:10px">Details: <code>docs/MULTILIST-ONE-CLICK.md</code>.</p>
  <button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="closeSheet()">Done</button>`);
 }
 async function extConnectRecheck(){
@@ -3567,21 +3566,21 @@ function xlSheet(l, picks, copied, kits, allKit){
  const gate = xlOneClickGate();
  const ebayBanner = picks.includes("ebay") ? (
   EXT_LIVE
-   ? `<div class="xl-ebay-create"><p><b>eBay · equal with every shop:</b> Sell everywhere queues eBay through the extension like Depop, Poshmark, Mercari, Vinted and Grailed — no eBay API keys required. Optional developer <b>Create on eBay</b> (OAuth) stays available separately${ebayConnected ? "" : " after Connect OAuth"}.</p></div>`
+   ? `<div class="xl-ebay-create"><p><b>eBay:</b> queued like every other shop — equal with every shop, no eBay API keys.</p></div>`
    : (ebayConnected
-     ? `<div class="xl-ebay-create" id="xl-ebay-create-box"><p><b>Optional eBay API:</b> Connected locally. Without the extension, <b>Create on eBay</b> needs OAuth + server secrets. Prefer <b>Set up extension</b> for one-click with every other shop.</p><div id="xl-ebay-create-msg" class="mut" style="font-size:12px"></div></div>`
-     : `<div class="xl-ebay-create"><p><b>eBay:</b> One-click uses the extension (same as every shop). Optional API create needs <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="xlShopOpenGuide('ebay')">Connect OAuth</button> + secrets — or paste the kit.</p></div>`)
+     ? `<div class="xl-ebay-create" id="xl-ebay-create-box"><p><b>eBay:</b> use your kit, or connect eBay's own API with</p><div id="xl-ebay-create-msg" class="mut" style="font-size:12px"></div></div>`
+     : `<div class="xl-ebay-create"><p><b>eBay:</b> use your kit, or connect eBay's own API with <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="xlShopOpenGuide('ebay')">Connect OAuth</button> + secrets — or paste the kit.</p></div>`)
  ) : "";
 
  openSheet(`
  <h3 style="margin:0 0 4px">Ready to post \u2014 ${picks.length} shop${picks.length===1?"":"s"}</h3>
- <p class="mut" style="margin-top:0">Each shop keeps its own title rules, tags and tone. With the extension live, <b>Sell everywhere</b> queues real posts to every ticked shop equally and shows queued → posting → posted (View when a listing URL is captured). Nothing is marked Posted until that happens or you confirm a paste-kit publish.</p>
+ <p class="mut" style="margin-top:0">Each shop keeps its own title rules. Tick the shops you want, then <b>Sell everywhere</b>.</p>
  ${xlReadyStripHtml()}
- <div class="xl-note"><b>What actually happens:</b> the Chrome extension posts from your logged-in sessions — Depop, Poshmark, Mercari, Vinted, Grailed, eBay and the rest — no Stripe, no API keys. Without the extension, one-click is blocked: eBay/Etsy may try the server API (needs subscription + secrets), and other shops fall back to clipboard + open-form. We never take a marketplace password and never toast “posted” on a no-op.</div>
+ <div class="xl-note">Nothing is marked Posted until it really is, and we never take your shop password.</div>
  ${ebayBanner}
  <div style="max-height:48vh;overflow:auto;margin-top:10px">${rows}</div>
  <div class="xl-row" style="border-top:1px solid var(--line);margin-top:6px;padding-top:10px">
- <div class="mut" style="font-size:12px" id="xl-handoff-mode">${gate.ext?"Posts through your extension — no API keys, no Stripe.":(gate.reason||"One-click blocked — Set up extension for one-click (clipboard fallback available).")}</div>
+ <div class="mut" style="font-size:12px" id="xl-handoff-mode">${gate.ext?"Posts through your extension.":(gate.reason||"Each shop opens with its kit ready to paste.")}</div>
  <div style="display:flex;gap:8px;flex-wrap:wrap">
  <button class="btn btn-accent btn-sm" onclick="handoffSellAll(${Number(l.id)||0})" data-tip="${gate.ext?"Queues every selected shop to your extension — equal treatment, no API keys.":"Extension missing — will open paste kits / optional API. Set up extension for true one-click."}" ${gate.ext?"":'aria-describedby="xl-handoff-mode"'}>Sell everywhere</button>
  ${extConnectBtnHtml()}</div>
@@ -3690,6 +3689,7 @@ async function markSold(id){
 
 /* ================= SELL ================= */
 async function renderSell(el){
+ if (window.LW) return LW.mount(el);
  el.innerHTML = showLoader();
  try {
  await loadMarketplaces();
@@ -4921,6 +4921,13 @@ document.querySelectorAll("#auth-tab-login,#auth-tab-signup").forEach(b=>b.oncli
 navBuild();
 if (TOKEN && USER) { $("#view-auth").classList.add("hidden"); $("#view-app").classList.remove("hidden"); $("#tabbar").classList.remove("hidden"); $("#guide-fab").classList.remove("hidden"); go("home"); }
 else { $("#view-auth").classList.remove("hidden"); $("#view-app").classList.add("hidden"); $("#tabbar").classList.add("hidden"); $("#guide-fab").classList.add("hidden"); authTab("login"); }
+syncSessionChrome();
+function openFromHash(){
+  var openHash = (location.hash || "").replace("#", "");
+  if (openHash === "shop" || openHash === "sell") enterBrowse(openHash);
+}
+window.addEventListener("hashchange", openFromHash);
+setTimeout(openFromHash, 0);
 
 /* ================= motion & polish ================= */
 (function(){
@@ -4932,7 +4939,7 @@ else { $("#view-auth").classList.remove("hidden"); $("#view-app").classList.add(
  countUp(document);
 
  // animated headline word
- var WORDS = ["Eleven shops.","Live in seconds.","Queued to posted."];
+ var WORDS = ["One photo.","In the shop.","Try it on."];
  var wi = 0, w = document.getElementById("rot-word");
  if (w && !reduce){
  setInterval(function(){
