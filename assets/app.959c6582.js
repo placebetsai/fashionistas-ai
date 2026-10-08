@@ -1928,7 +1928,7 @@ function fxBg(words){
  return `<div class="fx-bg" aria-hidden="true">${words.map((w,i)=>{
    const t = 5 + ((i*29) % 72), l = 3 + ((i*37) % 76);
    const dly = (i*1.35).toFixed(2), dur = (11 + (i%4)*2.5).toFixed(1);
-   const fs = i % 2 ? 13 : 17;
+   const fs = i % 2 ? 15 : 20;
    return `<span style="--t:${t}%;--l:${l}%;--dly:${dly}s;--dur:${dur}s;--fs:${fs}px">${escapeHtml(w)}</span>`;
  }).join("")}</div>`;
 }

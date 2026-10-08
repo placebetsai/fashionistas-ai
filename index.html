@@ -340,7 +340,7 @@ html[data-theme="light"] .theme-btn .ic-moon{display:none}
 .stat b[data-count]{background:linear-gradient(95deg,var(--ink) 30%,var(--accent) 50%,var(--ink) 70%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:sheen 3.4s linear infinite}
 .plat-row{animation:fadeUp .45s cubic-bezier(.22,1,.36,1) both}
 @media (prefers-reduced-motion:reduce){
- #screen > *,.chip-draw,.bar-grow,.plat-row,.stat b[data-count],.card.fx .fx-bg::before,.card.fx .fx-bg span,.kt i,.kt-sheen,.fx-ico{animation:none!important}
+ #screen > *,.chip-draw,.bar-grow,.plat-row,.stat b[data-count],.card.fx .fx-bg::before,.card.fx .fx-bg span,.kt i,.kt-sheen i,.fx-ico{animation:none!important}
  .plat-bar > i{animation:none!important;width:var(--w,0%)}
  .kt i{opacity:1!important;transform:none!important;filter:none!important}
  .card,.ht-clip > span{transition:none!important}
@@ -353,17 +353,19 @@ html[data-theme="light"] .theme-btn .ic-moon{display:none}
 .card.fx > *{position:relative;z-index:1}
 .card.fx .fx-bg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .card.fx .fx-bg::before{content:"";position:absolute;inset:-35%;background:radial-gradient(58% 58% at 18% 14%,var(--fx-a,rgba(255,78,58,.22)),transparent 62%),radial-gradient(54% 54% at 84% 84%,var(--fx-b,rgba(192,92,255,.18)),transparent 64%);filter:blur(12px);animation:fxWash 12s ease-in-out infinite alternate}
-.card.fx .fx-bg span{position:absolute;top:var(--t,40%);left:var(--l,10%);font-size:var(--fs,15px);font-weight:900;letter-spacing:.14em;color:var(--fx-t,rgba(255,78,58,.24));white-space:nowrap;user-select:none;animation:fxFloat var(--dur,13s) ease-in-out var(--dly,0s) infinite}
-.fx-sale{--fx-a:rgba(255,78,58,.26);--fx-b:rgba(255,196,84,.22);--fx-t:rgba(255,124,64,.30)}
-.fx-sold{--fx-a:rgba(74,222,170,.22);--fx-b:rgba(58,196,255,.18);--fx-t:rgba(58,214,170,.30)}
-.fx-money{--fx-a:rgba(192,92,255,.24);--fx-b:rgba(255,78,58,.18);--fx-t:rgba(190,124,255,.30)}
-.fx-shops{--fx-a:rgba(58,196,255,.20);--fx-b:rgba(255,196,84,.18);--fx-t:rgba(96,190,255,.30)}
+.card.fx .fx-bg span{position:absolute;top:var(--t,40%);left:var(--l,10%);font-size:var(--fs,17px);font-weight:900;letter-spacing:.14em;color:var(--fx-t,rgba(255,78,58,.40));text-shadow:0 2px 14px rgba(0,0,0,.22);white-space:nowrap;user-select:none;animation:fxFloat var(--dur,13s) ease-in-out var(--dly,0s) infinite}
+.fx-sale{--fx-a:rgba(255,78,58,.30);--fx-b:rgba(255,196,84,.26);--fx-t:rgba(255,148,90,.46)}
+.fx-sold{--fx-a:rgba(74,222,170,.26);--fx-b:rgba(58,196,255,.22);--fx-t:rgba(96,232,190,.44)}
+.fx-money{--fx-a:rgba(192,92,255,.28);--fx-b:rgba(255,78,58,.22);--fx-t:rgba(204,150,255,.46)}
+.fx-shops{--fx-a:rgba(58,196,255,.24);--fx-b:rgba(255,196,84,.22);--fx-t:rgba(120,200,255,.44)}
 @keyframes fxWash{from{transform:translate3d(-4%,-3%,0) scale(1)}to{transform:translate3d(5%,4%,0) scale(1.14)}}
 @keyframes fxFloat{0%{opacity:0;transform:translate3d(0,18px,0) rotate(-7deg)}14%{opacity:1}50%{transform:translate3d(28px,-14px,0) rotate(5deg)}86%{opacity:1}100%{opacity:0;transform:translate3d(-8px,-46px,0) rotate(-4deg)}}
-/* kinetic titles: per-letter rise-in, then a slow sheen across the word */
+/* kinetic titles: per-letter rise-in. The sheen gradient lives on each LETTER,
+   not the h3: a transformed child punches out of a parent's background-clip:text,
+   which made the whole title invisible. */
 .kt i{display:inline-block;font-style:normal;animation:ktIn .52s cubic-bezier(.22,1,.36,1) both;animation-delay:inherit}
 @keyframes ktIn{from{opacity:0;transform:translateY(.55em) rotate(-9deg);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
-.kt-sheen{background:linear-gradient(95deg,var(--ink) 34%,var(--accent) 50%,var(--ink) 66%);background-size:240% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:sheen 5.5s linear infinite}
+.kt-sheen i{background-image:linear-gradient(95deg,var(--ink) 34%,var(--accent) 50%,var(--ink) 66%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:ktIn .52s cubic-bezier(.22,1,.36,1) both,sheen 5.5s linear infinite;animation-delay:inherit,0s}
 .fx-ico{width:24px;height:24px;display:block;margin:0 auto 6px;color:var(--accent);filter:drop-shadow(0 3px 8px rgba(255,78,58,.35));animation:icoBob 3.6s ease-in-out infinite}
 @keyframes icoBob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(3deg)}}
 /* share bars under each platform row */
