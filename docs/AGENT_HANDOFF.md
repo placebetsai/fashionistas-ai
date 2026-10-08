@@ -1,6 +1,29 @@
 # Agent handoff — fashionistas.ai
 
-## LATEST — 2026-10-07 4:45 PM ET (read this first)
+## LATEST — 2026-10-08 ~2:10 PM ET (read this first)
+
+**Production is unchanged.** `https://fashionistas.ai/version.txt` = `2eb3f164627780d6c86a408ab2e283f406689ff5`. Pages deployment `0d44887b-acd7-46e4-ac74-77c7896251d8`. Rollback `f408459d-5d27-4523-acbd-0d7711c8f6d3`. `listing-wizard.js` and `ux-pass.css` 404 on that deployment. Do not describe the public site as the layout below.
+
+**Laptop:** `/home/billionaremaker/fashionistas-ai`, branch `tryon-open`, HEAD `1e05068` (chat smalltalk). Not committed, not previewed, not shipped. User has not said commit or "ship it". `scripts/deploy-local.sh` refuses a dirty tree. Also dirty, and not part of this UX: `chrome-store/fashionistas-extension-v.zip` and `chrome-store/fashionistas-extension-v1.0.1.zip` — do not add those to a listing commit.
+
+**Uncommitted product files:** `listing-wizard.js`, `ux-pass.css`, `index.html`, `assets/app.959c6582.js`.
+
+**What a signed-out person gets locally (proven 2026-10-08 with headless Chrome on a local static server, phone 390×844 and desktop 1440×900):**
+- Landing: "Snap it. List it. Try it on." Shop / Sell / Try it on. Shop and Sell call `enterBrowse`, which opens the app without an account. `#shop` and `#sell` do the same after the wizard script loads. Under 767px the fake phone in the hero is hidden so the first screen is the headline and the three buttons, then the photo steps. The old "Posted · Poshmark" floats and the hero stat row are hidden.
+- Shop: search, Newest / price sort, one chip row (All, Tops, Jeans, Dresses, Jackets, Bags). Cards are photo, price, title. "Try it on" is a pill on the photo. Desktop is 4 columns from 900px and 5 from 1280px inside a 1280px page. Phone is 2 columns. No Selling/Shopping switch on the shop. Guest header does not show Sign out.
+- Item: photo, price, size, condition, Try it on, Message, Buy now. Desktop is photo left, buy column right. Phone buy bar sits above the tab bar. Buy copy is still a demo reserve, no Stripe charge.
+- Sell and Photo both mount the one-screen wizard (`LW.mount`). One card: photo, then title, price, kind, condition; size/brand/description collapsed. Button "List on fashionistas", disabled until photo + title + price. Submit sends `status:"active"` and `platforms:["fashionistas"]` and will not save a listing whose photo upload returned null. Desktop top nav hides the duplicate Photo tab. The old "Multilist" label reads "Shops". After list, other shops are copy-and-open, except eBay/Etsy which call the existing OAuth start. Those keys are still missing, so Connect is not a working post. Depop, Poshmark, Mercari, Vinted, Grailed have no seller post API. Do not claim one-click or "posted".
+- Help bubble and the wizard "?" are hidden on the app screens.
+
+**Live shop feed (worker, 2026-10-08):** `GET /api/market` returned 8 active rows with photos. The grid will show them, including a polo listed at $10,000, duplicate Keurig rows, and plain shirt drawings. Layout does not fix bad inventory.
+
+**Landing, local only, cut down 2026-10-08 ~5:40 PM ET.** The visible page is Shop, Sell, Try it on. Three steps: photo, price, in the shop. Account card says `$14.99/mo`. Removed from the page: the A-to-Z grid, the eleven-shop logo wall, “Sell everywhere / queued → posted”, the demo-seller button, and “nothing is charged, ever.” Phone bar is Shop, Sell, Try on, Sign in. Desktop app bar is Shop, Sell, Account. FAQ JSON-LD in the head still claims an eleven-shop post. Do not treat that script as the product.
+
+**Still open, same as before:** preview this branch only after a commit the user asked for; prove one real listing in the shop with an account; try-on cold start (~109s vs 150s web limit) still needs finish-or-poll; eBay/Etsy keys; no Stripe; 44 old deployments not deleted; do not spend a paid Modal render to look around.
+
+**Rules:** deploy only from this laptop with wrangler. Preview first (`DEPLOY_BRANCH=`). Production only after "ship it". Clear wrangler cache and stray `CF_ACCOUNT_ID`. Never print Cloudflare, Modal, or VAPID secrets. Zero-install. Try-on is for buyers. See in my space is for art and furniture. Never show a fake posted status.
+
+## PREVIOUS — 2026-10-07 4:45 PM ET
 
 **Production:** Pages deployment `0d44887b-acd7-46e4-ac74-77c7896251d8` = commit `2eb3f16` (phone nav: sticky header + bottom tab bar, "What's next" bar Home-only, compact chat button, blinking fix). **Rollback:** `f408459d-5d27-4523-acbd-0d7711c8f6d3` (`1c174ff`), older `45b2aecb-3cf5-4659-9a88-b3090771bbec`. Verified live on Pixel 7 + Galaxy 360, light/dark, no JS errors.
 

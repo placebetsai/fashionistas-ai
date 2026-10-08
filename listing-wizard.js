@@ -174,32 +174,61 @@
       '<div id="snap-pre" hidden></div></div>';
     renderStep();
   }
+  /* One screen. Photo, title, price, List. The old 4-step form is what sellers
+     called broken: Sell opened a calculator, and "Save to my clothes" never
+     put the item in Shop. */
+  var KINDS = [
+    { label: "Top", path: "Women/Tops" },
+    { label: "Jeans", path: "Women/Jeans" },
+    { label: "Pants", path: "Women/Pants" },
+    { label: "Dress", path: "Women/Dresses" },
+    { label: "Jacket", path: "Women/Coats & Jackets" },
+    { label: "Skirt", path: "Women/Skirts" },
+    { label: "Bag", path: "Women/Bags & Handbags" }
+  ];
   function renderStep() {
     if (!W || !$id("lw")) return;
-    var n = W.step;
-    $id("lw-stepn").textContent = "Step " + n + " of 4";
-    $id("lw-stepname").textContent = STEPS[n - 1];
-    $id("lw-bar-i").style.width = (n * 25) + "%";
-    $id("lw-bar").setAttribute("aria-valuenow", String(n));
-    $id("lw-back").hidden = n < 2;
+    var stepn = $id("lw-stepn"), stepname = $id("lw-stepname"), bar = $id("lw-bar"), back = $id("lw-back");
+    if (stepn) stepn.textContent = "";
+    if (stepname) stepname.textContent = "List it here";
+    if (bar) bar.hidden = true;
+    if (back) back.hidden = true;
     var body = $id("lw-body");
-    body.innerHTML = n === 1 ? step1() : n === 2 ? step2() : n === 3 ? step3() : step4();
-    if (n === 2) afterStep2();
-    if (n === 3) refreshKeep();
+    if (body) body.innerHTML = onePage();
     footer();
-    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+  function readyToList() {
+    return !!(W && PHOTOS.length && String(W.f.title || "").trim() && parseFloat(W.f.price) > 0);
   }
   function footer() {
-    var b = $id("lw-next"); if (!b) return;
-    var n = W.step, label, dis = false;
-    if (n === 1) { label = PHOTOS.length ? "Next: What is it" : "Add a photo to start"; dis = !PHOTOS.length; }
-    else if (n === 2) label = "Next: Price";
-    else if (n === 3) label = "Next: Where to list";
-    else label = W.mode === "edit" ? "Save changes" : "List it";
-    b.innerHTML = esc(label) + (n < 4 ? ' <span aria-hidden="true">→</span>' : "");
-    b.disabled = dis;
-    b.classList.toggle("lw-go", n === 4);
+    var b = $id("lw-next"); if (!b || !W) return;
+    b.innerHTML = W.mode === "edit" ? "Save changes" : "List on fashionistas";
+    b.disabled = !readyToList();
+    b.classList.add("lw-go");
   }
+  function onePage() {
+    var f = W.f;
+    var h = "";
+    if (W.restored && W.mode === "new") h += '<div class="lw-note">Draft saved on this phone. <button type="button" class="lw-link" onclick="LW.reset()">Start over</button></div>';
+    h += '<p class="lw-hint" style="margin-top:0">Photo, title, price. Then it’s in the shop.</p>';
+    h += step1();
+    if (!PHOTOS.length) return h;
+    h += '<div class="lw-field"><div class="lw-lab"><label for="lw-title">Title</label>' + aiTag("title") + '</div>' +
+      '<input class="lw-in" id="lw-title" maxlength="80" autocomplete="off" enterkeyhint="next" placeholder="e.g. Levi\'s denim jacket" value="' + esc(f.title) + '" oninput="LW.set(\'title\',this.value)"></div>';
+    h += '<div class="lw-field"><div class="lw-lab"><label for="lw-price">Price</label>' + aiTag("price") + '<span class="lw-opt">you keep all of it here</span></div>' +
+      '<input class="lw-in" id="lw-price" inputmode="decimal" enterkeyhint="done" placeholder="48" value="' + esc(f.price) + '" oninput="LW.set(\'price\',this.value)"></div>';
+    h += '<div class="lw-field"><div class="lw-lab"><span class="lw-labt">What is it</span></div><div class="lw-chips" role="radiogroup" aria-label="What is it">' +
+      KINDS.map(function (k) {
+        return '<button type="button" class="lw-chip' + (f.path === k.path ? " on" : "") + '" onclick="LW.kind(\'' + k.path.replace(/'/g, "\\'") + '\')">' + esc(k.label) + '</button>';
+      }).join("") + '</div></div>';
+    h += '<div class="lw-field"><div class="lw-lab"><span class="lw-labt">Condition</span></div><div class="lw-chips" id="lw-conds" role="radiogroup" aria-label="Condition">' + condChips() + '</div></div>';
+    h += '<details class="lw-more"><summary><b>Size, brand, description</b>' + ICON.chev + '</summary>' +
+      '<div class="lw-field"><label for="lw-size">Size</label><input class="lw-in" id="lw-size" placeholder="M, 8, 32" value="' + esc(f.size) + '" oninput="LW.set(\'size\',this.value)"></div>' +
+      '<div class="lw-field"><label for="lw-brand">Brand</label><input class="lw-in" id="lw-brand" placeholder="Leave blank if there\'s no label" value="' + esc(f.brand) + '" oninput="LW.set(\'brand\',this.value)"></div>' +
+      '<div class="lw-field"><label for="lw-desc">Description</label><textarea class="lw-in" id="lw-desc" rows="4" oninput="LW.set(\'desc\',this.value)">' + esc(f.desc || autoDesc()) + '</textarea></div></details>';
+    return h;
+  }
+  function kind(path) { if (!W) return; W.f.path = path; W.touched.path = 1; save(); renderStep(); }
 
   /* ================= STEP 1 — PHOTOS ================= */
   function step1() {
@@ -339,7 +368,9 @@
       if (!d || d.source === "error") throw new Error((d && d.error) || "could not read the photo");
       applyAi(d, force);
       W.aiState = "done"; save(); coach("identify");
-      if (W.step === 1) refreshAi(); else if (W.step === 2) renderStep();
+      if (!W.f.path) W.f.path = "Women/Tops";
+      if (!W.f.cond) W.f.cond = "good";
+      renderStep();
     }).catch(function (e) {
       if (!W || W.at !== started) return;
       W.aiState = "error"; W.aiErr = (e && e.message && e.message !== "unauthorized") ? ("" + e.message).slice(0, 120) : ""; save();
@@ -483,6 +514,7 @@
     if (k === "title") { var c = $id("lw-tcount"); if (c) c.textContent = v.length + "/80"; var e = $id("lw-err-title"); if (e && v.trim()) e.textContent = ""; }
     if (k !== "desc" && !W.touched.desc) { W.f.desc = autoDesc(); syncDesc(); }
     save();
+    if (k === "title" || k === "price") footer();
   }
   function syncDesc() { var d = $id("lw-desc"); if (d && !W.touched.desc && document.activeElement !== d) d.value = W.f.desc || autoDesc(); }
   function cond(k) {
@@ -627,11 +659,13 @@
   }
   function next() {
     if (!W) return;
-    var n = W.step;
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-    if (!validate(n)) return;
-    if (n === 2) coach("listing");
-    if (n < 4) { W.step = n + 1; W.restored = false; save(); renderStep(); return; }
+    if (!PHOTOS.length) { say("Add a photo first."); return; }
+    if (!String(W.f.title || "").trim()) { say("Add a title. Buyers search by it."); var i = $id("lw-title"); if (i) i.focus(); return; }
+    if (!(parseFloat(W.f.price) > 0)) { say("Add a price."); var p = $id("lw-price"); if (p) p.focus(); return; }
+    if (!W.f.path) W.f.path = "Women/Tops";
+    if (!W.f.cond) W.f.cond = "good";
+    coach("listing");
     submit();
   }
   function back() { if (W && W.step > 1) { W.step--; save(); renderStep(); } }
@@ -660,7 +694,7 @@
         title: f.title.trim().slice(0, 80), description: (f.desc || autoDesc()).trim(), price: parseFloat(f.price), size: f.size || "",
         condition: c ? c.store : "Good", category: f.path, photo_url: url, ai_confidence: W.ai ? W.ai.conf : null,
         brand: f.brand.trim(), color: f.color || "", material: f.material.trim(), weight_oz: weightFor(f.path),
-        local_pickup: f.ship === "pickup"
+        local_pickup: f.ship === "pickup", status: "active", platforms: ["fashionistas"]
       };
       return api(W.mode === "edit" ? "/api/listings/" + W.listingId : "/api/listings", { method: W.mode === "edit" ? "PUT" : "POST", body: JSON.stringify(body) })
         .then(function (d) { return { d: d, body: body }; });
@@ -738,12 +772,12 @@
     var h = '<div class="lw lw-post" id="lw">';
     h += '<div class="lw-live">' + (l.photo_url ? '<img src="' + esc(l.photo_url) + '" alt="">' : "") + '<div class="lw-livet"><span class="lw-livek">' + ICON.check + (fresh ? " Listed!" : " Live") + '</span><b>' + esc(l.title || "Your item") + '</b><span>' + money0(Number(l.price) || 0) + ' · on sale on fashionistas.ai</span>' +
       '<span class="lw-livea"><button type="button" class="lw-link" onclick="LW.view(' + Number(l.id) + ')">View listing</button><button type="button" class="lw-link" onclick="LW.edit(' + Number(l.id) + ')">Edit</button></span></div></div>';
-    if (n) h += '<div class="lw-pp"><div class="lw-stepline"><b>' + d + ' of ' + n + ' shops posted</b><span>' + (d === n ? "All done" : "3 quick steps each") + '</span></div><div class="lw-bar"><i style="width:' + Math.round(d / n * 100) + '%"></i></div></div>';
+    if (n) h += '<div class="lw-pp"><div class="lw-stepline"><b>Also on other shops</b><span>' + d + ' of ' + n + ' done</span></div><div class="lw-bar"><i style="width:' + Math.round(d / n * 100) + '%"></i></div></div>';
     else h += '<p class="lw-hint">Add a shop below to post this item there too.</p>';
     h += P.shops.map(function (id) { return shopCard(id, path); }).join("");
     var rest = SHOPS.filter(function (s) { return P.shops.indexOf(s.id) < 0 && shopTakes(s.id, path); });
     if (rest.length) h += '<div class="lw-addshops"><span class="lw-labt">Add a shop</span><div class="lw-chips">' + rest.map(function (s) { return '<button type="button" class="lw-chip lw-chip-shop" data-v="' + s.id + '" onclick="LW.addShop(this.getAttribute(\'data-v\'))">' + logo(s, 22) + esc(s.name) + '<span aria-hidden="true">+</span></button>'; }).join("") + '</div></div>';
-    h += '<p class="lw-hint lw-how">These shops don\'t let other apps post for you, so we do everything up to the last tap: the words are copied for you, the photos go straight into their app, and you press Post there. The status here is what you\'ve told us.</p>';
+    h += '<p class="lw-hint lw-how">Depop, Poshmark, Mercari, Vinted, Grailed, eBay and Etsy do not let us press Post for you. Open one, paste, and press their button. Nothing to install.</p>';
     h += '<div class="lw-foot"><button type="button" class="lw-next lw-ghost" onclick="LW.done()">' + (n && d === n ? "All done — see my items" : "Finish later — it's saved") + '</button></div>';
     h += '</div>';
     el.innerHTML = h;
@@ -767,27 +801,17 @@
       (done ? '<span class="lw-mode auto">Posted · marked by you</span>' : (id === "ebay" && EBAY_LIVE ? '<span class="lw-mode auto">Direct post available</span>' : '<span class="lw-mode">To do · about 1 min</span>')) +
       '</span><span class="lw-pc-st' + (done ? " ok" : "") + (open ? " up" : "") + '">' + (done ? ICON.check : ICON.chev) + '</span></button>';
     if (!open) return '<div class="lw-pc' + (done ? " done" : "") + '" id="lw-pc-' + id + '">' + head + '</div>';
-    var canShare = !!(navigator.canShare && navigator.share);
-    var catP = shopCat(path, id), desc = shopDesc(id, l);
     var b = '<div class="lw-pc-b">';
+    b += '<p class="lw-hint">Opens ' + esc(s.name) + ' with the title and price copied.</p>';
     if (id === "ebay" && EBAY_LIVE) {
-      b += '<div class="lw-pstep"><span class="lw-pn">★</span><div><b>Post directly to eBay</b><small>Your eBay account is connected, so we can create it for you.</small><button type="button" class="lw-btn lw-btn-acc lw-btn-sm" onclick="LW.ebay()">Create on eBay</button><div id="xl-ebay-create-msg" class="lw-hint"></div></div></div>';
+      b += '<button type="button" class="lw-btn lw-btn-acc lw-btn-sm" onclick="LW.ebay()">Post on eBay</button><div id="xl-ebay-create-msg" class="lw-hint"></div>';
+    } else if (id === "ebay") {
+      b += '<button type="button" class="lw-btn lw-btn-acc lw-btn-sm" onclick="LW.connect(\'ebay\')">Connect eBay</button>';
+    } else if (id === "etsy") {
+      b += '<button type="button" class="lw-btn lw-btn-acc lw-btn-sm" onclick="LW.connect(\'etsy\')">Connect Etsy</button>';
     }
-    b += '<div class="lw-pstep' + (fl.photos ? " ok" : "") + '"><span class="lw-pn">' + (fl.photos ? ICON.check : "1") + '</span><div><b>Send the photos to ' + esc(s.name) + '</b>' +
-      '<small>' + (canShare ? "Opens your share sheet — pick the " + esc(s.name) + " app. The description is copied at the same time." : "This browser can't hand photos to apps. Save them, then add them on " + esc(s.name) + ".") + '</small>' +
-      '<button type="button" class="lw-btn lw-btn-acc lw-btn-sm" data-v="' + id + '" onclick="LW.share(this.getAttribute(\'data-v\'))">' + ICON.share + (canShare ? " Share photos" : " Save photos") + '</button></div></div>';
-    b += '<div class="lw-pstep' + (fl.opened ? " ok" : "") + '"><span class="lw-pn">' + (fl.opened ? ICON.check : "2") + '</span><div><b>Open ' + esc(s.name) + ' and paste</b><small>Tap a line to copy it, then paste it into the matching box.</small>' +
-      '<a class="lw-btn lw-btn-soft lw-btn-sm" href="' + esc(s.sell) + '" target="_blank" rel="noopener" data-v="' + id + '" onclick="LW.opened(this.getAttribute(\'data-v\'))">Open ' + esc(s.name) + ' ' + ICON.ext + '</a></div></div>';
-    b += '<div class="lw-fields">' +
-      (s.noTitle ? "" : fieldRow("Title", shopTitle(id, l), id + ":title")) +
-      fieldRow("Description", desc.length > 110 ? desc.slice(0, 108).replace(/\s+\S*$/, "") + "…" : desc, id + ":desc") +
-      fieldRow("Price", String(Number(l.price) || ""), id + ":price") +
-      fieldRow(id === "ebay" ? "Category (eBay id)" : "Category", catP || pathLabel(path), id + ":cat") +
-      fieldRow("Brand", l.brand, id + ":brand") +
-      fieldRow("Size", l.size, id + ":size") +
-      fieldRow("Condition", condFor(id, l), id + ":cond") +
-      fieldRow("Colour", l.color, id + ":color") + '</div>';
-    b += '<div class="lw-pstep last"><span class="lw-pn">3</span><div><b>Posted it?</b><small>Tell us so your list stays honest.</small>' +
+    b += '<button type="button" class="lw-btn lw-btn-soft lw-btn-sm" data-v="' + id + '" onclick="LW.handOff(this.getAttribute(\'data-v\'))">Open ' + esc(s.name) + '</button>';
+    b += '<div class="lw-pstep last"><span class="lw-pn">✓</span><div><b>Posted it?</b><small>Only tap this after you see it live on ' + esc(s.name) + '.</small>' +
       (done ? '<button type="button" class="lw-btn lw-btn-soft lw-btn-sm" data-v="' + id + '" onclick="LW.mark(this.getAttribute(\'data-v\'),0)">Undo — not posted yet</button>'
         : '<button type="button" class="lw-btn lw-btn-dark lw-btn-sm" data-v="' + id + '" onclick="LW.mark(this.getAttribute(\'data-v\'),1)">' + ICON.check + ' Yes, it\'s live on ' + esc(s.name) + '</button>') + '</div></div>';
     b += '</div>';
@@ -843,6 +867,20 @@
     renderPost(false);
     var c = P.open && $id("lw-pc-" + P.open); if (c) c.scrollIntoView({ block: "start", behavior: "smooth" });
   }
+  function connect(id) {
+    if (id === "etsy") { window.location.href = "/api/etsy/oauth/start"; return; }
+    if (id === "ebay" && typeof xlEbayConnectStart === "function") { xlEbayConnectStart(); return; }
+    say("That connect isn’t available.");
+  }
+  function handOff(id) {
+    var s = shopById(id); if (!s || !P) return;
+    var l = P.l;
+    var text = [l.title, "$" + (Number(l.price) || 0), l.size ? ("Size " + l.size) : "", l.condition || "", l.description || ""].filter(Boolean).join("\n");
+    var go = function () { window.open(s.sell, "_blank", "noopener"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { say("Copied. Paste it into " + s.name + " and press Post."); go(); }).catch(go);
+    } else go();
+  }
   function openShop(id) { P.open = P.open === id ? "" : id; renderPost(false); var c = $id("lw-pc-" + id); if (c) c.scrollIntoView({ block: "start" }); try { window.scrollBy(0, -((parseInt(getComputedStyle(root).getPropertyValue("--mh"), 10) || 0) + 8)); } catch (e) {} }
   function addShop(id) { P.shops.push(id); try { localStorage.setItem("fash_lw_post_" + P.l.id, JSON.stringify(P.shops)); } catch (e) {} openShop(id); }
   function ebay() { try { xlEbayCreateListingFromId(Number(P.l.id)); } catch (e) { say("eBay direct posting isn't available right now."); } }
@@ -879,10 +917,10 @@
   window.LW = {
     mount: mount, mounted: function () { var e = $id("lw"); return !!(e && W && !e.classList.contains("lw-post")); },
     addPhotoB64: addPhotoB64, files: files, pick: pick, sample: sample, sel: sel, cover: cover, move: move, remove: remove, clean: clean, identify: identify,
-    set: set, catOpen: catOpen, catDept: catDept, catSearch: catSearch, catSet: catSet, cond: cond, size: size, sizeOther: sizeOther, color: color,
+    set: set, kind: kind, catOpen: catOpen, catDept: catDept, catSearch: catSearch, catSet: catSet, cond: cond, size: size, sizeOther: sizeOther, color: color,
     price: price, bump: bump, ship: ship, shop: shop,
     next: next, back: back, to: to, reset: reset, help: help,
-    post: post, copy: copy, share: share, opened: opened, mark: mark, openShop: openShop, addShop: addShop, ebay: ebay, view: view, done: doneBtn, edit: edit,
+    post: post, copy: copy, share: share, opened: opened, mark: mark, openShop: openShop, handOff: handOff, connect: connect, addShop: addShop, ebay: ebay, view: view, done: doneBtn, edit: edit,
     _state: function () { return { W: W, photos: PHOTOS.length, P: P ? { id: P.l.id, shops: P.shops, open: P.open } : null }; },
     SHOPS: SHOPS, COND: COND
   };

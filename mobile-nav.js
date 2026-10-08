@@ -30,10 +30,13 @@
       bar.addEventListener("click", function (e) {
         var a = e.target.closest && e.target.closest("a[data-mt]"); if (!a) return;
         var id = a.getAttribute("data-mt");
-        if (id === "l-home") { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }
-        if (id === "l-sell" || id === "l-acct") {
+        if (id === "l-shop" || id === "l-sell") {
           e.preventDefault();
-          try { if (window.authTab) authTab(id === "l-sell" ? "signup" : "login"); } catch (x) {}
+          if (window.enterBrowse) enterBrowse(id === "l-shop" ? "shop" : "sell");
+        }
+        if (id === "l-acct") {
+          e.preventDefault();
+          try { if (window.authTab) authTab("login"); } catch (x) {}
           var c = document.querySelector(".land-card"); if (c) c.scrollIntoView({ behavior: "smooth", block: "center" });
         }
       });
@@ -41,11 +44,13 @@
     if (want === mode) return;
     mode = want;
     bar.innerHTML = want === "app"
-      ? tab("home", "Home", "home", "javascript:go('home')") + tab("shop", "Shop", "shop", "javascript:go('shop')") +
-        tab("snap", "Sell", "cam", "javascript:go('snap')", " mt-center") + tab("tryon", "Try on", "tryon", "/try-on/") +
+      ? tab("shop", "Shop", "shop", "javascript:go('shop')") +
+        tab("snap", "Sell", "cam", "javascript:go('snap')", " mt-center") +
+        tab("tryon", "Try on", "tryon", "/try-on/") +
         tab("more", "Account", "user", "javascript:go('more')")
-      : tab("l-home", "Home", "home", "#") + tab("l-tryon", "Try on", "tryon", "/try-on/") +
-        tab("l-sell", "Sell", "cam", "#", " mt-center") + tab("l-room", "Room", "room", "/see-in-space/") +
+      : tab("l-shop", "Shop", "shop", "#") +
+        tab("l-sell", "Sell", "cam", "#", " mt-center") +
+        tab("l-tryon", "Try on", "tryon", "/try-on/") +
         tab("l-acct", "Sign in", "user", "#");
     root.classList.toggle("mt-app", want === "app");
     root.classList.toggle("mt-land", want === "land");
@@ -59,7 +64,7 @@
     /* current view as an attribute: CSS shows the "What's next" coach bar on Home only */
     var mv = v || "other";
     if (root.getAttribute("data-mtv") !== mv) root.setAttribute("data-mtv", mv);
-    var map = { home: "home", shop: "shop", snap: "snap", more: "more" };
+    var map = { shop: "shop", snap: "snap", sell: "snap", more: "more" };
     [].forEach.call(bar.querySelectorAll("a[data-mt]"), function (a) {
       var hit = a.getAttribute("data-mt") === map[v];
       a.classList.toggle("on", hit);
