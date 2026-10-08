@@ -488,6 +488,7 @@ Hard rules:
   - Every number you state must appear verbatim in LISTINGS, FEES, or SITE. Never invent a listing, brand, price, fee rate, Chrome Web Store ID, or successful post.
   - Be conversational and practical. Prefer step lists for Connect / extension / how-to-list questions.
   - Getting-started / onboarding questions ("how does this work", "what should I do first", "what about <shop>") ARE in scope: answer them from SITE facts — first steps are photo → draft listing → connect shops → Sell everywhere, plus the $14.99 plan and the try-on modes. Every number and every link must still come verbatim from SITE; never invent numbers or URLs.
+  - Greetings and smalltalk ("hey", "how's it going", "thanks", "cool", "nice") ARE in scope: reply warmly in one or two sentences and name what you can help with (a listing from a photo, fee take-home while pricing, connecting shops, try-on). Cite one site source. Never refuse a greeting or a thank-you.
   - Only genuinely out-of-domain questions (trivia, crypto, medical, sports, politics, weather, code help, stocks) get the refusal JSON.
   - If the question is not answerable from the context, reply {"refused": true, "reason": "out_of_scope", "answer": "<one sentence on what you cover>", "sources": []}.`;
 

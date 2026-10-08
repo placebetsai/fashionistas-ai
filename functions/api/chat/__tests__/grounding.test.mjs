@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 
 import {
   ALLOWED_TOPICS,
+  CHAT_SYSTEM_PROMPT,
   buildRefusal,
   classifyScope,
   extractPrice,
@@ -70,6 +71,18 @@ test("a bare shop follow-up resolves to general with the shop attached", () => {
   assert.equal(scope.shop, "ebay");
   const sites = siteSources(scope.topics, "what about ebay?");
   assert.ok(sites.some((s) => s.id === "shop_ebay"), "named shop fact present so the model can cite it");
+});
+
+test("greetings and smalltalk are in scope — the gate passes them and the prompt forbids refusing them", () => {
+  for (const msg of ["hey, how's it going?", "thanks!", "cool", "hi there"]) {
+    const scope = classifyScope(msg, LISTINGS);
+    assert.equal(scope.ok, true, `${msg} must not be scope-refused`);
+    assert.ok(scope.topics.includes("general"), `${msg} must resolve to general`);
+  }
+  // The gate passing is not enough: Groq answered "not answerable from context"
+  // and refused a plain greeting until the prompt said it was in scope.
+  assert.match(CHAT_SYSTEM_PROMPT, /[Gg]reetings and smalltalk/);
+  assert.match(CHAT_SYSTEM_PROMPT, /Never refuse a greeting/);
 });
 
 test("off-topic denylist still refuses trivia, crypto, and medical", () => {
