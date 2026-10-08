@@ -1921,6 +1921,34 @@ async function xlExport(ev, name){
 }
 
 /* ================= HOME ================= */
+/* Background layer for a card: a drifting field of letters/words that are
+   relevant to what that card says (SELL/TAG for stock, SOLD for sales,
+   $/% for money, real shop names for sources). Built once, CSS animates it. */
+function fxBg(words){
+ return `<div class="fx-bg" aria-hidden="true">${words.map((w,i)=>{
+   const t = 5 + ((i*29) % 72), l = 3 + ((i*37) % 76);
+   const dly = (i*1.35).toFixed(2), dur = (11 + (i%4)*2.5).toFixed(1);
+   const fs = i % 2 ? 13 : 17;
+   return `<span style="--t:${t}%;--l:${l}%;--dly:${dly}s;--dur:${dur}s;--fs:${fs}px">${escapeHtml(w)}</span>`;
+ }).join("")}</div>`;
+}
+
+/* Kinetic titles: split a [data-kt] heading into per-letter spans that rise in.
+   aria-label keeps the real text for screen readers; letters are aria-hidden. */
+function ktSplit(root){
+ const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+ (root||document).querySelectorAll("[data-kt]").forEach(el=>{
+   if (el.__ktDone) return;
+   el.__ktDone = 1;
+   const txt = el.textContent;
+   el.setAttribute("aria-label", txt);
+   el.innerHTML = [...txt].map((ch,i)=>
+     `<i aria-hidden="true" style="animation-delay:${(i*0.045).toFixed(3)}s">${(ch===" "||ch==="\u00A0")?"&nbsp;":escapeHtml(ch)}</i>`
+   ).join("");
+   if (reduce) el.querySelectorAll("i").forEach(n=>{ n.style.animation = "none"; });
+ });
+}
+
 async function renderHome(el){
  if (!TOKEN || !USER) {
    el.innerHTML = roleSwitchHtml() + renderAuthPrompt("Log in to see your home screen", "Sign in to see your sales, active listings and daily profit.");
@@ -1940,27 +1968,30 @@ async function renderHome(el){
  </div>
  <button type="button" class="btn btn-accent ux-big" onclick="go('snap')"><svg class='i16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='6' width='18' height='14' rx='3'/><path d='M8.5 6 10 3.5h4L15.5 6'/><circle cx='12' cy='13' r='3.8'/></svg> Sell an item</button>
  <div class="three">
- <div class="card" style="margin:0;text-align:center" data-tip="Items you could sell right now — open My clothes to see them."><div class="stat"><b data-count="${Number(st.activeListings)||0}">0</b><span>For sale</span></div></div>
- <div class="card" style="margin:0;text-align:center" data-tip="How many items you've sold so far."><div class="stat"><b data-count="${Number(st.sales)||0}">0</b><span>Sold</span></div></div>
- <div class="card" style="margin:0;text-align:center" data-tip="What you actually kept after fees, postage and what it cost you."><div class="stat"><b data-count="${Number(st.profit)||0}" data-pre="$" data-dec="2">$0.00</b><span>Profit</span></div></div>
+ <div class="card fx fx-sale" style="margin:0;text-align:center" data-tip="Items you could sell right now — open My clothes to see them.">${fxBg(["SELL","LIST","TAG","NEW","FOR SALE","HANG"])}<div class="stat"><svg class="fx-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 12 4.8H4.8V12l8.6 8.6a2 2 0 0 0 2.8 0l4.4-4.4a2 2 0 0 0 0-2.8Z"/><circle cx="8.4" cy="8.4" r="1.4"/></svg><b data-count="${Number(st.activeListings)||0}">0</b><span>For sale</span></div></div>
+ <div class="card fx fx-sold" style="margin:0;text-align:center" data-tip="How many items you've sold so far.">${fxBg(["SOLD","SHIPPED","SOLD","DONE","SOLD","\u2713"])}<div class="stat"><svg class="fx-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.2 12.4 2.6 2.6 5-5.6"/></svg><b data-count="${Number(st.sales)||0}">0</b><span>Sold</span></div></div>
+ <div class="card fx fx-money" style="margin:0;text-align:center" data-tip="What you actually kept after fees, postage and what it cost you.">${fxBg(["$","%","PROFIT","$","+","KEPT"])}<div class="stat"><svg class="fx-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.7 9.3c-.6-.9-1.7-1.4-2.8-1.4-1.6 0-2.7.8-2.7 2 0 2.7 5.7 1.3 5.7 4.1 0 1.3-1.2 2.1-2.9 2.1-1.3 0-2.5-.5-3.1-1.5M12 6.1v1.5M12 16.3v1.5"/></svg><b data-count="${Number(st.profit)||0}" data-pre="$" data-dec="2">$0.00</b><span>Profit</span></div></div>
  </div>
- <div class="card">
- <h3 style="margin-top:0">Money in · last 30 days</h3>
+<div class="card fx fx-money">
+<h3 class="kt-sheen" data-kt style="margin-top:0">Money in</h3>
+  ${fxBg(["$","MONEY IN","+","CASH","$","\u2191"])}
  ${await revenueChart(a.byDay||[])}
  </div>
- <div class="card">
- <h3 style="margin-top:0">Where your sales came from</h3>
+<div class="card fx fx-shops">
+<h3 class="kt-sheen" data-kt style="margin-top:0">Where your sales came from</h3>
+  ${fxBg((a.byPlatform||[]).slice(0,4).map(r=>String(r.platform||"").toUpperCase()).concat(["DEPOP","POSHMARK"]))}
  ${renderPlatforms(a.byPlatform||[])}
  </div>
- <div class="card">
- <h3 style="margin-top:0">Shortcuts</h3>
+<div class="card fx fx-sale">
+<h3 class="kt-sheen" data-kt style="margin-top:0">Shortcuts</h3>
+  ${fxBg(["SNAP IT","TAP","LIST","GO","SELL","\u2192"])}
  <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
  <button class="btn btn-soft" data-tip="Everything you're selling — search it, sort it, fix it." onclick="go('closet')"><svg class='i16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2h7.8A2.5 2.5 0 0 1 21 9.5v7A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5z'/></svg> See my clothes</button>
  <button class="btn btn-soft" data-tip="No camera handy? Type the details in yourself." onclick="openAdd()"><svg class='i16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 5v14M5 12h14'/></svg> Add without a photo</button>
  <button class="btn btn-soft" data-tip="Enter a price and see what's left after each shop takes its cut." onclick="go('sell')"><svg class='i16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3.5v17M7.5 20.5h9M4 8.5h16M7.5 8.5 4.5 15a3 3 0 0 0 6 0zM16.5 8.5l-3 6.5a3 3 0 0 0 6 0z'/></svg> What will I make?</button>
  </div>
  </div>`;
-  countUp(el); startHeroTick(); refreshTips();
+  countUp(el); ktSplit(el); startHeroTick(); refreshTips();
  } catch(e){
   if (e.message === "unauthorized") {
     el.innerHTML = roleSwitchHtml() + renderAuthPrompt("Session expired — please log in", "Your session has ended. Sign in to see your listings and profit.");
@@ -2009,7 +2040,14 @@ function startHeroTick(){
    const el = document.getElementById("hero-word");
    if (!el){ clearInterval(HERO_TICK); HERO_TICK = null; return; }
    el.classList.add("out");
-   setTimeout(()=>{ i = (i+1) % WORDS.length; el.textContent = WORDS[i]; el.classList.remove("out"); }, 420);
+   setTimeout(()=>{
+     i = (i+1) % WORDS.length;
+     const w = WORDS[i];
+     el.innerHTML = [...w].map((ch,ci)=>
+       `<i aria-hidden="true" style="display:inline-block;font-style:normal;animation:ktIn .5s cubic-bezier(.22,1,.36,1) ${(ci*0.04).toFixed(3)}s both">${ch===" "?"&nbsp;":escapeHtml(ch)}</i>`).join("");
+     el.setAttribute("aria-label", w);
+     el.classList.remove("out");
+   }, 420);
  }, 2400);
 }
 async function revenueChart(days){
@@ -2020,7 +2058,12 @@ async function revenueChart(days){
 }
 function renderPlatforms(rows){
  if (!rows.length) return `<div class="chart-empty"><svg viewBox="0 0 320 92" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="ceBars" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff4e3a" stop-opacity=".92"/><stop offset="1" stop-color="#c05cff" stop-opacity=".45"/></linearGradient></defs><g stroke="rgba(0,0,0,.07)" stroke-width="1"><path d="M0 23H320M0 46H320M0 69H320"/></g><g fill="url(#ceBars)"><rect class="bar-grow" style="animation-delay:.05s" x="26" y="50" width="42" height="34" rx="7"/><rect class="bar-grow" style="animation-delay:.13s" x="92" y="34" width="42" height="50" rx="7"/><rect class="bar-grow" style="animation-delay:.21s" x="158" y="58" width="42" height="26" rx="7"/><rect class="bar-grow" style="animation-delay:.29s" x="224" y="26" width="42" height="58" rx="7"/><rect class="bar-grow" style="animation-delay:.37s" x="278" y="46" width="34" height="38" rx="7"/></g></svg><p class="mut">Sales you write down show up here, shop by shop.</p></div>`;
- return rows.map((r,ri)=>`<div class="plat-row" style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);animation-delay:${(ri*0.06).toFixed(2)}s"><b>${r.platform||"other"}</b><span class="mut">${r.c} sales · ${money(r.rev)}</span></div>`).join("");
+ const maxRev = Math.max(...rows.map(r=>Number(r.rev)||0), 1);
+ return rows.map((r,ri)=>{
+  const share = Math.round(((Number(r.rev)||0)/maxRev)*100);
+  const d = (ri*0.09).toFixed(2);
+  return `<div class="plat-row" style="display:flex;flex-direction:column;padding:8px 0;border-bottom:1px solid var(--line);animation-delay:${d}s"><div style="display:flex;justify-content:space-between;gap:8px"><b>${r.platform||"other"}</b><span class="mut">${r.c} sales · ${money(r.rev)}</span></div><div class="plat-bar"><i style="--w:${share}%;animation-delay:${d}s"></i></div></div>`;
+ }).join("");
 }
 
 /* ================= CLOSET ================= */
