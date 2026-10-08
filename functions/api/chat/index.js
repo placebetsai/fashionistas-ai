@@ -205,7 +205,7 @@ async function handle(context) {
           code: "no_listings",
           answer:
             "You don't have any listings yet, so there is nothing to compare against. " +
-            "Write one with POST /api/listing and ask me again.",
+            "Add your first listing from a photo in the app, then ask me again and I can help with the title, price, and where to list it.",
           sources: [],
           topics: scope.topics,
           usage: await usageSnapshot(env, userId),

@@ -50,6 +50,35 @@ test("crypto and medical questions stay out of scope", () => {
   assert.equal(classifyScope("What dosage of ibuprofen for a headache?", LISTINGS).reason, "out_of_scope");
 });
 
+test("seller onboarding messages resolve to general instead of refusal", () => {
+  const a = classifyScope("i have 30 items to sell, what should i do first?", LISTINGS);
+  assert.equal(a.ok, true);
+  assert.ok(a.topics.includes("general"));
+  const b = classifyScope("how does this work? i have 30 items", LISTINGS);
+  assert.equal(b.ok, true);
+  assert.ok(b.topics.includes("general"));
+  const sites = siteSources(b.topics, "how does this work? i have 30 items");
+  for (const id of ["pricing_plan", "listing_from_photo", "connect_shops", "chrome_extension", "shops_overview"]) {
+    assert.ok(sites.some((s) => s.id === id), `general carries ${id} so the model can cite it`);
+  }
+});
+
+test("a bare shop follow-up resolves to general with the shop attached", () => {
+  const scope = classifyScope("what about ebay?", LISTINGS);
+  assert.equal(scope.ok, true);
+  assert.ok(scope.topics.includes("general"));
+  assert.equal(scope.shop, "ebay");
+  const sites = siteSources(scope.topics, "what about ebay?");
+  assert.ok(sites.some((s) => s.id === "shop_ebay"), "named shop fact present so the model can cite it");
+});
+
+test("off-topic denylist still refuses trivia, crypto, and medical", () => {
+  assert.equal(classifyScope("What's the capital of France?", LISTINGS).reason, "out_of_scope");
+  assert.equal(classifyScope("Should I buy Bitcoin this week?", LISTINGS).reason, "out_of_scope");
+  assert.equal(classifyScope("What dosage of ibuprofen for a headache?", LISTINGS).reason, "out_of_scope");
+  assert.equal(classifyScope("Who won the Super Bowl?", LISTINGS).reason, "out_of_scope");
+});
+
 test("a fee question resolves to the fee topic and pulls out the price", () => {
   const scope = classifyScope("If I sell at $48, what do I keep on Poshmark?", LISTINGS);
   assert.equal(scope.ok, true);

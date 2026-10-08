@@ -6,8 +6,10 @@
  *   1. Deterministic scope gate, BEFORE any model call. A question that is
  *      none of: the user's own listings, this repo's fee table, Connect /
  *      Multilist / extension setup, try-on modes, listing-from-photo, the
- *      $14.99 plan, or published shop how-to facts — gets a structured
- *      refusal and the model is never invoked.
+ *      $14.99 plan, or published shop how-to facts — is refused ONLY if it
+ *      also matches the explicit off-topic denylist (trivia, crypto, medical,
+ *      sports, politics, weather, code help, stocks). Anything else reaches
+ *      the model as "general" with core SITE facts to cite.
  *   2. Citation validation, AFTER the model call. Every source the model
  *      names is resolved against the sources this server actually supplied.
  *      An id the model invented is dropped; if nothing valid survives, the
@@ -31,6 +33,7 @@ export const ALLOWED_TOPICS = [
   "listing_from_photo",
   "pricing_plan",
   "how_to_list",
+  "general",
 ];
 
 /* ------------------------------------------------------------- scope gate */
@@ -64,6 +67,13 @@ const SHOP_NAMES_RE =
 
 const HOW_TO_LIST_RE =
   /\bhow\s+(?:do\s+i|to)\s+(?:list|sell|post|publish)\b|\b(?:list|sell|post|publish)\s+(?:on|to|in)\s+\w+\b|\b(?:listing|selling)\s+(?:on|to)\s+\w+\b|\b(?:depop|ebay|etsy|poshmark|mercari|vinted|grailed|facebook|kidizen|vestiaire|whatnot)\s+(?:how[- ]?to|guide|walkthrough|listing|tips?)\b|\bhow[- ]?to\s+(?:list|sell|use)\s+(?:on\s+)?(?:depop|ebay|etsy|poshmark|mercari|vinted|grailed|facebook|kidizen|vestiaire|whatnot)\b/i;
+
+// Explicitly off-domain: trivia, crypto, medical, pro-sports results,
+// politics/elections, weather, programming help, stock prices. Checked ONLY
+// when no in-scope topic fired, so a seller message that happens to share a
+// word is never refused by this pattern.
+const OFF_TOPIC_RE =
+  /\bcapital of\b|\btrivia\b|\b(bitcoin|crypto\w*|ethereum|dogecoin|blockchain|nft)\b|\b(dosage|prescription|ibuprofen|diagnos\w*|medical advice|side effects)\b|\bsuper bowl\b|\bworld cup\b|\bnba\b|\bnfl\b|\bmlb\b|\bnhl\b|\bufc\b|\bformula\s*1\b|\bpremier league\b|\b(elections?|presidential|senate|congress|parliament|democrats?|republicans?|prime minister|white house)\b|\bweather\b|\bforecast\b|\bstocks?\s+(?:prices?|market|quotes?|tickers?)\b|\bshare\s+prices?\b|\bnasdaq\b|\bs&p\b|\bticker\s+symbol\b|\b(write|debug|review|fix)\b.{0,30}\b(code|functions?|scripts?|programs?|python|javascript)\b|\b(python|javascript|typescript|stack\s*trace|coding\s+help|programming\s+help|help\s+me\s+code)\b/i;
 
 const STOPWORDS = new Set([
   "about", "after", "again", "against", "being", "below", "between", "brand", "color",
@@ -160,7 +170,13 @@ export function classifyScope(message, listings) {
   if (photoHit) topics.push("listing_from_photo");
   if (planHit) topics.push("pricing_plan");
   if (howToHit) topics.push("how_to_list");
-  if (topics.length === 0) return { ok: false, reason: "out_of_scope" };
+  if (topics.length === 0) {
+    // Inverted default, gate still strict: only an explicit off-topic match is
+    // refused. A conversational / onboarding message ("how does this work? I
+    // have 30 items") reaches the model as "general" with SITE facts to cite.
+    if (OFF_TOPIC_RE.test(msg)) return { ok: false, reason: "out_of_scope" };
+    return { ok: true, topics: ["general"], price, shop };
+  }
   return { ok: true, topics, price, shop };
 }
 
@@ -303,7 +319,7 @@ const PRODUCT_FACTS = [
     title: "List from one photo",
     facts: [
       "Promise: photograph your closet / take one photo → AI item ID, price suggestion, fee take-home → Sell everywhere to connected shops.",
-      "In the app: snap or upload a photo to draft a listing (title, description, tags, price) via POST /api/listing — then Multilist posts.",
+      "In the app: snap or upload a photo to draft a listing (title, description, tags, price) — then Multilist shares it to your connected shops.",
       "Seller checklist also covers connect shops → photo set → price with fee calculator → Sell everywhere (/guide/).",
       "Do not claim a listing already posted — status chips (queued/posting/posted) only after a real extension or API job.",
     ],
@@ -329,7 +345,7 @@ const PRODUCT_FACTS = [
       "Chrome Web Store ID is not published yet (FASH_EXT_IDS is empty on purpose). Supported today: download /chrome-store/fashionistas-extension-v1.0.1.zip → chrome://extensions → Developer mode → Load unpacked → folder with manifest.json.",
       "Keep browsing https://fashionistas.ai in that same Chrome profile; Re-check / auto-detect stores the extension id. Advanced: paste the 32-character ID from Chrome → Extensions → Details.",
       "Then: Multilist → tick shops → Sell everywhere. Live status: queued → posting → posted (View URL when captured) or failed / capped.",
-      "Without the extension: eBay/Etsy server /api/list/* need Stripe + secrets (402/503 when empty); other shops get clipboard + open-form handoff.",
+      "Without the extension: eBay/Etsy posting from our servers needs your own keys plus a Stripe-backed setup, and stays off until those are added; other shops get clipboard + open-form handoff.",
       "Never invent Stripe keys or claim a post succeeded without a real posted status. See docs/MULTILIST-ONE-CLICK.md.",
     ],
   },
@@ -339,7 +355,7 @@ const PRODUCT_FACTS = [
     title: "Virtual try-on: Photoreal vs Instant",
     facts: [
       "Open /try-on/: add a photo of the person and a photo of the garment, then Try it on.",
-      "Photoreal · Pro: full render (fabric/drape/light), posts to /api/tryon/hd; needs Pro or a try-on credit; takes about a minute or two.",
+      "Photoreal · Pro: full render (fabric/drape/light); needs Pro or a try-on credit; takes about a minute or two.",
       "Instant · experimental overlay: on-device browser warp/composite for placement only — not photoreal; photos stay on the device; free.",
       "If Photoreal returns 402, Instant overlay remains available on-device.",
       "Download, save or share the render when it completes.",
@@ -352,7 +368,7 @@ const PRODUCT_FACTS = [
     facts: [
       "Eleven shops: Poshmark, Mercari, Depop, Vinted, Grailed, eBay, Etsy, Facebook Marketplace, Kidizen, Vestiaire Collective, Whatnot.",
       "Connect each shop once, then Sell everywhere posts to the ones you tick and shows queued / posting / posted.",
-      "Catalogue signup and create-listing URLs are published by GET /api/marketplaces — use those, do not invent URLs or keys.",
+      "Signup and create-listing links come from this app's shop catalogue — use those, do not invent URLs or keys.",
     ],
   },
 ];
@@ -409,7 +425,25 @@ export function siteSources(topics, message) {
     }
   }
 
-  if (set.has("how_to_list") || set.has("connect_shops")) {
+  // "general" (onboarding / getting-started) always carries a compact core
+  // fact set so the model has something real to cite — citation validation
+  // fails closed with 502 when the model cites nothing.
+  if (set.has("general")) {
+    for (const id of ["pricing_plan", "listing_from_photo", "connect_shops", "chrome_extension", "shops_overview"]) {
+      const fact = PRODUCT_FACTS.find((f) => f.id === id);
+      if (fact) {
+        push({
+          type: "site",
+          id: fact.id,
+          topic: fact.topics[0],
+          title: fact.title,
+          facts: fact.facts.slice(),
+        });
+      }
+    }
+  }
+
+  if (set.has("how_to_list") || set.has("connect_shops") || (set.has("general") && shopId)) {
     if (shopId) {
       const m = MARKETPLACES.find((x) => x.id === shopId);
       if (m) push(shopSiteFact(m));
@@ -453,6 +487,8 @@ Hard rules:
   - "sources" must list at least one context id you actually used: listing ids are numbers, fee ids are strings like "poshmark", site ids are strings like "try_on" or "shop_depop".
   - Every number you state must appear verbatim in LISTINGS, FEES, or SITE. Never invent a listing, brand, price, fee rate, Chrome Web Store ID, or successful post.
   - Be conversational and practical. Prefer step lists for Connect / extension / how-to-list questions.
+  - Getting-started / onboarding questions ("how does this work", "what should I do first", "what about <shop>") ARE in scope: answer them from SITE facts — first steps are photo → draft listing → connect shops → Sell everywhere, plus the $14.99 plan and the try-on modes. Every number and every link must still come verbatim from SITE; never invent numbers or URLs.
+  - Only genuinely out-of-domain questions (trivia, crypto, medical, sports, politics, weather, code help, stocks) get the refusal JSON.
   - If the question is not answerable from the context, reply {"refused": true, "reason": "out_of_scope", "answer": "<one sentence on what you cover>", "sources": []}.`;
 
 const SOURCE_TYPES = new Set(["listing", "fee", "site"]);
