@@ -30,6 +30,12 @@
 .to-zone .to-ic{width:38px;height:38px;border-radius:50%;background:rgba(179,71,31,.1);display:flex;align-items:center;justify-content:center}
 .to-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
 .to-name{font-size:12px;color:var(--mut);word-break:break-all}
+.to-closet{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.to-closet-l{font-size:12.5px;color:var(--mut);width:100%}
+.to-closet-item{position:relative;flex:0 0 auto;width:58px;height:58px;padding:0;border:2px solid var(--line);border-radius:12px;background:#faf7f3;overflow:hidden;cursor:pointer}
+.to-closet-item img{width:100%;height:100%;object-fit:cover;display:block}
+.to-closet-item.on{border-color:#b3471f;box-shadow:0 0 0 3px rgba(179,71,31,.14)}
+.to-closet-item:focus-visible{outline:2px solid #b3471f;outline-offset:2px}
 .to-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center}
 .to-btn{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:11px 16px;font-weight:700;font:inherit;font-size:14px;cursor:pointer}
 .to-btn:hover{border-color:var(--accent);color:var(--accent)}
@@ -227,7 +233,7 @@
 
 <span class="badge to-badge">AI virtual try-on</span>
 <h1 class="to-h1" aria-label="See it on you before you list it"><span class="w" style="--i:0" aria-hidden="true">See</span> <span class="w" style="--i:1" aria-hidden="true">it</span> <span class="w" style="--i:2" aria-hidden="true">on</span> <span class="w sh" style="--i:3" aria-hidden="true">you</span> <span class="w" style="--i:4" aria-hidden="true">before</span> <span class="w sh" style="--i:5" aria-hidden="true">you</span> <span class="w" style="--i:6" aria-hidden="true">list</span> <span class="w" style="--i:7" aria-hidden="true">it</span></h1>
-<p class="lede to-lede">Add a photo of the person and a photo of the piece, press <b>Try it on</b>, and see it worn. Download it, save it or share it when you like what you see.</p>
+<p class="lede to-lede">Add a photo of yourself — when you're signed in we pull the clothing straight from your own listing, so one upload is all it takes. Press <b>Try it on</b>, and see it worn. Download it, save it or share it when you like what you see.</p>
 
 <div class="to-rot">
  <span>Works on any piece</span>
@@ -251,6 +257,7 @@
    <input type="file" id="file-garment" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose the garment photo">
   </div>
  </div>
+ <div class="to-closet" id="closet-strip" hidden><span class="to-closet-l">Your listings</span></div>
 
  <div class="to-kind" role="radiogroup" aria-label="Garment type">
   <span class="to-kind-l">Garment type</span>
@@ -446,6 +453,110 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
         var t = qp.get("title"); if (t) say("Item loaded: " + t.slice(0, 80) + ". Now add a photo of yourself.", false);
       }).catch(function(){ say("Couldn't load the item photo automatically — save it from the listing and add it here.", false); });
     } catch (e) {}
+  })();
+
+  /* Seller flow: the item is ALREADY photographed — listings.photo_url lives on
+     the server (R2, served from /api/images/…). Prefill the garment from the
+     seller's own newest listing so the ONLY upload left is their own photo, and
+     offer a thumbnail strip to swap which piece is being tried on. Signed-out
+     visitors keep the manual picker; a garment chosen by hand is remembered
+     locally so the next visit is prefilled too. */
+  var API_HOST = "https://fashionistas-api.fashionistas1979.workers.dev";
+  var GARMENT_KEY = "fash_tryon_garment_v1";
+  var garmentPrefilled = false;
+
+  function rememberGarment(file){
+    try {
+      if (!file || file.size > 3000000) return;
+      readAsDataUrl(file).then(function(data){
+        if (data.length > 1500000) { try { localStorage.removeItem(GARMENT_KEY); } catch (e) {} return; }
+        try { localStorage.setItem(GARMENT_KEY, data); }
+        catch (e) { try { localStorage.removeItem(GARMENT_KEY); } catch (e2) {} }
+      });
+    } catch (e) {}
+  }
+
+  function restoreLastGarment(){
+    if (files.garment || garmentPrefilled) return;
+    var saved = null;
+    try { saved = localStorage.getItem(GARMENT_KEY); } catch (e) {}
+    if (!saved || saved.slice(0, 5) !== "data:") return;
+    try {
+      var comma = saved.indexOf(",");
+      var mime = saved.slice(5, comma).split(";")[0] || "image/jpeg";
+      var bin = atob(saved.slice(comma + 1)), n = bin.length, u8 = new Uint8Array(n);
+      for (var i = 0; i < n; i++) u8[i] = bin.charCodeAt(i);
+      setFile("garment", new File([u8], "last garment." + (mime.split("/")[1] || "jpg"), { type: mime }));
+      say("Clothing restored from your last try-on — now add a photo of yourself.", false);
+    } catch (e) {}
+  }
+
+  function loadItem(item){
+    return fetch(item.photo_url, { credentials: "omit" })
+      .then(function(r){ if (!r.ok) throw new Error("photo " + r.status); return r.blob(); })
+      .then(function(b){
+        if (!/^image\//.test(b.type || "")) throw new Error("not an image");
+        setFile("garment", new File([b], (item.title || "your item") + ".jpg", { type: b.type }));
+        garmentPrefilled = true;
+        say("Item loaded: " + String(item.title || "your item").slice(0, 70) + " — now add a photo of yourself.", false);
+        return item;
+      });
+  }
+
+  function renderStrip(items){
+    var strip = $("closet-strip");
+    if (!strip) return;
+    var label = strip.querySelector(".to-closet-l");
+    strip.innerHTML = "";
+    if (label) strip.appendChild(label);
+    if (!items.length) { strip.hidden = true; return; }
+    if (label) label.textContent = "Your listings — tap a photo to swap the clothing";
+    strip.hidden = false;
+    items.slice(0, 10).forEach(function(item, i){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "to-closet-item" + (i === 0 ? " on" : "");
+      b.setAttribute("aria-label", "Try on " + (item.title || "this listing"));
+      var im = document.createElement("img");
+      im.src = item.photo_url;
+      im.alt = item.title || "Your listing";
+      im.loading = "lazy";
+      b.appendChild(im);
+      b.addEventListener("click", function(){
+        Array.prototype.forEach.call(strip.querySelectorAll(".to-closet-item"), function(c){ c.classList.remove("on"); });
+        b.classList.add("on");
+        loadItem(item).catch(function(){ say("Couldn't load that photo — pick another, or add one below.", true); });
+      });
+      strip.appendChild(b);
+    });
+  }
+
+  (function prefillOwnCloset(){
+    if (new URLSearchParams(location.search).get("item")) return; // buyer link already loads it
+    var token = null;
+    try { token = localStorage.getItem("fash_token"); } catch (e) {}
+    if (!token) { restoreLastGarment(); return; }
+    fetch(API_HOST + "/api/listings", { headers: { authorization: "Bearer " + token } })
+      .then(function(r){ if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+      .then(function(d){
+        var rows = (d && d.listings) || [];
+        var items = rows.filter(function(x){ return x && x.photo_url; });
+        if (!items.length) { restoreLastGarment(); return; }
+        renderStrip(items);
+        return loadItem(items[0]);
+      })
+      .catch(function(){ restoreLastGarment(); });
+  })();
+
+  // A garment picked by hand is remembered for next time (additive listener —
+  // the original change handler still runs setFile).
+  (function hookGarmentInput(){
+    var input = $("file-garment");
+    if (!input) return;
+    input.addEventListener("change", function(){
+      var f = this.files && this.files[0];
+      if (f) rememberGarment(f);
+    });
   })();
 
   function readAsDataUrl(blob){
