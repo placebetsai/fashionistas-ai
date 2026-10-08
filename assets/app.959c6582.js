@@ -1973,17 +1973,17 @@ async function renderHome(el){
  <div class="card fx fx-money" style="margin:0;text-align:center" data-tip="What you actually kept after fees, postage and what it cost you.">${fxBg(["$","%","PROFIT","$","+","KEPT"])}<div class="stat"><svg class="fx-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.7 9.3c-.6-.9-1.7-1.4-2.8-1.4-1.6 0-2.7.8-2.7 2 0 2.7 5.7 1.3 5.7 4.1 0 1.3-1.2 2.1-2.9 2.1-1.3 0-2.5-.5-3.1-1.5M12 6.1v1.5M12 16.3v1.5"/></svg><b data-count="${Number(st.profit)||0}" data-pre="$" data-dec="2">$0.00</b><span>Profit</span></div></div>
  </div>
 <div class="card fx fx-money">
-<h3 class="kt-sheen" data-kt style="margin-top:0">Money in</h3>
+<h3 class="kt kt-sheen" data-kt style="margin-top:0">Money in · last 30 days</h3>
   ${fxBg(["$","MONEY IN","+","CASH","$","\u2191"])}
  ${await revenueChart(a.byDay||[])}
  </div>
 <div class="card fx fx-shops">
-<h3 class="kt-sheen" data-kt style="margin-top:0">Where your sales came from</h3>
+<h3 class="kt kt-sheen" data-kt style="margin-top:0">Where your sales came from</h3>
   ${fxBg((a.byPlatform||[]).slice(0,4).map(r=>String(r.platform||"").toUpperCase()).concat(["DEPOP","POSHMARK"]))}
  ${renderPlatforms(a.byPlatform||[])}
  </div>
 <div class="card fx fx-sale">
-<h3 class="kt-sheen" data-kt style="margin-top:0">Shortcuts</h3>
+<h3 class="kt kt-sheen" data-kt style="margin-top:0">Shortcuts</h3>
   ${fxBg(["SNAP IT","TAP","LIST","GO","SELL","\u2192"])}
  <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
  <button class="btn btn-soft" data-tip="Everything you're selling — search it, sort it, fix it." onclick="go('closet')"><svg class='i16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2h7.8A2.5 2.5 0 0 1 21 9.5v7A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5z'/></svg> See my clothes</button>
