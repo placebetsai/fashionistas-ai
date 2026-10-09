@@ -96,8 +96,8 @@ async function doSignup(){
  afterAuth(d);
  } catch(e){ toast(e.message); }
 }
-function afterAuth(d){ TOKEN = (d && d.token) || ""; USER = (d && d.user) || (d && d.id ? { id: d.id, email: d.email, username: d.username || d.email } : null); if (TOKEN) localStorage.setItem("fash_token", TOKEN); else localStorage.removeItem("fash_token"); localStorage.setItem("fash_user", JSON.stringify(USER)); $("#view-auth").classList.add("hidden"); $("#view-app").classList.remove("hidden"); $("#tabbar").classList.remove("hidden"); $("#guide-fab").classList.remove("hidden"); go("home"); const who = (USER && (USER.username || USER.email)) || "you"; toast("Signed in as " + who + " — next: Connect your shop, then Sell to post an item.", 6000); }
-function logout(){ TOKEN = ""; USER = null; localStorage.removeItem("fash_token"); localStorage.removeItem("fash_user"); $("#view-app").classList.add("hidden"); $("#tabbar").classList.add("hidden"); $("#guide-fab").classList.add("hidden"); guideToggle(false); $("#view-auth").classList.remove("hidden"); }
+function afterAuth(d){ TOKEN = (d && d.token) || ""; USER = (d && d.user) || (d && d.id ? { id: d.id, email: d.email, username: d.username || d.email } : null); if (TOKEN) localStorage.setItem("fash_token", TOKEN); else localStorage.removeItem("fash_token"); localStorage.setItem("fash_user", JSON.stringify(USER)); $("#view-auth").classList.add("hidden"); $("#view-app").classList.remove("hidden"); $("#tabbar").classList.remove("hidden"); $("#guide-fab").classList.remove("hidden"); go("home"); syncSessionChrome(); const who = (USER && (USER.username || USER.email)) || "you"; toast("Signed in as " + who + " — next: Connect your shop, then Sell to post an item.", 6000); }
+function logout(){ TOKEN = ""; USER = null; localStorage.removeItem("fash_token"); localStorage.removeItem("fash_user"); $("#view-app").classList.add("hidden"); $("#tabbar").classList.add("hidden"); $("#guide-fab").classList.add("hidden"); guideToggle(false); $("#view-auth").classList.remove("hidden"); syncSessionChrome(); }
 
 /* Session restore: the stored token is checked once at boot so a signed-in user
    is never silently dumped back at the sign-in screen, and a dead one is
@@ -193,6 +193,12 @@ function syncSessionChrome(){
   var on = !!(TOKEN && USER);
   document.querySelectorAll("button").forEach(function(b){
     if ((b.getAttribute("onclick") || "").indexOf("logout(") !== -1) b.style.display = on ? "" : "none";
+  });
+  /* A guest who arrived at /shop/<id> from a link needs a door back into their
+     account: the chrome only ever offered "Sign out" (hidden for guests), so
+     nobody could sign in without going back to the landing page. */
+  document.querySelectorAll("#signin-btn, #drawer-signin").forEach(function(b){
+    b.style.display = on ? "none" : "";
   });
 }
 function enterBrowse(v){

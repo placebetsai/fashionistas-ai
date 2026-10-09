@@ -148,6 +148,20 @@ test("description falls back to facts when the listing has no blurb", () => {
   assert.equal(listingDescription(null), "");
 });
 
+test("a guest who arrived from a link can sign in from inside the app", () => {
+  const html = readFileSync(join(ROOT, "index.html"), "utf8");
+  assert.match(html, /id="signin-btn" onclick="showAuth\('login'\)"/, "topbar door");
+  assert.match(html, /id="drawer-signin" onclick="navDrawer\(false\);showAuth\('login'\)"/, "drawer door");
+  // chrome flips both ways: hidden when signed in, visible for guests
+  assert.match(src, /document\.querySelectorAll\("#signin-btn, #drawer-signin"\)/);
+  assert.match(src, /b\.style\.display = on \? "none" : "";/);
+  // and the flip runs on login and on logout, not just at boot
+  const auth = src.slice(src.indexOf("function afterAuth(d){"), src.indexOf("function logout(){"));
+  assert.match(auth, /syncSessionChrome\(\)/);
+  const out = src.slice(src.indexOf("function logout(){"), src.indexOf("/* Session restore"));
+  assert.match(out, /syncSessionChrome\(\)/);
+});
+
 test("the sitemap lists live items as /shop/<id>", () => {
   assert.match(sitemapFn, /\/shop\/\$\{Number\(it\.id\)\}/);
   assert.match(sitemapFn, /<\/urlset>/, "appends into the existing urlset");
