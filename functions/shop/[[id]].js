@@ -34,7 +34,12 @@ export async function onRequestGet(context) {
 
   if (!idStr) {
     return new Response(
-      injectHead(body, `<title>Shop — fashionistas.ai</title><meta name="description" content="Everything for sale on fashionistas.ai — clothing, decor and objects listed by real sellers. One photo in, every shop updated.">`),
+      injectHead(
+        body,
+        `<title>Shop — fashionistas.ai</title>` +
+          `<meta name="description" content="Everything for sale on fashionistas.ai — clothing, decor and objects listed by real sellers. One photo in, every shop updated.">` +
+          `<link rel="canonical" href="${origin}/shop">`
+      ),
       { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" } }
     );
   }
@@ -63,10 +68,13 @@ export async function onRequestGet(context) {
   }
 
   if (!listing) {
+    // Dead item: honest 404 + noindex (the shell's "index, follow" is stripped
+    // by the robots rule, so we never ask a crawler to keep a sold-out page).
+    // Unreachable API: plain 200 shell, no claim either way.
     const head = missing
-      ? `<title>Item no longer for sale — fashionistas.ai</title><meta name="robots" content="noindex">`
-      : "";
-    return new Response(injectHead(body, head || `<title>fashionistas.ai — Photograph Your Closet, Sell It Everywhere</title>`, { noindex: missing }), {
+      ? `<title>Item no longer for sale — fashionistas.ai</title>`
+      : `<title>fashionistas.ai — Photograph Your Closet, Sell It Everywhere</title>`;
+    return new Response(injectHead(body, head, { noindex: missing }), {
       status: missing ? 404 : 200,
       headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": missing ? "public, max-age=60" : "no-store" },
     });

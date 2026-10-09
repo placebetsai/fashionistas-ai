@@ -34,6 +34,7 @@ export function itemHead(l, origin) {
   const url = `${origin}/shop/${Number(l.id)}`;
   const title = `${l.title || "Listing"}${l.price ? ` · $${Number(l.price)}` : ""} — fashionistas.ai`;
   const desc = listingDescription(l);
+  const image = l.photo_url || "https://fashionistas.ai/og.png";
   const tags = [
     `<title>${esc(title)}</title>`,
     `<meta name="description" content="${esc(desc)}">`,
@@ -43,14 +44,12 @@ export function itemHead(l, origin) {
     `<meta property="og:title" content="${esc(title)}">`,
     `<meta property="og:description" content="${esc(desc)}">`,
     `<meta property="og:url" content="${esc(url)}">`,
+    `<meta property="og:image" content="${esc(image)}">`,
     `<meta name="twitter:card" content="summary_large_image">`,
     `<meta name="twitter:title" content="${esc(title)}">`,
     `<meta name="twitter:description" content="${esc(desc)}">`,
+    `<meta name="twitter:image" content="${esc(image)}">`,
   ];
-  if (l.photo_url) {
-    tags.push(`<meta property="og:image" content="${esc(l.photo_url)}">`);
-    tags.push(`<meta name="twitter:image" content="${esc(l.photo_url)}">`);
-  }
   const seller = (l.seller && (l.seller.display_name || l.seller.username)) || "";
   tags.push(
     `<script type="application/ld+json">${jsonForScript({
@@ -75,15 +74,38 @@ export function itemHead(l, origin) {
 }
 
 /**
- * Replace the shell's <title> with the item's and append the rest just before
- * </head>. Keys on the shell's own marker so a double-inject can't stack.
+ * One owner per tag kind.
+ *
+ * The shell ships its own site-wide <title>, canonical, description and social
+ * tags. Appending ours beside them leaves two <title>s and two conflicting
+ * canonicals — crawlers ignore both or pick the wrong one — so each kind is
+ * stripped from the shell ONLY when this head supplies a replacement. When ours
+ * doesn't cover a kind (a 404 page has no product card), the shell's tag
+ * survives untouched.
  */
+const KINDS = [
+  ["title", /<title>[\s\S]*?<\/title>/gi, /<title>/i],
+  ["canonical", /<link[^>]*rel="canonical"[^>]*>/gi, /rel="canonical"/i],
+  ["description", /<meta[^>]*name="description"[^>]*>/gi, /name="description"/i],
+  ["og", /<meta[^>]*property="og:[^"]*"[^>]*>/gi, /property="og:/i],
+  ["twitter", /<meta[^>]*name="twitter:[^"]*"[^>]*>/gi, /name="twitter:/i],
+  ["robots", /<meta[^>]*name="robots"[^>]*>/gi, /name="robots"/i],
+];
+
 export function injectHead(html, head, opts = {}) {
-  const titleTag = head.match(/<title>[\s\S]*?<\/title>/i);
-  let out = titleTag ? html.replace(/<title>[\s\S]*?<\/title>/i, titleTag[0]) : html;
-  if (opts.noindex && !/name="robots"/i.test(out)) {
+  const titleTag = (head.match(/<title>[\s\S]*?<\/title>/i) || [""])[0];
+  const rest = head.replace(/<title>[\s\S]*?<\/title>/i, "").trim();
+  let out = html;
+  for (const [name, shellRe, mineRe] of KINDS) {
+    // noindex counts as "we supply robots": the shell's "index, follow" has to
+    // go even though the head string itself doesn't carry a robots tag.
+    if (mineRe.test(head) || (name === "robots" && !!opts.noindex)) out = out.replace(shellRe, "");
+  }
+  if (titleTag) out = out.replace(/<head[^>]*>/i, (m) => `${m}\n${titleTag}`);
+  if (opts.noindex) {
+    // The shell's "index, follow" would contradict a noindex — replace it.
     out = out.replace(/<head[^>]*>/i, (m) => `${m}\n<meta name="robots" content="noindex">`);
   }
-  if (/<\/head>/i.test(out)) return out.replace(/<\/head>/i, `${head}\n</head>`);
-  return `${head}\n${out}`;
+  if (rest && /<\/head>/i.test(out)) return out.replace(/<\/head>/i, `${rest}\n</head>`);
+  return rest ? `${rest}\n${out}` : out;
 }

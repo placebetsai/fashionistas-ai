@@ -110,6 +110,35 @@ test("injectHead swaps the shell title and appends before </head>", () => {
   assert.match(injectHead(shell, head, { noindex: true }), /<meta name="robots" content="noindex">/);
 });
 
+test("exactly one owner per tag — no second <title>, no conflicting canonical", () => {
+  const shell =
+    `<!doctype html><html><head>\n<title>site default</title>\n` +
+    `<link rel="canonical" href="https://fashionistas.ai/">\n` +
+    `<meta name="description" content="site desc">\n` +
+    `<meta name="robots" content="index, follow, max-image-preview:large">\n` +
+    `<meta property="og:title" content="site og">\n` +
+    `<meta property="og:image" content="https://fashionistas.ai/og.png">\n` +
+    `<meta name="twitter:card" content="summary_large_image">\n</head><body></body></html>`;
+  const out = injectHead(shell, itemHead(fixture, "https://fashionistas.ai"));
+  const count = (re) => (out.match(re) || []).length;
+  assert.equal(count(/<title>/g), 1, "the shell's title must not survive beside ours");
+  assert.equal(count(/rel="canonical"/g), 1, "two canonicals = crawlers trust neither");
+  assert.equal(count(/name="description"/g), 1);
+  assert.equal(count(/name="robots"/g), 1);
+  assert.equal(count(/property="og:title"/g), 1);
+  assert.equal(count(/property="og:image"/g), 1);
+  assert.ok(!out.includes('href="https://fashionistas.ai/"'), "the home canonical is replaced");
+  assert.match(out, /href="https:\/\/fashionistas\.ai\/shop\/147"/);
+
+  // A head that supplies no social card must NOT delete the shell's — a 404
+  // still shares with an image, and noindex replaces the shell's robots tag.
+  const kept = injectHead(shell, `<title>Item no longer for sale — fashionistas.ai</title>`, { noindex: true });
+  assert.equal((kept.match(/property="og:image"/g) || []).length, 1);
+  assert.equal((kept.match(/name="robots"/g) || []).length, 1, "noindex must not duplicate robots");
+  assert.match(kept, /content="noindex"/);
+  assert.equal((kept.match(/<title>/g) || []).length, 1);
+});
+
 test("description falls back to facts when the listing has no blurb", () => {
   assert.equal(
     listingDescription(fixture),
