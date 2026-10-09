@@ -32,6 +32,17 @@
  * import the real module in bare Node.
  */
 
+/**
+ * Import version for this module: every page imports it as
+ * `/site-adsense.js?v=<SITE_ADSENSE_VERSION>` and the regression test fails if
+ * a page uses a different number. Cloudflare serves this file with
+ * `cache-control: public, max-age=14400`, so an unversioned import lets a
+ * browser keep executing the PREVIOUS copy for up to four hours after a deploy
+ * — which is exactly how a fixed ad push ran unreached in prod while the edge
+ * already served the new bytes. Bump this on every behavioural edit.
+ */
+export const SITE_ADSENSE_VERSION = 2;
+
 /** The approved AdSense publisher for this network. Not a secret. */
 export const ADSENSE_CLIENT = "ca-pub-7215975042937417";
 

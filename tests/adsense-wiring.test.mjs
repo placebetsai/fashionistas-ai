@@ -36,6 +36,7 @@ import {
   reservedHeightFor,
   loaderTagHTML,
   adSlotHTML,
+  SITE_ADSENSE_VERSION,
 } from "../site-adsense.js";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -172,6 +173,28 @@ test("every page carries at least one mount, and every mount is a known placemen
       );
     }
   }
+});
+
+test("every page imports site-adsense.js at the version the module declares", () => {
+  // Cloudflare serves this file with max-age=14400, so an unversioned import
+  // lets a browser keep executing the PREVIOUS copy for up to four hours after
+  // a deploy — prod once ran the pre-gate pushAd while the edge already had
+  // the new bytes. One declared version, checked against every page.
+  const wanted = `from "/site-adsense.js?v=${SITE_ADSENSE_VERSION}"`;
+  let seen = 0;
+  for (const page of PAGES) {
+    const imports = page.html.match(/from\s+"\/site-adsense\.js[^"]*"/g) || [];
+    if (imports.length === 0) continue;
+    seen++;
+    for (const line of imports) {
+      assert.equal(
+        line,
+        wanted,
+        `${page.name} imports site-adsense.js without ?v=${SITE_ADSENSE_VERSION} — browsers will hold the old copy for up to 4h`,
+      );
+    }
+  }
+  assert.ok(seen > 0, "no page imports site-adsense.js at all — the ad wiring is gone");
 });
 
 test("adSlotHTML is self-consistent and escapes caller-supplied attributes", () => {
