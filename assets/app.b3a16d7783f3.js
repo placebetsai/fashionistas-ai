@@ -888,14 +888,14 @@ function photoResultsHtml(d, secs){
       </div>` : `<div class="ps-note">We couldn't make out what that is. Try a clearer, closer photo.</div>`);
 
   const ours = (d.ours || []).map(x => `
-    <button type="button" class="ps-hit" onclick="openMarketItem(${Number(x.id)})" data-tip="Opens the full details for this item." title="Opens the full details for this item.">
+    <a class="ps-hit" href="/shop/${Number(x.id)}" onclick="openMarketItem(${Number(x.id)});return false" data-tip="Opens the full details for this item." title="Opens the full details for this item.">
       ${x.photo_url ? `<img src="${escapeAttr(x.photo_url)}" alt="" loading="lazy">` : `<span class="ps-hit-noimg">No photo</span>`}
       <span class="ps-hit-b">
         <span class="ps-hit-t">${escapeHtml(x.title)}</span>
         <span class="ps-hit-s">${escapeHtml([x.condition, x.size, x.ship_city].filter(Boolean).join(" · "))}${x.seller && x.seller.username ? ` · from ${escapeHtml(x.seller.username)}` : ""}</span>
       </span>
       <b class="ps-hit-p">${money(x.price)}</b>
-    </button>`).join("");
+    </a>`).join("");
 
   const others = (d.marketplaces || []).map(m =>
     `<a class="ps-mk" href="${escapeAttr(m.url)}" target="_blank" rel="noopener noreferrer sponsored" data-tip="Opens ${escapeHtml(m.name)} in a new tab.">${escapeHtml(m.name)}</a>`
@@ -1054,12 +1054,12 @@ function marketCard(m, i){
     : `<div class="ph"><span class="ph-ico">${catEmoji(m.category||"item")}</span></div>`;
   const sub = [m.size, m.condition].map(v => String(v||"").trim()).filter(v => v && !/^(n\/?a|none|not visible|unknown|-)$/i.test(v)).join(" · ");
   return `<div class="ux-tile" style="--gi:${Number(i)||0}">`
-  + `<button type="button" class="ux-tile-open" onclick="openMarketItem(${Number(m.id)})">`
+  + `<a class="ux-tile-open" href="/shop/${Number(m.id)}" onclick="openMarketItem(${Number(m.id)});return false" data-tip="Opens the full details for this item.">`
   + `<span class="ux-tile-img">${photo}</span>`
   + `<span class="ux-tile-p">${money(m.price)}</span>`
   + `<span class="ux-tile-t">${escapeHtml(m.title||"Untitled")}</span>`
   + (sub ? `<span class="ux-tile-s">${escapeHtml(sub)}</span>` : "")
-  + `</button>`
+  + `</a>`
   + marketCardTry(m)
   + `</div>`;
 }

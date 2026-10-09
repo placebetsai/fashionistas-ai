@@ -162,6 +162,22 @@ test("a guest who arrived from a link can sign in from inside the app", () => {
   assert.match(out, /syncSessionChrome\(\)/);
 });
 
+test("every item tile is a real link — crawlable href, SPA intercept", () => {
+  assert.match(
+    src,
+    /<a class="ux-tile-open" href="\/shop\/\$\{Number\(m\.id\)\}" onclick="openMarketItem\(\$\{Number\(m\.id\)\}\);return false"/,
+    "shop cards link to /shop/<id>"
+  );
+  assert.match(
+    src,
+    /<a class="ps-hit" href="\/shop\/\$\{Number\(x\.id\)\}" onclick="openMarketItem\(\$\{Number\(x\.id\)\}\);return false"/,
+    "photo-search hits link too"
+  );
+  assert.doesNotMatch(src, /<button[^>]*onclick="openMarketItem\(/, "an onclick button gives crawlers no href to follow");
+  const html = readFileSync(join(ROOT, "index.html"), "utf8");
+  assert.match(html, /\.ps-hit\{[^}]*text-decoration:none/, "anchors must not render underlined");
+});
+
 test("the sitemap lists live items as /shop/<id>", () => {
   assert.match(sitemapFn, /\/shop\/\$\{Number\(it\.id\)\}/);
   assert.match(sitemapFn, /<\/urlset>/, "appends into the existing urlset");
