@@ -24,6 +24,7 @@
 <meta name="twitter:description" content="Snap a photo, set a price, and it’s in the shop. Buyers can try it on.">
 <meta name="twitter:image" content="https://fashionistas.ai/og.png">
 <meta name="twitter:image:alt" content="fashionistas.ai — snap it, list it, try it on">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 64x64">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -348,8 +349,11 @@ html[data-theme="light"] .theme-btn .ic-moon{display:none}
 }
 .stat b{font-size:24px;display:block;letter-spacing:-.02em}
 .stat span{font-size:11.5px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
-/* ===== Card FX: animated background wash + drifting letters + kinetic titles ===== */
-.card.fx{overflow:hidden}
+/* ===== Card FX: animated background wash + drifting letters + kinetic titles =====
+   contain:layout paint keeps each card's raster area self-contained, so the
+   animated .fx-bg layer paints with the card instead of re-invalidating the
+   whole screen when glyphs move. */
+.card.fx{overflow:hidden;contain:layout paint}
 .card.fx > *{position:relative;z-index:1}
 #screen .card.fx .fx-bg,.card.fx .fx-bg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .card.fx .fx-bg::before{content:"";position:absolute;inset:-35%;background:radial-gradient(58% 58% at 18% 14%,var(--fx-a,rgba(255,78,58,.22)),transparent 62%),radial-gradient(54% 54% at 84% 84%,var(--fx-b,rgba(192,92,255,.18)),transparent 64%);animation:fxWash 12s ease-in-out infinite alternate}

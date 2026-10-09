@@ -87,6 +87,9 @@ export const AD_MOUNT_ATTR = "data-ad-slot";
 /** Marks an <ins> whose queue push already happened, so it never doubles. */
 const AD_PUSHED_ATTR = "data-adsbygoogle-pushed";
 
+/** Marks a zero-width <ins> already waiting on its ResizeObserver. */
+const AD_ARMED_ATTR = "data-adsbygoogle-armed";
+
 /**
  * Resolve a placement name to a real slot id. An unknown name is passed
  * through (so a raw numeric slot id still works) and an empty one falls back
@@ -154,25 +157,58 @@ export function adSlotHTML(slot, options = {}) {
 }
 
 /**
- * Push this <ins> onto the AdSense queue exactly once.
- *
- * Pushing twice for the same element asks Google for two creatives into one
- * slot and reports a bogus impression, so the guard is on the element itself
- * rather than in a module-level Set: it survives the slot being re-rendered
- * and stays correct when this module is loaded more than once.
+ * Queue a single push. Only ever called with a slot that has real width.
  */
-export function pushAd(ins) {
-  if (!ins || ins.getAttribute(AD_PUSHED_ATTR) === "1") return false;
+function queuePush(ins, w) {
   ins.setAttribute(AD_PUSHED_ATTR, "1");
   try {
-    const w = ins.ownerDocument && ins.ownerDocument.defaultView;
-    if (!w) return false;
     (w.adsbygoogle = w.adsbygoogle || []).push({});
     return true;
   } catch {
     // A blocked or failed loader must never take the page down with it.
     return false;
   }
+}
+
+/**
+ * Push this <ins> onto the AdSense queue exactly once, and only once it is
+ * actually visible.
+ *
+ * Pushing twice for the same element asks Google for two creatives into one
+ * slot and reports a bogus impression, so the guard is on the element itself
+ * rather than in a module-level Set: it survives the slot being re-rendered
+ * and stays correct when this module is loaded more than once.
+ *
+ * A slot inside a hidden subtree — the signed-out #view-auth block while a
+ * session exists — measures 0px wide. Pushing there makes adsbygoogle throw
+ * "No slot size for availableWidth=0" three times on every logged-in visit,
+ * and the creative could not render anyway. Those slots arm a ResizeObserver
+ * instead and push on the first frame that has real width, so the ad fills
+ * the moment the block becomes visible (login/logout) and never errors while
+ * it is hidden.
+ */
+export function pushAd(ins) {
+  if (!ins || ins.getAttribute(AD_PUSHED_ATTR) === "1") return false;
+  const w = ins.ownerDocument && ins.ownerDocument.defaultView;
+  if (!w) return false;
+  if (typeof w.ResizeObserver === "function" && ins.getBoundingClientRect().width === 0) {
+    if (ins.getAttribute(AD_ARMED_ATTR) === "1") return false;
+    ins.setAttribute(AD_ARMED_ATTR, "1");
+    try {
+      const ro = new w.ResizeObserver(() => {
+        if (ins.getAttribute(AD_PUSHED_ATTR) === "1") { ro.disconnect(); return; }
+        if (ins.getBoundingClientRect().width === 0) return;
+        ro.disconnect();
+        queuePush(ins, w);
+      });
+      ro.observe(ins);
+    } catch {
+      // Observing is impossible here — fall back to the old eager push.
+      queuePush(ins, w);
+    }
+    return false;
+  }
+  return queuePush(ins, w);
 }
 
 /**
