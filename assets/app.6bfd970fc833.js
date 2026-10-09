@@ -1175,6 +1175,10 @@ async function openMarketItem(id, opts){
   if (!m){ dropItemUrl(); el.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="go('shop')" data-tip="Back to everything that is for sale.">Back to Shop</button><div class="empty"><p>This item is no longer for sale.</p></div>`; refreshTips(); return; }
   const seller = (m.seller && (m.seller.display_name || m.seller.username)) || (m.seller && m.seller.username) || "Seller";
   const sellerU = (m.seller && m.seller.username) || "";
+  /* Your own listing must not offer to message or buy you: the API answers
+     422 "That is you" and 409 "This is your own listing." — correct, but a
+     button that always errors is still a broken button. */
+  const isMine = !!(USER && m.seller && Number(m.seller.id) === Number(USER.id));
   const plats = shopNormalizePlatforms(m.platforms);
   CURRENT.market = m;
   const clean = v => { v = String(v||"").trim(); return (v && !/^(n\/?a|none|not visible|unknown|-)$/i.test(v)) ? v : ""; };
@@ -1191,7 +1195,9 @@ async function openMarketItem(id, opts){
   + (m.description ? `<p class="ux-item-desc">${escapeHtml(m.description)}</p>` : "")
   + `<div class="ux-seller"><span class="ux-av">${escapeHtml(String(seller).slice(0,1).toUpperCase())}</span><span><b>${escapeHtml(seller)}</b>${sellerU?`<small>@${escapeHtml(sellerU)}</small>`:""}</span></div>`
   + `</div>`
-  + `<div class="ux-buybar"><button class="btn btn-soft" onclick="dmOrSignIn(${dmPeerRef(m, sellerU||seller)}, '${escapeAttr(seller)}')">Message</button><button class="btn btn-accent" onclick="buySheet(${Number(m.id)})">Buy now</button></div>`
+  + (isMine
+      ? `<div class="ux-buybar"><button class="btn btn-soft" onclick="go('closet')">Manage listing</button><button class="btn btn-accent" onclick="editFromItem(${Number(m.id)})">Edit listing</button></div>`
+      : `<div class="ux-buybar"><button class="btn btn-soft" onclick="dmOrSignIn(${dmPeerRef(m, sellerU||seller)}, '${escapeAttr(seller)}')">Message</button><button class="btn btn-accent" onclick="buySheet(${Number(m.id)})">Buy now</button></div>`)
   + `</div>`;
   setItemUrl(id, m, opts.url);
   refreshTips();
@@ -1200,6 +1206,20 @@ async function openMarketItem(id, opts){
    /api/dm/<peer> is addressed by numeric user id; sending a handle answers
    404 "Not found" and the conversation dies before it starts. The listing
    payload carries seller.id, so prefer it and keep the handle as fallback. */
+/* Open the editor straight from a listing of your own. LW.edit() works off the
+   owner's list, which the item page has not loaded yet, so fetch it first. */
+function editFromItem(id){
+  (async () => {
+    try{
+      if (!(S.listings || []).some(x => Number(x.id) === Number(id))){
+        const d = await api("/api/listings"); S.listings = (d && d.listings) || [];
+      }
+      const it = (S.listings || []).find(x => Number(x.id) === Number(id));
+      if (it && window.LW) return LW.edit(it);
+      toast("Could not open that listing for editing.");
+    }catch(e){ toast("Could not open the editor: " + e.message); }
+  })();
+}
 function dmPeerRef(m, fallback){
   const id = m && m.seller && Number(m.seller.id);
   if (id) return String(id);

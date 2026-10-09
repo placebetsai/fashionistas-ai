@@ -174,7 +174,21 @@ test("document.title tracks the screen the user is on", () => {
   assert.match(html, /src="\/seller-coach\.js\?v=\d+"/, "coach cache-busted");
 });
 
-/* ── 5. your own conversations are never dropped ──────────────────────── */
+/* ── 5. your own listing is yours to manage, not to buy ────────────────── */
+
+test("a seller is offered Manage/Edit on their own listing, never Buy/Message", () => {
+  assert.match(src, /const isMine = !!\(USER && m\.seller && Number\(m\.seller\.id\) === Number\(USER\.id\)\);/,
+    "the listing's owner is recognised");
+  assert.ok(src.includes('`<div class="ux-buybar"><button class="btn btn-soft" onclick="go(\'closet\')">Manage listing</button><button class="btn btn-accent" onclick="editFromItem('),
+    "own listing gets Manage + Edit");
+  assert.ok(src.includes("`<div class=\"ux-buybar\"><button class=\"btn btn-soft\" onclick=\"dmOrSignIn("),
+    "everyone else still gets Message + Buy now");
+  assert.match(src, /function editFromItem\(id\)\{/, "an editor entry point exists");
+  assert.match(src, /const d = await api\("\/api\/listings"\); S\.listings = \(d && d\.listings\) \|\| \[\];/,
+    "it loads the owner's list, which LW.edit() reads from");
+});
+
+/* ── 6. your own conversations are never dropped ──────────────────────── */
 
 test("Messages keeps real threads ahead of the directory sample", { skip: noWorker }, () => {
   assert.ok(worker.includes("const threads = await env.DB.prepare("), "conversations get their own query");
