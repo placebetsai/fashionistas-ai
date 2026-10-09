@@ -149,6 +149,7 @@
   function screenEl() { return $id("screen"); }
   function setHead(t, sub) {
     try { kineticTitle(t); } catch (e) {}
+    try { if (t) document.title = t + " — fashionistas.ai"; } catch (e) {}
     var s = $id("view-sub"); if (s) s.textContent = sub || "";
   }
   function mount(el, opts) {
@@ -162,6 +163,9 @@
       if (W.aiState === "busy") W.aiState = PHOTOS.length ? "error" : "idle";
     }
     root.classList.add("lw-on");
+    /* The floating checklist otherwise lands on the drop zone's "Take photo"
+       button — it blocked a real drag-and-drop. Collapse it first. */
+    if (typeof SCCollapse === "function") { try { SCCollapse(); } catch (e) {} }
     setHead(W.mode === "edit" ? "Edit listing" : "Sell an item", "");
     el.innerHTML = '<div class="lw" id="lw">' +
       '<div class="lw-top"><button type="button" class="lw-back" id="lw-back" aria-label="Back" onclick="LW.back()">' + ICON.back + '</button>' +

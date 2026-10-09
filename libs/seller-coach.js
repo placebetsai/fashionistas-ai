@@ -621,13 +621,29 @@
     }
   }
 
+  /* The panel floats bottom-left, over the very controls it describes: it sat
+     on top of "Take photo" far enough to swallow a whole drag-and-drop. Callers
+     put it away whenever they open something it would cover. */
+  function collapse() {
+    var panel = document.getElementById("seller-coach-panel");
+    if (!panel || panel.classList.contains("hidden")) return;
+    if (panel.classList.contains("collapsed")) return;
+    panel.classList.add("collapsed");
+    var btn = panel.querySelector(".sc-toggle");
+    if (btn) btn.textContent = "▸";
+  }
+
   window.SellerCoach = {
     refresh: refresh,
     mark: mark,
     ask: askChat,
     steps: STEPS,
-    progress: progress
+    progress: progress,
+    collapse: collapse
   };
+  /* Plain global too: the app bundle and the sell wizard call this before they
+     render, and seller-coach.js loads after them. */
+  window.SCCollapse = collapse;
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);

@@ -96,7 +96,7 @@ async function doSignup(){
  afterAuth(d);
  } catch(e){ toast(e.message); }
 }
-function afterAuth(d){ TOKEN = (d && d.token) || ""; USER = (d && d.user) || (d && d.id ? { id: d.id, email: d.email, username: d.username || d.email } : null); if (TOKEN) localStorage.setItem("fash_token", TOKEN); else localStorage.removeItem("fash_token"); localStorage.setItem("fash_user", JSON.stringify(USER)); $("#view-auth").classList.add("hidden"); $("#view-app").classList.remove("hidden"); $("#tabbar").classList.remove("hidden"); $("#guide-fab").classList.remove("hidden"); go("home"); syncSessionChrome(); const who = (USER && (USER.username || USER.email)) || "you"; toast("Signed in as " + who + " — next: Connect your shop, then Sell to post an item.", 6000); }
+function afterAuth(d){ TOKEN = (d && d.token) || ""; USER = (d && d.user) || (d && d.id ? { id: d.id, email: d.email, username: d.username || d.email } : null); if (TOKEN) localStorage.setItem("fash_token", TOKEN); else localStorage.removeItem("fash_token"); localStorage.setItem("fash_user", JSON.stringify(USER)); $("#view-auth").classList.add("hidden"); $("#view-app").classList.remove("hidden"); $("#tabbar").classList.remove("hidden"); $("#guide-fab").classList.remove("hidden"); const resumed = resumeAfterAuth(); syncSessionChrome(); const who = (USER && (USER.username || USER.email)) || "you"; if (!resumed) toast("Signed in as " + who + " — next: Connect your shop, then Sell to post an item.", 6000); }
 function logout(){ TOKEN = ""; USER = null; localStorage.removeItem("fash_token"); localStorage.removeItem("fash_user"); $("#view-app").classList.add("hidden"); $("#tabbar").classList.add("hidden"); $("#guide-fab").classList.add("hidden"); guideToggle(false); $("#view-auth").classList.remove("hidden"); syncSessionChrome(); }
 
 /* Session restore: the stored token is checked once at boot so a signed-in user
@@ -218,7 +218,7 @@ async function go(v){
      item never strands /shop/<id> in the bar. replaceState keeps the back
      button about views, not about every tab click. */
   try{ if (v === "shop" && (location.pathname || "").replace(/\/$/, "") !== "/shop") history.replaceState(history.state, "", "/shop"); }catch(e){}
-  const [t, sub] = TITLES[v] || ["",""];
+  const [t, sub] = TITLES[v] || ["",""]; if (t) document.title = t + " — fashionistas.ai";
   kineticTitle(t); $("#view-sub").textContent = sub;
   const el = $("#screen");
   el.classList.remove("view-in"); void el.offsetWidth; el.classList.add("view-in");
@@ -1188,10 +1188,58 @@ async function openMarketItem(id, opts){
   + (m.description ? `<p class="ux-item-desc">${escapeHtml(m.description)}</p>` : "")
   + `<div class="ux-seller"><span class="ux-av">${escapeHtml(String(seller).slice(0,1).toUpperCase())}</span><span><b>${escapeHtml(seller)}</b>${sellerU?`<small>@${escapeHtml(sellerU)}</small>`:""}</span></div>`
   + `</div>`
-  + `<div class="ux-buybar"><button class="btn btn-soft" onclick="threadScreen('${escapeAttr(sellerU||seller)}')">Message</button><button class="btn btn-accent" onclick="buySheet(${Number(m.id)})">Buy now</button></div>`
+  + `<div class="ux-buybar"><button class="btn btn-soft" onclick="dmOrSignIn(${dmPeerRef(m, sellerU||seller)}, '${escapeAttr(seller)}')">Message</button><button class="btn btn-accent" onclick="buySheet(${Number(m.id)})">Buy now</button></div>`
   + `</div>`;
   setItemUrl(id, m, opts.url);
   refreshTips();
+}
+/* ── Reserve / Message from an item page ─────────────────────────────────
+   /api/dm/<peer> is addressed by numeric user id; sending a handle answers
+   404 "Not found" and the conversation dies before it starts. The listing
+   payload carries seller.id, so prefer it and keep the handle as fallback. */
+function dmPeerRef(m, fallback){
+  const id = m && m.seller && Number(m.seller.id);
+  if (id) return String(id);
+  return "'" + escapeAttr(String((m && m.seller && (m.seller.username || m.seller.display_name)) || fallback || "")) + "'";
+}
+/* Sign-in must not eat the intent: remember what they tapped so afterAuth()
+   can finish it. sessionStorage, so it dies with the tab. */
+function setPendingIntent(data){
+  try{ sessionStorage.setItem("fash_pending", JSON.stringify(Object.assign({ path: location.pathname, at: Date.now() }, data))); }catch(e){}
+}
+function takePendingIntent(){
+  try{
+    const raw = sessionStorage.getItem("fash_pending"); if (!raw) return null;
+    sessionStorage.removeItem("fash_pending");
+    const p = JSON.parse(raw);
+    if (!p || (Date.now() - (p.at || 0)) > 15 * 60000) return null;
+    return p;
+  }catch(e){ return null; }
+}
+function dmOrSignIn(peer, label){
+  if (!TOKEN){ setPendingIntent({ action:"message", peer: peer, label: label || "" }); toast("Sign in to message them"); showAuth("login"); return; }
+  threadScreen(peer, label);
+}
+/* Returns true when it put the user back where they chose, so the caller can
+   skip the generic "you're signed in" nudge. */
+function resumeAfterAuth(){
+  const p = takePendingIntent();
+  if (p && p.action === "reserve" && p.id){
+    (async () => { try{ await openMarketItem(Number(p.id)); buySheet(Number(p.id)); setTimeout(() => confirmBuy(Number(p.id)), 250); }catch(e){ go("home"); } })();
+    return true;
+  }
+  if (p && p.action === "message" && p.peer !== undefined && p.peer !== null && p.peer !== ""){
+    (async () => { try{ await threadScreen(p.peer, p.label || ""); }catch(e){ go("home"); } })();
+    return true;
+  }
+  /* Coming back to an addressable page must land on that page — /shop/<id>
+     used to render Home while the bar still claimed the item. */
+  const path = (location.pathname || "").replace(/\/$/, "");
+  const item = path.match(/^\/shop\/(\d+)$/);
+  if (item){ openMarketItem(Number(item[1])); return true; }
+  if (path === "/shop"){ go("shop"); return true; }
+  go("home");
+  return false;
 }
 function buySheet(id){
   const m = CURRENT.market && Number(CURRENT.market.id)===Number(id) ? CURRENT.market : ((S.market||[]).find(x=>Number(x.id)===Number(id)) || {});
@@ -1203,18 +1251,18 @@ function buySheet(id){
   </div>
   <p class="mut" style="margin:12px 0">No charge. Reserve it, then message ${escapeHtml(seller)}.</p>
   <button class="btn btn-accent" style="width:100%" onclick="confirmBuy(${Number(id)},this)">Reserve it</button>
-  <button class="btn btn-soft" style="width:100%;margin-top:8px" onclick="closeSheet();threadScreen('${escapeAttr((m.seller&&m.seller.username)||seller)}')">Message ${escapeHtml(seller)}</button>
+  <button class="btn btn-soft" style="width:100%;margin-top:8px" onclick="closeSheet();dmOrSignIn(${dmPeerRef(m, seller)}, '${escapeAttr(seller)}')">Message ${escapeHtml(seller)}</button>
   <div id="buy-out" style="margin-top:10px"></div>
   `);
   refreshTips();
 }
 async function confirmBuy(id, btn){
   const out = document.getElementById("buy-out");
-  if (!TOKEN){ closeSheet(); toast("Sign in to reserve it"); try{ showAuth("login"); }catch(e){} return; }
+  if (!TOKEN){ closeSheet(); setPendingIntent({ action:"reserve", id: Number(id) }); toast("Sign in to reserve it"); try{ showAuth("login"); }catch(e){} return; }
   if (btn){ btn.disabled = true; btn.textContent = "Reserving…"; }
   try{
     const r = await fetch(API + "/api/market/" + id + "/buy", { method:"POST", headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+TOKEN } });
-    if (r.status === 401){ closeSheet(); toast("Sign in to reserve it"); try{ showAuth("login"); }catch(e){} return; }
+    if (r.status === 401){ closeSheet(); setPendingIntent({ action:"reserve", id: Number(id) }); toast("Sign in to reserve it"); try{ showAuth("login"); }catch(e){} return; }
     if (r.ok){
       if (out) out.innerHTML = `<p class="ux-ok">Reserved. No money has moved — message the seller to sort out payment and delivery.</p>`;
       if (btn) btn.remove();
@@ -3958,11 +4006,14 @@ async function messagesScreen(){
       </div>` : ""}`);
   } catch(e){ dmRender(el, `<div class="empty">${escapeHtml(e.message)}</div>`); }
 }
-async function threadScreen(id){
+async function threadScreen(id, label){
   clearInterval(CURRENT.dmTimer);
   const who = (S.dmContacts||[]).find(x => x.id === id);
   CURRENT.dmPeer = id;
-  kineticTitle(who ? who.name : "Messages");
+  const name = label || (who ? who.name : "Messages");
+  kineticTitle(name);
+  document.title = name + " — fashionistas.ai";
+  if (typeof SCCollapse === "function") { try{ SCCollapse(); }catch(e){} }
   $("#view-sub").textContent = "Messages between you and this account.";
   const el = $("#screen");
   const isBlocked = (S.dmBlocked||[]).some(x=>x.id===id);
@@ -4379,6 +4430,7 @@ async function saveManual(){
 }
 
 function openSheet(html){
+ if (typeof SCCollapse === "function") { try{ SCCollapse(); }catch(e){} }
  const el = document.createElement("div");
  el.className = "sheet"; el.id = "sheet";
  el.innerHTML = `<div class="body">${html}<br><button class="btn btn-soft" style="width:100%" onclick="closeSheet()" data-tip="Closes this panel." title="Closes this panel.">Close</button></div>`;
