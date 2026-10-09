@@ -208,6 +208,10 @@ function enterBrowse(v){
 async function go(v){
   document.querySelectorAll("nav.tabbar a, #topnav a, #drawer-links a").forEach(a => a.classList.toggle("on", a.dataset.v === v));
   navDrawer(false);
+  /* The marketplace is addressable: /shop opens it directly, and leaving an
+     item never strands /shop/<id> in the bar. replaceState keeps the back
+     button about views, not about every tab click. */
+  try{ if (v === "shop" && (location.pathname || "").replace(/\/$/, "") !== "/shop") history.replaceState(history.state, "", "/shop"); }catch(e){}
   const [t, sub] = TITLES[v] || ["",""];
   kineticTitle(t); $("#view-sub").textContent = sub;
   const el = $("#screen");
@@ -1111,7 +1115,38 @@ function placementCtaHtml(item){
   return bits.join("");
 }
 
-async function openMarketItem(id){
+/* Every listing gets a real address — /shop/<id>. Before this, opening an item
+   only re-rendered the screen: the URL never changed, so a listing could not be
+   linked, shared, bookmarked, indexed or opened cold. The document title moves
+   with it so a search result reads "Blue Henley Shirt · $20 — fashionistas.ai"
+   instead of the site-wide default. */
+function itemPath(id){ return "/shop/" + Number(id); }
+function setItemUrl(id, m, mode){
+  try{
+    const p = itemPath(id);
+    if (location.pathname !== p){
+      const fn = mode === "replace" ? "replaceState" : "pushState";
+      history[fn]({ item: Number(id) }, "", p);
+    }
+    if (m && m.title){
+      document.title = m.title + (m.price ? " · " + money(m.price) : "") + " — fashionistas.ai";
+      const t = document.querySelector('meta[property="og:title"]'); if (t) t.setAttribute("content", String(m.title).slice(0, 70));
+      const u = document.querySelector('meta[property="og:url"]'); if (u) u.setAttribute("content", location.origin + p);
+      const d = document.querySelector('meta[name="description"]'); if (d) d.setAttribute("content", String(m.description || m.title).slice(0, 155));
+    }
+  }catch(e){ /* file:// or a stripped history API — the item still renders */ }
+}
+/* A delisted / unknown item must not keep the dead URL in the address bar. */
+function dropItemUrl(){
+  try{
+    if ((location.pathname || "").indexOf("/shop/") === 0){
+      history.replaceState(history.state, "", "/shop");
+      document.title = "Shop — fashionistas.ai";
+    }
+  }catch(e){}
+}
+async function openMarketItem(id, opts){
+  opts = opts || {};
   kineticTitle("This item"); $("#view-sub").textContent = "Details from the seller — check it before you buy.";
   const el = $("#screen");
   el.innerHTML = showLoader();
@@ -1126,9 +1161,9 @@ async function openMarketItem(id){
       if (!r.ok) throw new Error("Could not load this item (HTTP " + st + ").");
       S.market = (b && b.market) || [];
       m = S.market.find(x=>Number(x.id)===Number(id)) || null;
-    }catch(e){ el.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="go('shop')" data-tip="Back to everything that is for sale.">Back to Shop</button><div class="empty">${escapeHtml(e.message)}</div>`; refreshTips(); return; }
+    }catch(e){ dropItemUrl(); el.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="go('shop')" data-tip="Back to everything that is for sale.">Back to Shop</button><div class="empty">${escapeHtml(e.message)}</div>`; refreshTips(); return; }
   }
-  if (!m){ el.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="go('shop')" data-tip="Back to everything that is for sale.">Back to Shop</button><div class="empty"><p>This item is no longer for sale.</p></div>`; refreshTips(); return; }
+  if (!m){ dropItemUrl(); el.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="go('shop')" data-tip="Back to everything that is for sale.">Back to Shop</button><div class="empty"><p>This item is no longer for sale.</p></div>`; refreshTips(); return; }
   const seller = (m.seller && (m.seller.display_name || m.seller.username)) || (m.seller && m.seller.username) || "Seller";
   const sellerU = (m.seller && m.seller.username) || "";
   const plats = shopNormalizePlatforms(m.platforms);
@@ -1149,6 +1184,7 @@ async function openMarketItem(id){
   + `</div>`
   + `<div class="ux-buybar"><button class="btn btn-soft" onclick="threadScreen('${escapeAttr(sellerU||seller)}')">Message</button><button class="btn btn-accent" onclick="buySheet(${Number(m.id)})">Buy now</button></div>`
   + `</div>`;
+  setItemUrl(id, m, opts.url);
   refreshTips();
 }
 function buySheet(id){
@@ -4982,8 +5018,29 @@ document.querySelectorAll("#auth-tab-login,#auth-tab-signup").forEach(b=>b.oncli
 })();
 
 navBuild();
-if (TOKEN && USER) { $("#view-auth").classList.add("hidden"); $("#view-app").classList.remove("hidden"); $("#tabbar").classList.remove("hidden"); $("#guide-fab").classList.remove("hidden"); go("home"); }
-else { $("#view-auth").classList.remove("hidden"); $("#view-app").classList.add("hidden"); $("#tabbar").classList.add("hidden"); $("#guide-fab").classList.add("hidden"); authTab("login"); }
+/* Deep links: /shop/<id> opens that listing — logged in or not. A buyer
+   following a shared link, a search result or a sitemap entry lands on the
+   item itself, never on the sign-in screen. */
+function itemFromPath(){
+  const m = (location.pathname || "").match(/^\/shop\/(\d+)\/?$/);
+  return m ? Number(m[1]) : 0;
+}
+function routePath(){
+  const id = itemFromPath();
+  if (id){ enterBrowse("shop"); openMarketItem(id, { url: "replace" }); return true; }
+  if ((location.pathname || "").replace(/\/$/, "") === "/shop"){ enterBrowse("shop"); return true; }
+  return false;
+}
+function homeOrAuth(){
+  if (TOKEN && USER) { $("#view-auth").classList.add("hidden"); $("#view-app").classList.remove("hidden"); $("#tabbar").classList.remove("hidden"); $("#guide-fab").classList.remove("hidden"); go("home"); }
+  else { $("#view-auth").classList.remove("hidden"); $("#view-app").classList.add("hidden"); $("#tabbar").classList.add("hidden"); $("#guide-fab").classList.add("hidden"); authTab("login"); }
+}
+window.addEventListener("popstate", function(){
+  if (routePath()) return;
+  const p = (location.pathname || "").replace(/\/$/, "");
+  if (p === "") homeOrAuth();
+});
+if (!routePath()) homeOrAuth();
 syncSessionChrome();
 function openFromHash(){
   var openHash = (location.hash || "").replace("#", "");
