@@ -4,17 +4,17 @@
    guide pages need: one-tap copy rows, walk-through steps, checklist. */
 
 /* --- one-tap copy rows --- */
-.copy-row{border:1px solid var(--line);border-radius:12px;background:#faf7f3;padding:12px 14px;margin-bottom:10px}
+.copy-row{border:1px solid var(--line);border-radius:12px;background:var(--card-2);padding:12px 14px;margin-bottom:10px}
 .copy-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px}
 .copy-key{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--mut)}
 .copy-count{font-weight:700;letter-spacing:0;text-transform:none;color:var(--mut)}
 .copy-count.over{color:var(--accent2)}
 .copy-val{white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.55;color:var(--ink);
-  background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0;min-height:44px}
-.copy-val:focus{outline:2px solid rgba(179,71,31,.35);border-color:var(--accent)}
-.copy-btn{border:1.5px solid var(--accent);background:#fff;color:var(--accent);border-radius:999px;
+  background:var(--input-bg);border:1px solid var(--line-2);border-radius:10px;padding:10px 12px;margin:0;min-height:44px}
+.copy-val:focus{outline:var(--ring);border-color:var(--accent)}
+.copy-btn{border:1.5px solid var(--accent);background:var(--card);color:var(--accent);border-radius:999px;
   padding:7px 16px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;flex:0 0 auto}
-.copy-btn:hover{background:rgba(179,71,31,.08)}
+.copy-btn:hover{background:rgba(255,78,58,.10)}
 .copy-btn.is-done{background:var(--good);border-color:var(--good);color:#fff}
 .deeprow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
 .deepnote{font-size:13px;color:var(--mut);margin-top:8px}
@@ -41,7 +41,7 @@
 /* --- links to the nine shop walk-throughs --- */
 .chiprow{display:flex;flex-wrap:wrap;gap:9px;margin-top:8px}
 .chip{display:inline-block;font-size:13.5px;font-weight:700;border:1.5px solid var(--line);
-  background:#fff;color:var(--ink);border-radius:999px;padding:8px 14px}
-.chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(179,71,31,.06);text-decoration:none}
+  background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px}
+.chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,78,58,.08);text-decoration:none}
 .crumb{display:inline-block;font-size:13px;font-weight:700;color:var(--mut);margin-bottom:12px}
 .crumb:hover{color:var(--accent);text-decoration:none}

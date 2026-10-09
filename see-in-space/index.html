@@ -6,6 +6,7 @@
 <title>See in my space — free Instant preview | fashionistas.ai</title>
 <meta name="description" content="Upload a photo of your room and place any listing — on the wall, on the floor, or on your counter — with a free Instant preview. Optional phone AR when supported. Not photoreal.">
 <link rel="canonical" href="https://fashionistas.ai/see-in-space/">
+<meta name="robots" content="index, follow, max-image-preview:large">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="fashionistas.ai">
 <meta property="og:title" content="See in my space — free Instant preview">
@@ -19,44 +20,108 @@
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/site.css">
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+<script>try{var t=localStorage.getItem("fash_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <style>
+/* See-in-my-space panel styling. Token names come from /site.css so this page
+   matches the app; only the placement UI lives here. */
+:root{--hud:rgba(255,78,58,.5)}
 .sis-badge{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .sis-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
 @media (max-width:800px){.sis-grid{grid-template-columns:1fr}.sis-grid .sis-panel{order:-1}}
-.sis-more{margin-top:12px;border-top:1px solid var(--line,#e5dcd3);padding-top:6px}.sis-more summary{cursor:pointer;font-weight:700;min-height:40px;display:flex;align-items:center}
-.sis-stage{position:relative;background:#1a1410;border-radius:16px;overflow:hidden;border:1px solid var(--line);min-height:280px;touch-action:none;user-select:none}
+.sis-more{margin-top:12px;border-top:1px solid var(--line);padding-top:6px}
+.sis-more summary{cursor:pointer;font-weight:700;min-height:40px;display:flex;align-items:center;
+  font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.sis-more summary:hover{color:var(--accent)}
+
+/* the render surface: dark glass, corner brackets, never a cream box */
+.sis-stage{position:relative;border-radius:16px;overflow:hidden;min-height:280px;
+  touch-action:none;user-select:none;
+  background-image:
+   linear-gradient(var(--hud),var(--hud)),linear-gradient(var(--hud),var(--hud)),
+   linear-gradient(var(--hud),var(--hud)),linear-gradient(var(--hud),var(--hud)),
+   linear-gradient(var(--hud),var(--hud)),linear-gradient(var(--hud),var(--hud)),
+   linear-gradient(var(--hud),var(--hud)),linear-gradient(var(--hud),var(--hud)),
+   radial-gradient(70% 60% at 50% 0%,rgba(124,92,255,.14),transparent 70%),var(--input-bg);
+  background-repeat:no-repeat;
+  background-size:20px 2px,2px 20px,20px 2px,2px 20px,20px 2px,2px 20px,20px 2px,2px 20px,100% 100%,100% 100%;
+  background-position:
+   left 10px top 10px,left 10px top 10px,
+   right 10px top 10px,right 10px top 10px,
+   left 10px bottom 10px,left 10px bottom 10px,
+   right 10px bottom 10px,right 10px bottom 10px,0 0,0 0}
 .sis-stage canvas{display:block;width:100%;height:auto;max-height:70vh;cursor:crosshair}
-.sis-handle{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:var(--accent);border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.35);z-index:3;touch-action:none;cursor:grab}
+.sis-handle{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;
+  background:var(--accent);border:3px solid #fff;
+  box-shadow:0 0 0 1px rgba(0,0,0,.4),0 0 18px rgba(255,78,58,.5);z-index:3;touch-action:none;cursor:grab}
 .sis-handle:active{cursor:grabbing}
-.sis-empty{padding:48px 20px;text-align:center;color:#f7f3ee}
-.sis-empty p{margin:8px 0;opacity:.85}
+.sis-empty{padding:48px 20px;text-align:center;color:var(--mut)}
+.sis-empty b{color:var(--ink);font-family:var(--mono);font-size:12.5px;
+  letter-spacing:.1em;text-transform:uppercase}
+.sis-empty p{margin:8px 0;opacity:.9}
 .sis-panel label{margin-top:10px}
 .sis-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+
+/* placement mode: squared mono chips with a status LED, not pastel pills */
 .sis-mode{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
-.sis-mode button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink)}
-.sis-mode button.on{border-color:var(--accent);background:rgba(179,71,31,.1);color:var(--accent)}
-.sis-honest{font-size:13px;line-height:1.5;padding:10px 12px;border-radius:12px;background:#faf7f3;border:1px dashed var(--line);color:var(--mut);margin:0 0 12px}
+.sis-mode button{position:relative;border:1px solid var(--line-2);background:var(--card);
+  border-radius:10px;padding:9px 14px 9px 30px;font:inherit;font-family:var(--mono);
+  font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+  cursor:pointer;color:var(--mut);transition:border-color .18s,color .18s,box-shadow .18s}
+.sis-mode button::before{content:"";position:absolute;left:12px;top:50%;margin-top:-4px;
+  width:8px;height:8px;border-radius:50%;background:var(--line-2);transition:background .18s,box-shadow .18s}
+.sis-mode button:hover{color:var(--ink)}
+.sis-mode button.on{border-color:var(--accent);color:var(--accent);
+  box-shadow:0 0 0 1px rgba(255,78,58,.28),0 0 22px rgba(255,78,58,.16)}
+.sis-mode button.on::before{background:var(--accent);box-shadow:0 0 10px var(--accent)}
+
+/* the honesty note stays honest — it just stops looking like a warning slip */
+.sis-honest{font-size:13px;line-height:1.55;padding:11px 13px;border-radius:12px;
+  background:var(--card-2);border:1px solid var(--line-2);color:var(--mut);margin:0 0 12px}
 .sis-honest b{color:var(--ink)}
-.sis-ar{margin-top:14px;padding:12px;border-radius:14px;border:1px solid var(--line);background:#fff}
-.sis-ar model-viewer{width:100%;height:280px;background:#f3eee8;border-radius:12px}
+
+.sis-ar{margin-top:14px;padding:12px;border-radius:14px;border:1px solid var(--line);
+  background:var(--card-2)}
+.sis-ar model-viewer{width:100%;height:280px;background:var(--input-bg);border-radius:12px}
 .sis-ar .muted{font-size:12.5px;color:var(--mut);margin:8px 0 0}
 .sis-ar.hidden{display:none}
-.sis-drop{border:1.5px dashed var(--line);border-radius:14px;padding:16px;text-align:center;background:#faf7f3;position:relative;min-height:110px}
-.sis-drop.over{border-color:var(--accent);background:#fff}
+
+/* drop bays wear the same corner brackets as the try-on stations */
+.sis-drop{position:relative;border-radius:14px;padding:18px 16px;text-align:center;min-height:110px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:border-color .18s,box-shadow .18s;
+  background-image:
+   linear-gradient(var(--hud),var(--hud)),linear-gradient(var(--hud),var(--hud)),
+   linear-gradient(var(--hud),var(--hud)),linear-gradient(var(--hud),var(--hud)),
+   linear-gradient(var(--hud),var(--hud)),linear-gradient(var(--hud),var(--hud)),
+   linear-gradient(var(--hud),var(--hud)),linear-gradient(var(--hud),var(--hud)),
+   linear-gradient(180deg,var(--card-2),var(--card));
+  background-repeat:no-repeat;
+  background-size:16px 2px,2px 16px,16px 2px,2px 16px,16px 2px,2px 16px,16px 2px,2px 16px,100% 100%;
+  background-position:
+   left 8px top 8px,left 8px top 8px,
+   right 8px top 8px,right 8px top 8px,
+   left 8px bottom 8px,left 8px bottom 8px,
+   right 8px bottom 8px,right 8px bottom 8px,0 0}
+.sis-drop.over{box-shadow:0 0 0 1px var(--accent),0 0 30px rgba(255,78,58,.18)}
 .sis-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
-.sis-thumb{max-width:100%;max-height:120px;border-radius:10px;display:none;margin:0 auto}
+.sis-step{margin:0;font-family:var(--mono);font-size:12px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.sis-drop .note{margin:5px 0 0}
+.sis-thumb{max-width:100%;max-height:120px;border-radius:10px;display:none;margin:10px auto 0;
+  box-shadow:0 8px 24px rgba(0,0,0,.4)}
 .sis-thumb.on{display:block}
-.sis-status{font-size:13.5px;color:var(--mut);min-height:1.3em;margin-top:8px}
-.sis-status.err{color:#a3210f;font-weight:700}
-.range{width:100%}
-.btn-soft{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
-.btn-soft:hover{border-color:var(--accent);color:var(--accent)}
-.btn-sm{padding:9px 14px;font-size:13px}
+
+.sis-status{font-family:var(--mono);font-size:12.5px;color:var(--mut);min-height:1.3em;
+  margin-top:10px}
+.sis-status.err{color:var(--bad);font-weight:700}
+.range{width:100%;accent-color:var(--accent)}
+.btn-sm{padding:10px 15px;font-size:13px}
 </style>
-<meta name="color-scheme" content="only light">
+<meta name="color-scheme" content="dark light">
 <script>if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).catch(function(){});if(window.caches)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})}).catch(function(){})}</script>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 <div class="wrap">
 <header class="topnav">
 <a class="brand" href="/">fashionistas<span>.ai</span></a>
@@ -65,7 +130,7 @@
 <a href="/try-on/">Try it on</a>
 <a href="/about/">About</a>
 <a href="/">App</a>
-</nav>
+<a href="/pricing/">Pricing</a><a href="/guide/">Guide</a></nav>
 </header>
 <script src="/topnav.js"></script>
 <script src="/countdown.js" defer></script>
@@ -84,7 +149,7 @@
         <p><b>Your preview shows here</b></p>
         <p>Add a room photo and an item photo, then drag the item into place.</p>
       </div>
-      <canvas id="cv" width="800" height="600" hidden></canvas>
+      <canvas id="cv" width="800" height="600" hidden role="img" aria-label="Preview: your item placed in your room photo. Drag the four corner handles to fit it to the wall."></canvas>
     </div>
     <p class="sis-status" id="status" role="status"></p>
     <div class="sis-row">
@@ -102,14 +167,14 @@
     </div>
 
     <div class="sis-drop" id="drop-room">
-      <p style="margin:0;font-weight:700">1. Add a room photo</p>
+      <p class="sis-step">1. Add a room photo</p>
       <p class="note" style="margin:4px 0 0">Your wall, floor or counter</p>
       <img class="sis-thumb" id="thumb-room" alt="">
       <input type="file" id="file-room" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose room photo">
     </div>
 
     <div class="sis-drop" id="drop-item" style="margin-top:12px">
-      <p style="margin:0;font-weight:700">2. Add the item photo</p>
+      <p class="sis-step">2. Add the item photo</p>
       <p class="note" style="margin:4px 0 0">Art, a lamp, a coffee maker…</p>
       <img class="sis-thumb" id="thumb-item" alt="">
       <input type="file" id="file-item" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose item photo">
@@ -163,7 +228,7 @@
 <a href="/see-in-space/">See in my space</a>
 <a href="/try-on/">Try it on</a>
 <a href="/about/">About</a>
-<a href="/privacy/">Privacy</a>
+<a href="/privacy/">Privacy</a><a href="/pricing/">Pricing</a><a href="/guide/">Guide</a>
 <a href="/contact/">Contact</a>
 </nav>
 <p>fashionistas.ai — see it in your life before you list or buy. Email: <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a></p>

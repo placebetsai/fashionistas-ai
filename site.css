@@ -1,45 +1,151 @@
+/* ===================================================================
+   fashionistas.ai — shared styles for the static pages (about, contact,
+   pricing, privacy, guide, see-in-space, try-on).
+
+   The token NAMES and VALUES are the app shell's, copied from the
+   :root block in /index.html, so a static page and the app are visibly
+   the same product rather than two designs stapled together.
+
+   Dark is the default here — the studio look the app uses. Pages carry a
+   three-line inline script that reads the app's saved theme choice and
+   sets data-theme="light" before first paint, so somebody who chose
+   light in the app gets light here too. Nobody gets a cream page on a
+   black site.
+   =================================================================== */
 :root{
-  --bg:#f7f3ee;--ink:#1a1410;--mut:#6b5e55;--line:#e5dcd3;
-  --accent:#b3471f;--accent2:#8f3818;--card:#fff;--good:#1f7a45;
+  /* surfaces — the app's dark palette */
+  --bg:#0a0a0f; --bg-tint:#0e0e15;
+  --card:#15151d; --card-2:#1b1b25;
+  --line:#272733; --line-2:#353541;
+  /* ink */
+  --ink:#f1efec; --mut:#9b97a6;
+  --input-bg:#101018; --soft:#22222c;
+  /* status */
+  --accent:#ff4e3a; --accent2:#7c5cff;
+  --good:#41cf8e; --good-soft:rgba(65,207,142,.14); --bad:#ff8375;
+  /* light effects */
+  --sheen:rgba(255,255,255,.06);
+  --grad:linear-gradient(100deg,#ff8a3d,#ff4e3a 45%,#c05cff);
+  --sh-1:0 1px 2px rgba(0,0,0,.5);
+  --shadow:0 10px 34px rgba(0,0,0,.45);
+  --ring:0 0 0 3px rgba(255,78,58,.24);
+  /* type */
   --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:dark;
 }
+/* an explicit light choice, set by the app's theme button */
+:root[data-theme="light"]{
+  --bg:#faf7f2; --bg-tint:#f4efe7;
+  --card:#ffffff; --card-2:#fffdfa;
+  --line:#e9e2d8; --line-2:#ddd3c5;
+  --ink:#12121a; --mut:#74747e;
+  --input-bg:#ffffff; --soft:#eee9e0;
+  --good:#1f7a4d; --good-soft:#e2efe7; --bad:#c0392b;
+  --sheen:rgba(255,255,255,.55);
+  --sh-1:0 1px 2px rgba(24,16,10,.05);
+  --shadow:0 10px 34px rgba(24,16,10,.09);
+  --ring:0 0 0 3px rgba(255,78,58,.18);
+  color-scheme:light;
+}
+
 *{box-sizing:border-box}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.55}
+html{background:var(--bg)}
+body{
+  margin:0;padding:0;
+  background:
+    radial-gradient(46% 34% at 8% 2%,rgba(255,138,61,.14),transparent 62%),
+    radial-gradient(38% 30% at 94% 0%,rgba(124,92,255,.12),transparent 64%),
+    var(--bg);
+  background-attachment:fixed;
+  color:var(--ink);font-family:var(--font);line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+:root[data-theme="light"] body{
+  background:
+    radial-gradient(46% 34% at 8% 2%,rgba(255,138,61,.10),transparent 62%),
+    radial-gradient(38% 30% at 94% 0%,rgba(124,92,255,.08),transparent 64%),
+    var(--bg);
+}
+
+/* skip link — every page has <main id="main"> to jump to */
+.skip{position:absolute;left:-9999px;top:0;z-index:200;background:var(--card);
+  color:var(--ink);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;font-weight:700}
+.skip:focus{left:12px;top:12px}
+
 a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline}
 .wrap{max-width:880px;margin:0 auto;padding:0 20px 48px}
-.topnav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0;border-bottom:1px solid var(--line);margin-bottom:28px;flex-wrap:wrap}
+
+/* --- header --- */
+.topnav{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:18px 0;border-bottom:1px solid var(--line);margin-bottom:28px;flex-wrap:wrap}
 .brand{font-weight:800;font-size:18px;color:var(--ink);letter-spacing:-.02em}
 .brand span{color:var(--accent)}
-.topnav nav{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;font-weight:600}
-.topnav nav a{color:var(--mut)}
-.topnav nav a:hover,.topnav nav a[aria-current="page"]{color:var(--accent)}
-h1{font-size:clamp(1.6rem,3vw,2.1rem);line-height:1.2;margin:0 0 10px;letter-spacing:-.03em}
+.topnav nav{display:flex;gap:6px;flex-wrap:wrap;font-size:14px;font-weight:600}
+.topnav nav a{color:var(--mut);padding:7px 11px;border-radius:999px;transition:background .18s,color .18s}
+.topnav nav a:hover{color:var(--accent);background:rgba(255,78,58,.10);text-decoration:none}
+.topnav nav a[aria-current="page"]{color:var(--accent);background:rgba(255,78,58,.12)}
+
+h1{font-size:clamp(1.7rem,3.2vw,2.3rem);line-height:1.15;margin:0 0 10px;letter-spacing:-.03em}
+h2{font-size:1.25rem;line-height:1.25;margin:26px 0 8px;letter-spacing:-.02em}
+h3{font-size:1.05rem;margin:20px 0 6px}
 .lede{color:var(--mut);font-size:1.05rem;margin:0 0 22px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 8px 24px rgba(26,20,16,.04)}
+
+/* --- surfaces --- */
+.card{background:linear-gradient(180deg,var(--card),var(--card-2));
+  border:1px solid var(--line);border-radius:16px;padding:22px;
+  box-shadow:var(--shadow),inset 0 1px 0 var(--sheen)}
+
 label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}
 input.input,textarea.input,select.input{
-  width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);
-  background:#fff;font:inherit;color:var(--ink)
-}
-input.input:focus,textarea.input:focus,select.input:focus{outline:2px solid rgba(179,71,31,.35);border-color:var(--accent)}
+  width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line-2);
+  background:var(--input-bg);font:inherit;color:var(--ink)}
+input.input:focus,textarea.input:focus,select.input:focus{outline:0;border-color:var(--accent);box-shadow:var(--ring)}
 textarea.input{min-height:140px;resize:vertical}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;padding:12px 18px;font-weight:700;font:inherit;cursor:pointer}
+
+/* --- buttons --- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;
+  border-radius:12px;padding:12px 18px;font-weight:700;font:inherit;cursor:pointer;
+  text-decoration:none;transition:transform .18s,box-shadow .18s,border-color .18s,color .18s}
+.btn:hover{text-decoration:none}
 .btn-accent{background:var(--accent);color:#fff}
-.btn-accent:hover{background:var(--accent2)}
+.btn-accent:hover{background:#ff6250;transform:translateY(-1px);
+  box-shadow:0 10px 26px rgba(255,78,58,.34)}
+.btn-soft{background:var(--card);color:var(--ink);border:1.5px solid var(--line-2)}
+.btn-soft:hover{border-color:var(--accent);color:var(--accent)}
+
+/* honeypot for bots — kept off-screen, never display:none */
 .hp{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+
 .note{font-size:13px;color:var(--mut);margin-top:14px}
-.site-footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:var(--mut);font-size:13px}
-.site-footer nav{display:flex;flex-wrap:wrap;gap:12px 16px;margin-bottom:10px;font-weight:600}
+.muted{color:var(--mut)}
+.keep{color:var(--good);font-weight:800}
+
+/* --- footer --- */
+.site-footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);
+  color:var(--mut);font-size:13px}
+.site-footer nav{display:flex;flex-wrap:wrap;gap:8px 14px;margin-bottom:10px;font-weight:600}
 .site-footer a{color:var(--mut)}
 .site-footer a:hover{color:var(--accent)}
+
+/* --- tables --- */
 .table{width:100%;border-collapse:collapse;font-size:14px}
-.table th,.table td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left}
-.table th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
-.keep{color:var(--good);font-weight:800}
-.muted{color:var(--mut)}
+.table th,.table td{padding:11px 8px;border-bottom:1px solid var(--line);text-align:left}
+.table th{font-family:var(--mono);font-size:11px;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--mut);font-weight:700}
+
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:640px){.grid-2{grid-template-columns:1fr}}
-.badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);background:rgba(179,71,31,.1);padding:4px 8px;border-radius:999px;margin-bottom:10px}
-.calc-out{margin-top:16px;padding:14px;border-radius:12px;background:#faf7f3;border:1px dashed var(--line)}
-.ok{background:#eaf7ef;border:1px solid #bfe5cd;color:#14532d;padding:12px 14px;border-radius:12px;margin-bottom:16px;font-weight:600}
+
+/* micro-label — the monospace tag that ties the static pages to the studio */
+.badge{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+  background:rgba(255,78,58,.10);border:1px solid rgba(255,78,58,.26);
+  padding:4px 9px;border-radius:8px;margin-bottom:10px}
+
+/* calculator output / callouts */
+.calc-out{margin-top:16px;padding:14px;border-radius:12px;background:var(--card-2);
+  border:1px solid var(--line-2)}
+.ok{background:var(--good-soft);border:1px solid var(--good);color:var(--ink);
+  padding:12px 14px;border-radius:12px;margin-bottom:16px;font-weight:600}

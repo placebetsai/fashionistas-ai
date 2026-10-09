@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Privacy Policy — fashionistas.ai</title>
+<title>Privacy policy — what fashionistas.ai collects and why</title>
 <meta name="description" content="Privacy policy for fashionistas.ai: what we collect for accounts, listing drafts and contact forms, and how to reach fashionistas1979@gmail.com.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://fashionistas.ai/privacy/">
@@ -19,10 +19,12 @@
 <meta name="twitter:image" content="https://fashionistas.ai/og.png">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/site.css">
-<meta name="color-scheme" content="only light">
+<meta name="color-scheme" content="dark light">
 <script>if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).catch(function(){});if(window.caches)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})}).catch(function(){})}</script>
+<script>try{var t=localStorage.getItem("fash_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 <div class="wrap">
 <header class="topnav">
 <a class="brand" href="/">fashionistas<span>.ai</span></a>
@@ -31,12 +33,12 @@
 <a href="/privacy/" aria-current="page">Privacy</a>
 <a href="/contact/">Contact</a>
 <a href="/">App</a>
-</nav>
+<a href="/pricing/">Pricing</a><a href="/guide/">Guide</a></nav>
 </header>
 <main id="main">
 <span class="badge">Privacy</span>
 <h1>Privacy Policy</h1>
-<p class="lede">Last updated: September 26, 2026 (America/New_York). fashionistas.ai is a resale listing-draft tool. We do not sell your personal data.</p>
+<p class="lede">Last updated: October 9, 2026 (America/New_York). fashionistas.ai is a resale listing-draft tool. We do not sell your personal data.</p>
 <div class="card">
 <h2 style="font-size:1.15rem;margin-top:0">What we collect</h2>
 <ul>
@@ -46,12 +48,13 @@
 </ul>
 <h2 style="font-size:1.15rem">What we do not do</h2>
 <ul>
-<li>We do not post to Depop, eBay, Poshmark, Mercari, Vinted or Grailed on your behalf.</li>
+<li>Listing to eBay and Etsy runs through their own OAuth connection: we hold the connection and send the listing you approved.</li>
+  <li>For Poshmark, Mercari, Depop, Vinted, Grailed, Facebook Marketplace, Kidizen, Vestiaire Collective and Whatnot there is no seller API. Nothing is sent to those shops — our browser extension types the draft into the form inside your own signed-in tab, and your session with that shop stays yours.</li>
 <li>We do not sell or rent your personal information to data brokers.</li>
-<li>We do not place Google AdSense ad units on empty app shells.</li>
+<li><strong>Advertising.</strong> Google AdSense is loaded on the marketing pages (home, about, pricing and the guide). Google and its partners may set cookies on those pages to serve and measure ads. Ad units are not placed on screens where you are working with your closet.</li>
 </ul>
 <h2 style="font-size:1.15rem">Where data lives</h2>
-<p>Application data is stored with Cloudflare (Workers / D1). Contact form messages are processed by FormSubmit and emailed to us.</p>
+<p>Application data is stored with Cloudflare (Workers / D1). Contact form messages are processed by FormSubmit and emailed to us. Virtual try-on renders are processed by our render provider, which receives the two images for that single render and nothing else. Fonts, the 3D model viewer and the on-device pose check are loaded from Google and jsDelivr CDNs, which see your IP address when they serve those files.</p>
 <h2 style="font-size:1.15rem">Your choices</h2>
 <p>Email <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a> to request account deletion or a copy of your data. Boca Raton, FL.</p>
 <p class="muted" style="margin-bottom:0">This page is a plain-language policy for the multilist draft product. It is not legal advice.</p>
@@ -63,7 +66,7 @@
 <a href="/">Home</a>
 <a href="/contact/">Contact</a>
 <a href="/about/">About</a>
-<a href="/privacy/">Privacy</a>
+<a href="/privacy/">Privacy</a><a href="/pricing/">Pricing</a><a href="/guide/">Guide</a><a href="/try-on/">Try it on</a><a href="/see-in-space/">See in my space</a>
 <a href="/#view-auth">Open app</a>
 </nav>
 <p>fashionistas.ai — photograph your closet, list it everywhere. Email: <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a></p>
