@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>See in my space — free Instant preview | fashionistas.ai</title>
-<meta name="description" content="Upload a room photo and place any listing — wall art, furniture, or décor — with a free Instant preview. Optional phone AR when supported. Not photoreal.">
+<meta name="description" content="Upload a photo of your room and place any listing — on the wall, on the floor, or on your counter — with a free Instant preview. Optional phone AR when supported. Not photoreal.">
 <link rel="canonical" href="https://fashionistas.ai/see-in-space/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="fashionistas.ai">
@@ -75,7 +75,7 @@
   <span class="badge">Free</span>
 </div>
 <h1>See it in my space</h1>
-<p class="lede">Add a photo of your room and the item, then drag it into place. A quick preview, not a real photo — and your photos stay on your phone. For clothes, use <a href="/try-on/">Try it on</a>.</p>
+<p class="lede">Add a photo of your room and the item, then drag it into place — on the wall, the floor, or your counter. A quick preview, not a real photo, and your photos stay on your phone. For clothes, use <a href="/try-on/">Try it on</a>.</p>
 
 <div class="sis-grid">
   <section class="card" style="padding:14px">
@@ -98,18 +98,19 @@
     <div class="sis-mode" role="group" aria-label="Placement mode">
       <button type="button" id="mode-wall" class="on" data-mode="wall">Wall</button>
       <button type="button" id="mode-floor" data-mode="floor">Floor</button>
+      <button type="button" id="mode-table" data-mode="table">Counter</button>
     </div>
 
     <div class="sis-drop" id="drop-room">
       <p style="margin:0;font-weight:700">1. Add a room photo</p>
-      <p class="note" style="margin:4px 0 0">Your wall or floor</p>
+      <p class="note" style="margin:4px 0 0">Your wall, floor or counter</p>
       <img class="sis-thumb" id="thumb-room" alt="">
       <input type="file" id="file-room" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose room photo">
     </div>
 
     <div class="sis-drop" id="drop-item" style="margin-top:12px">
       <p style="margin:0;font-weight:700">2. Add the item photo</p>
-      <p class="note" style="margin:4px 0 0">Art, a lamp, a chair…</p>
+      <p class="note" style="margin:4px 0 0">Art, a lamp, a coffee maker…</p>
       <img class="sis-thumb" id="thumb-item" alt="">
       <input type="file" id="file-item" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose item photo">
     </div>
@@ -186,7 +187,15 @@ import { cutoutBackground, canvasToImage, aiCutout } from "./cutout.js";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
-let mode = (params.get("mode") === "floor") ? "floor" : "wall";
+const normMode = (v) => (v === "floor" || v === "table") ? v : "wall";
+const yFrac = () => (mode === "table" ? 0.46 : 0.78);   // where the item stands: counter vs floor
+let mode = normMode(params.get("mode"));
+/** One sentence per mode: where the seller should drag the item. */
+const placeHint = (bg) => mode === "wall"
+  ? (bg ? "Background removed. " : "") + "Drag the four corner handles onto your wall."
+  : mode === "table"
+    ? (bg ? "Background removed. " : "") + "Drag it onto your counter — scale and rotate below."
+    : (bg ? "Background removed. " : "") + "Drag the item; use scale and rotate sliders.";
 let roomImg = null;
 let itemImg = null;
 let corners = null;
@@ -206,16 +215,20 @@ function say(msg, err) {
 }
 
 function setMode(m) {
-  mode = m === "floor" ? "floor" : "wall";
+  mode = normMode(m);
   $("mode-wall").classList.toggle("on", mode === "wall");
   $("mode-floor").classList.toggle("on", mode === "floor");
-  $("floor-controls").hidden = mode !== "floor";
+  $("mode-table").classList.toggle("on", mode === "table");
+  $("floor-controls").hidden = mode === "wall";          // scale/rotate apply to any surface
   const mv = $("mv");
-  if (mv) mv.setAttribute("ar-placement", mode === "floor" ? "floor" : "wall");
+  // WebXR exposes horizontal planes as "floor"; a countertop is the same hit
+  // plane to the runtime, so counter AR is labelled floor to the browser and
+  // "counter" to the seller.
+  if (mv) mv.setAttribute("ar-placement", mode === "wall" ? "wall" : "floor");
   clearHandles();
   if (roomImg && itemImg) {
     if (mode === "wall") corners = defaultWallCorners(cv.width, cv.height);
-    else floorPose = defaultFloorPose(cv.width, cv.height, itemImg);
+    else floorPose = defaultFloorPose(cv.width, cv.height, itemImg, yFrac());
     paint();
   }
 }
@@ -252,7 +265,7 @@ function paint() {
     if (!corners) corners = defaultWallCorners(cv.width, cv.height);
     drawPerspectiveOverlay(ctx, roomImg, itemImg, corners, { opacity, shadow });
   } else {
-    if (!floorPose) floorPose = defaultFloorPose(cv.width, cv.height, itemImg);
+    if (!floorPose) floorPose = defaultFloorPose(cv.width, cv.height, itemImg, yFrac());
     const scaleMul = Number($("scale").value) / 100;
     const rot = (Number($("rot").value) * Math.PI) / 180;
     drawAffineOverlay(ctx, roomImg, itemImg, {
@@ -288,7 +301,7 @@ async function setRoom(img) {
   $("thumb-room").classList.add("on");
   try { saveRoomDataUrl(imageToDataUrl(roomImg, 1200)); } catch (_) {}
   corners = defaultWallCorners(cv.width, cv.height);
-  if (itemImg) floorPose = defaultFloorPose(cv.width, cv.height, itemImg);
+  if (itemImg) floorPose = defaultFloorPose(cv.width, cv.height, itemImg, yFrac());
   say("Room photo ready. Add an item if you have not yet.");
   if (itemImg) paint();
 }
@@ -313,7 +326,7 @@ async function setItem(img) {
         if (token !== setItem.token || !cut) { if (!cut) say("Couldn't separate the item from its background — placed the photo as-is."); return; }
         itemCut = true;
         await placeItem(await canvasToImage(cut));
-        say(mode === "wall" ? "Background removed. Drag the four corner handles onto your wall." : "Background removed. Drag the item; use scale and rotate sliders.");
+        say(placeHint(true));
       })
       .catch(() => { if (token === setItem.token) say("Background remover couldn't load here — placed the photo as-is."); });
   }
@@ -330,9 +343,9 @@ async function placeItem(img, aiPending) {
   $("thumb-item").src = img.src;
   $("thumb-item").classList.add("on");
   if (roomImg) {
-    floorPose = defaultFloorPose(cv.width, cv.height, itemImg);
+    floorPose = defaultFloorPose(cv.width, cv.height, itemImg, yFrac());
     paint();
-    if (!aiPending) say(mode === "wall" ? "Drag the four corner handles onto your wall." : "Drag the item; use scale and rotate sliders.");
+    if (!aiPending) say(placeHint(false));
   } else if (!aiPending) {
     say("Item ready — now add a room photo.");
   }
@@ -349,7 +362,7 @@ async function maybeBuildAr() {
     glbUrl = await listingImageToGlbUrl(itemImg, { widthCm: w, heightCm: h, maxEdge: 1024, alpha: itemCut });
     const mv = $("mv");
     mv.setAttribute("src", glbUrl);
-    mv.setAttribute("ar-placement", mode === "floor" ? "floor" : "wall");
+    mv.setAttribute("ar-placement", mode === "wall" ? "wall" : "floor");
     $("ar-status").textContent = "Ready. On a supported phone, tap the AR button above.";
   } catch (e) {
     $("ar-status").textContent = "AR isn't available on this device — the preview above still works.";
@@ -362,6 +375,7 @@ async function maybeBuildAr() {
 // Mode buttons
 $("mode-wall").onclick = () => setMode("wall");
 $("mode-floor").onclick = () => setMode("floor");
+$("mode-table").onclick = () => setMode("table");
 
 // File inputs + drag
 function wireDrop(zoneId, fileId, onFile) {
@@ -403,7 +417,7 @@ $("btn-ar-refresh").onclick = () => maybeBuildAr();
 $("btn-reset").onclick = () => {
   if (!roomImg || !itemImg) return;
   corners = defaultWallCorners(cv.width, cv.height);
-  floorPose = defaultFloorPose(cv.width, cv.height, itemImg);
+  floorPose = defaultFloorPose(cv.width, cv.height, itemImg, yFrac());
   $("scale").value = 100; $("scale-v").textContent = "100%";
   $("rot").value = 0; $("rot-v").textContent = "0°";
   paint();
@@ -454,7 +468,7 @@ stage.addEventListener("pointerdown", (ev) => {
     ev.preventDefault();
     return;
   }
-  if (mode === "floor" && ev.target === cv) {
+  if (mode !== "wall" && ev.target === cv) {
     const p = canvasLocal(ev);
     drag = { kind: "floor", ox: p.x - floorPose.x, oy: p.y - floorPose.y };
     cv.setPointerCapture?.(ev.pointerId);

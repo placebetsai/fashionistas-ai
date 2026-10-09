@@ -1023,16 +1023,19 @@ function marketClearFilters(){
   marketRefresh();
   refreshTips();
 }
-/* Buyer-only preview button on a search-result card. */
+/* Buyer-only preview button on a search-result card. Never blank — an object
+   we can't classify still opens the room placer with its photo. */
 function marketCardTry(m){
   const mode = inferPlacementMode(m || {});
-  if (mode !== "clothing" && mode !== "wall" && mode !== "floor") return "";
   const q = [];
-  if (mode !== "clothing") q.push("mode=" + mode);
+  if (mode !== "clothing" && mode !== "none") q.push("mode=" + mode);
   if (m.photo_url) q.push("item=" + encodeURIComponent(m.photo_url));
   if (m.title) q.push("title=" + encodeURIComponent(String(m.title).slice(0, 80)));
   const href = (mode === "clothing" ? "/try-on/" : "/see-in-space/") + (q.length ? "?" + q.join("&") : "");
-  const label = mode === "clothing" ? "Try it on" : "See it in my room";
+  const label = mode === "clothing" ? "Try it on"
+    : mode === "table" ? "See it on my counter"
+    : mode === "wall" ? "See it on my wall"
+    : "See it in my room";
   return `<a class="btn btn-accent btn-sm ux-try-link" href="${escapeAttr(href)}">${label}</a>`;
 }
 function marketCard(m, i){
@@ -1052,22 +1055,25 @@ function marketCard(m, i){
 }
 
 /* ================= PLACEMENT MODE (P0-B/C — free Instant space placer) ================
-   Infer clothing | wall | floor | none from category/title. Wire CTAs to /try-on/
-   or /see-in-space/. Client-side only; placement_mode may also be set on a listing. */
+   Infer clothing | wall | floor | table | none from category/title. table = sits ON
+   a surface (counter, table, shelf) — the "see it in my kitchen" case for objects.
+   Wire CTAs to /try-on/ or /see-in-space/. Client-side only; placement_mode may
+   also be set on a listing. */
 function inferPlacementMode(item){
   { const r = item && catRow(item.category); if (r && r.place) return r.place; }
   if (item && typeof item.placement_mode === "string"){
     const e = item.placement_mode.trim().toLowerCase();
-    if (e === "clothing" || e === "wall" || e === "floor" || e === "none") return e;
+    if (e === "clothing" || e === "wall" || e === "floor" || e === "table" || e === "none") return e;
   }
   const src = [item && item.category, item && item.title, item && item.description].filter(Boolean).join(" ");
   if (!src.trim()) return "none";
   if (/\b(paintings?|posters?|prints?|canvas(?:es)?|wall\s*arts?|framed\s+arts?|artworks?|tapestr(?:y|ies)|wall\s*hang(?:ing)?s?|mirrors?|wall\s*decors?|photo\s*frames?|gallery\s*walls?)\b/i.test(src)) return "wall";
   if (/\b(furniture|sofas?|couches?|chairs?|tables?|desks?|lamps?|rugs?|carpets?|ottomans?|bookshelves?|bookcases?|dressers?|nightstands?|bed\s*frames?|cabinets?|stools?|benches?|wardrobes?|armoires?|coffee\s*tables?|side\s*tables?|floor\s*lamps?)\b/i.test(src)) return "floor";
+  if (/\b(coffee\s*makers?|espresso|toasters?|blenders?|kettles?|mixers?|microwaves?|air\s*fryers?|slow\s*cookers?|pressure\s*cookers?|kitchen|vases?|mugs?|cups|bowls|plates|platters|trays|candles?|perfume|diffusers?|speakers?|soundbars?|monitors?|tvs?|television|clocks?|radios?|cameras?|projectors?|laptops?|desk\s*lamps?|figurines?|ornaments?|dolls?|toys?|plush(?:ies)?|stuffed\s+animals?|board\s*games?|puzzles?|planters?|house\s*plants?|jewel(?:l)ery\s*boxes?|keepsakes?|collectibles?)\b/i.test(src)) return "table";
   if (/\bhome\s*&\s*decor\b/i.test(src)){
     if (/wall|poster|print|mirror|painting/i.test(src)) return "wall";
     if (/rug|furniture|lamp|lighting|accent/i.test(src)) return "floor";
-    return "none";
+    return "table";
   }
   if (/\b(women'?s\s+clothing|men'?s\s+clothing|kids?\s*&?\s*baby)\b/i.test(src)) return "clothing";
   if (/\b(clothing|apparel|garments?|tops?|shirts?|t-?shirts?|tees?|blouses?|bottoms?|pants?|trousers?|jeans?|shorts?|skirts?|dresses?|gowns?|outerwear|jackets?|coats?|parkas?|blazers?|hoodies?|sweaters?|cardigans?|shoes?|sneakers?|boots?|heels?|sandals?|activewear|swimwear|lingerie|suits?|bags?|handbags?|purses?|accessories|jewellery|jewelry)\b/i.test(src)) return "clothing";
@@ -1091,11 +1097,15 @@ function placementCtaHtml(item){
   if (mode === "clothing"){
     bits.push(`<a class="btn btn-accent" href="/try-on/${qs("")}">Try it on</a>`);
   } else if (mode === "wall"){
-    bits.push(btn("/see-in-space/" + qs("wall"), "See it in my room", "Add a photo of your wall and hang this on it. Free."));
+    bits.push(btn("/see-in-space/" + qs("wall"), "See it on my wall", "Add a photo of your wall and hang this on it. Free."));
   } else if (mode === "floor"){
     bits.push(btn("/see-in-space/" + qs("floor"), "See it in my room", "Add a photo of your room and place this item in it. Free."));
+  } else if (mode === "table"){
+    bits.push(btn("/see-in-space/" + qs("table"), "See it on my counter", "Add a photo of your counter, table or shelf and place this on it. Free."));
   } else {
-    return "";
+    /* Never an empty string: every object used to lose its entry point here.
+       An unclassifiable item still gets the room placer with its own photo. */
+    bits.push(btn("/see-in-space/" + qs(""), "See it in my space", "Place this in a photo of your room — free Instant preview."));
   }
   bits.push(`</div>`);
   return bits.join("");

@@ -12,8 +12,8 @@ import {
   PLACEMENT_MODES,
 } from "../see-in-space/placement-mode.js";
 
-test("PLACEMENT_MODES lists clothing|wall|floor|none", () => {
-  assert.deepEqual([...PLACEMENT_MODES], ["clothing", "wall", "floor", "none"]);
+test("PLACEMENT_MODES lists clothing|wall|floor|table|none", () => {
+  assert.deepEqual([...PLACEMENT_MODES], ["clothing", "wall", "floor", "table", "none"]);
 });
 
 test("explicit placement_mode wins over category text", () => {

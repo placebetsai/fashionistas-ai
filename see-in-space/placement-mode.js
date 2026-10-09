@@ -1,19 +1,25 @@
 /**
  * Infer listing placement_mode for free Instant previews.
- * Values: clothing | wall | floor | none
+ * Values: clothing | wall | floor | table | none
+ *   table = the item sits ON a surface — counter, tabletop, shelf or desk —
+ *   which is how people picture mugs, appliances, decor and electronics.
  * Client-side only — no schema migration required; callers may also store
  * an explicit placement_mode on the listing when present.
  */
-export const PLACEMENT_MODES = Object.freeze(["clothing", "wall", "floor", "none"]);
+export const PLACEMENT_MODES = Object.freeze(["clothing", "wall", "floor", "table", "none"]);
 
 const WALL_RE = /\b(paintings?|posters?|prints?|canvas(?:es)?|wall\s*arts?|framed\s+arts?|artworks?|tapestr(?:y|ies)|wall\s*hang(?:ing)?s?|mirrors?|wall\s*decors?|photo\s*frames?|gallery\s*walls?)\b/i;
 const FLOOR_RE = /\b(furniture|sofas?|couches?|chairs?|tables?|desks?|lamps?|rugs?|carpets?|ottomans?|bookshelves?|bookcases?|dressers?|nightstands?|bed\s*frames?|cabinets?|stools?|benches?|wardrobes?|armoires?|coffee\s*tables?|side\s*tables?|floor\s*lamps?|plant\s*stands?)\b/i;
 const CLOTHING_RE = /\b(clothing|apparel|garments?|tops?|shirts?|t-?shirts?|tees?|blouses?|bottoms?|pants?|trousers?|jeans?|shorts?|skirts?|dresses?|gowns?|outerwear|jackets?|coats?|parkas?|blazers?|hoodies?|sweaters?|cardigans?|shoes?|sneakers?|boots?|heels?|sandals?|activewear|swimwear|lingerie|suits?|bags?|handbags?|purses?|accessories|jewellery|jewelry)\b/i;
 const CLOTHING_DEPT_RE = /\b(women'?s\s+clothing|men'?s\s+clothing|kids?\s*&?\s*baby|vintage\s*&\s*designer|sports\s*&\s*outdoor)\b/i;
+/* Objects that live ON a surface: the kitchen counter, the coffee table, the
+   desk. Checked after wall and floor (a floor lamp stays a floor item) and
+   before clothing, so "jewelry box" is a box, not a garment. */
+const TABLE_RE = /\b(coffee\s*makers?|espresso|toasters?|blenders?|kettles?|mixers?|microwaves?|air\s*fryers?|slow\s*cookers?|pressure\s*cookers?|kitchen|vases?|mugs?|cups|bowls|plates|platters|trays|candles?|perfume|diffusers?|speakers?|soundbars?|monitors?|tvs?|television|clocks?|radios?|cameras?|projectors?|laptops?|desk\s*lamps?|figurines?|ornaments?|dolls?|toys?|plush(?:ies)?|stuffed\s+animals?|board\s*games?|puzzles?|planters?|house\s*plants?|jewel(?:l)ery\s*boxes?|keepsakes?|collectibles?)\b/i;
 
 /**
  * @param {{ category?: string, title?: string, description?: string, placement_mode?: string }|string|null|undefined} input
- * @returns {"clothing"|"wall"|"floor"|"none"}
+ * @returns {"clothing"|"wall"|"floor"|"table"|"none"}
  */
 export function inferPlacementMode(input) {
   if (input && typeof input === "object" && typeof input.placement_mode === "string") {
@@ -29,6 +35,7 @@ export function inferPlacementMode(input) {
   if (!src.trim()) return "none";
   if (WALL_RE.test(src)) return "wall";
   if (FLOOR_RE.test(src)) return "floor";
+  if (TABLE_RE.test(src)) return "table";
   if (CLOTHING_DEPT_RE.test(src) || CLOTHING_RE.test(src)) return "clothing";
   return "none";
 }
@@ -54,6 +61,12 @@ export function placementCtas(mode) {
     return [
       { href: "/see-in-space/?mode=floor", label: "See in my room", tip: "Instant room preview — free. Photo overlay, not photoreal." },
       { href: "/see-in-space/?mode=floor", label: "See in my space", tip: "Place this listing in a room photo — free forever." },
+    ];
+  }
+  if (m === "table") {
+    return [
+      { href: "/see-in-space/?mode=table", label: "See it on my counter", tip: "Instant counter preview — free. Photo overlay, not photoreal." },
+      { href: "/see-in-space/?mode=table", label: "See it in my space", tip: "Place this on a counter, table or shelf — free forever." },
     ];
   }
   // none / unknown — offer space placer + clothing try-on so shoppers are never stuck

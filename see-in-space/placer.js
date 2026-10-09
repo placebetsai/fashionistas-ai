@@ -179,12 +179,14 @@ export function defaultWallCorners(W, H) {
   ].map((p) => ({ x: Math.max(m * 0.2, Math.min(W - m * 0.2, p.x)), y: Math.max(m * 0.2, Math.min(H - m * 0.2, p.y)) }));
 }
 
-export function defaultFloorPose(W, H, itemImg) {
+export function defaultFloorPose(W, H, itemImg, yFrac = 0.78) {
   const iw = itemImg.naturalWidth || itemImg.width || 100;
   const ih = itemImg.naturalHeight || itemImg.height || 100;
   const scale = Math.min((W * 0.35) / iw, (H * 0.35) / ih);
-  // Sit the item on the floor plane (lower third), not floating mid-room.
-  return { x: W * 0.5, y: Math.min(H * 0.78, H - (ih * scale) / 2 - H * 0.04), scale, rotation: 0 };
+  // Sit the item on its plane: yFrac 0.78 = floor (lower third), 0.46 = a
+  // counter or tabletop, which reads mid-frame in a room photo.
+  const y = Math.min(H * yFrac, H - (ih * scale) / 2 - H * 0.04);
+  return { x: W * 0.5, y, scale, rotation: 0 };
 }
 
 export function saveRoomDataUrl(dataUrl) {
