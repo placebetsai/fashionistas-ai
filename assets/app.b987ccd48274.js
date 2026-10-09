@@ -110,7 +110,13 @@ async function restoreSession(){
    TOKEN = ""; USER = null;
    localStorage.removeItem("fash_token"); localStorage.removeItem("fash_user");
    toast("Your session ended — sign in again to pick up where you left off.", 5000);
+   return;
   }
+  /* Sliding session — "sign in once, forever". A live token comes back
+     re-signed with a fresh expiry; store it and this account never asks for a
+     password again on this device (it would take a year of not opening the app). */
+  const d = await r.json().catch(() => null);
+  if (d && d.token && d.token !== TOKEN){ TOKEN = d.token; localStorage.setItem("fash_token", TOKEN); }
  } catch(e){ /* offline or the API is unreachable: keep what we have */ }
 }
 
@@ -3503,8 +3509,12 @@ async function handoffApi(shopId, lid){
  * Without the extension: eBay/Etsy still try the server API (may 402/503 when
  * Stripe or keys are empty); the other shops get clipboard + open-form handoff.
  */
-async function handoffSellAll(lid){
-  const picks = xlChecks().filter(c=>c.checked).map(c=>c.value);
+async function handoffSellAll(lid, picksArg){
+  // picksArg (optional): explicit shop ids — the wizard's "Post everywhere"
+  // button passes its own list. Without it, the multilist sheet's checkboxes.
+  const picks = (Array.isArray(picksArg) && picksArg.length)
+    ? picksArg.map(String)
+    : xlChecks().filter(c=>c.checked).map(c=>c.value);
   if (!picks.length) { toast("Select at least one marketplace first"); return; }
   const l = (S.listings||[]).find(x=>x.id===Number(lid));
   const api  = picks.filter(p => HANDOFF_API_HOSTS[p]);

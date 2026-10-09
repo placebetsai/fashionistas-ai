@@ -249,3 +249,10 @@ p.lw-range{margin-top:0}
   html.lw-on:has(.lw input:focus,.lw textarea:focus) #mtabbar{display:none!important}
   html.lw-on:has(.lw input:focus,.lw textarea:focus) .lw-foot{bottom:0!important}
 }
+
+/* one-click walk: primary button inline, above the shop cards (not in the foot) */
+.lw-all{margin:4px 0 16px}
+
+/* real drag & drop — #screen gets .lw-drag while files are over it */
+#screen.lw-drag .lw-drop{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);transition:border-color .12s ease,background .12s ease}
+#screen.lw-drag .lw-grid{outline:2px dashed var(--accent);outline-offset:4px}

@@ -172,6 +172,8 @@
       '<input type="file" id="lw-cam" accept="image/*" capture="environment" hidden onchange="LW.files(this)">' +
       '<input type="file" id="lw-gal" accept="image/*" multiple hidden onchange="LW.files(this)">' +
       '<div id="snap-pre" hidden></div></div>';
+    wireDrop(el);
+    wirePaste();
     renderStep();
   }
   /* One screen. Photo, title, price, List. The old 4-step form is what sellers
@@ -210,7 +212,6 @@
     var f = W.f;
     var h = "";
     if (W.restored && W.mode === "new") h += '<div class="lw-note">Draft saved on this phone. <button type="button" class="lw-link" onclick="LW.reset()">Start over</button></div>';
-    h += '<p class="lw-hint" style="margin-top:0">Photo, title, price. Then it’s in the shop.</p>';
     h += step1();
     if (!PHOTOS.length) return h;
     h += '<div class="lw-field"><div class="lw-lab"><label for="lw-title">Title</label>' + aiTag("title") + '</div>' +
@@ -238,7 +239,7 @@
       h += '<div class="lw-drop">' +
         '<div class="lw-drop-ico">' + ICON.cam + '</div>' +
         '<h3>Add photos of your item</h3>' +
-        '<p>Front first, then the label, the back and any flaws — up to ' + MAXP + '. AI reads the first photo and fills in the details.</p>' +
+        '<p>Front, label, back, flaws — up to ' + MAXP + '. AI fills in the rest.</p>' +
         '<div class="lw-drop-btns"><button type="button" class="lw-btn lw-btn-acc" onclick="LW.pick(\'cam\')">' + ICON.cam + ' Take photo</button>' +
         '<button type="button" class="lw-btn lw-btn-soft" onclick="LW.pick(\'gal\')">' + ICON.img + ' Choose from gallery</button></div>' +
         '<button type="button" class="lw-link lw-sample" onclick="LW.sample()">No photo handy? Try a sample</button></div>';
@@ -261,13 +262,13 @@
   }
   function aiCard() {
     if (W.mode === "edit" && W.aiState === "idle") return "";
-    if (W.aiState === "busy") return '<div class="lw-ai busy"><span class="lw-spin" aria-hidden="true"></span><div><b>AI is looking at your item…</b><span>Name, category, brand and price fill in by themselves. You can keep going.</span></div></div>';
+    if (W.aiState === "busy") return '<div class="lw-ai busy"><span class="lw-spin" aria-hidden="true"></span><div><b>AI is reading your photo…</b><span>Title, price and details fill in by themselves.</span></div></div>';
     if (W.aiState === "error") return '<div class="lw-ai err"><div><b>We couldn\'t read that photo</b><span>' + esc(W.aiErr || "Fill in the details yourself — it only takes a minute.") + '</span></div><button type="button" class="lw-chipbtn" onclick="LW.identify(true)">Try again</button></div>';
     if (W.aiState === "done" && W.ai) {
       var a = W.ai;
       return '<div class="lw-ai ok"><span class="lw-ok">' + ICON.check + '</span><div><b>' + esc(W.f.title || a.type || "Item identified") + '</b><span>' +
         esc([pathLabel(W.f.path), a.lo && a.hi ? ("sells for " + money0(a.lo) + "–" + money0(a.hi)) : ""].filter(Boolean).join(" · ")) +
-        (a.conf ? " · " + a.conf + "% sure" : "") + '. We filled in the details — check them next.</span></div></div>';
+        (a.conf ? " · " + a.conf + "% sure" : "") + '. Filled in for you.</span></div></div>';
     }
     return "";
   }
@@ -276,8 +277,11 @@
     if (PHOTOS.length >= MAXP) return say("That's the maximum of " + MAXP + " photos.");
     var inp = $id(which === "cam" ? "lw-cam" : "lw-gal"); if (inp) { inp.value = ""; inp.click(); }
   }
-  function files(inp) {
-    var list = [].slice.call(inp.files || []).slice(0, MAXP - PHOTOS.length);
+  function files(inp) { ingest(inp.files); }
+  /* One ingest path for every way a photo can arrive: camera, gallery, drag &
+     drop, and paste. All of them land in the same downscale -> AI pipeline. */
+  function ingest(fileList) {
+    var list = [].slice.call(fileList || []).filter(function (f) { return f && /^image\//.test(f.type); }).slice(0, MAXP - PHOTOS.length);
     if (!list.length) return;
     var first = !PHOTOS.length, done = 0, out = new Array(list.length);
     list.forEach(function (f, i) {
@@ -291,6 +295,49 @@
         if (first && PHOTOS.length && W.mode === "new") identify(false);
         coach("photo");
       });
+    });
+  }
+  /* Real drag & drop — desktop sellers drop files straight onto the screen.
+     Wired on the mount container once; every handler no-ops unless the wizard
+     is the screen currently up, so other views are untouched. */
+  function wireDrop(el) {
+    if (!el || el.__fashDrop) return;
+    el.__fashDrop = true;
+    var hasFiles = function (e) {
+      var t = (e.dataTransfer && e.dataTransfer.types) || null;
+      if (!t) return false;
+      for (var i = 0; i < t.length; i++) if (t[i] === "Files") return true;
+      return false;
+    };
+    el.addEventListener("dragover", function (e) {
+      if (!$id("lw") || !W || W.mode !== "new" || !hasFiles(e)) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+      el.classList.add("lw-drag");
+    });
+    el.addEventListener("dragleave", function (e) {
+      if (!el.contains(e.relatedTarget)) el.classList.remove("lw-drag");
+    });
+    el.addEventListener("drop", function (e) {
+      if (!$id("lw") || !W || W.mode !== "new" || !hasFiles(e)) return;
+      e.preventDefault(); el.classList.remove("lw-drag");
+      ingest(e.dataTransfer && e.dataTransfer.files);
+    });
+  }
+  var pasteWired = false;
+  function wirePaste() {
+    if (pasteWired) return;
+    pasteWired = true;
+    document.addEventListener("paste", function (e) {
+      if (!$id("lw") || !W || W.mode !== "new" || !e.clipboardData) return;
+      var items = e.clipboardData.items || [], got = [];
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].type && items[i].type.indexOf("image/") === 0) {
+          var f = items[i].getAsFile && items[i].getAsFile();
+          if (f) got.push(f);
+        }
+      }
+      if (got.length) { e.preventDefault(); ingest(got); }
     });
   }
   function downscale(file, cb) {
@@ -764,6 +811,66 @@
   }
   function stateOf(shop) { try { var s = handoffStateOf(shop, P.l.id); return s && s.status; } catch (e) { return null; } }
   function doneCount() { return P.shops.filter(function (s) { return stateOf(s) === "posted"; }).length; }
+  function pendingShops() { return P ? P.shops.filter(function (s) { return stateOf(s) !== "posted"; }) : []; }
+
+  /* ================= ONE CLICK: POST EVERYWHERE ================= */
+  /* The seller presses one button. With the extension installed that really
+     does queue every shop at once (handoffSellAll). Without it the marketplaces
+     refuse a server-side post (no seller API), so this walks the list: one tap
+     opens the next shop with its listing already copied — the seller only ever
+     presses that shop's own Post button. Nothing is ever marked Posted for them. */
+  function sellAll() {
+    if (!P) return;
+    if (P.walk && P.walkAt < P.walk.length) return walkNext();
+    var pend = pendingShops();
+    if (!pend.length) return say("Every shop is posted ✓");
+    var ext = (typeof extAvailable === "function") ? extAvailable() : Promise.resolve(false);
+    Promise.resolve(ext).then(function (ok) {
+      if (!P) return;
+      if (ok && typeof handoffSellAll === "function") {
+        handoffSellAll(P.l.id, pend);
+        setTimeout(function () { if (P) renderPost(false); }, 900);
+        return;
+      }
+      P.walk = pend; P.walkAt = 0;
+      walkNext();
+    });
+  }
+  function walkNext() {
+    if (!P || !P.walk) return;
+    while (P.walkAt < P.walk.length && stateOf(P.walk[P.walkAt]) === "posted") P.walkAt++;   // don't reopen one the seller already posted
+    if (P.walkAt >= P.walk.length) {
+      P.walk = null; renderPost(false);
+      return say("That's every shop opened — press Post on the one you're on.", 4500);
+    }
+    var id = P.walk[P.walkAt++];
+    P.open = id;
+    renderPost(false);
+    openWithKit(id);
+    var c = $id("lw-pc-" + id);
+    if (c && c.scrollIntoView) c.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
+  /* Open synchronously with the tap (a delayed window.open gets popup-blocked),
+     and put that shop's own kit — title, price, size, condition, description —
+     on the clipboard so the paste is one long-press. */
+  function openWithKit(id) {
+    var s = shopById(id), l = P && P.l;
+    if (!s || !l) return;
+    var text = [shopTitle(id, l), "$" + (Number(l.price) || 0), l.size ? ("Size " + l.size) : "",
+      condFor(id, l), shopDesc(id, l)].filter(Boolean).join("\n");
+    P.flags[id] = Object.assign({}, P.flags[id], { opened: true });
+    window.open(s.sell, "_blank", "noopener");
+    var copied = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          say(s.name + " opened with the listing copied — press Post there.", 4000);
+        }, function () {});
+        copied = true;
+      }
+    } catch (e) {}
+    if (!copied) say(s.name + " opened — copy the lines from its card, then press Post there.", 4000);
+  }
   function renderPost(fresh) {
     var el = screenEl(); if (!el || !P) return;
     var l = P.l, path = canonPath(l.category);
@@ -774,10 +881,20 @@
       '<span class="lw-livea"><button type="button" class="lw-link" onclick="LW.view(' + Number(l.id) + ')">View listing</button><button type="button" class="lw-link" onclick="LW.edit(' + Number(l.id) + ')">Edit</button></span></div></div>';
     if (n) h += '<div class="lw-pp"><div class="lw-stepline"><b>Also on other shops</b><span>' + d + ' of ' + n + ' done</span></div><div class="lw-bar"><i style="width:' + Math.round(d / n * 100) + '%"></i></div></div>';
     else h += '<p class="lw-hint">Add a shop below to post this item there too.</p>';
+    var pend = pendingShops();
+    if (pend.length) {
+      var walking = !!(P.walk && P.walkAt < P.walk.length);
+      var nextS = walking ? shopById(P.walk[P.walkAt]) : null;
+      h += '<button type="button" class="lw-next lw-go lw-all" onclick="LW.sellAll()">' +
+        (walking
+          ? ("Next: " + esc((nextS && nextS.name) || "shop") + " · " + P.walkAt + "/" + P.walk.length)
+          : ("Post everywhere · " + pend.length + (pend.length === 1 ? " shop" : " shops"))) +
+        '</button>';
+    }
     h += P.shops.map(function (id) { return shopCard(id, path); }).join("");
     var rest = SHOPS.filter(function (s) { return P.shops.indexOf(s.id) < 0 && shopTakes(s.id, path); });
     if (rest.length) h += '<div class="lw-addshops"><span class="lw-labt">Add a shop</span><div class="lw-chips">' + rest.map(function (s) { return '<button type="button" class="lw-chip lw-chip-shop" data-v="' + s.id + '" onclick="LW.addShop(this.getAttribute(\'data-v\'))">' + logo(s, 22) + esc(s.name) + '<span aria-hidden="true">+</span></button>'; }).join("") + '</div></div>';
-    h += '<p class="lw-hint lw-how">Depop, Poshmark, Mercari, Vinted, Grailed, eBay and Etsy do not let us press Post for you. Open one, paste, and press their button. Nothing to install.</p>';
+    h += '<p class="lw-hint lw-how">Tap a shop — we copy the whole listing and open it. You press their Post button. Nothing to install.</p>';
     h += '<div class="lw-foot"><button type="button" class="lw-next lw-ghost" onclick="LW.done()">' + (n && d === n ? "All done — see my items" : "Finish later — it's saved") + '</button></div>';
     h += '</div>';
     el.innerHTML = h;
@@ -920,7 +1037,7 @@
     set: set, kind: kind, catOpen: catOpen, catDept: catDept, catSearch: catSearch, catSet: catSet, cond: cond, size: size, sizeOther: sizeOther, color: color,
     price: price, bump: bump, ship: ship, shop: shop,
     next: next, back: back, to: to, reset: reset, help: help,
-    post: post, copy: copy, share: share, opened: opened, mark: mark, openShop: openShop, handOff: handOff, connect: connect, addShop: addShop, ebay: ebay, view: view, done: doneBtn, edit: edit,
+    post: post, sellAll: sellAll, copy: copy, share: share, opened: opened, mark: mark, openShop: openShop, handOff: handOff, connect: connect, addShop: addShop, ebay: ebay, view: view, done: doneBtn, edit: edit,
     _state: function () { return { W: W, photos: PHOTOS.length, P: P ? { id: P.l.id, shops: P.shops, open: P.open } : null }; },
     SHOPS: SHOPS, COND: COND
   };
