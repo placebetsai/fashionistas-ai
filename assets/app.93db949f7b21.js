@@ -214,6 +214,10 @@ function enterBrowse(v){
 async function go(v){
   document.querySelectorAll("nav.tabbar a, #topnav a, #drawer-links a").forEach(a => a.classList.toggle("on", a.dataset.v === v));
   navDrawer(false);
+  /* A sheet belongs to the screen you opened it from. Leave it hanging around
+     and it covers the next screen: a buyer sheet stayed open over the Sell
+     wizard and swallowed a drag-and-drop meant for the photo drop zone. */
+  if (document.getElementById("sheet")) { try{ closeSheet(); }catch(e){} }
   /* Move on and the floating checklist stops covering whatever you moved to;
      it is one tap away and the user can reopen it. */
   if (typeof SCCollapse === "function") { try{ SCCollapse(); }catch(e){} }

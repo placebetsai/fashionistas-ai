@@ -145,8 +145,7 @@ test("the seller checklist collapses before anything it would cover", () => {
   assert.match(src, /function openSheet\(html\)\{\n if \(typeof SCCollapse === "function"\)/, "sheets open over it");
   assert.match(src, /async function threadScreen\(id, label\)\{[\s\S]{0,400}SCCollapse\(\)/, "messages too");
   assert.match(src, /async function messagesScreen\(\)\{[\s\S]{0,300}SCCollapse\(\)/, "the inbox too");
-  assert.match(src, /navDrawer\(false\);\n  \/\* Move on and the floating checklist[\s\S]{0,220}SCCollapse\(\)/,
-    "and every screen swap");
+  assert.match(src, /navDrawer\(false\);[\s\S]{0,700}SCCollapse\(\)/, "and every screen swap");
 
   // it must not re-expand itself behind the fix, or every collapse is cosmetic
   assert.match(coach, /function collapse\(\) \{[\s\S]{0,620}st\.panelOpened = true; saveState\(st\);/,
@@ -157,6 +156,14 @@ test("the seller checklist collapses before anything it would cover", () => {
     "first open starts collapsed on every screen size");
   assert.doesNotMatch(coach, /panel\.classList\.remove\("collapsed"\);[\s\S]{0,80}tg\.textContent/,
     "it no longer force-expands itself on first render");
+});
+
+test("leaving a screen closes the sheet that screen opened", () => {
+  // a buyer sheet stayed open across a tab switch and covered the Sell drop
+  // zone — the drop never fired, and the seller's photo silently vanished
+  assert.match(src, /if \(document\.getElementById\("sheet"\)\) \{ try\{ closeSheet\(\); \}catch\(e\)\{\} \}/,
+    "go() puts the sheet away before the next screen paints");
+  assert.match(src, /function closeSheet\(\)/, "closeSheet exists to call");
 });
 
 /* ── 4. the tab title follows the screen ──────────────────────────────── */
