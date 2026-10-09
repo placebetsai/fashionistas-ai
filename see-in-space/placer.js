@@ -219,7 +219,7 @@ export function loadImageFromFile(file) {
   });
 }
 
-export function loadImageFromUrl(url) {
+function imgFrom(url) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -227,6 +227,37 @@ export function loadImageFromUrl(url) {
     img.onerror = () => reject(new Error("Could not load item image"));
     img.src = url;
   });
+}
+
+/**
+ * Load a room/item photo.
+ *
+ * Cross-origin item photos used to fail with "No Access-Control-Allow-Origin":
+ * the item page shows the same URL in a plain <img> (request has no Origin, so
+ * the response carries no ACAO and no Vary), Chrome caches it for max-age
+ * (a year), and the room page's crossOrigin="anonymous" load then reuses that
+ * entry — CORS error, every time the seller came from an item page. Fetching
+ * with cache:"reload" forces the network round-trip (which does carry ACAO)
+ * and hands the bytes over as a blob URL, so the canvas stays untainted.
+ */
+export async function loadImageFromUrl(url) {
+  if (/^https?:\/\//i.test(url)) {
+    try {
+      const resp = await fetch(url, { cache: "reload", mode: "cors" });
+      if (resp.ok) {
+        const objUrl = URL.createObjectURL(await resp.blob());
+        try {
+          return await imgFrom(objUrl);
+        } catch (e) {
+          URL.revokeObjectURL(objUrl);
+          throw e;
+        }
+      }
+    } catch (_) {
+      /* fall through to the direct image path */
+    }
+  }
+  return imgFrom(url);
 }
 
 export function imageToDataUrl(img, maxEdge = 1600) {

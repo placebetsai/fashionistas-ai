@@ -93,6 +93,17 @@ test("counter mode behaves like a surface: drag, scale/rotate, AR on a plane", (
   assert.match(room, /Drag it onto your counter/);
 });
 
+test("the room page never trusts a poisoned cross-origin image cache", () => {
+  // The item page caches the photo with a plain <img> (no Origin -> no ACAO),
+  // the room page's crossOrigin load reuses that entry and dies with a CORS
+  // error. The loader must go to the network and hand bytes over as a blob.
+  const fn = placer.slice(placer.indexOf("export async function loadImageFromUrl"));
+  assert.match(fn, /fetch\(url, \{ cache: "reload", mode: "cors" \}\)/);
+  assert.match(fn, /URL\.createObjectURL\(await resp\.blob\(\)\)/);
+  assert.match(fn, /fall through to the direct image path/);
+  assert.match(room, /await loadImageFromUrl\(/, "callers still await it");
+});
+
 test("a counter item starts mid-frame, a floor item stays on the floor", () => {
   assert.match(room, /const yFrac = \(\) => \(mode === "table" \? 0\.46 : 0\.78\);/);
   assert.match(room, /defaultFloorPose\(cv\.width, cv\.height, itemImg, yFrac\(\)\)/);
