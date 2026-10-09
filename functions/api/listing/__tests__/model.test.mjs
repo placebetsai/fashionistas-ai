@@ -464,3 +464,103 @@ describe("completeJSON() — provider fallback (never a dead chatbot)", () => {
     }
   });
 });
+
+describe("completeJSON() — one budget for the whole provider chain", () => {
+  const sys = { system: "sys", prompt: "prompt" };
+  let orig;
+
+  beforeEach(() => {
+    orig = globalThis.fetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = orig;
+  });
+
+  it("a stalled provider spends the budget once — the chain does not multiply it", async () => {
+    // A provider whose response never arrives, stalled for exactly the attempt
+    // timeout. The stall is driven by a ref'd timer rather than by waiting on
+    // init.signal: AbortSignal.timeout()'s internal timer does not keep Node's
+    // test event loop alive, so a mock that only listens for "abort" drains the
+    // loop and cancels the suite instead of ever rejecting.
+    globalThis.fetch = (url, init) =>
+      new Promise((_, reject) => {
+        setTimeout(() => {
+          const err = new Error("aborted");
+          err.name = "TimeoutError";
+          reject(err);
+        }, 300);
+      });
+
+    const t0 = Date.now();
+    await assert.rejects(
+      completeJSON(
+        {
+          GROQ_API_KEY: "gsk_test",
+          AI: { run: async () => ({ response: '{"ok":true}' }) },
+          MODEL_TIMEOUT_MS: "300",
+        },
+        sys
+      ),
+      (err) =>
+        err instanceof ModelError &&
+        err.status === 502 &&
+        err.code === "model_unavailable" &&
+        /budget already spent/.test(err.message)
+    );
+    const elapsed = Date.now() - t0;
+    // Per-provider budgets would spend 300ms on groq and then SUCCEED through
+    // workers_ai at ~300ms; N hanging providers would run N×300ms. One budget
+    // means one 300ms spend and a JSON failure, never an unbounded chain.
+    assert.ok(
+      elapsed < 900,
+      `chain must stop when the 300ms budget is spent; took ${elapsed}ms`
+    );
+  });
+
+  it("fast failures still fail over inside the same budget", async () => {
+    let aiCalled = false;
+    globalThis.fetch = async () => new Response("rate limited", { status: 429 });
+
+    const t0 = Date.now();
+    const out = await completeJSON(
+      {
+        GROQ_API_KEY: "gsk_test",
+        AI: {
+          run: async () => {
+            aiCalled = true;
+            return { response: '{"answer":"ok"}' };
+          },
+        },
+        MODEL_TIMEOUT_MS: "3000",
+      },
+      sys
+    );
+    assert.deepStrictEqual(out, { answer: "ok" });
+    assert.ok(aiCalled, "workers_ai must be tried after the first provider fails fast");
+    assert.ok(Date.now() - t0 < 1500, "failover must not wait out the budget");
+  });
+
+  it("a hung workers_ai binding is cut at its attempt timeout", async () => {
+    // env.AI.run takes no AbortSignal, so callWorkersAI races its own timer.
+    // Without that race this call would hang forever and the platform would
+    // answer with an opaque gateway page instead of a JSON ModelError.
+    const t0 = Date.now();
+    const raced = await Promise.race([
+      completeJSON({ AI: { run: () => new Promise(() => {}) }, MODEL_TIMEOUT_MS: "200" }, sys).then(
+        (value) => ({ settled: "ok", value }),
+        (error) => ({ settled: "error", error })
+      ),
+      new Promise((resolve) =>
+        setTimeout(() => resolve({ settled: "watchdog", error: new Error("still hung after 2500ms") }), 2500)
+      ),
+    ]);
+    const elapsed = Date.now() - t0;
+    assert.equal(raced.settled, "error", "a hung binding must reject, not hang");
+    assert.ok(
+      raced.error instanceof ModelError && raced.error.status === 504 && raced.error.code === "model_timeout",
+      `expected ModelError 504 model_timeout, got: ${raced.error && raced.error.message}`
+    );
+    assert.ok(elapsed < 1500, `must be cut at ~200ms; took ${elapsed}ms`);
+  });
+});

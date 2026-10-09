@@ -421,11 +421,27 @@ async function callWorkersAI(cfg, messages, temperature, env) {
 
   let result;
   try {
-    result = await env.AI.run(cfg.model, {
-      prompt,
-      max_tokens: 2048,
-      temperature,
-    });
+    // env.AI.run takes no AbortSignal, so the per-attempt timeout is enforced
+    // here with a race: without it a hung binding ignored cfg.timeoutMs
+    // entirely, and this attempt could outlive the whole chain's budget — the
+    // unbounded leg of the opaque-502 failure.
+    result = await Promise.race([
+      env.AI.run(cfg.model, {
+        prompt,
+        max_tokens: 2048,
+        temperature,
+      }),
+      new Promise((_, reject) => {
+        // Ref'd on purpose: an unref'd timer can leave a Node test awaiting a
+        // race nobody will ever settle (Workers has no loop to drain, but the
+        // unit tests do).
+        setTimeout(() => {
+          const err = new Error(`workers_ai timed out after ${cfg.timeoutMs}ms`);
+          err.name = "TimeoutError";
+          reject(err);
+        }, cfg.timeoutMs);
+      }),
+    ]);
   } catch (err) {
     const timedOut = err && (err.name === "TimeoutError" || err.name === "AbortError");
     throw timedOut
@@ -543,14 +559,34 @@ export async function completeJSON(env, { system, prompt, temperature = 0.2, met
   const failures = [];
   let lastErr = null;
 
+  // ONE budget for the whole chain, not one per attempt. MODEL_TIMEOUT_MS is
+  // documented (top of this file) as the runtime for the CALL, and the route
+  // contract promises a JSON ModelError — but with a per-attempt 45s the chain
+  // could run N×45s: on /api/chat a stalled first provider plus a second
+  // attempt went past the platform's own cut (~54s measured, opaque HTML 502
+  // that no wrapper can convert). Each attempt gets whatever is left of the
+  // budget; when it is spent the chain stops and reports, so the response is
+  // always ours and always inside MODEL_TIMEOUT_MS. Fast failures (rate limit,
+  // 5xx) still fail over — that is what the chain is for.
+  const budgetMs =
+    Number(env && env.MODEL_TIMEOUT_MS) > 0 ? Number(env.MODEL_TIMEOUT_MS) : DEFAULT_TIMEOUT_MS;
+  const deadline = Date.now() + budgetMs;
+
   for (const cfg of chain) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) {
+      failures.push(`${cfg.provider}: not tried — ${budgetMs}ms provider budget already spent`);
+      continue;
+    }
+    const attempt =
+      remaining < cfg.timeoutMs ? Object.assign({}, cfg, { timeoutMs: remaining }) : cfg;
     try {
       const content =
         cfg.provider === "ollama"
-          ? await callOllama(cfg, messages, temperature)
+          ? await callOllama(attempt, messages, temperature)
           : cfg.provider === "workers_ai"
-            ? await callWorkersAI(cfg, messages, temperature, env)
-            : await callOpenAI(cfg, messages, temperature);
+            ? await callWorkersAI(attempt, messages, temperature, env)
+            : await callOpenAI(attempt, messages, temperature);
       const parsed = parseModelJSON(content);
       if (meta && typeof meta === "object") {
         meta.provider = cfg.provider;
