@@ -214,6 +214,9 @@ function enterBrowse(v){
 async function go(v){
   document.querySelectorAll("nav.tabbar a, #topnav a, #drawer-links a").forEach(a => a.classList.toggle("on", a.dataset.v === v));
   navDrawer(false);
+  /* Move on and the floating checklist stops covering whatever you moved to;
+     it is one tap away and the user can reopen it. */
+  if (typeof SCCollapse === "function") { try{ SCCollapse(); }catch(e){} }
   /* The marketplace is addressable: /shop opens it directly, and leaving an
      item never strands /shop/<id> in the bar. replaceState keeps the back
      button about views, not about every tab click. */
@@ -3969,7 +3972,10 @@ function dmRender(el, nodes){
 }
 async function messagesScreen(){
   clearInterval(CURRENT.dmTimer);
-  kineticTitle("Messages"); $("#view-sub").textContent = "Talk to other accounts right inside the app.";
+  kineticTitle("Messages");
+  document.title = "Messages — fashionistas.ai";
+  if (typeof SCCollapse === "function") { try{ SCCollapse(); }catch(e){} }
+  $("#view-sub").textContent = "Talk to other accounts right inside the app.";
   const el = $("#screen"); el.innerHTML = showLoader();
   try {
     const [d, bl] = await Promise.all([api("/api/dm"), api("/api/dm/blocks")]);

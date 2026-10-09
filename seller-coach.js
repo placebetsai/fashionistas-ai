@@ -359,18 +359,13 @@
     if (body.__scSig !== bodyHtml) { body.innerHTML = bodyHtml; body.__scSig = bodyHtml; }
 
     if (panel.classList.contains("hidden")) panel.classList.remove("hidden");
-    // Expand when there is still work, or first open
     var st = loadState();
-    /* Phones: start collapsed — expanded, it covered half the screen. */
-    var isPhone = window.matchMedia && window.matchMedia("(max-width:767px)").matches;
-    if (!st.panelOpened && isPhone) { panel.classList.add("collapsed"); st.panelOpened = true; saveState(st); }
-    if (!st.panelOpened) {
-      panel.classList.remove("collapsed");
-      st.panelOpened = true;
-      saveState(st);
-      var tg = panel.querySelector(".sc-toggle");
-      if (tg) tg.textContent = "▾";
-    }
+    /* Start collapsed on EVERY screen size, not just phones. Expanded it covers
+       the controls it is describing: on a phone it ate half the screen, and on a
+       laptop it sat on "Take photo" far enough to cancel a real drag-and-drop
+       (the drop event never fired). The "What's next" bar stays tappable, so it
+       opens on a tap and not before. */
+    if (!st.panelOpened) { panel.classList.add("collapsed"); st.panelOpened = true; saveState(st); }
   }
 
   function escapeHtml(s) {
@@ -626,11 +621,14 @@
      put it away whenever they open something it would cover. */
   function collapse() {
     var panel = document.getElementById("seller-coach-panel");
-    if (!panel || panel.classList.contains("hidden")) return;
-    if (panel.classList.contains("collapsed")) return;
-    panel.classList.add("collapsed");
+    if (!panel) return;
+    if (!panel.classList.contains("collapsed")) panel.classList.add("collapsed");
     var btn = panel.querySelector(".sc-toggle");
     if (btn) btn.textContent = "▸";
+    /* Remember it has been put away — otherwise the "first open" expansion
+       puts it straight back over the next screen. */
+    var st = loadState();
+    if (!st.panelOpened) { st.panelOpened = true; saveState(st); }
   }
 
   window.SellerCoach = {
