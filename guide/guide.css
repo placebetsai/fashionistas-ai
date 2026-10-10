@@ -45,3 +45,64 @@
 .chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,78,58,.08);text-decoration:none}
 .crumb{display:inline-block;font-size:13px;font-weight:700;color:var(--mut);margin-bottom:12px}
 .crumb:hover{color:var(--accent);text-decoration:none}
+
+/* --- plain-English hover tips -------------------------------------------
+   The engine is /tips.js (the same one the app bundle ships, extracted so
+   static pages behave identically). Anything carrying [data-tip] gets a
+   bubble on hover or keyboard focus.
+
+   .tip is the INLINE PROSE form: a word that has a tip behind it. The dotted
+   underline is load-bearing — without it a tip nobody can discover is the
+   same as no tip at all, so the affordance has to be visible in the text.
+   Scoped to .tip rather than bare [data-tip] so buttons and chips on these
+   pages keep their own styling.                                                          */
+.tip{border-bottom:1.5px dotted var(--line-2);cursor:help;font-weight:inherit}
+.tip:hover{border-bottom-color:var(--accent);color:var(--accent)}
+
+/* --- the four-step flow -------------------------------------------------
+   This is the page's spine: the process, in order, each step one screenful
+   with the action button right there. Deliberately NOT a wall of bullets —
+   the detail the old page buried the reader in now lives behind <details>
+   further down, so it survives (and stays indexable) without being in the
+   way of someone who just wants to know what to do next.                   */
+.flow{list-style:none;margin:0;padding:0;counter-reset:flow}
+.flow>li{position:relative;border:1px solid var(--line);border-radius:14px;background:var(--card-2);
+  padding:14px 16px 14px 52px;margin:0 0 10px}
+.flow>li:last-child{margin-bottom:0}
+.flow>li::before{counter-increment:flow;content:counter(flow);position:absolute;left:15px;top:14px;
+  width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;
+  font-size:13px;font-weight:800;display:grid;place-items:center}
+.flow h3{margin:0 0 4px;font-size:15.5px;font-weight:800}
+.flow .do{margin:0;font-size:14px;line-height:1.55;color:var(--ink)}
+.flow .do+.do{margin-top:6px}
+.flow .act{display:inline-block;margin-top:10px;font-size:13.5px;font-weight:800;color:var(--accent)}
+.flow .ck{display:flex;gap:9px;align-items:center;margin-top:10px;font-size:13px;font-weight:700;color:var(--mut);cursor:pointer}
+.flow .ck input{width:18px;height:18px;accent-color:var(--accent);margin:0}
+.flow>li.done{opacity:.55}
+/* :has() rather than a JS-added class — copy.js only persists the tick, and a
+   second script just to strike a line through would be one more thing to break */
+.flow>li:has(.ck input:checked){opacity:.55}
+.flow>li:has(.ck input:checked) h3{text-decoration:line-through;text-decoration-thickness:1.5px}
+
+/* --- what the words mean: the tip glossary ------------------------------ */
+.glossary{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:0;padding:0;list-style:none}
+.glossary li{font-size:13.5px;line-height:1.5;color:var(--mut);border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--card)}
+.glossary b{display:block;color:var(--ink);font-size:13px;margin-bottom:2px}
+
+/* --- reference material, collapsed out of the way ----------------------- */
+.ref{border:1px solid var(--line);border-radius:14px;background:var(--card-2);margin:0 0 10px;overflow:hidden}
+.ref>summary{cursor:pointer;list-style:none;padding:13px 16px;font-size:14.5px;font-weight:800;display:flex;
+  align-items:center;justify-content:space-between;gap:10px}
+.ref>summary::-webkit-details-marker{display:none}
+.ref>summary::after{content:"+";font-size:18px;font-weight:800;color:var(--accent);flex:0 0 auto}
+.ref[open]>summary::after{content:"\2212"}
+.ref>summary:hover{color:var(--accent)}
+.ref .ref-body{padding:2px 16px 15px;border-top:1px solid var(--line)}
+
+#tip-bubble{position:fixed;left:0;top:0;z-index:300;max-width:250px;padding:8px 11px;border-radius:11px;
+  background:#12121a;color:#f7f3ee;border:1px solid rgba(255,255,255,.18);box-shadow:0 14px 34px rgba(0,0,0,.34);
+  font-size:12.5px;line-height:1.4;font-weight:600;letter-spacing:0;text-transform:none;pointer-events:none;
+  opacity:0;transform:translateY(4px);transition:opacity .16s ease,transform .16s ease}
+#tip-bubble.on{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){#tip-bubble{transition:none!important;transform:none!important}}
+@media (hover:none){#tip-bubble{display:none}}
