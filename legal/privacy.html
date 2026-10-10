@@ -233,7 +233,7 @@ h1{font-size:clamp(1.6rem,4vw,2.1rem);line-height:1.2;margin:0 0 8px;letter-spac
 </tbody></table></div>
 <p><strong>Photos may contain people.</strong> A virtual try-on render places a garment onto a photograph of a person. That image is personal data about whoever is in it. Do not upload a photograph of a person who has not consented, and delete anything you should not have uploaded.</p>
 <h3 id="2-4-billing-and-plan">2.4 Billing and plan</h3>
-<p>Stripe is the processor. We store <strong>only what we need to recognise your subscription</strong>: a Stripe customer id, a Stripe subscription id, a status (<code>active</code>, <code>inactive</code>, …) and the end of the current period. <strong>We never see, receive or store your card number, CVC or expiry</strong> — that happens entirely on Stripe's hosted checkout page.</p>
+<p><strong>Nothing is charged today, so no card data is collected and no payment data leaves this service.</strong> If a paid plan is ever introduced, Stripe is the processor and we store <strong>only what we need to recognise your subscription</strong>: a Stripe customer id, a Stripe subscription id, a status (<code>active</code>, <code>inactive</code>, …) and the end of the current period. <strong>We never see, receive or store your card number, CVC or expiry</strong> — that would happen entirely on Stripe's hosted checkout page.</p>
 <h3 id="2-5-usage-counters">2.5 Usage counters</h3>
 <p>Per user, per calendar month, in Cloudflare D1: how many listings, AI photos and stylist messages you have used. We need these to enforce the free-tier caps, and they reset on the first of each month.</p>
 <h3 id="2-6-technical-data">2.6 Technical data</h3>
@@ -255,7 +255,7 @@ h1{font-size:clamp(1.6rem,4vw,2.1rem);line-height:1.2;margin:0 0 8px;letter-spac
 <th>What they get</th>
 </tr></thead><tbody>
 <tr><td><strong>Cloudflare</strong> (Workers, Pages, D1, R2, KV)</td><td>Hosting and storage</td><td>Everything we store: accounts, listings, photos, counters, logs. Bound in <code>wrangler.toml</code>.</td></tr>
-<tr><td><strong>Stripe</strong></td><td>Subscription billing</td><td>Your email, plan, and card details on their own checkout pages. We get only the ids listed in 2.4.</td></tr>
+<tr><td><strong>Stripe</strong> — not in use today</td><td>Subscription billing, only if a paid plan is in force</td><td>Nothing, while nothing is for sale. If a paid plan is introduced, your card details stay on Stripe's own checkout pages and we receive only the ids listed in 2.4.</td></tr>
 <tr><td><strong>RunPod</strong> (Serverless GPU, FASHN VTON v1.5)</td><td>Rendering the virtual try-on image</td><td><strong>The image bytes and the prompt for that single render</strong>, in order to return the finished picture. Renders are paid for by us per run.</td></tr>
 </tbody></table></div>
 <p><strong>Text and listing AI — deployment-dependent.</strong> The writing model is chosen by configuration, not hard-coded, so which provider sees your text depends on how this deployment is set up. It can be a local model, or any OpenAI-compatible host (OpenAI, a Cloudflare AI Gateway, or another compatible host). Which one is live is visible in each listing draft: we store the provider name and model name alongside every listing. <strong>If the deployment is unconfigured, the feature refuses to run rather than sending your text anywhere.</strong> <code>[COUNSEL / PRODUCT: identify the specific production text-model provider and name it here, then set the DPA and transfer mechanism before launch.]</code></p>
@@ -264,7 +264,7 @@ h1{font-size:clamp(1.6rem,4vw,2.1rem);line-height:1.2;margin:0 0 8px;letter-spac
 <h2 id="5-fee-estimates">5. Fee estimates</h2>
 <p>Fee and take-home figures are computed by arithmetic inside our own code from a static catalogue. <strong>No third party is contacted, and nothing about your sales is sent anywhere, to produce them.</strong> The figures are an approximate model, not a live quote — see <a href="/legal/risk.html">risk.html</a>.</p>
 <h2 id="6-international-transfers">6. International transfers</h2>
-<p>Cloudflare and Stripe process data on infrastructure in multiple countries. If you are outside the United States, your data may be processed outside it. <code>[COUNSEL: add the correct transfer mechanism — Standard Contractual Clauses, an adequacy decision, or equivalent — for each jurisdiction, and name the regions actually used.]</code></p>
+<p>Cloudflare processes data on infrastructure in multiple countries, and Stripe would process payment data the same way only if a paid plan is in force. If you are outside the United States, your data may be processed outside it. <code>[COUNSEL: add the correct transfer mechanism — Standard Contractual Clauses, an adequacy decision, or equivalent — for each jurisdiction, and name the regions actually used.]</code></p>
 <h2 id="7-how-long-we-keep-things">7. How long we keep things</h2>
 <div class="tablewrap"><table><thead><tr>
 <th>Data</th>
