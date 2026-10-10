@@ -857,7 +857,31 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
         var head = pts[0] && (pts[0].visibility || 0) > 0.3;   // nose
         var hips = (pts[23] && (pts[23].visibility || 0) > 0.3) ||
                    (pts[24] && (pts[24].visibility || 0) > 0.3);
-        return visible >= 10 && !!head && !!hips;
+        if (visible < 10 || !head || !hips) return false;
+        // The landmarker localises a human skeleton; it does not decide whether
+        // the subject IS human. Measured against the dog photo this guard was
+        // built for, it answers 33/33 landmarks at visibility 1.0, nose 1.0,
+        // both hips 1.0 — the same confidence it gives a real person, so no
+        // visibility threshold can tell them apart. Proportion can. Landmark
+        // extents as aspect height/width, measured on the preview build:
+        //   dog lying down        0.98
+        //   person, full body     2.51
+        //   person, head-knees    2.86
+        //   person, head-hips     5.02
+        // 1.5 clears every human framing measured with room to spare and sits
+        // well above the dog. Costs nothing, runs after the cheap checks.
+        var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (var g = 0; g < pts.length; g++){
+          if (!isFinite(pts[g].x) || !isFinite(pts[g].y)) continue;
+          if (pts[g].x < minX) minX = pts[g].x;
+          if (pts[g].x > maxX) maxX = pts[g].x;
+          if (pts[g].y < minY) minY = pts[g].y;
+          if (pts[g].y > maxY) maxY = pts[g].y;
+        }
+        var wide = maxX - minX, tall = maxY - minY;
+        if (!(wide > 0) || !(tall > 0)) return false;
+        if (tall / wide < 1.5) return false;   // lying down: an animal, not a customer
+        return true;
       }).catch(function(){ return true; });
     });
   }

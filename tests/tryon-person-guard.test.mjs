@@ -37,14 +37,50 @@ function grab(name, source = html) {
   throw new Error(`unbalanced braces for ${name}`);
 }
 
-/** Landmarks helper: 33 MediaPipe points, all confidently visible. */
+/**
+ * Landmarks helper: 33 MediaPipe points arranged as an upright, standing
+ * person, all confidently visible. The ARRANGEMENT is load-bearing: the guard
+ * now measures the pose's height/width proportion to tell a person from an
+ * animal lying down, so a fixture that stacked every point on one coordinate
+ * would pass for anything and prove nothing. Real proportions here — nose at
+ * the top, ankles at the bottom, ~0.26 of the height across the shoulders.
+ */
 function fullPose(overrides = {}) {
+  const y = (i) =>
+    i === 0 ? 0.08 :          // nose
+    i <= 10 ? 0.09 :          // face
+    i <= 12 ? 0.22 :          // shoulders
+    i <= 22 ? 0.34 :          // arms, hands
+    i <= 24 ? 0.50 :          // hips
+    i <= 26 ? 0.72 :          // knees
+    i <= 28 ? 0.95 :          // ankles
+             0.97;            // feet
+  const x = (i) =>
+    i === 0 ? 0.50 :
+    (i % 2 === 1) ? 0.37 :    // left-hand side landmarks
+                   0.63;      // right-hand side landmarks
   const pts = Array.from({ length: 33 }, (_, i) => ({
-    x: 0.5, y: 0.5, z: 0, visibility: i < 10 ? 0.9 : 0.7, ...overrides,
+    x: x(i), y: y(i), z: 0, visibility: i < 10 ? 0.9 : 0.7, ...overrides,
   }));
   pts[0].visibility = 0.95;  // nose
   pts[23].visibility = 0.9;  // left hip
   pts[24].visibility = 0.9;  // right hip
+  return pts;
+}
+
+/**
+ * Same confidence, wrong shape: a subject lying down. This is what the
+ * landmarker returns for the doberman in services/fashn-modal/testdata/dog.jpg
+ * — 33/33 landmarks at visibility 1.0, nose present, both hips present. Every
+ * check in the guard passes on it except its proportions.
+ */
+function supinePose() {
+  const pts = fullPose();
+  for (const p of pts) {
+    const along = (p.y - 0.08) / 0.89;   // 0..1 down the body
+    p.x = 0.05 + along * 0.90;           // body laid out left to right
+    p.y = 0.45 + (p.x - 0.50) * 0.06;    // squashed into a shallow band
+  }
   return pts;
 }
 
@@ -88,6 +124,37 @@ test("a pose without hips is refused - not head to knees", async () => {
   pts[24].visibility = 0.1;
   const personInPhoto = buildPersonInPhoto(() => ({ landmarks: [pts] }), okBitmap);
   assert.equal(await personInPhoto(FILE), false, "legs cut off above the hips must be refused");
+});
+
+test("a subject lying down is refused - the landmarker calls a dog a person", async () => {
+  const personInPhoto = buildPersonInPhoto(() => ({ landmarks: [supinePose()] }), okBitmap);
+  assert.equal(
+    await personInPhoto(FILE), false,
+    "every landmark can be confident and the subject still is not a customer",
+  );
+});
+
+test("the proportion check leaves a real person alone at every framing", async () => {
+  // Head-only, torso and full body are all legitimate submissions; the
+  // aspect gate must not trade one false positive (the dog) for three false
+  // negatives (real customers told their photo of themselves is not one).
+  const clip = (pts, lo, hi) => {
+    const out = pts.map((p) => ({ ...p }));
+    // compress into the crop the way a real crop does: vertical span shrinks,
+    // so a tighter crop reads as a SHORTER, wider pose, not a taller one
+    for (const p of out) p.y = lo + (p.y - 0.08) / 0.89 * (hi - lo);
+    return out;
+  };
+  for (const [name, lo, hi] of [
+    ["full body", 0.05, 0.98],
+    ["head to knees", 0.05, 0.74],
+    ["head to hips", 0.05, 0.52],
+  ]) {
+    const personInPhoto = buildPersonInPhoto(
+      () => ({ landmarks: [clip(fullPose(), lo, hi)] }), okBitmap,
+    );
+    assert.equal(await personInPhoto(FILE), true, `${name} must still be allowed`);
+  }
 });
 
 test("if the detector throws, the request falls through to the server check", async () => {
