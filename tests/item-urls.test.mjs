@@ -21,6 +21,7 @@ import { dirname, join } from "node:path";
 
 import { indexSource } from "./helpers/index-source.mjs";
 import { itemHead, injectHead, listingDescription } from "../functions/_lib/item-meta.js";
+import { demoteShellH1 } from "../functions/shop/[[id]].js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = indexSource(ROOT);
@@ -183,4 +184,39 @@ test("the sitemap lists live items as /shop/<id>", () => {
   assert.match(sitemapFn, /<\/urlset>/, "appends into the existing urlset");
   assert.match(sitemapFn, /api\/market/, "reads the public market feed");
   assert.match(sitemapFn, /ASSETS\.fetch/, "keeps the hand-written page entries");
+});
+
+/**
+ * The shell is index.html, so a live item used to ship two <h1>s: the
+ * homepage hero's (hidden inside <section class="hidden">) and the one the
+ * SPA renders for the item. Lock the demotion: one <h1> per item page, and
+ * it must be the thing for sale.
+ */
+test("an item page has exactly one <h1>, and it is the item", () => {
+  const shell = readFileSync(join(ROOT, "index.html"), "utf8");
+  const hero = (shell.match(/<h1 class="rd-h1">[\s\S]*?<\/h1>/) || [])[0];
+  assert.ok(hero, "the shell ships the hero heading this fix is about");
+
+  const shellH1s = (shell.match(/<h1/g) || []).length;
+  assert.equal(shellH1s, 1, "precondition: exactly one <h1> in the shell");
+
+  const demoted = demoteShellH1(shell);
+  assert.equal(
+    (demoted.match(/<h1/g) || []).length,
+    shellH1s - 1,
+    "the hero heading is no longer an <h1>"
+  );
+  assert.ok(
+    demoted.includes(hero.replace(/^<h1/, "<div").replace(/<\/h1>$/, "</div>")),
+    "the hero's words survive — only the tag changes, so the homepage copy is not edited"
+  );
+
+  // shell + the SPA's item heading = exactly one <h1>, and it is the item
+  const page = demoted + `<h1 class="ux-item-title">Vintage denim jacket</h1>`;
+  assert.equal((page.match(/<h1/g) || []).length, 1, "exactly one <h1> on a live item page");
+  assert.match(page, /<h1 class="ux-item-title">Vintage denim jacket<\/h1>/);
+
+  // a shell with no hero heading (the 404 path renders no item heading) must
+  // come back untouched, so it can never be left with zero <h1>s
+  assert.equal(demoteShellH1("<div>nothing to demote</div>"), "<div>nothing to demote</div>");
 });

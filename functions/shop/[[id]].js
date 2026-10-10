@@ -22,6 +22,27 @@ async function shell(context) {
   return res.text();
 }
 
+/**
+ * The shell IS index.html, so it carries the homepage hero heading:
+ * <h1 class="rd-h1">. Once the SPA takes over an item it renders its own
+ * <h1 class="ux-item-title">, which left every /shop/<id> document holding
+ * two <h1>s — the second being a hero heading that was not even painted (the
+ * hero sits inside a <section class="hidden">, display:none).
+ *
+ * Demote the shell's heading to a <div> for a live item, so the only <h1> on
+ * the page is the thing actually for sale. This is purely semantic: the
+ * demoted node is inside that hidden section either way, so nothing moves on
+ * screen. It is applied to the live-item response only — the 404 path renders
+ * no item heading of its own, so demoting there would leave a document with
+ * none at all.
+ */
+export function demoteShellH1(html) {
+  return String(html).replace(
+    /<h1(\s+class="rd-h1"[^>]*)>([\s\S]*?)<\/h1>/,
+    "<div$1>$2</div>"
+  );
+}
+
 export async function onRequestGet(context) {
   const { request, params } = context;
   const raw = params && params.id;
@@ -80,7 +101,7 @@ export async function onRequestGet(context) {
     });
   }
 
-  return new Response(injectHead(body, itemHead(listing, origin)), {
+  return new Response(injectHead(demoteShellH1(body), itemHead(listing, origin)), {
     headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" },
   });
 }
