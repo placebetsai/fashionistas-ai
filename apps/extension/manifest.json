@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Fashionistas Crosslister",
   "version": "1.0.1",
-  "description": "One button posts a closet item to every marketplace automatically: fully submitted, live listing URL captured, no manual steps.",
+  "description": "Fills your listing on every marketplace you sell on, in your own browser. You press List. We never see your passwords.",
   "minimum_chrome_version": "116",
   "background": {
     "service_worker": "background.js",
