@@ -86,6 +86,10 @@ const PUBLIC = {
   "tryon/image/[uuid].js":
     "the stored image URL is handed to Replicate and to <img> tags, so it cannot require a session; " +
     "it is constrained by a strict id regex instead (asserted below)",
+  "contact.js":
+    "the contact form has to work for someone who has never had an account, so it cannot be session-" +
+    "gated; it returns no user data, writes nothing to D1/R2/KV, and its only side effect is a " +
+    "server-side forward to a mail relay. It exists precisely so the relay address stays off the page.",
 };
 
 /** Routes whose gate is 402-before-401 for an authenticated free user. */

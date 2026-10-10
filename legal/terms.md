@@ -16,7 +16,7 @@ fashionistas.ai ("fashionistas", "we", "us") is a software tool operated by
 `[LEGAL ENTITY NAME]`, a `[ENTITY TYPE]` organised under the laws of
 `[JURISDICTION]`, with a registered address at `[ADDRESS]`.
 
-You can reach us at [fashionistas1979@gmail.com](mailto:fashionistas1979@gmail.com).
+You can reach us through the [contact form](/contact/).
 
 These Terms are a binding agreement between you and `fashionistas`. If you do not
 agree with them, do not use the service. If you use the service on behalf of a
@@ -173,29 +173,35 @@ the cap is, and the exact instant it resets.
 
 ### 7.2 Pro plan
 
-**Pro costs $14.99 per month**, billed monthly in advance through Stripe. Pro
-raises or removes the free-tier caps (unlimited listings, and a higher AI-photo
-and message allowance). The plan does not include any marketplace fees — those
+**Nothing is charged today.** The Pro plan exists in the product but is not for
+sale: there is no live checkout, we do not hold your card, and nothing renews or
+auto-charges. If that changes, this section and the [pricing page](/pricing/)
+change together, before any charge is possible — you are never asked to agree to
+a price here that we are not actually charging. Pro is intended to raise or
+remove the free-tier caps (unlimited listings, and a higher AI-photo and message
+allowance). No plan, free or otherwise, includes any marketplace fees — those
 are charged to you by each marketplace, separately.
 
 ### 7.3 Cancellation
 
-You may cancel at any time from your account, and we link to Stripe's customer
-portal for exactly that reason. There is no cancellation fee.
+There is nothing to cancel today: no plan is for sale and we hold no card. If a
+paid plan is ever introduced you will be able to cancel from your account, with
+no cancellation fee.
 
-If you cancel, your Pro access continues to the end of the period you have
-already paid for, and then stops. We do not pro-rate partial months back to you.
-After your Pro access ends you drop to the free plan and its caps.
+If you ever cancel a paid plan, your access continues to the end of the period
+you have already paid for, and then stops. We do not pro-rate partial months
+back to you. After paid access ends you drop to the free plan and its caps.
 
-We may change the price of Pro. We will tell you before a price change takes
-effect on a renewal. We will never raise the price mid-period you have already
-paid for.
+We may introduce a price for Pro. Any price takes effect only after it is stated
+on the pricing page, and you will never be charged for a period you were not
+told about in advance.
 
 ### 7.4 Payment and renewal
 
-Stripe processes the payment; we never see or store your card number. The
-subscription renews monthly until you cancel. If a renewal payment fails we may
-suspend paid features until it succeeds.
+No payment is taken today, and nothing renews or auto-charges. If the product
+ever charges for something, Stripe processes the payment and we never see or
+store your card number; the renewal terms then in force will be stated on the
+pricing page before you agree to them.
 
 ### 7.5 Taxes
 
@@ -317,7 +323,7 @@ and receive `[COUNSEL: state whether a pro-rata refund applies to the change]`.
 ## 15. Third-party services
 
 The service links to, and depends on, third parties including Cloudflare (hosting
-and databases), Stripe (payments), RunPod (virtual try-on rendering) and the
+and databases), Stripe (payments, only if a paid plan is in force), RunPod (virtual try-on rendering) and the
 marketplaces themselves. Their own terms govern your use of them, and their
 availability is outside our control.
 
@@ -352,7 +358,7 @@ a place you have a right to use.
 
 ## 19. Notices
 
-Notices to us: [fashionistas1979@gmail.com](mailto:fashionistas1979@gmail.com).
+Notices to us: through the [contact form](/contact/).
 Notices to you: the email address on your account. `[COUNSEL: confirm the notice
 addresses and whether a separate formal notice address is required.]`
 
@@ -372,10 +378,15 @@ addresses and whether a separate formal notice address is required.]`
 
 ### Drafting notes for counsel — not part of the Terms
 
-1. **Section 7.2 states $14.99/month.** This is the price the codebase enforces
-   (`functions/api/billing/checkout.js`, `PRO_UNIT_AMOUNT = 1499` cents) and the
-   price shown site-wide. If the business intends a different price, that number
-   must be changed in the code and the marketing copy together, not here alone.
+1. **Section 7.2 states that nothing is charged, and that is the true state
+   today.** `STRIPE_SECRET_KEY` is unset, so
+   `functions/api/billing/checkout.js` answers 503 naming that variable before it
+   can open a session, and no Subscribe button ships on the pricing page.
+   `PRO_UNIT_AMOUNT = 1499` cents still sits in that file as the configured price
+   for whenever checkout is switched on, but it is unreachable and is not
+   advertised anywhere. If the business starts charging, Section 7.2, the pricing
+   page, the homepage stat card and the two JSON-LD blocks must all change
+   together, in one pass.
 2. **Section 6 and Section 4 are the load-bearing clauses.** The whole product
    premise is that the seller presses Post in their own session. If that changes,
    Sections 4, 6, 12 and the risk page must all be rewritten.

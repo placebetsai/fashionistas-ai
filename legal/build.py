@@ -428,6 +428,8 @@ def page_html(page: dict, body: str, headers: list[tuple[int, str, str]]) -> str
 {FONT_LINK}
 <style>{TOKENS}
 </style>
+<meta name="color-scheme" content="only light">
+<script>if("serviceWorker"in navigator){{navigator.serviceWorker.getRegistrations().then(function(r){{r.forEach(function(x){{x.unregister()}})}}).catch(function(){{}});if(window.caches)caches.keys().then(function(k){{k.forEach(function(n){{caches.delete(n)}})}}).catch(function(){{}})}}</script>
 </head>
 <body class="legal">
 <div class="wrap">
@@ -495,7 +497,7 @@ Next in this set: <a href="/legal/{other}">{TITLES[other]}</a></p>
 <a href="/legal/risk.html">Risk Disclosure</a>
 </nav>
 <p>fashionistas.ai &mdash; photograph your closet, list it everywhere.
-Email: <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a></p>
+<a href="/contact/">Contact</a></p>
 <p class="legal-line">These legal pages are a draft for counsel review and are not legal advice.
 Marketplace names are used descriptively; fashionistas.ai is not affiliated with, endorsed by
 or sponsored by Poshmark, Mercari, Depop, Grailed, eBay or Etsy.</p>

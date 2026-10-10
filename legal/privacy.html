@@ -188,7 +188,7 @@ h1{font-size:clamp(1.6rem,4vw,2.1rem);line-height:1.2;margin:0 0 8px;letter-spac
 <p># Privacy Policy</p>
 <p><strong>DRAFT — not legal advice, pending counsel review.</strong> <strong>Draft date: 2026-10-05. Effective date: to be set by counsel.</strong></p>
 <blockquote>Drafted by an engineer for review by a licensed lawyer. Bracketed items <code>[LIKE THIS]</code> are placeholders for counsel. This policy describes what the software <strong>actually does today</strong> — it was written by reading the deployed code, not by writing what a privacy policy usually says.</blockquote>
-<p><strong>The operator:</strong> <code>fashionistas.ai</code>, operated by <code>[LEGAL ENTITY NAME]</code>, a <code>[ENTITY TYPE]</code> organised under the laws of <code>[JURISDICTION]</code>, at <code>[ADDRESS]</code>. Contact: <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a>.</p>
+<p><strong>The operator:</strong> <code>fashionistas.ai</code>, operated by <code>[LEGAL ENTITY NAME]</code>, a <code>[ENTITY TYPE]</code> organised under the laws of <code>[JURISDICTION]</code>, at <code>[ADDRESS]</code>. Contact: through the <a href="/contact/">contact form</a>.</p>
 <hr>
 <h2 id="1-the-short-version">1. The short version</h2>
 <ul><li>We store your email, a <strong>salted hash</strong> of your password (never the password), your session tokens, your listing text, your photos, your plan status and your monthly usage counters.</li><li><strong>We never ask for your marketplace password, and our servers never receive it.</strong> Listing happens in your own logged-in browser session. There is no field anywhere in this product for a marketplace password, because there is no code path that would accept one.</li><li>We do <strong>not</strong> sell your personal information.</li><li>Email us and we will delete your account data.</li></ul>
@@ -280,7 +280,7 @@ h1{font-size:clamp(1.6rem,4vw,2.1rem);line-height:1.2;margin:0 0 8px;letter-spac
 </tbody></table></div>
 <p>Backups age out on their own cycle: <code>[COUNSEL: state the backup retention window so deletion is described honestly, including the fact that a backup copy can persist until it is overwritten.]</code></p>
 <h2 id="8-deletion-on-request">8. Deletion on request</h2>
-<p><strong>Email <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a> from the address on your account and ask for deletion.</strong> We will verify that you are the account holder, then delete:</p>
+<p><strong>Use the <a href="/contact/">contact form</a>, from the address on your account, and ask for deletion.</strong> We will verify that you are the account holder, then delete:</p>
 <ul><li>your account row, password hash and sessions;</li><li>your listings, closet items and sale records;</li><li><strong>your photos and renders from Cloudflare R2</strong>, including the bucket objects themselves — not just the database row that points at them;</li><li>your usage counters.</li></ul>
 <p>Cancelling a subscription is not deletion; ask for both if you want both. A marketplace account is not ours, so we cannot delete that — do it with the marketplace. Revoke any eBay or Etsy OAuth grant you gave us at the same time.</p>
 <p><code>[COUNSEL: state the statutory response window (e.g. 30 days), whether we can place an exception for records we must keep for tax or fraud purposes, and who in the company is the privacy contact.]</code></p>
@@ -288,7 +288,7 @@ h1{font-size:clamp(1.6rem,4vw,2.1rem);line-height:1.2;margin:0 0 8px;letter-spac
 <ul><li>Passwords are salted and stretched with PBKDF2-HMAC-SHA256 at 100,000 iterations; the plaintext password is never stored or logged.</li><li>Session tokens are compared server-side against an expiry, and authenticated routes have no anonymous path.</li><li>Access to stored photos requires a valid session.</li><li>Secrets — the Stripe key, the marketplace API keys, the model API key — are read from environment configuration and are never written into source, logs or listings.</li></ul>
 <p><code>[COUNSEL: this section describes the code, not a security programme. If the product ever needs a compliance attestation (SOC 2, a penetration test), state it here only once it exists — do not promise one.]</code></p>
 <h2 id="10-your-rights">10. Your rights</h2>
-<p>Depending on where you live you may have rights to access, correct, delete, port, or object to the processing of your personal data, and to complain to a regulator. In practice: our databases are keyed to your account, so you can see and change most of your own data from inside the app, and you can ask for the rest. To exercise any right, email <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a>.</p>
+<p>Depending on where you live you may have rights to access, correct, delete, port, or object to the processing of your personal data, and to complain to a regulator. In practice: our databases are keyed to your account, so you can see and change most of your own data from inside the app, and you can ask for the rest. To exercise any right, use the <a href="/contact/">contact form</a>.</p>
 <p><code>[COUNSEL: this section needs the actual jurisdiction-specific rights and supervisory authority for each market you operate in. Do not ship it as-is.]</code></p>
 <h2 id="11-children">11. Children</h2>
 <p>The service is for people who can enter a binding contract and sell on a marketplace. It is not directed at children under 13 (or the equivalent minimum age where you operate), and we do not knowingly collect their data. If you believe a child has given us data, email us and we will delete it.</p>
@@ -323,7 +323,7 @@ Next in this set: <a href="/legal/risk.html">Risk</a></p>
 <a href="/legal/risk.html">Risk Disclosure</a>
 </nav>
 <p>fashionistas.ai &mdash; photograph your closet, list it everywhere.
-Email: <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a></p>
+<a href="/contact/">Contact</a></p>
 <p class="legal-line">These legal pages are a draft for counsel review and are not legal advice.
 Marketplace names are used descriptively; fashionistas.ai is not affiliated with, endorsed by
 or sponsored by Poshmark, Mercari, Depop, Grailed, eBay or Etsy.</p>

@@ -10,7 +10,7 @@
 
 **The operator:** `fashionistas.ai`, operated by `[LEGAL ENTITY NAME]`, a
 `[ENTITY TYPE]` organised under the laws of `[JURISDICTION]`, at `[ADDRESS]`.
-Contact: [fashionistas1979@gmail.com](mailto:fashionistas1979@gmail.com).
+Contact: through the [contact form](/contact/).
 
 ---
 
@@ -80,11 +80,12 @@ you should not have uploaded.
 
 ### 2.4 Billing and plan
 
-Stripe is the processor. We store **only what we need to recognise your
-subscription**: a Stripe customer id, a Stripe subscription id, a status
-(`active`, `inactive`, …) and the end of the current period. **We never see,
-receive or store your card number, CVC or expiry** — that happens entirely on
-Stripe's hosted checkout page.
+**Nothing is charged today, so no card data is collected and no payment data
+leaves this service.** If a paid plan is ever introduced, Stripe is the processor
+and we store **only what we need to recognise your subscription**: a Stripe
+customer id, a Stripe subscription id, a status (`active`, `inactive`, …) and the
+end of the current period. **We never see, receive or store your card number,
+CVC or expiry** — that would happen entirely on Stripe's hosted checkout page.
 
 ### 2.5 Usage counters
 
@@ -156,7 +157,7 @@ our instructions:
 | Provider | What | What they get |
 | --- | --- | --- |
 | **Cloudflare** (Workers, Pages, D1, R2, KV) | Hosting and storage | Everything we store: accounts, listings, photos, counters, logs. Bound in `wrangler.toml`. |
-| **Stripe** | Subscription billing | Your email, plan, and card details on their own checkout pages. We get only the ids listed in 2.4. |
+| **Stripe** — not in use today | Subscription billing, only if a paid plan is in force | Nothing, while nothing is for sale. If a paid plan is introduced, your card details stay on Stripe's own checkout pages and we receive only the ids listed in 2.4. |
 | **RunPod** (Serverless GPU, FASHN VTON v1.5) | Rendering the virtual try-on image | **The image bytes and the prompt for that single render**, in order to return the finished picture. Renders are paid for by us per run. |
 
 **Text and listing AI — deployment-dependent.** The writing model is chosen by
@@ -184,7 +185,8 @@ live quote — see [risk.html](/legal/risk.html).
 
 ## 6. International transfers
 
-Cloudflare and Stripe process data on infrastructure in multiple countries. If
+Cloudflare processes data on infrastructure in multiple countries, and Stripe
+would process payment data the same way only if a paid plan is in force. If
 you are outside the United States, your data may be processed outside it.
 `[COUNSEL: add the correct transfer mechanism — Standard Contractual Clauses, an
 adequacy decision, or equivalent — for each jurisdiction, and name the regions
@@ -208,8 +210,8 @@ can persist until it is overwritten.]`
 
 ## 8. Deletion on request
 
-**Email [fashionistas1979@gmail.com](mailto:fashionistas1979@gmail.com) from the
-address on your account and ask for deletion.** We will verify that you are the
+**Use the [contact form](/contact/), from the address on your
+account, and ask for deletion.** We will verify that you are the
 account holder, then delete:
 
 - your account row, password hash and sessions;
@@ -247,8 +249,8 @@ Depending on where you live you may have rights to access, correct, delete,
 port, or object to the processing of your personal data, and to complain to a
 regulator. In practice: our databases are keyed to your account, so you can see
 and change most of your own data from inside the app, and you can ask for the
-rest. To exercise any right, email
-[fashionistas1979@gmail.com](mailto:fashionistas1979@gmail.com).
+rest. To exercise any right, use the
+[contact form](/contact/).
 
 `[COUNSEL: this section needs the actual jurisdiction-specific rights and
 supervisory authority for each market you operate in. Do not ship it as-is.]`
