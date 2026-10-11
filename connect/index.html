@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connect your shops — post listings to eBay, Etsy &amp; Whatnot | fashionistas.ai</title>
+<meta name="description" content="Connect your eBay, Etsy and Whatnot seller accounts once, then post a listing to any of them in one click. You sign in on the marketplace itself — we never see your password.">
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/site.css">
+<meta name="color-scheme" content="dark light">
+<script>try{if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).catch(function(){});if(window.caches)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})})}}catch(e){}</script>
+<script>try{var t=localStorage.getItem("fash_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .wrap{max-width:920px;margin:0 auto;padding:28px 18px 72px}
+  .hero{margin:18px 0 26px}
+  .hero h1{font-size:clamp(28px,5vw,40px);line-height:1.1;margin:0 0 10px;letter-spacing:-.02em}
+  .hero p{color:var(--mut);font-size:16px;line-height:1.6;margin:0;max-width:60ch}
+  .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  .step{display:flex;gap:12px;align-items:flex-start;margin:22px 0 10px}
+  .step-n{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--soft);color:var(--ink);
+    display:grid;place-items:center;font-size:13px;font-weight:700}
+  .step-t{font-size:14.5px;line-height:1.55}
+  .step-t b{color:var(--ink)}
+  .step-t span{color:var(--mut)}
+
+  .chans{display:grid;gap:14px;margin-top:14px}
+  @media(min-width:720px){.chans{grid-template-columns:repeat(3,1fr)}}
+  .chan{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;
+    display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden}
+  .chan.is-on{border-color:var(--good)}
+  .chan-top{display:flex;align-items:center;gap:10px}
+  .chan-logo{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+    font-weight:800;font-size:15px;color:#fff;letter-spacing:-.03em}
+  .chan-name{font-weight:700;font-size:16px}
+  .chan-blurb{color:var(--mut);font-size:13.5px;line-height:1.5;flex:1;margin:0}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+    padding:4px 10px;border-radius:999px;background:var(--soft);color:var(--mut);width:fit-content}
+  .pill.on{background:var(--good-soft);color:var(--good)}
+  .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+  .chan .btn{width:100%;justify-content:center}
+  .need{font-size:12px;color:var(--mut);line-height:1.5;border-top:1px dashed var(--line);padding-top:10px;margin:0}
+
+  .post{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:26px}
+  .post h2{font-size:19px;margin:0 0 4px}
+  .post p.sub{color:var(--mut);font-size:14px;margin:0 0 16px}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  select.input,button.input{min-width:0}
+  .input{background:var(--input-bg);border:1px solid var(--line);color:var(--ink);
+    border-radius:10px;padding:11px 13px;font:inherit;font-size:14.5px}
+  .res{margin-top:14px;font-size:14px;line-height:1.6;min-height:20px}
+  .res .ok{color:var(--good)}
+  .res .bad{color:var(--bad)}
+  .res a{color:var(--accent)}
+  .msg{font-size:13px;color:var(--mut);margin-top:10px;line-height:1.5}
+
+  .note{margin-top:28px;padding:16px 18px;border-radius:14px;background:var(--bg-tint);
+    border:1px solid var(--line);font-size:13.5px;line-height:1.65;color:var(--mut)}
+  .note b{color:var(--ink)}
+  .note ul{margin:8px 0 0;padding-left:18px}
+  .note li{margin:3px 0}
+  .signin{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px;text-align:center}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);
+    border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<header class="topnav">
+  <a href="/" style="font-weight:800;letter-spacing:-.02em;text-decoration:none;color:var(--ink)">fashionistas<span style="color:var(--accent)">.ai</span></a>
+  <nav aria-label="Main" style="display:flex;gap:16px">
+    <a href="/#sell">Sell</a><a href="/#shop">Shop</a><a href="/guide/">Guide</a>
+  </nav>
+</header>
+
+<main class="wrap" id="app"><div class="hero"><h1>Connecting…</h1></div></main>
+
+<script>
+const API = "https://fashionistas-api.fashionistas1979.workers.dev";
+const app = document.getElementById("app");
+const tok = () => { try { return localStorage.getItem("fash_token") || ""; } catch(e){ return ""; } };
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* Brand colours, because a marketplace tile that isn't its own colour reads as
+   a placeholder. eBay's four are the ones on their own logo. */
+const BRAND = {
+  ebay:     { bg: "linear-gradient(135deg,#e53238,#0064d2 55%,#f5af02 85%,#86b817)", tag: "eB" },
+  etsy:     { bg: "linear-gradient(135deg,#f56400,#d44400)",                            tag: "Et" },
+  whatnot:  { bg: "linear-gradient(135deg,#7b2ff7,#4a1fd6)",                            tag: "Wh" },
+};
+
+let CHANNELS = [];
+let LISTINGS = [];
+
+async function call(path, opts = {}) {
+  const r = await fetch(API + path, {
+    ...opts,
+    headers: { "content-type": "application/json", ...(opts.headers || {}), ...(tok() ? { authorization: "Bearer " + tok() } : {}) },
+  });
+  let d = null; try { d = await r.json(); } catch(e){}
+  return { status: r.status, data: d };
+}
+
+/* The OAuth landing opens in a new tab and posts back here when it finishes,
+   so the tile flips to Connected without the seller reloading anything. */
+window.addEventListener("message", (e) => {
+  if (e.origin !== API && e.origin !== "https://fashionistas.ai") return;
+  if (e.data && e.data.fashionistas) load();
+});
+
+async function load() {
+  const signedIn = !!tok();
+  // Two fetches, and the order matters. The signed-in one tells us which shops
+  // THIS seller has connected; the public one still answers when nobody is
+  // signed in, so an anonymous visitor sees the same three shops with the same
+  // Connect buttons instead of a wall telling them to log in first. The action
+  // is what needs an account — not the knowledge that the action exists.
+  let data = null;
+  const authed = await call("/api/channels/connected");
+  if (authed.status === 200) {
+    data = authed.data;
+  } else {
+    const pub = await call("/api/channels");
+    data = pub.data;
+  }
+  CHANNELS = (data && data.channels) || [];
+  if (signedIn) await loadListings();
+  render(signedIn);
+}
+
+async function loadListings() {
+  const { status, data } = await call("/api/listings");
+  if (status === 200) LISTINGS = (data && data.listings) || [];
+}
+
+function render(signedIn) {
+  const cards = CHANNELS.map(chanCard).join("");
+  const opts = LISTINGS.filter(l => l.status !== "sold")
+    .map(l => `<option value="${l.id}">${esc(l.title)} — $${esc(l.price)}</option>`).join("");
+
+  app.innerHTML = `
+    <div class="hero">
+      <h1>Post to <span class="grad">three more shops</span> in one click.</h1>
+      <p>Connect each shop once. After that a listing in your closet goes live where you
+         want it, without retyping a thing.</p>
+    </div>
+
+    <div class="step"><div class="step-n">1</div><div class="step-t">
+      <b>Connect a shop.</b> <span>You'll sign in on the marketplace's own page — your password never comes here, and we only get permission to list.</span>
+    </div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-t">
+      <b>Pick a listing, pick a shop, press Post.</b> <span>Photos, title, description and price are carried across for you.</span>
+    </div></div>
+
+    <div class="chans">${cards}</div>
+
+    ${signedIn ? `
+    <div class="post">
+      <h2>Post a listing</h2>
+      <p class="sub">Anything already in your closet. It goes live on the shop you pick.</p>
+      <div class="row">
+        <select class="input" id="p-listing" style="flex:2;min-width:200px">
+          ${opts || `<option value="">Add an item to your closet first</option>`}
+        </select>
+        <select class="input" id="p-shop" style="flex:1;min-width:140px">
+          ${CHANNELS.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}
+        </select>
+        <button class="btn btn-accent" id="p-go" ${opts ? "" : "disabled"}>Post it</button>
+      </div>
+      <div class="res" id="p-res"></div>
+      <div class="msg" id="p-msg"></div>
+    </div>` : `
+    <div class="post" style="text-align:center">
+      <h2>Sign in to post</h2>
+      <p class="sub" style="margin-bottom:16px">Your shops connect to your account, so sign in first — then everything below is one click.</p>
+      <a class="btn btn-accent" href="/#login" style="text-decoration:none;display:inline-block">Sign in to connect your shops</a>
+    </div>`}
+
+    ${honestNote()}`;
+
+  CHANNELS.forEach(c => {
+    const b = document.getElementById("btn-" + c.id);
+    if (b) b.addEventListener("click", () => connect(c.id, signedIn));
+  });
+  const go = document.getElementById("p-go");
+  if (go) go.addEventListener("click", post);
+}
+
+function chanCard(c) {
+  const b = BRAND[c.id] || { bg: "var(--soft)", tag: c.name.slice(0, 2) };
+  const on = c.connected;
+  return `<div class="chan ${on ? "is-on" : ""}">
+    <div class="chan-top">
+      <div class="chan-logo" style="background:${b.bg}">${b.tag}</div>
+      <div>
+        <div class="chan-name">${esc(c.name)}</div>
+        <span class="pill ${on ? "on" : ""}"><span class="dot"></span>${on ? (c.shop ? esc(c.shop) : "Connected") : "Not connected"}</span>
+      </div>
+    </div>
+    <p class="chan-blurb">${esc(c.blurb)}</p>
+    ${on
+      ? `<button class="btn btn-soft" id="btn-${c.id}">Disconnect</button>`
+      : `<button class="btn btn-accent" id="btn-${c.id}" ${c.configured ? "" : "disabled"}>${c.configured ? "Connect " + esc(c.name) : "Not available yet"}</button>`}
+    ${c.setup ? `<p class="need">${esc(c.setup)}</p>` : ""}
+  </div>`;
+}
+
+async function connect(id, signedIn) {
+  const c = CHANNELS.find(x => x.id === id);
+  const btn = document.getElementById("btn-" + id);
+  // Nobody is signed in: the shop tiles still exist, they just can't do
+  // anything yet — so send them where the account is, not into a consent
+  // screen that would produce a token with nowhere to live.
+  if (!signedIn) { location.hash = "login"; location.reload(); return; }
+  if (c && c.connected) {
+    if (!confirm("Disconnect " + c.name + "?")) return;
+    await call("/api/channels/disconnect", { method: "POST", body: JSON.stringify({ marketplace: id }) });
+    return load();
+  }
+  if (btn) { btn.disabled = true; btn.innerHTML = `<span class="spin"></span>`; }
+  const { status, data } = await call("/api/channels/connect", { method: "POST", body: JSON.stringify({ marketplace: id }) });
+  if (status !== 200 || !data.url) {
+    if (btn) { btn.disabled = false; btn.textContent = "Connect " + (c ? c.name : id); }
+    alert((data && (data.error || data.need)) || "Could not start the sign-in.");
+    return;
+  }
+  // A new tab, not a redirect — the seller keeps this page open behind it and
+  // the tile updates on its own when the marketplace sends them back.
+  window.open(data.url, "_blank", "noopener");
+  if (btn) btn.innerHTML = `<span class="spin"></span> Waiting for you to approve`;
+}
+
+async function post() {
+  const id = document.getElementById("p-listing").value;
+  const shop = document.getElementById("p-shop").value;
+  const res = document.getElementById("p-res"), msg = document.getElementById("p-msg");
+  const go = document.getElementById("p-go");
+  if (!id) return;
+  if (go) { go.disabled = true; go.innerHTML = `<span class="spin"></span>`; }
+  res.innerHTML = ""; msg.textContent = "Posting… this is the real API, so it takes a few seconds.";
+
+  const r = await call("/api/channels/post", { method: "POST", body: JSON.stringify({ marketplace: shop, listingId: +id }) });
+  if (go) { go.disabled = false; go.textContent = "Post it"; }
+  msg.textContent = "";
+
+  if (r.status === 200 && r.data && r.data.ok) {
+    res.innerHTML = `<span class="ok">✅ ${esc(r.data.note || "Posted.")}</span>` +
+      (r.data.url ? ` <a href="${esc(r.data.url)}" target="_blank" rel="noopener">See it live →</a>` : "");
+  } else {
+    const bits = [r.data && r.data.error, r.data && r.data.detail].filter(Boolean);
+    res.innerHTML = `<span class="bad">⚠ ${esc(bits.join(" — ") || "That didn't go through.")}</span>` +
+      (r.status === 401 ? ` <a href="/#login">Sign in again</a>` : "");
+  }
+}
+
+function honestNote() {
+  const ext = "Poshmark, Mercari, Grailed and Facebook Marketplace";
+  return `<div class="note">
+    <b>Why only three shops here?</b> Because three is what actually works, and we'd rather
+    tell you than let you find out the hard way. ${esc(ext)} have no public posting API at
+    all — no tool on earth can post to them except by filling in the form in your own
+    browser, which is what the Fashionistas extension does and why you press the button
+    yourself there. Vinted and Vestiaire have APIs but gate them behind an allowlist and a
+    monthly listing minimum. Kidizen shut down.
+    <ul>
+      <li><b>eBay</b> — free, self-serve keys. Yours in about ten minutes.</li>
+      <li><b>Etsy</b> — a Seller App is approved in minutes, with no review queue.</li>
+      <li><b>Whatnot</b> — open developer preview.</li>
+    </ul>
+  </div>`;
+}
+
+load().catch(() => { app.innerHTML = `<div class="signin"><p style="color:var(--mut)">Something went wrong loading your shops. <button class="btn btn-soft" onclick="load()">Try again</button></p></div>`; });
+</script>
+</body>
+</html>

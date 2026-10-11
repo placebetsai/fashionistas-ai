@@ -4,6 +4,16 @@
 /ar-tryon                 /try-on/    301
 /ar-tryon/                /try-on/    301
 
+# ── Marketplace OAuth landing ───────────────────────────────────────────────
+# eBay, Etsy and Whatnot redirect the seller back to fashionistas.ai after the
+# consent screen, and that has to reach the Worker or the flow dead-ends on the
+# static 404 page. A 202 is a proxy: the browser lands here and Cloudflare
+# forwards it, query string intact, to the Worker. The session cookie is not
+# what authenticates this — the signed `state` round-tripped from the start of
+# the flow is, because the marketplace arrives with no header of ours at all.
+/api/channels/callback/*  https://fashionistas-api.fashionistas1979.workers.dev/api/channels/callback/:splat  202
+/api/channels/callback    https://fashionistas-api.fashionistas1979.workers.dev/api/channels/callback  202
+
 # ── Internal files: never served publicly ────────────────────────────────────
 # The Pages output dir is the repo root, so anything checked in would otherwise
 # ship as a public URL.
