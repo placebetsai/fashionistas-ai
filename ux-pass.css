@@ -36,6 +36,9 @@ a.ux-try-link{position:absolute;left:10px;top:calc(125cqw - 44px);z-index:2;marg
 .ux-facts div{padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
 .ux-facts dt{font-size:11.5px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
 .ux-facts dd{margin:2px 0 0;font-weight:700;font-size:14.5px}
+/* Ships-from / one-of-a-kind line. Kept quiet but legible: it answers the two
+   questions a buyer asks right before making an offer. */
+.ux-item-note{font-size:13px;color:var(--mut);margin:-4px 0 14px;line-height:1.45}
 .ux-try{display:flex;gap:8px;margin:0 0 14px}
 .ux-try .btn{flex:1}
 .ux-item-desc{white-space:pre-line;line-height:1.55;margin:0 0 16px;color:var(--ink)}

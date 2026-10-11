@@ -77,6 +77,13 @@ const PUBLIC = {
   "ebay/oauth/callback.js": "OAuth redirect target; verified by the `code` + state, not a session",
   "etsy/oauth/start.js": "OAuth consent redirect; there is no session yet at that point",
   "etsy/oauth/callback.js": "OAuth redirect target; verified by `code` + state cookie",
+  "channels/callback/[[channel]].js":
+    "marketplace OAuth landing pad — eBay/Etsy/Whatnot send the seller's browser here with no " +
+    "session cookie of ours attached, so there is nothing to gate on. It authenticates exactly " +
+    "like ebay/oauth/callback: the signed `state` minted when the flow started. The proxy forwards " +
+    "only the query string, method and five pass-through headers — no cookie crosses origins — and " +
+    "stores nothing itself. It exists because _redirects cannot proxy: Cloudflare silently ignores " +
+    "a 202 rule, which is why this route answered 404 until the Function replaced it.",
   "ai/analyze.js":
     "the identify/convert funnel (sample jacket + first photo) runs before a Pages session exists, so " +
     "it must work logged out; it stores no user data — no D1/R2 write, no image kept, the only " +

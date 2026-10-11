@@ -5,14 +5,22 @@
 /ar-tryon/                /try-on/    301
 
 # ── Marketplace OAuth landing ───────────────────────────────────────────────
-# eBay, Etsy and Whatnot redirect the seller back to fashionistas.ai after the
-# consent screen, and that has to reach the Worker or the flow dead-ends on the
-# static 404 page. A 202 is a proxy: the browser lands here and Cloudflare
-# forwards it, query string intact, to the Worker. The session cookie is not
-# what authenticates this — the signed `state` round-tripped from the start of
-# the flow is, because the marketplace arrives with no header of ours at all.
-/api/channels/callback/*  https://fashionistas-api.fashionistas1979.workers.dev/api/channels/callback/:splat  202
-/api/channels/callback    https://fashionistas-api.fashionistas1979.workers.dev/api/channels/callback  202
+# THERE IS NO RULE HERE ANYMORE, ON PURPOSE. This used to hold two `202`
+# "proxy" lines on the theory that a 202 forwards the request.
+# Cloudflare Pages only parses redirect statuses (200/301/302/303/307/308).
+# 202 is on the docs' list of rules that are parsed and silently ignored —
+# the same list, and the same failure mode, as the /404 asset lines described
+# at the bottom of this file. So neither line ever did anything, and every
+# seller returning from the eBay, Etsy or Whatnot consent screen fell through
+# to the static 404 page with `state` still in the query string. Verified:
+#   curl -I https://fashionistas.ai/api/channels/callback        -> 404
+#   curl -I https://fashionistas.ai/api/channels/callback/etsy   -> 404
+#   (both while these rules were present)
+# The proxy now lives where it is guaranteed to run, ahead of both the asset
+# layer and _redirects — functions/api/channels/callback/[[channel]].js.
+# The two `202` lines that used to sit here were deleted rather than left as
+# documentation: they never matched anything, and a rule nobody can see fail is
+# how this broke the first time.
 
 # ── Internal files: never served publicly ────────────────────────────────────
 # The Pages output dir is the repo root, so anything checked in would otherwise

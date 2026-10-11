@@ -24,10 +24,134 @@ const jsonForScript = (obj) => JSON.stringify(obj).replace(/</g, "\\u003c");
 export function listingDescription(l) {
   if (!l) return "";
   if (l.description) return String(l.description).trim().slice(0, 155);
-  const bits = [l.title, l.condition ? `Condition: ${l.condition}` : "", l.size ? `Size ${l.size}` : "", l.category || ""]
-    .filter(Boolean);
-  const s = bits.join(" · ").slice(0, 155);
-  return s;
+  // A listing with no seller-written description still has to say what it is.
+  // Brand and colour come first: those are the two words a shopper actually
+  // types, and they were missing entirely.
+  const bits = [
+    l.brand, l.title,
+    l.color ? `${l.color}` : "",
+    l.material ? `${l.material}` : "",
+    l.condition ? `Condition: ${l.condition}` : "",
+    l.size ? `Size ${l.size}` : "",
+  ].filter(Boolean);
+  return [...new Set(bits)].join(" · ").slice(0, 155);
+}
+
+/* Google's product taxonomy path, used by Merchant Center and TikTok's ads
+   catalog. Only the branches this shop can actually hold are mapped; anything
+   unmapped omits the tag rather than guessing, because a wrong taxonomy is a
+   disapproval and a missing one is only a warning. */
+const GOOGLE_CATEGORY = {
+  Tops: "Apparel & Accessories > Clothing > Shirts & Tops",
+  Sweaters: "Apparel & Accessories > Clothing > Shirts & Tops",
+  "T-Shirts": "Apparel & Accessories > Clothing > Shirts & Tops",
+  "Button-Down Shirts": "Apparel & Accessories > Clothing > Shirts & Tops",
+  Polos: "Apparel & Accessories > Clothing > Shirts & Tops",
+  "Hoodies & Sweatshirts": "Apparel & Accessories > Clothing > Shirts & Tops",
+  Dresses: "Apparel & Accessories > Clothing > Dresses",
+  "Jumpsuits & Rompers": "Apparel & Accessories > Clothing > Overalls & Jumpsuits",
+  Jeans: "Apparel & Accessories > Clothing > Pants > Jeans",
+  Pants: "Apparel & Accessories > Clothing > Pants",
+  Skirts: "Apparel & Accessories > Clothing > Skirts",
+  Shorts: "Apparel & Accessories > Clothing > Shorts",
+  "Coats & Jackets": "Apparel & Accessories > Clothing > Coats & Jackets",
+  "Suits & Blazers": "Apparel & Accessories > Clothing > Suits",
+  Activewear: "Apparel & Accessories > Clothing > Athletic Clothing",
+  Swimwear: "Apparel & Accessories > Clothing > Swimwear > Swimwear",
+  Sneakers: "Apparel & Accessories > Shoes > Athletic Shoes",
+  Boots: "Apparel & Accessories > Shoes > Boots",
+  Heels: "Apparel & Accessories > Shoes > High Heels",
+  Flats: "Apparel & Accessories > Shoes > Flats",
+  Sandals: "Apparel & Accessories > Shoes > Sandals",
+  "Casual Shoes": "Apparel & Accessories > Shoes > Casual Shoes",
+  "Dress Shoes": "Apparel & Accessories > Shoes > Dress Shoes",
+  "Bags & Handbags": "Apparel & Accessories > Handbags, Wallets & Cases > Handbags",
+  "Bags & Backpacks": "Apparel & Accessories > Bags & Backpacks > Backpacks",
+  "Kids' Bags & Backpacks": "Apparel & Accessories > Bags & Backpacks > Backpacks",
+  Jewelry: "Apparel & Accessories > Jewelry",
+  Watches: "Apparel & Accessories > Watches",
+  Hats: "Apparel & Accessories > Hats",
+  Belts: "Apparel & Accessories > Belts",
+  Scarves: "Apparel & Accessories > Scarves & Wraps",
+  Sunglasses: "Apparel & Accessories > Eyewear > Sunglasses",
+  Wallets: "Apparel & Accessories > Handbags, Wallets & Cases > Wallets",
+  Mirrors: "Home & Living > Home Decor > Mirrors",
+  Rugs: "Home & Living > Rugs",
+  "Lamps & Lighting": "Home & Living > Lighting > Lamps",
+  Furniture: "Home & Living > Furniture",
+  "Home Accents": "Home & Living > Home Decor > Decorative Accessories",
+  Paintings: "Media Types > Images > Fine Art Images > Paintings",
+  Prints: "Media Types > Images > Fine Art Images > Prints",
+  Posters: "Media Types > Images > Fine Art Images > Prints > Posters",
+  Photographs: "Media Types > Images > Fine Art Images > Photographs",
+  Sculptures: "Media Types > Images > Fine Art Images > Sculptures",
+};
+
+/** Google taxonomy path for a stored category value, or null when unknown. */
+export function googleProductCategory(category) {
+  const sub = String(category || "").split("/").pop().trim();
+  return GOOGLE_CATEGORY[sub] || null;
+}
+
+/** Schema.org condition item, from the grade a seller picked. */
+function conditionRef(grade) {
+  const g = String(grade || "").toLowerCase();
+  if (g.includes("new") || g === "nwt" || g === "nwot") return "https://schema.org/NewCondition";
+  if (g.includes("refurb")) return "https://schema.org/RefurbishedCondition";
+  // Everything else on a resale site is used, including "Like New" — claiming
+  // NewCondition for a pre-owned garment is the kind of mismatch Merchant
+  // Center disapproves on sight.
+  return "https://schema.org/UsedCondition";
+}
+
+/* ISO 3166-1 alpha-2, for the country a seller types in free text.
+ *
+ * The previous code took `.slice(0, 2)` of whatever the seller had written, so
+ * "United States" shipped as `addressCountry: "UN"` — the United Nations. A
+ * wrong country is worse than none: it puts the item's shipping origin on the
+ * wrong continent for every crawler that reads it, and Merchant Center rejects
+ * a shipping destination that does not exist.
+ *
+ * Sellers type the country however they like, so the common spellings are
+ * matched, an already-ISO value is accepted as-is, and anything unrecognised
+ * omits the shipping block entirely. Absent is a warning; wrong is a
+ * disapproval. */
+const COUNTRY_CODES = {
+  "us": "US", "usa": "US", "u.s.": "US", "u.s.a.": "US", "united states": "US",
+  "united states of america": "US", "america": "US",
+  "gb": "GB", "uk": "GB", "u.k.": "GB", "united kingdom": "GB",
+  "great britain": "GB", "england": "GB", "scotland": "GB", "wales": "GB",
+  "canada": "CA", "ca": "CA",
+  "australia": "AU", "au": "AU",
+  "germany": "DE", "deutschland": "DE", "de": "DE",
+  "france": "FR", "fr": "FR",
+  "ireland": "IE", "ie": "IE",
+  "netherlands": "NL", "the netherlands": "NL", "holland": "NL", "nl": "NL",
+  "spain": "ES", "espana": "ES", "españa": "ES", "es": "ES",
+  "italy": "IT", "italia": "IT", "it": "IT",
+  "japan": "JP", "jp": "JP",
+  "mexico": "MX", "mx": "MX",
+  "new zealand": "NZ", "nz": "NZ",
+  "sweden": "SE", "se": "SE",
+  "norway": "NO", "no": "NO",
+  "denmark": "DK", "dk": "DK",
+  "finland": "FI", "fi": "FI",
+  "switzerland": "CH", "ch": "CH",
+  "austria": "AT", "at": "AT",
+  "belgium": "BE", "be": "BE",
+  "portugal": "PT", "pt": "PT",
+  "poland": "PL", "pl": "PL",
+};
+
+/** Two-letter ISO code for a seller's free-text country, or null. */
+export function countryCode(raw) {
+  const v = String(raw || "").trim().toLowerCase().replace(/\s+/g, " ");
+  if (!v) return null;
+  if (COUNTRY_CODES[v]) return COUNTRY_CODES[v];
+  // Already an ISO code — "US", "gb" — but only exactly two letters, so
+  // "us" as the first word of a sentence cannot be mistaken for one.
+  if (/^[a-z]{2}$/.test(v)) return v.toUpperCase();
+  return null;
 }
 
 export function itemHead(l, origin) {
@@ -51,25 +175,57 @@ export function itemHead(l, origin) {
     `<meta name="twitter:image" content="${esc(image)}">`,
   ];
   const seller = (l.seller && (l.seller.display_name || l.seller.username)) || "";
-  tags.push(
-    `<script type="application/ld+json">${jsonForScript({
-      "@context": "https://schema.org",
-      "@type": "Product",
-      name: l.title || "Listing",
-      image: l.photo_url || undefined,
-      description: desc || undefined,
-      sku: `fash-${Number(l.id)}`,
-      brand: { "@type": "Brand", name: "fashionistas.ai" },
-      offers: {
-        "@type": "Offer",
-        url,
-        priceCurrency: "USD",
-        price: l.price != null ? String(l.price) : undefined,
-        availability: l.status === "active" ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
-        seller: seller ? { "@type": "Person", name: seller } : undefined,
-      },
-    })}</script>`
-  );
+  /* Product structured data a shopping crawler can actually use.
+
+     The old block hardcoded `brand: fashionistas.ai` on every item — a Versace
+     polo was declared as a fashionistas.ai product. That is not a cosmetic
+     slip: Merchant Center rejects a brand that does not match the item, so the
+     one attribute most likely to be present (sellers do type a brand) was the
+     one being overwritten with a lie. Brand is now the seller's value, and it
+     is omitted when there is none rather than filled with the site name.
+
+     `identifier_exists: no` is the honest statement for one-of-a-kind used
+     clothing: there is no GTIN/MPN to check, and saying so is what stops
+     Google from disapproving the item for a missing identifier. */
+  const brand = String(l.brand || "").trim();
+  const gpc = googleProductCategory(l.category);
+  const product = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: l.title || "Listing",
+    image: l.photo_url || undefined,
+    description: desc || undefined,
+    sku: `fash-${Number(l.id)}`,
+    item_group_id: `fash-${Number(l.id)}`,
+    color: l.color || undefined,
+    size: l.size || undefined,
+    material: l.material || undefined,
+    condition: conditionRef(l.condition),
+    offers: {
+      "@type": "Offer",
+      url,
+      priceCurrency: "USD",
+      price: l.price != null ? String(l.price) : undefined,
+      availability: l.status === "active" ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+      itemCondition: conditionRef(l.condition),
+      seller: seller ? { "@type": "Person", name: seller } : undefined,
+    },
+  };
+  // Only emit shipping when the country resolves to a real ISO code. A
+  // shipping block naming a country that does not exist is a disapproval, and
+  // the old `.slice(0, 2)` turned "United States" into "UN".
+  const shipTo = countryCode(l.ship_country);
+  if (shipTo) {
+    product.offers.shippingDetails = {
+      "@type": "OfferShippingDetails",
+      shippingDestination: { "@type": "DefinedRegion", addressCountry: shipTo },
+    };
+  }
+  // Only emit what is actually known. A brand of "fashionistas.ai", an empty
+  // size or a guessed taxonomy is worse than no tag at all.
+  if (brand) product.brand = { "@type": "Brand", name: brand.slice(0, 80) };
+  if (gpc) product.google_product_category = gpc;
+  tags.push(`<script type="application/ld+json">${jsonForScript(product)}</script>`);
   return tags.join("\n");
 }
 

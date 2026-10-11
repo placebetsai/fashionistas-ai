@@ -985,7 +985,15 @@ function marketPick(path){
 function marketRows(){
   const q = (S.marketQ || "").toLowerCase().trim();
   let rows = shopPublicRows(S.market || []).slice();
-  if (q) rows = rows.filter(m=>((m.title||"")+" "+(m.description||"")+" "+(m.category||"")+" "+((m.seller&&m.seller.username)||"")).toLowerCase().includes(q));
+  /* Client-side search, mirroring the API's own field list exactly. Brand,
+     colour, material, size and seller handle are all omitted here before this
+     change, so a shopper could type "Versace", "wool" or the seller's handle
+     and get an empty grid while the item sat right there in S.market — the
+     server had already learned to find it, the grid had not. */
+  if (q) rows = rows.filter(m=>[
+      m.title, m.description, m.category, m.brand, m.color, m.material, m.size,
+      m.condition, m.seller && m.seller.username, m.seller && m.seller.display_name,
+    ].filter(Boolean).join(" ").toLowerCase().includes(q));
   if (S.marketCat) rows = rows.filter(m => taxMatches(m.category, S.marketCat));
   const n2 = v => Number(v) || 0;
   rows.sort((a,b)=>{
@@ -1186,7 +1194,27 @@ async function openMarketItem(id, opts){
   const plats = shopNormalizePlatforms(m.platforms);
   CURRENT.market = m;
   const clean = v => { v = String(v||"").trim(); return (v && !/^(n\/?a|none|not visible|unknown|-)$/i.test(v)) ? v : ""; };
-  const facts = [["Size", clean(m.size)], ["Condition", clean(m.condition)], ["Category", canonCat(m.category) ? taxLabel(canonCat(m.category)) || canonCat(m.category) : ""]].filter(r => r[1]);
+  /* Every field the API returns for this item, shown to the buyer.
+     This list used to be Size / Condition / Category and nothing else, while
+     the API was already handing over brand, colour, material and where it
+     ships from. The data existed and the page threw it away — which is what
+     "the listings are missing so many things" meant. A shopper cannot judge a
+     $200 handbag on a colour-less, brand-less card. */
+  const catFull = canonCat(m.category) || "";
+  const facts = [
+    ["Brand", clean(m.brand)],
+    ["Size", clean(m.size)],
+    ["Colour", clean(m.color)],
+    ["Material", clean(m.material)],
+    ["Condition", clean(m.condition)],
+    ["Department", catFull ? taxLabel(catFull) || catFull : ""],
+  ].filter(r => r[1]);
+  /* Where it ships from, which is the other thing a buyer asks before making
+     an offer. Omitted entirely when the seller never filled it in. */
+  const from = [clean(m.ship_city), clean(m.ship_country)].filter(Boolean).join(", ");
+  /* One-of-a-kind is the whole premise of this shop, so say it where the buy
+     button is rather than leaving the buyer assuming there may be more. */
+  const scarce = m.status === "active" ? `<p class="ux-item-note">One of a kind &mdash; there is only this one.</p>` : "";
   kineticTitle(""); $("#view-sub").textContent = "";
   el.innerHTML = `<div class="ux-item">`
   + `<button type="button" class="ux-back" onclick="go('shop')" aria-label="Back to Shop"><svg class='i20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M15 5l-7 7 7 7'/></svg></button>`
@@ -1195,7 +1223,9 @@ async function openMarketItem(id, opts){
   + `<div class="ux-item-price">${money(m.price)}</div>`
   + `<h1 class="ux-item-title">${escapeHtml(m.title||"Untitled")}</h1>`
   + (facts.length ? `<dl class="ux-facts">` + facts.map(r => `<div><dt>${r[0]}</dt><dd>${escapeHtml(r[1])}</dd></div>`).join("") + `</dl>` : "")
+  + (from ? `<p class="ux-item-note">Ships from ${escapeHtml(from)}${m.local_pickup ? " &middot; local pickup available" : ""}</p>` : (m.local_pickup ? `<p class="ux-item-note">Local pickup available.</p>` : ""))
   + placementCtaHtml(m)
+  + scarce
   + (m.description ? `<p class="ux-item-desc">${escapeHtml(m.description)}</p>` : "")
   + `<div class="ux-seller"><span class="ux-av">${escapeHtml(String(seller).slice(0,1).toUpperCase())}</span><span><b>${escapeHtml(seller)}</b>${sellerU?`<small>@${escapeHtml(sellerU)}</small>`:""}</span></div>`
   + `</div>`
@@ -4444,13 +4474,26 @@ function openAdd(){
  <div id="m-sub-wrap">${fSubInner("", "")}</div>
  <label>Condition</label>
  <div id="m-cond">${["Poor","Fair","Good","Excellent"].map(c=>`<button class="chip ${c==="Good"?"on":""}" onclick="pickCond(this,'${c}')" data-tip="Sets the condition for this listing." title="Sets the condition for this listing.">${c}</button>`).join("")}</div>
+ <fieldset class="form-sec" data-tip="These are the fields shoppers filter and search by — filling them in is what gets you found.">
+  <legend>What it is</legend>
+  <div class="two">
+   <div><label>Brand</label><input class="input" id="m-brand" autocomplete="off" placeholder="e.g. Levi's" data-tip="Brand is searched by buyers and used by Google Shopping. Leave blank if unsure — never guess."></div>
+   <div><label>Colour</label><input class="input" id="m-color" autocomplete="off" placeholder="e.g. Light blue"></div>
+  </div>
+  <div><label>Material</label><input class="input" id="m-material" autocomplete="off" placeholder="e.g. 100% cotton"></div>
+ </fieldset>
  <label>Description</label><textarea class="input" id="m-desc" rows="3"></textarea>
  <div style="height:10px"></div>
  <button class="btn btn-accent" onclick="saveManual()" data-tip="Saves this sale by hand." title="Saves this sale by hand.">Save to my clothes</button>
  `);
 }
 async function saveManual(){
- const body = { title: $("#m-title").value.trim(), price: parseFloat($("#m-price").value), size: $("#m-size").value.trim(), category: fReadCat("m-dept","m-sub-wrap"), condition: ((($("#m-cond .on")||{}).textContent)||"Good").trim(), description: $("#m-desc").value.trim(), photo_url: $("#m-photo").value.trim()||null };
+ /* The detail fields the hand-add sheet was the only form not sending. Brand,
+    colour and material are what a buyer filters and searches on, and what a
+    Google Shopping row is built from — leaving them out here meant a listing
+    typed by hand was permanently thinner than one created any other way. */
+ const mv = id => { const e = document.getElementById(id); return e ? e.value.trim() : ""; };
+ const body = { title: $("#m-title").value.trim(), price: parseFloat($("#m-price").value), size: $("#m-size").value.trim(), category: fReadCat("m-dept","m-sub-wrap"), condition: ((($("#m-cond .on")||{}).textContent)||"Good").trim(), description: $("#m-desc").value.trim(), photo_url: $("#m-photo").value.trim()||null, brand: mv("m-brand"), color: mv("m-color"), material: mv("m-material") };
  if (!body.title || !body.price) return toast("Title and price are required");
  /* Same rule as the main form: every item gets a department, or it can never
     be browsed to. The old code read a chip group that no longer exists and
