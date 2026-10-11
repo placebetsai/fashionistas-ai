@@ -362,7 +362,7 @@ body{-webkit-font-smoothing:antialiased}
 
 <span class="badge to-badge">AI virtual try-on</span>
 <h1 class="to-h1" aria-label="See it on you before you buy it"><span class="w" style="--i:0" aria-hidden="true">See</span> <span class="w" style="--i:1" aria-hidden="true">it</span> <span class="w" style="--i:2" aria-hidden="true">on</span> <span class="w sh" style="--i:3" aria-hidden="true">you</span> <span class="w" style="--i:4" aria-hidden="true">before</span> <span class="w sh" style="--i:5" aria-hidden="true">you</span> <span class="w" style="--i:6" aria-hidden="true">buy</span> <span class="w" style="--i:7" aria-hidden="true">it</span></h1>
-<p class="lede to-lede">Add a photo of yourself and see the item on you before you buy it. Open anything in the shop and press <b>Try it on</b> — the garment loads itself, so one photo is all it takes. <b>Quick preview</b> is free and instant, right on your phone; HD needs Pro or a try-on credit and takes about a minute. Download it, save it or share it when you like what you see. Signed in? Your own listings sit in the strip below and load the same way.</p>
+<p class="lede to-lede">Add a photo of yourself and see the item on you before you buy it. Open anything in the shop and press <b>Try it on</b> — the garment loads itself, so one photo is all it takes. <b>Quick preview</b> is free and instant, right on your phone; HD needs Pro or a try-on credit and takes about a minute. Download it, save it or share it when you like what you see. No sign-in needed either — the shop loads its own stock into the strip below, so the only photo you ever add is of yourself.</p>
 
 <div class="to-rot">
  <span>Works on any piece</span>
@@ -642,14 +642,14 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
       });
   }
 
-  function renderStrip(items){
+  function renderStrip(items, label){
     var strip = $("closet-strip");
     if (!strip) return;
-    var label = strip.querySelector(".to-closet-l");
+    var lab = strip.querySelector(".to-closet-l");
     strip.innerHTML = "";
-    if (label) strip.appendChild(label);
+    if (lab) strip.appendChild(lab);
     if (!items.length) { strip.hidden = true; return; }
-    if (label) label.textContent = "Your listings — tap a photo to swap the clothing";
+    if (lab) lab.textContent = label || "Your listings — tap a photo to swap the clothing";
     strip.hidden = false;
     items.slice(0, 10).forEach(function(item, i){
       var b = document.createElement("button");
@@ -674,18 +674,41 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
     if (new URLSearchParams(location.search).get("item")) return; // buyer link already loads it
     var token = null;
     try { token = localStorage.getItem("fash_token"); } catch (e) {}
-    if (!token) { restoreLastGarment(); return; }
+    if (!token) { loadShopStrip(); return; }
     fetch(API_HOST + "/api/listings", { headers: { authorization: "Bearer " + token } })
       .then(function(r){ if (!r.ok) throw new Error("http " + r.status); return r.json(); })
       .then(function(d){
         var rows = (d && d.listings) || [];
         var items = rows.filter(function(x){ return x && x.photo_url; });
-        if (!items.length) { restoreLastGarment(); return; }
+        if (!items.length) { loadShopStrip(); return; }
         renderStrip(items);
         return loadItem(items[0]);
       })
-      .catch(function(){ restoreLastGarment(); });
+      .catch(function(){ loadShopStrip(); });
   })();
+
+  /* A shopper who is not signed in owns a closet of zero, and until now that
+     meant an upload box asking them to photograph the very garment they had
+     just been looking at in the shop. The garment is not theirs to provide —
+     it is already on the server, and /api/market is public, so the shop
+     itself is the picker. Tap a photo, it becomes the garment, and the only
+     upload left is the one only they can give: a photo of themselves. */
+  function loadShopStrip(){
+    restoreLastGarment();
+    var input = $("file-garment");
+    var already = !!(input && input.files && input.files.length);
+    fetch(API_HOST + "/api/market")
+      .then(function(r){ if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+      .then(function(d){
+        var rows = (d && d.market) || [];
+        var items = rows.filter(function(x){ return x && x.photo_url; });
+        if (!items.length) return;
+        renderStrip(items, "In the shop — tap to try one on");
+        if (already) return;
+        return loadItem(items[0]);
+      })
+      .catch(function(){ /* leave whatever restoreLastGarment() managed to restore */ });
+  }
 
   // A garment picked by hand is remembered for next time (additive listener —
   // the original change handler still runs setFile).
