@@ -42,6 +42,7 @@
   .chan .btn{width:100%;justify-content:center}
   .need{font-size:12px;color:var(--mut);line-height:1.5;border-top:1px dashed var(--line);padding-top:10px;margin:0}
 
+
   .post{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:26px}
   .post h2{font-size:19px;margin:0 0 4px}
   .post p.sub{color:var(--mut);font-size:14px;margin:0 0 16px}
@@ -141,16 +142,17 @@ function render(signedIn) {
 
   app.innerHTML = `
     <div class="hero">
-      <h1>Post to <span class="grad">three more shops</span> in one click.</h1>
-      <p>Connect each shop once. After that a listing in your closet goes live where you
-         want it, without retyping a thing.</p>
+      <h1>Post anywhere. <span class="grad">No keys, no setup.</span></h1>
+      <p>Every shop fills from one photo in your own signed-in browser, and you press
+         Post — the step those sites require anyway. Connecting a shop below is only
+         worth it if you want even that button skipped.</p>
     </div>
 
     <div class="step"><div class="step-n">1</div><div class="step-t">
-      <b>Connect a shop.</b> <span>You'll sign in on the marketplace's own page — your password never comes here, and we only get permission to list.</span>
+      <b>Post with the extension.</b> <span>Nothing to register, nothing to paste. It works because it's your own browser, already signed into your own shops.</span>
     </div></div>
     <div class="step"><div class="step-n">2</div><div class="step-t">
-      <b>Pick a listing, pick a shop, press Post.</b> <span>Photos, title, description and price are carried across for you.</span>
+      <b>Optional: connect a shop for true one-click.</b> <span>eBay, Etsy and Whatnot have official seller APIs that create the listing outright. Good if you post a lot.</span>
     </div></div>
 
     <div class="chans">${cards}</div>
@@ -201,8 +203,10 @@ function chanCard(c) {
     <p class="chan-blurb">${esc(c.blurb)}</p>
     ${on
       ? `<button class="btn btn-soft" id="btn-${c.id}">Disconnect</button>`
-      : `<button class="btn btn-accent" id="btn-${c.id}" ${c.configured ? "" : "disabled"}>${c.configured ? "Connect " + esc(c.name) : "Not available yet"}</button>`}
-    ${c.setup ? `<p class="need">${esc(c.setup)}</p>` : ""}
+      : c.configured
+        ? `<button class="btn btn-accent" id="btn-${c.id}">Connect ${esc(c.name)}</button>`
+        : `<a class="btn btn-soft" href="/#sell" style="text-decoration:none;justify-content:center">Use the extension</a>`}
+    ${c.configured || on ? "" : `<p class="need">One-click posting here needs this shop's own seller API. Until that's connected, the extension fills ${esc(c.name)} in your own signed-in browser — no keys, no account, no setup.</p>`}
   </div>`;
 }
 
@@ -264,9 +268,9 @@ function honestNote() {
     yourself there. Vinted and Vestiaire have APIs but gate them behind an allowlist and a
     monthly listing minimum. Kidizen shut down.
     <ul>
-      <li><b>eBay</b> — free, self-serve keys. Yours in about ten minutes.</li>
-      <li><b>Etsy</b> — a Seller App is approved in minutes, with no review queue.</li>
-      <li><b>Whatnot</b> — open developer preview.</li>
+      <li><b>eBay</b> — the biggest audience of the three. Works in your own browser today.</li>
+      <li><b>Etsy</b> — the shoppers here are searching for exactly secondhand and vintage clothing.</li>
+      <li><b>Whatnot</b> — live sales and drops. Best for streetwear and collectibles.</li>
     </ul>
   </div>`;
 }
