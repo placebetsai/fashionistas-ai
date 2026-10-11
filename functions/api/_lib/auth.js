@@ -146,9 +146,17 @@ export async function requireAuth(request, env) {
   // Worker-issued session: signed, stateless, no row to look up. Verified first
   // because this is the credential the web app actually holds; the D1 lookup
   // below only serves tokens minted by this project's own /api/auth/* routes.
+  //
+  // SESSION_SECRET may hold a comma-separated list, newest first. That is how
+  // the signing key gets rotated without a gap: publish `new,old` on both
+  // sides, let every outstanding token verify, then drop `old`.
   if (token.indexOf(".") > 0 && env && env.SESSION_SECRET) {
-    const p = await verifyWorkerToken(token, env.SESSION_SECRET);
-    if (p) return { ok: true, user: { id: p.sub, email: p.u || "" }, token };
+    for (const candidate of String(env.SESSION_SECRET).split(",")) {
+      const secret = candidate.trim();
+      if (!secret) continue;
+      const p = await verifyWorkerToken(token, secret);
+      if (p) return { ok: true, user: { id: p.sub, email: p.u || "" }, token };
+    }
   }
 
   const db = getDB(env);
