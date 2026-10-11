@@ -84,6 +84,55 @@ export const UNAUTHORIZED = () =>
   json({ ok: false, error: "unauthorized", detail: "A valid Bearer token (or fash_session cookie) is required." }, 401);
 
 /**
+ * Stateless session token issued by the fashionistas-api Worker.
+ *
+ * The Worker signs `{sub, u, exp}` with HMAC-SHA256 and writes no row, while
+ * requireAuth() below resolved tokens by looking them up in the D1 `sessions`
+ * table. Those two systems cannot interoperate, so a Worker session — the only
+ * kind the web app actually has — never authenticated on this side.
+ *
+ * The visible casualty was virtual try-on. The real render engine is alive
+ * (2026-10-11: `GET <modal>/healthz` with the proxy credentials returned
+ * `200 {"ok":true,"model":"fashn-vton-1.5","steps_default":20}`), but
+ * `POST /api/tryon/hd` 401'd every request before it could reach the GPU, so
+ * the only try-on path anyone ever saw was the on-device overlay — a shirt
+ * pasted on top of a photo, sold as a render.
+ *
+ * The signing key is `SESSION_SECRET`, set identically on this project and on
+ * the Worker. It used to be hardcoded in the Worker's source, which is pushed
+ * to a public repository — anyone could sign `{sub: <any user id>}` and become
+ * that account.
+ */
+async function verifyWorkerToken(token, secret) {
+  try {
+    const dot = token.lastIndexOf(".");
+    if (dot < 1) return null;
+    const body = token.slice(0, dot);
+    const sig = token.slice(dot + 1);
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+    );
+    const buf = await crypto.subtle.sign("HMAC", key, enc.encode(body));
+    // Constant-time compare, same as the Worker: never return early on a match.
+    const expect = btoa(String.fromCharCode(...new Uint8Array(buf)))
+      .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    if (expect.length !== sig.length) return null;
+    let diff = 0;
+    for (let i = 0; i < expect.length; i++) diff |= expect.charCodeAt(i) ^ sig.charCodeAt(i);
+    if (diff !== 0) return null;
+
+    const padded = body.replace(/-/g, "+").replace(/_/g, "/");
+    const p = JSON.parse(atob(padded + "=".repeat((4 - (padded.length % 4)) % 4)));
+    if (!p || !Number.isFinite(p.sub)) return null;
+    if (!Number.isFinite(p.exp) || p.exp < Date.now()) return null;
+    return p;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Resolve the caller. Returns `{ ok:true, user, token }` or
  * `{ ok:false, response }` — the caller must return `response` verbatim.
  *
@@ -93,6 +142,14 @@ export const UNAUTHORIZED = () =>
 export async function requireAuth(request, env) {
   const token = bearerOrCookie(request);
   if (!token) return { ok: false, response: UNAUTHORIZED() };
+
+  // Worker-issued session: signed, stateless, no row to look up. Verified first
+  // because this is the credential the web app actually holds; the D1 lookup
+  // below only serves tokens minted by this project's own /api/auth/* routes.
+  if (token.indexOf(".") > 0 && env && env.SESSION_SECRET) {
+    const p = await verifyWorkerToken(token, env.SESSION_SECRET);
+    if (p) return { ok: true, user: { id: p.sub, email: p.u || "" }, token };
+  }
 
   const db = getDB(env);
   if (!db) {
