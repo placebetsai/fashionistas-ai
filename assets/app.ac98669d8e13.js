@@ -1050,19 +1050,12 @@ function marketClearFilters(){
 }
 /* Buyer-only preview button on a search-result card. Never blank — an object
    we can't classify still opens the room placer with its photo. */
-function marketCardTry(m){
-  const mode = inferPlacementMode(m || {});
-  const q = [];
-  if (mode !== "clothing" && mode !== "none") q.push("mode=" + mode);
-  if (m.photo_url) q.push("item=" + encodeURIComponent(m.photo_url));
-  if (m.title) q.push("title=" + encodeURIComponent(String(m.title).slice(0, 80)));
-  const href = (mode === "clothing" ? "/try-on/" : "/see-in-space/") + (q.length ? "?" + q.join("&") : "");
-  const label = mode === "clothing" ? "Try it on"
-    : mode === "table" ? "See it on my counter"
-    : mode === "wall" ? "See it on my wall"
-    : "See it in my room";
-  return `<a class="btn btn-accent btn-sm ux-try-link" href="${escapeAttr(href)}">${label}</a>`;
-}
+/* The grid tile used to end with a "Try it on" button. It is gone: a search
+   result is a list of things, not a thing you are trying on, and seven of
+   them at once read as noise — the owner's words were "on the search screen,
+   what the fuck are you trying on". The CTA still exists exactly where it
+   means something, on the item itself: placementCtaHtml() is called from the
+   detail render, so you open the item and then decide. */
 function marketCard(m, i){
   const photo = m.photo_url
     ? `<img loading="lazy" src="${escapeAttr(m.photo_url)}" alt="" onerror="this.remove()">`
@@ -1075,7 +1068,6 @@ function marketCard(m, i){
   + `<span class="ux-tile-t">${escapeHtml(m.title||"Untitled")}</span>`
   + (sub ? `<span class="ux-tile-s">${escapeHtml(sub)}</span>` : "")
   + `</a>`
-  + marketCardTry(m)
   + `</div>`;
 }
 

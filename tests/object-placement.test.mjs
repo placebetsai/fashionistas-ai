@@ -61,10 +61,13 @@ test("the item page CTA is never empty — objects lose their entry point no mor
   assert.match(fn, /mode === "table"/);
   assert.match(fn, /See it on my counter/);
   assert.match(fn, /never an empty string/i);
-  // The card-level button must also cover every mode.
-  const card = bundle.slice(bundle.indexOf("function marketCardTry(m){"), bundle.indexOf("function marketCard(m, i){"));
-  assert.doesNotMatch(card, /return "";/);
-  assert.match(card, /See it on my counter/);
+  // The tile-level button is deliberately gone. A search result is a list of
+  // things, not a thing you are trying on, and seven of them at once read as
+  // noise — the owner's words were "on the search screen, what the fuck are
+  // you trying on". Every mode is still reachable, from the item itself,
+  // which is where placementCtaHtml() runs (asserted above).
+  assert.doesNotMatch(bundle, /marketCardTry\(/, "the shop/search tile must not carry a try-on button");
+  assert.doesNotMatch(bundle, /ux-try-link/, "same, by class: the tile CTA is gone");
 });
 
 test("the classifier in the bundle knows table too", () => {
@@ -102,6 +105,31 @@ test("the room page never trusts a poisoned cross-origin image cache", () => {
   assert.match(fn, /URL\.createObjectURL\(await resp\.blob\(\)\)/);
   assert.match(fn, /fall through to the direct image path/);
   assert.match(room, /await loadImageFromUrl\(/, "callers still await it");
+});
+
+test("try-on never trusts a poisoned cross-origin image cache either", () => {
+  // The exact bug the room page above already fixed, one page over, where it
+  // was never applied. The shop grid's <img> tags fetch the listing photo with
+  // NO Origin header; the Worker used to send no `Vary: Origin` on that
+  // variant either, so the browser's cache held one copy for both — and the
+  // try-on page's CORS fetch was handed the copy without
+  // Access-Control-Allow-Origin. It died with `TypeError: Failed to fetch`,
+  // the garment station stayed empty, and the page told the shopper to upload
+  // the very item they had just clicked on.
+  //
+  // Measured on prod 2026-10-11:
+  //   fetch(src)                -> TypeError: Failed to fetch
+  //   fetch(src, {cache:"no-store"}) -> 200 image/jpeg
+  //   fetch(src, {cache:"reload"})   -> 200 image/jpeg
+  const tryon = readFileSync(join(ROOT, "try-on/index.html"), "utf8");
+  const fn = tryon.slice(tryon.indexOf("(function preloadItem(){"), tryon.indexOf("Seller flow: the item is ALREADY"));
+  assert.ok(fn.length > 0, "preloadItem must still be in the page");
+  assert.match(fn, /cache: "no-store"/, "must bypass the poisoned cache entry");
+  assert.match(fn, /setFile\("garment"/, "the garment is still preloaded, not asked for");
+  assert.match(fn, /loadShopStrip\(\)/,
+    "a failed preload falls back to the shop strip — never an empty station telling them to re-upload");
+  assert.doesNotMatch(fn, /save it from the listing and add it here/,
+    "the old message asked the shopper to re-upload the item they had just clicked");
 });
 
 test("a counter item starts mid-frame, a floor item stays on the floor", () => {

@@ -584,11 +584,25 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
     try {
       var qp = new URLSearchParams(location.search), src = qp.get("item");
       if (!src || !/^(https?:\/\/|\/)/i.test(src)) return;
-      fetch(src, { credentials: "omit" }).then(function(r){ if (!r.ok) throw 0; return r.blob(); }).then(function(b){
+      /* cache:"no-store" is not cosmetic. The shop page's <img> tags fetch this
+         same photo with NO Origin header and cache it for max-age=31536000;
+         this CORS fetch was then handed that cached copy — without
+         Access-Control-Allow-Origin — and died with TypeError: Failed to
+         fetch, leaving an empty garment station that told the shopper to
+         re-upload the very item they had just clicked. Proven on prod:
+         fetch(src) failed, fetch(src, {cache:"no-store"}) returned 200
+         image/jpeg. The Worker also now sends Vary: Origin unconditionally. */
+      fetch(src, { credentials: "omit", cache: "no-store" }).then(function(r){ if (!r.ok) throw 0; return r.blob(); }).then(function(b){
         if (!/^image\//.test(b.type || "")) throw 0;
         setFile("garment", new File([b], "listing.jpg", { type: b.type }));
         var t = qp.get("title"); if (t) say("Item loaded: " + t.slice(0, 80) + ". Now add a photo of yourself.", false);
-      }).catch(function(){ say("Couldn't load the item photo automatically — save it from the listing and add it here.", false); });
+      }).catch(function(){
+        say("Couldn't load that item automatically — pick it from the shop strip below.", false);
+        // Never strand the shopper with an empty garment station asking them to
+        // upload the item they just clicked. The shop's photos are public on
+        // /api/market, so the shop itself becomes the picker instead.
+        try { if (typeof loadShopStrip === "function") loadShopStrip(); } catch (e) {}
+      });
     } catch (e) {}
   })();
 
