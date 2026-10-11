@@ -75,7 +75,7 @@ async function loadGenerated() {
 }
 
 const generated = await loadGenerated();
-const { PATHS, DEPARTMENTS, LEGACY, resolveCategory, spellingsFor } = generated;
+const { PATHS, DEPARTMENTS, LEGACY, resolveCategory, prefixesFor, belongsUnder } = generated;
 
 test("the Worker ships the real departments, not the retired ones", () => {
   assert.deepEqual([...DEPARTMENTS], [...REAL_DEPTS]);
@@ -128,15 +128,16 @@ test("the exact values prod was holding still resolve to a real department", () 
   };
   for (const [held, want] of Object.entries(prod)) {
     assert.equal(resolveCategory(held), want, held);
-    // …and the shopper browsing the destination actually sees it. Compared
-    // case-insensitively because the SQL is: the market route wraps both sides
-    // in LOWER(TRIM(l.category)) = LOWER(?), and spellingsFor() hands it the
-    // keys as LEGACY spells them (all lowercase), which is not the
-    // capitalisation D1 happens to hold. Verified live after deploy.
+    // …and the shopper browsing the destination actually sees it. The route
+    // matches with LIKE on a prefix (the SQL wraps both sides in LOWER, and
+    // LEGACY spells its keys lowercase), so what has to hold is that one of
+    // the prefixes, upper-cased as a LIKE pattern, reaches the stored value.
     assert.ok(
-      spellingsFor(want).some((s) => s.toLowerCase() === held.toLowerCase()),
-      `${want} filter misses ${held}`
+      prefixesFor(want).some((p) => held.toLowerCase().startsWith(p.toLowerCase())),
+      `no prefix for ${want} reaches the stored ${held}`
     );
+    // And the authoritative test agrees once the row is canonicalized.
+    assert.ok(belongsUnder(held, want), `${held} is not under ${want}`);
   }
 });
 
@@ -156,21 +157,41 @@ test("junk stays null — the resolver never invents a department", () => {
 });
 
 test("a bare department stays a department in the Worker, so nothing under it is filtered out", () => {
-  // The department chips in the Shop send "Women", not "Women/Tops", so the
-  // SQL filter has to widen it — otherwise clicking a department shows only
-  // whatever was filed at the top level, which is nothing at all.
+  // The department chips in the Shop send "Women", not "Women/Tops". The route
+  // widens it through LIKE prefixes and then checks each canonicalized row
+  // with belongsUnder — so what has to hold is that every path beneath the
+  // department is classified as beneath it, and that the prefixes really do
+  // reach the legacy spellings that would otherwise sit outside by string.
   for (const dept of DEPARTMENTS) {
     assert.equal(resolveCategory(dept), dept, dept);
     const under = [...PATHS].filter((p) => p.startsWith(dept + "/"));
     assert.ok(under.length > 0, `${dept} has no items under it`);
-    const listed = spellingsFor(dept).map((s) => s.toLowerCase());
-    assert.ok(listed.includes(dept.toLowerCase()), `${dept} misses itself`);
-    for (const p of under) assert.ok(listed.includes(p.toLowerCase()), `${dept} misses ${p}`);
+    for (const p of under) assert.ok(belongsUnder(p, dept), `${dept} misses ${p}`);
+    // The prefix that has to exist is the department's own name: LIKE
+    // "Women%" is what finds rows filed as bare "Women" and as "Women/…".
+    assert.ok(prefixesFor(dept).includes(dept), `${dept} has no prefix of its own`);
   }
-  // …and a leaf request stays a leaf request, not a department-wide sweep.
-  assert.ok(!spellingsFor("Women/Tops").includes("Women/Dresses"));
+  // A leaf request stays a leaf request, not a department-wide sweep.
+  assert.ok(belongsUnder("Women/Tops", "Women/Tops"));
+  assert.ok(!belongsUnder("Women/Dresses", "Women/Tops"));
   // Pages, by contrast, collapses a bare department to its first row.
   assert.equal(realResolve("Women").path, "Women/Tops");
+});
+
+test("a request that names no place in the table matches nothing, not everything", () => {
+  // `?category=nonsense` answered all 7 live listings before this, because
+  // belongsUnder re-resolved the request and read an unresolvable one as "no
+  // filter". A department a shopper asked for that does not exist has to come
+  // back empty — showing the whole shop under the wrong heading is worse than
+  // showing nothing, because it looks like it worked.
+  assert.equal(prefixesFor("nonsense").length, 0);
+  assert.equal(belongsUnder("Women/Tops", null), false);
+  assert.equal(belongsUnder("Women/Tops", "nonsense"), false);
+  // Rows that resolve to nothing are never under anything either.
+  assert.equal(belongsUnder(null, "Women"), false);
+  assert.equal(belongsUnder("", "Women"), false);
+  // …and an empty request is still not a filter.
+  assert.equal(prefixesFor("").length, 0);
 });
 
 test("the Worker's resolver and the Pages one agree on every path and alias", () => {
