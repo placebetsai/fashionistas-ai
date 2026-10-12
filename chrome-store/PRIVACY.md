@@ -38,13 +38,29 @@ a marketplace login: the marketplace sees the seller's own browser session, not 
 All network calls made by the extension go to two destinations declared in `config/api.js:6` and
 `config/selector-source.js:23` — our own product hosts.
 
-| Data sent | Direction | Code | Why it is needed |
+**Status of each call, stated plainly.** The extension is not published and not released. One of the
+two hosts is live today; the other is not, and the calls below that target it currently answer 404
+(verified 2026-10-12 by probing the deployed Worker). We are listing them as *implemented client-side,
+not yet served* rather than describing them to you as working infrastructure, because a privacy notice
+that overstates what a server does is the same kind of lie as one that understates it.
+
+| Data sent | Direction | Code | Status |
 | --- | --- | --- | --- |
-| Queued job (listing title, description, price, photos, target shop) | GET from us | `queue.js:457` (`GET /api/jobs?status=queued`) | The seller created this listing on fashionistas.ai; the extension fetches it in order to publish it |
-| Job result `{status, listing_url, error?, attempts}` | POST to us | `queue.js:245`, `queue.js:348` (`POST /api/jobs/{id}/status`) | So the seller's dashboard shows "posted / failed" and the live listing URL |
-| Session-presence booleans `{poshmark: true, mercari: false, …}` | POST to us | `background.js:185-189` (`POST /api/sessions`) | Drives the "Connected" badge. One boolean per shop — the payload contains nothing else |
-| Sale/delist event `{shop, listingRef, listingUrl, title, price, currency, soldAt, soldAtText, detectedAt, source}` | POST to us | `sales/registry.js:55-67`, `sales/driver.js:246` (`POST /api/sales`) | Exactly one event per sold listing, so the seller's closet view stops showing sold items as available |
-| Selector document `https://fashionistas.ai/selectors.json` | GET from us | `config/selector-source.js:23` | Versioned form-field map, so a marketplace layout change is a one-file fix instead of a store release |
+| Selector document `https://fashionistas.ai/selectors.json` | GET from us | `config/selector-source.js:23` | **Live.** Versioned form-field map, so a marketplace layout change is a one-file fix instead of a store release |
+| Queued job (listing title, description, price, photos, target shop) | GET from us | `queue.js:457` (`GET /api/jobs?status=queued`) | **Client implemented, endpoint not served.** No producer exists — nothing on fashionistas.ai enqueues a job yet |
+| Job result `{status, listing_url, error?, attempts}` | POST to us | `queue.js:245`, `queue.js:348` (`POST /api/jobs/{id}/status`) | **Client implemented, endpoint not served** |
+| Session-presence booleans `{poshmark: true, mercari: false, …}` | POST to us | `background.js:185-189` (`POST /api/sessions`) | **Client implemented, endpoint not served.** One boolean per shop — the payload contains nothing else |
+| Sale/delist event `{shop, listingRef, listingUrl, title, price, currency, soldAt, soldAtText, detectedAt, source}` | POST to us | `sales/registry.js:55-67`, `sales/driver.js:246` (`POST /api/sales`) | **Client implemented, endpoint not served** |
+
+Because those four endpoints do not answer, the extension has no way to receive work: it polls, gets
+404, and backs off on a ladder (`config/api.js:59-83`). That is deliberate — the poll gate was written
+exactly so a missing backend costs one request per backoff step instead of hammering every minute. It
+also means the downloadable build has been withdrawn rather than shipped, so nobody can install a
+product whose entire reason to exist is unreachable.
+
+The data categories in the table above are what the code is written to send *if and when* those
+endpoints go live. They are not a description of traffic that is happening now.
+
 
 Requests to our own API use `credentials: "include"` (`config/api.js:39`, `config/api.js:50`), which can
 only carry **our site's own** session cookie to **our own** origin. A cookie for `poshmark.com` is

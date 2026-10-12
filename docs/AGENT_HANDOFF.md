@@ -4,7 +4,7 @@
 
 The app loop that was broken is the shop, the session, and a paywall the site does not sell. Do not put the women's-only chip row back. Do not default a blank category to `Women/Tops`. Do not send a 402 to `/pricing/` as a $14.99 plan.
 
-**Shop.** `marketNavHtml` in `/assets/app.ba3f42b8d601.js` builds chips from the category table (`Women`, `Men`, `Kids`, `Home`, `Art`), then that department's subcategories. Listings with no resolvable category get an **Other** chip (`__other__`). The old chips were only Women's tops, jeans, dresses, jackets, and bags, so the men's polo, the men's jean jacket, the cup, and the Keurig disappeared as soon as a shopper left All. `index.html` points at `app.ba3f42b8d601.js`. Leave `app.da08c2d586e1.js` and `app.151b586e54d8.js` in place; hashed files stay immutable. `app.da08c2d586e1.js` is the previous shop-nav bundle and still contains the $14.99 confirm. Do not point `index.html` back at it.
+**Shop.** `marketNavHtml` in `/assets/app.6fc355b2689c.js` builds chips from the category table (`Women`, `Men`, `Kids`, `Home`, `Art`), then that department's subcategories. Listings with no resolvable category get an **Other** chip (`__other__`). The old chips were only Women's tops, jeans, dresses, jackets, and bags, so the men's polo, the men's jean jacket, the cup, and the Keurig disappeared as soon as a shopper left All. `index.html` points at `app.6fc355b2689c.js`. Leave `app.ba3f42b8d601.js`, `app.da08c2d586e1.js`, and `app.151b586e54d8.js` in place; hashed files stay immutable. `app.da08c2d586e1.js` still contains the $14.99 confirm. Do not point `index.html` back at it.
 
 **Direct post.** `guideSubscribe` no longer says eBay or Etsy needs the $14.99/mo plan, and it no longer opens `/pricing/`. A 402 now says that shop has no direct post yet and the site is free — copy the listing and open their sell page. Server list routes can still return 402 when there is no subscription row; that is not a plan to buy. Stripe stays unset.
 
@@ -16,7 +16,7 @@ The app loop that was broken is the shop, the session, and a paywall the site do
 
 **Still not true.** eBay, Etsy, and Whatnot are not connected. After List it, other shops are copy-and-open. Reserve writes an order and moves no money. Stripe stays unset. Three live rows still have no category (vintage denim jacket, blue henley, Keurig) because the title does not say a department; they show under Other. Do not invent photos or a gender for them.
 
-Not committed. Newest deploy `https://23ab4228.fashionistas-ai.pages.dev` (project `fashionistas-ai`, branch `main`). The shop and session code first went out on `https://47d80f69.fashionistas-ai.pages.dev`. Checked on `https://fashionistas.ai/` 2026-10-12: the page loads `app.ba3f42b8d601.js` and `listing-wizard.js?v=3`. `GET /w/api/market?category=Men` returns the polo and the jean jacket. `?category=Home` returns the cup. `GET /api/auth/me` with no credential is still `401`.
+Not committed. Newest deploy `https://a748f398.fashionistas-ai.pages.dev` (project `fashionistas-ai`, branch `main`). The shop and session code first went out on `https://47d80f69.fashionistas-ai.pages.dev`. Checked on `https://fashionistas.ai/` 2026-10-12: the page loads `app.6fc355b2689c.js` and `listing-wizard.js?v=3`. That bundle tells a 402 to copy the listing and open the shop's sell page. `GET /w/api/market?category=Men` returns the polo and the jean jacket. `?category=Home` returns the cup. `GET /api/auth/me` with no credential is still `401`.
 
 ## LATEST — 2026-10-11 late ET (read this first)
 

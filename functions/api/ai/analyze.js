@@ -31,18 +31,30 @@ function cors(extra = {}) {
   };
 }
 
+// Returns { ok: true } or { ok: false, reason }. It fails CLOSED, and the
+// reason matters to the caller: `rate_limited` is a 429 the client can retry,
+// while `limiter_unavailable` is a 503 that must not look like traffic shaping.
+//
+// This used to return `true` when KV was unbound or threw. On a public,
+// unauthenticated, CORS `*` route whose every accepted request spends paid AI
+// compute, that turned the only spend cap into "unlimited" and reported it as
+// success — no error, no log line, nothing to notice until an invoice. The cap
+// was measured live before this change: 20 requests answered 415 (the body
+// never gets parsed, so nothing is spent) and the 21st answered 429, which
+// proves KV is bound today and that flipping the failure branch cannot break
+// the working path.
 async function rateLimit(env, request) {
   const cache = env && (env.CACHE || env.FASHIONISTAS_KV);
-  if (!cache || typeof cache.get !== "function") return true;
+  if (!cache || typeof cache.get !== "function") return { ok: false, reason: "limiter_unavailable" };
   const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "anon";
   const key = `ai-analyze:${ip}:${Math.floor(Date.now() / 60000)}`;
   try {
     const n = Number((await cache.get(key)) || 0);
-    if (n >= RATE_PER_MIN) return false;
+    if (n >= RATE_PER_MIN) return { ok: false, reason: "rate_limited" };
     await cache.put(key, String(n + 1), { expirationTtl: 120 });
-    return true;
+    return { ok: true };
   } catch {
-    return true;
+    return { ok: false, reason: "limiter_unavailable" };
   }
 }
 
@@ -57,7 +69,19 @@ export async function onRequest(context) {
     return json({ ok: false, error: "method_not_allowed", detail: "Use POST with { image }." }, 405, cors());
   }
 
-  if (!(await rateLimit(env, request))) {
+  const limit = await rateLimit(env, request);
+  if (!limit.ok) {
+    if (limit.reason === "limiter_unavailable") {
+      return json(
+        {
+          ok: false,
+          error: "unavailable",
+          detail: "Rate limiting is down, and this route spends paid AI compute — refusing rather than running uncapped.",
+        },
+        503,
+        cors()
+      );
+    }
     return json({ ok: false, error: "rate_limited", detail: "Too many identify requests — try again in a minute." }, 429, cors());
   }
 

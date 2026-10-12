@@ -43,10 +43,11 @@ export const CAPS = {
 
 const KIND_TEXT = {
   listings:
-    "Free tier: 10 listings per month. Pro: unlimited listings. Upgrade from /pricing.",
-  ai_photos: "Free tier: 3 AI photos per month. Pro: 100 AI photos per month. Upgrade from /pricing.",
+    "Free during launch: 10 listings a month per account. That is a fair-use limit, not a plan — there is nothing to buy and no upgrade to chase.",
+  ai_photos:
+    "Free during launch: 3 AI photo rewrites a month per account. That is a fair-use limit, not a plan — each one costs real AI compute.",
   chat_messages:
-    "Free tier: 10 stylist messages per month. Pro: 100 per month. Upgrade from /pricing.",
+    "Free during launch: 10 stylist messages a month per account. That is a fair-use limit, not a plan — there is nothing to buy.",
 };
 
 const USAGE_DDL = `CREATE TABLE IF NOT EXISTS ai_usage (

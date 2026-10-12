@@ -68,6 +68,13 @@ const PUBLIC = {
   "auth/google.js": "OAuth entry point for Google sign-in",
   "auth/logout.js": "clearing a cookie is safe and must work when already signed out",
   "billing/webhook.js": "Stripe server-to-server; authenticated by HMAC signature, never by a session",
+  "csp-report.js":
+    "a CSP violation report is emitted by the VISITOR'S BROWSER, automatically and unauthenticated, " +
+    "the instant a directive is violated. Gating it on a session would guarantee a 401 and leave the " +
+    "log permanently empty — strictly worse than having no CSP at all, because it would look enforced " +
+    "while proving nothing. It is safe to reach anonymously: the handler caps the body at 64 KB, logs " +
+    "one line per violation, returns 204 with no body, reads no user data, writes no state and mints " +
+    "nothing. The matrix is correct that a public route must be paid for in justification, so it is.",
   "fees/estimate.js": "static fee arithmetic, no user data",
   "fees/compare.js": "static fee arithmetic, no user data",
   "marketplaces.js": "static shop catalogue; the handler docstring states it reads no secret",
