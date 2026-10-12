@@ -84,35 +84,40 @@ SHA="$(git rev-parse HEAD)"
 echo "deploy-local: deploying $SHA from $(pwd) (branch $BRANCH_NOW)"
 
 # --- extension zip (served from /chrome-store/*.zip on Pages) -----------------
-# GATED, not unconditional. This used to run on every deploy, which published a
-# Chrome extension the public could download at /chrome-store/*.zip while the
-# backend it exists for was never built: neither /api/jobs nor /api/sessions
-# exists on the Worker or in these Pages functions (verified 2026-10-12 — zero
-# matching routes in either, and the live Worker answers 404), and nothing on
-# fashionistas.ai enqueues a job for the extension to pick up. So what shipped
-# was a product that could only ever fail at the one thing it does.
+# OPT-IN ONLY, via SHIP_EXTENSION=1. Do not "simplify" this back to unconditional.
 #
-# The probe below keeps that from quietly returning. 401 counts as alive, not
-# as failure: it means the route exists and is gating on auth, which is exactly
-# what should happen. Anything else means the backend is missing, and the zip is
-# withheld. Re-enable shipping by implementing the endpoint — not by deleting
-# this check.
+# The published build used to include a Chrome extension the public could
+# download at /chrome-store/*.zip, while the backend it exists for was never
+# built: nothing serves /api/jobs or /api/sessions, and nothing on the site
+# enqueues a job for it to pick up. So what shipped could only ever fail at the
+# one thing it does.
+#
+# The first version of this gate probed the Worker over the network and treated
+# 401 as proof the route existed ("the route exists and is gating on auth").
+# That was WRONG, and it is left here as the reason the gate is now a human
+# decision instead of a probe. This Worker answers 401 for every unmatched
+# /api path — measured 2026-10-12:
+#     /api/jobs                              -> 401
+#     /api/sessions                          -> 401
+#     /api/definitely-not-a-real-route-xyz   -> 401
+# A catch-all that 401s everything makes 401 evidence of nothing. Any probe
+# that can be fooled by a URL that does not exist is not a gate, it is
+# decoration — and this one would have shipped the zip on every single deploy
+# while looking like it was withholding it.
+#
+# A network probe only becomes meaningful once the Worker distinguishes
+# "no such route" (404) from "no session" (401). Reintroduce one then.
+# Until then, shipping the extension is a deliberate act: SHIP_EXTENSION=1.
 EXT_VER="$(node -p "JSON.parse(require('fs').readFileSync('apps/extension/manifest.json','utf8')).version")"
-JOBS_PROBE="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 \
-  'https://fashionistas-api.fashionistas1979.workers.dev/api/jobs?status=queued')"
-case "$JOBS_PROBE" in
-  200|401)
-    echo "deploy-local: /api/jobs answered $JOBS_PROBE — building the extension zip."
-    bash scripts/zip-extension.sh
-    cp -f "chrome-store/fashionistas-extension-v${EXT_VER}.zip" chrome-store/fashionistas-extension-v.zip
-    ;;
-  *)
-    echo "deploy-local: /api/jobs answered $JOBS_PROBE (an alive backend answers 200 or 401)." >&2
-    echo "deploy-local: the extension's backend does not exist, so its zip is NOT shipped." >&2
-    rm -f "chrome-store/fashionistas-extension-v.zip" \
-          "chrome-store/fashionistas-extension-v${EXT_VER}.zip"
-    ;;
-esac
+if [ "${SHIP_EXTENSION:-0}" = "1" ]; then
+  echo "deploy-local: SHIP_EXTENSION=1 — building the extension zip."
+  bash scripts/zip-extension.sh
+  cp -f "chrome-store/fashionistas-extension-v${EXT_VER}.zip" chrome-store/fashionistas-extension-v.zip
+else
+  echo "deploy-local: extension zip NOT shipped (set SHIP_EXTENSION=1 once its backend exists)." >&2
+  rm -f "chrome-store/fashionistas-extension-v.zip" \
+        "chrome-store/fashionistas-extension-v${EXT_VER}.zip"
+fi
 
 # --- version.txt -----------------------------------------------------------
 GITHUB_SHA="$SHA" bash scripts/gen-version.sh

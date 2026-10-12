@@ -39,10 +39,14 @@ All network calls made by the extension go to two destinations declared in `conf
 `config/selector-source.js:23` — our own product hosts.
 
 **Status of each call, stated plainly.** The extension is not published and not released. One of the
-two hosts is live today; the other is not, and the calls below that target it currently answer 404
-(verified 2026-10-12 by probing the deployed Worker). We are listing them as *implemented client-side,
+two hosts is live today; the other is not. We are listing those calls as *implemented client-side,
 not yet served* rather than describing them to you as working infrastructure, because a privacy notice
 that overstates what a server does is the same kind of lie as one that understates it.
+
+Verified 2026-10-12: nothing serves `/api/jobs` or `/api/sessions`. The deployed Worker answers
+**401** for them, but that is not evidence they exist — it answers 401 for *every* unmatched `/api`
+path (`/api/definitely-not-a-real-route-xyz` included), so a catch-all is what produced the 401, not
+an endpoint. There is also no producer anywhere on fashionistas.ai that enqueues a job.
 
 | Data sent | Direction | Code | Status |
 | --- | --- | --- | --- |

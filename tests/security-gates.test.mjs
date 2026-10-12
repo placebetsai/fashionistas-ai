@@ -191,14 +191,30 @@ test("PRIVACY.md no longer describes endpoints that do not answer", async () => 
   assert.match(doc, /not yet served|not served|not published/i, "the doc must state the release status");
 });
 
-test("the deploy gate withholds the extension zip while /api/jobs is dead", async () => {
+test("the deploy gate withholds the extension zip unless a human opts in", async () => {
   const fs = await import("node:fs/promises");
   const script = await fs.readFile(new URL("../scripts/deploy-local.sh", import.meta.url), "utf8");
 
   // The zip used to be built unconditionally, publishing an extension whose
   // entire backend (jobs, sessions) was never implemented.
-  assert.match(script, /JOBS_PROBE/, "the zip must be gated on the backend answering");
-  assert.match(script, /200\|401/, "401 means the route exists and is gating on auth");
-  const gate = script.slice(script.indexOf("JOBS_PROBE"));
+  assert.match(script, /SHIP_EXTENSION/, "shipping the extension must be a deliberate act");
+
+  // Regression pin for a gate that looked like it worked and did not. The first
+  // version probed /api/jobs and accepted 401 as proof the route existed — but
+  // this Worker answers 401 for EVERY unmatched /api path, so that check passed
+  // for URLs that do not exist and shipped the zip on every deploy while
+  // appearing to withhold it. A probe is only a gate if it can fail.
+  assert.doesNotMatch(
+    script,
+    /200\s*\|\s*401/,
+    "401 cannot mean 'the route exists' when the Worker 401s every unknown /api path"
+  );
+  assert.match(
+    script,
+    /definitely-not-a-real-route/,
+    "the evidence that disproved the probe must stay in the file so nobody re-adds it"
+  );
+
+  const gate = script.slice(script.indexOf("SHIP_EXTENSION"));
   assert.match(gate, /NOT shipped/, "a missing backend must withhold the zip, not warn");
 });
