@@ -237,10 +237,36 @@ test("the demo button's route exists — a shipped button with no server half 40
   );
 });
 
+test("the server never tells anyone to buy a plan that is not for sale", async () => {
+  const fs = await import("node:fs/promises");
+  const auth = await fs.readFile(new URL("../functions/api/_lib/auth.js", import.meta.url), "utf8");
+
+  // Measured live 2026-10-12. A signed-in account hitting any route behind
+  // requireActiveSubscriber() was told:
+  //   "An active $14.99/mo subscription is required to list.
+  //    POST /api/billing/checkout to subscribe."
+  // and POST /api/billing/checkout answers 503 "STRIPE_SECRET_KEY not
+  // configured". Stripe is unset on purpose, so no account can ever satisfy
+  // that gate — the message asked for money the site has no way to take, for a
+  // plan that is not for sale, pointing at an endpoint that cannot run.
+  //
+  // Comments are stripped before judging: this fix's own explanation quotes the
+  // offending string so the next reader knows why it is gone.
+  const code = auth
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+  assert.doesNotMatch(code, /14\.99/, "no price may be quoted for a plan that cannot be bought");
+  assert.doesNotMatch(code, /to subscribe/i, "the seller must not be told to subscribe");
+  assert.match(
+    auth,
+    /free while it is in launch/i,
+    "the gate must say what is actually true instead"
+  );
+});
+
 test("the demo route hands back the token afterAuth() reads", async () => {
   const fs = await import("node:fs/promises");
   const demo = await fs.readFile(new URL("../functions/api/auth/demo.js", import.meta.url), "utf8");
-
   // afterAuth(d) does `TOKEN = (d && d.token) || ""` — no token in the body
   // means the client stores nothing and the very next API call 401s, which
   // looks like a broken demo rather than a missing field.

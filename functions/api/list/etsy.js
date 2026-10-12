@@ -3,7 +3,12 @@
  *
  * Layers, in order:
  *   1. auth                → 401 without a valid session token
- *   2. active subscription → 402 without an active $14.99/mo plan
+ *   2. active subscription → 402. There is no plan to buy (Stripe is unset and
+ *                            nothing is for sale during launch), so this layer
+ *                            currently answers every signed-in caller. It stays
+ *                            because the shop cannot post either way; the 402
+ *                            detail tells the seller to copy the listing and
+ *                            post it themselves rather than to subscribe.
  *   3. credentials         → 503 naming the exact missing env var
  *   4. real API call       → draft listing + image upload, or Etsy's own error
  *

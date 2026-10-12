@@ -265,12 +265,25 @@ export async function requireActiveSubscriber(request, env) {
   if (sub.status !== "active") {
     return {
       ok: false,
+      // 402 is kept because the web client branches on this status to render
+      // its "this shop has no direct post yet" copy — but the DETAIL used to
+      // sell something that does not exist. Measured 2026-10-12, a signed-in
+      // account hitting a gated route was told:
+      //   "An active $14.99/mo subscription is required to list.
+      //    POST /api/billing/checkout to subscribe."
+      // and POST /api/billing/checkout answers 503 "STRIPE_SECRET_KEY not
+      // configured". So the site was asking for money it had no way to take,
+      // for a plan that is not for sale, from an endpoint that cannot run.
+      // Stripe is unset on purpose (see NEEDS_ISRAEL.txt), so no account can
+      // ever satisfy this gate — which makes the old wording a promise with
+      // nothing behind it. Tell the seller the truth and what to do instead.
       response: json(
         {
           ok: false,
           error: "subscription_required",
           status: sub.status,
-          detail: "An active $14.99/mo subscription is required to list. POST /api/billing/checkout to subscribe.",
+          detail:
+            "Direct posting to this shop is not live yet, so there is nothing to buy and no plan to upgrade to — the site is free while it is in launch. See /api/marketplaces for what each shop can actually do today. Copy this listing and post it on the shop yourself; /pricing/ shows the fee take-home so you know what you would keep.",
         },
         402
       ),
