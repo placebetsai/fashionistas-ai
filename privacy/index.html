@@ -4,18 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Privacy policy — what fashionistas.ai collects and why</title>
-<meta name="description" content="Privacy policy for fashionistas.ai: what we collect for accounts, listing drafts and contact forms, and how to reach us.">
+<meta name="description" content="Privacy policy for fashionistas.ai: what we store about accounts, closet and listing drafts, what happens to a photo you try on, the advertising cookies Google sets, and how to ask for deletion.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://fashionistas.ai/privacy/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="fashionistas.ai">
 <meta property="og:title" content="Privacy Policy — fashionistas.ai">
-<meta property="og:description" content="Privacy policy for fashionistas.ai accounts, listing drafts and contact forms.">
+<meta property="og:description" content="Privacy policy for fashionistas.ai accounts, listing drafts, try-on photos and advertising cookies.">
 <meta property="og:url" content="https://fashionistas.ai/privacy/">
 <meta property="og:image" content="https://fashionistas.ai/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Privacy Policy — fashionistas.ai">
-<meta name="twitter:description" content="Privacy policy for fashionistas.ai accounts, listing drafts and contact forms.">
+<meta name="twitter:description" content="Privacy policy for fashionistas.ai accounts, listing drafts, try-on photos and advertising cookies.">
 <meta name="twitter:image" content="https://fashionistas.ai/og.png">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/site.css">
@@ -31,6 +31,7 @@
 <nav aria-label="Main">
 <a href="/about/">About</a>
 <a href="/privacy/" aria-current="page">Privacy</a>
+<a href="/terms/">Terms</a>
 <a href="/contact/">Contact</a>
 <a href="/">App</a>
 <a href="/pricing/">Pricing</a><a href="/guide/">Guide</a></nav>
@@ -38,26 +39,54 @@
 <main id="main">
 <span class="badge">Privacy</span>
 <h1>Privacy Policy</h1>
-<p class="lede">Last updated: October 9, 2026 (America/New_York). fashionistas.ai is a resale listing-draft tool. We do not sell your personal data.</p>
+<p class="lede">Effective October 12, 2026 (America/New_York). This is the published privacy policy for fashionistas.ai. We do not sell your personal data.</p>
 <div class="card">
-<h2 style="font-size:1.15rem;margin-top:0">What we collect</h2>
+<h2 style="font-size:1.15rem;margin-top:0">What we store about you</h2>
 <ul>
-<li><strong>Account data</strong> — username, email, password hash, and closet listings you create (photos, titles, prices, notes).</li>
-<li><strong>Usage data</strong> — basic operational logs needed to run Cloudflare Workers / Pages (IP, timestamps, error traces).</li>
-<li><strong>Contact form</strong> — name, email and message you submit on <a href="/contact/">/contact</a>, forwarded by our server to a mail relay. The relay's own address is not published anywhere on this site.</li>
+<li><strong>Account data</strong> — your email address, a salted password hash (we do not keep a readable copy of your password), and the record that keeps you signed in.</li>
+<li><strong>Your closet and listing drafts</strong> — the text you enter: item name, brand, category, condition, prices, wear notes, and the listing drafts (title, description, size, tags, and which AI or seller wrote the copy). Listing drafts are text; the site does not upload your listing photos to our servers.</li>
+<li><strong>Usage counters</strong> — how much of the monthly fair-use allowance you have used (listings, AI photo rewrites, stylist messages) and how many try-on renders you have run today, so those limits can be enforced.</li>
+<li><strong>Try-on records</strong> — the finished render image (see below), plus a cost/operation log of each render: which model ran it, how long it took, and whether it succeeded.</li>
+<li><strong>Marketplace connections, if you make one</strong> — an eBay or Etsy OAuth connection is stored so the connector can act for you. If you paste your own eBay developer keys instead of using ours, those keys are carried in a short HttpOnly cookie (10 minutes, scoped to the eBay connect path) that is base64url-encoded rather than encrypted; anyone who can read that cookie can recover the keys, so prefer the ordinary connect flow.</li>
+<li><strong>Contact form</strong> — the name, email and message you submit on <a href="/contact/">/contact</a>. They are forwarded unchanged to the team through FormSubmit, a mail relay; the relay's own recipient address is not published anywhere on this site.</li>
 </ul>
+<h2 style="font-size:1.15rem">What happens to a photo you try on</h2>
+<p>Virtual try-on is a third-party render, not something computed inside your browser. When you press "try it on", your photo of the person and the photo of the garment are sent to a virtual-try-on rendering service — the FASHN VTON model, run on a Hugging Face Space, on our own Modal endpoint, or through the Replicate or FASHN APIs, depending on which is available — and the image it returns is the result you see. Before that, the site checks the photo actually contains a person: first on your own device, and, if that check could not run, with a detector on our server. The finished render is stored in Cloudflare R2 and served from a link containing a long random id: anyone who has that exact link can open the image without signing in, so do not try on a photo you would not want reachable that way. We have not set an automatic deletion schedule for stored renders — ask through the <a href="/contact/">contact form</a> and we will delete yours. A photo you submit for item identification is sent to a vision model for that one request — Cloudflare Workers AI, or Groq when that is the configured fallback — and is not stored by us.</p>
+<h2 style="font-size:1.15rem">AI text features</h2>
+<p>Listing copy and stylist answers can be generated by a text model. When you use one of those features, the text you submitted is sent to the AI provider the site is configured with — this deployment includes Cloudflare Workers AI, and an OpenAI-compatible provider (such as Groq) can also be configured. If no model is configured, drafts are written locally from your own text and nothing is sent to an AI provider.</p>
+<h2 style="font-size:1.15rem">Advertising</h2>
+<p>Google AdSense is loaded on the signed-out marketing pages (home, about, pricing and the guide). Ad units are not placed on the screens where you are working with your closet.</p>
+<ul>
+<li><strong>Google is a third-party vendor</strong> on this site and uses cookies to serve and measure ads.</li>
+<li>Cookies, <strong>including the DART cookie</strong>, may be set on these pages by Google and its advertising partners, including based on your prior visits to this site and to other sites, so that ads can be served and measured.</li>
+<li>You can <strong>opt out of personalized advertising</strong> through Google's ad settings: <a href="https://www.google.com/settings/ads" rel="noopener">https://www.google.com/settings/ads</a>.</li>
+<li>Google's and its partners' use of cookies for advertising is also described, with opt-out instructions, at <a href="https://www.doubleclick.com/dev_resources" rel="noopener">https://www.doubleclick.com/dev_resources</a>.</li>
+</ul>
+<h2 style="font-size:1.15rem">Other third parties that see your data</h2>
+<ul>
+<li><strong>Cloudflare</strong> — hosts the site, the database (D1), file storage (R2) and the Workers AI binding. Application data lives with Cloudflare.</li>
+<li><strong>The rendering services above</strong> — receive the two images for a try-on render and nothing else.</li>
+<li><strong>FormSubmit</strong> — receives contact form submissions to deliver them to us.</li>
+<li><strong>Google and jsDelivr</strong> — the marketing pages load fonts from Google; the try-on page loads its on-device pose check from jsDelivr and its model weights from Google's storage; the "See in my space" 3D viewer loads from Google's CDN. Those hosts see your IP address when they serve those files.</li>
+</ul>
+<h2 style="font-size:1.15rem">Cookies</h2>
+<p>We set a session cookie that keeps you signed in, and — only if you connect eBay or Etsy — the connection cookies described above. Your theme choice is stored in your browser, not on our servers. Advertising cookies come from Google AdSense, as described in the advertising section. We do not run our own cross-site tracking.</p>
 <h2 style="font-size:1.15rem">What we do not do</h2>
 <ul>
-<li>Listing to eBay and Etsy runs through their own OAuth connection: we hold the connection and send the listing you approved.</li>
-  <li>For Poshmark, Mercari, Depop, Vinted, Grailed, Facebook Marketplace, Vestiaire Collective and Whatnot there is no seller API. Nothing is sent to those shops — our browser extension types the draft into the form inside your own signed-in tab, and your session with that shop stays yours. Kidizen shut down, so it is not one of these shops.</li>
 <li>We do not sell or rent your personal information to data brokers.</li>
-<li><strong>Advertising.</strong> Google AdSense is loaded on the marketing pages (home, about, pricing and the guide). Google and its partners may set cookies on those pages to serve and measure ads. Ad units are not placed on screens where you are working with your closet.</li>
+<li>There is nothing to buy on the site, so we hold no payment card details. See the <a href="/terms/">terms</a>.</li>
+<li>Listing to Poshmark, Mercari, Depop, Vinted, Grailed, Facebook Marketplace, Vestiaire Collective and Whatnot has no seller API: nothing is sent to those shops by us. Publishing there happens in your own signed-in browser, through a browser extension that is not currently distributed for download. eBay and Etsy have server-side connectors, but no real listing has ever been posted through them — the eBay connector talks to eBay's sandbox environment and the Etsy connector creates a draft.</li>
+<li>Kidizen shut down, so it is not one of these shops.</li>
 </ul>
-<h2 style="font-size:1.15rem">Where data lives</h2>
-<p>Application data is stored with Cloudflare (Workers / D1). Contact form messages are processed by FormSubmit and emailed to us. Virtual try-on renders are processed by our render provider, which receives the two images for that single render and nothing else. Fonts, the 3D model viewer and the on-device pose check are loaded from Google and jsDelivr CDNs, which see your IP address when they serve those files.</p>
+<h2 style="font-size:1.15rem">Retention</h2>
+<p>We have not set automatic deletion schedules. Ask through the <a href="/contact/">contact form</a> and we will delete your account, your closet and listing drafts, and your stored try-on renders.</p>
+<h2 style="font-size:1.15rem">Children</h2>
+<p>The service is for people who resell clothing and can enter a binding contract. It is not directed at children, and we do not knowingly collect their data.</p>
 <h2 style="font-size:1.15rem">Your choices</h2>
-<p>Use the <a href="/contact/">contact form</a> to request account deletion or a copy of your data. Boca Raton, FL.</p>
-<p class="muted" style="margin-bottom:0">This page is a plain-language policy for the multilist draft product. It is not legal advice.</p>
+<p>Use the <a href="/contact/">contact form</a> to request a copy of your data or to have your account and stored data deleted. The team's location and contact route are on <a href="/about/">/about/</a> and <a href="/contact/">/contact/</a>.</p>
+<h2 style="font-size:1.15rem">Changes</h2>
+<p>This page carries the date it took effect. When what we collect changes, we will publish an updated page with a new date.</p>
+<p class="muted" style="margin-bottom:0">This page describes what the product actually does today, in plain language. It is not legal advice.</p>
 </div>
 </main>
 
@@ -66,7 +95,7 @@
 <a href="/">Home</a>
 <a href="/contact/">Contact</a>
 <a href="/about/">About</a>
-<a href="/privacy/">Privacy</a><a href="/pricing/">Pricing</a><a href="/guide/">Guide</a><a href="/try-on/">Try it on</a><a href="/see-in-space/">See in my space</a>
+<a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="/pricing/">Pricing</a><a href="/guide/">Guide</a><a href="/try-on/">Try it on</a><a href="/see-in-space/">See in my space</a>
 <a href="/#view-auth">Open app</a>
 </nav>
 <p>fashionistas.ai — photograph your closet, list it everywhere. <a href="/contact/">Contact</a></p>

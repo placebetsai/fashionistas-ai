@@ -164,11 +164,14 @@ presence booleans), `content/formkit.js` (the form engine) and `content/announce
 
 ## Legal
 
-- Terms of service: **https://fashionistas.ai/legal/terms**
-- Privacy policy: **https://fashionistas.ai/legal/privacy**
+- Terms of use: **https://fashionistas.ai/terms/** (effective 2026-10-12)
+- Privacy policy: **https://fashionistas.ai/privacy/** (effective 2026-10-12)
 
 Those two documents are the authoritative legal text; this file is only the extension-specific
 permission and data-use supplement that Chrome Web Store review asks for, and it does not replace or
 restate them.
+
+(The former `/legal/terms` and `/legal/privacy` URLs held unsigned drafts and are deliberately 404.
+Do not cite them anywhere.)
 
 **Contact:** https://fashionistas.ai/contact/
