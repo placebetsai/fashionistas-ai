@@ -64,6 +64,12 @@ const ROUTE_FILES = walk(API);
  */
 const PUBLIC = {
   "auth/login.js": "signing in is how a session is created; it must be reachable logged out",
+  "auth/demo.js":
+    "one-click demo sign-in — the sign-in screen renders a real button that POSTs here, and it has " +
+    "to work logged out for the same reason login does. It mints a normal D1 session row for the " +
+    "seeded demo seller and nothing else: no credential is read from the client (a hardcoded demo " +
+    "password in the bundle was the bug this replaced), and the demo account carries the same " +
+    "enforced try-on and fair-use caps as any signed-in account, so there is nothing to farm.",
   "auth/register.js": "account creation, same reason as login",
   "auth/google.js": "OAuth entry point for Google sign-in",
   "auth/logout.js": "clearing a cookie is safe and must work when already signed out",

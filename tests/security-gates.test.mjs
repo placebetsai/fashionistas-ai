@@ -218,3 +218,44 @@ test("the deploy gate withholds the extension zip unless a human opts in", async
   const gate = script.slice(script.indexOf("SHIP_EXTENSION"));
   assert.match(gate, /NOT shipped/, "a missing backend must withhold the zip, not warn");
 });
+
+test("the demo button's route exists — a shipped button with no server half 405s", async () => {
+  const fs = await import("node:fs/promises");
+
+  // The sign-in screen renders `onclick="demoLogin()"`, and the shipped bundle
+  // POSTs that to /api/auth/demo. The route did not exist and answered 405, so
+  // a visible one-click button failed on every press — the client was rewired
+  // away from the hardcoded demo password (correctly) but the server half of
+  // the replacement was never written. This pins the pair together.
+  const bundle = await fs.readFile(new URL("../assets/app.6fc355b2689c.js", import.meta.url), "utf8");
+  const target = [...bundle.matchAll(/api\/(auth\/demo)/g)][0];
+  assert.ok(target, "the bundle no longer calls a demo route — update this test if the button is gone");
+
+  await assert.doesNotReject(
+    fs.access(new URL(`../functions/api/${target[1]}.js`, import.meta.url)),
+    `the bundle calls /api/${target[1]} but functions/api/${target[1]}.js does not exist, so the button 405s`
+  );
+});
+
+test("the demo route hands back the token afterAuth() reads", async () => {
+  const fs = await import("node:fs/promises");
+  const demo = await fs.readFile(new URL("../functions/api/auth/demo.js", import.meta.url), "utf8");
+
+  // afterAuth(d) does `TOKEN = (d && d.token) || ""` — no token in the body
+  // means the client stores nothing and the very next API call 401s, which
+  // looks like a broken demo rather than a missing field.
+  assert.match(demo, /token,/, "the response body must carry `token`, which is what afterAuth reads");
+  assert.match(demo, /INSERT INTO sessions/, "it must mint a real D1 session, the same path login uses");
+
+  // Comments are stripped first: this file's own explanation mentions the
+  // hardcoded password it replaced, and a check that trips on prose teaches
+  // the next person to delete the reasoning rather than the behaviour.
+  const code = demo
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+  assert.doesNotMatch(
+    code,
+    /password|pass_hash|Primetime/i,
+    "the demo must not read a credential from the client — that is the bug it replaced"
+  );
+});
