@@ -196,9 +196,13 @@ function matrixEnv(d1) {
   };
 }
 
-async function anonStatus(rel, handler, fn, env) {
+async function anonStatus(rel, handler, fn, env, method = "GET") {
   const url = "https://fashionistas.ai/api/" + rel.replace(/\.js$/, "");
-  const req = new Request(url, { method: "GET" });
+  const init =
+    method === "GET"
+      ? { method: "GET" }
+      : { method, headers: { "Content-Type": "application/json" }, body: "{}" };
+  const req = new Request(url, init);
   const res = await handler[fn]({ request: req, env, params: { uuid: "0".repeat(32) } });
   return res.status;
 }
@@ -231,11 +235,17 @@ test("an anonymous caller never gets past a gated route", async () => {
 
     let hardGate = 0;
     for (const fn of fns) {
-      const status = await anonStatus(rel, mod, fn, env);
+      // A POST handler must be probed with a real POST. Probing it with GET
+      // makes req.json() throw, the handler falls through to an error branch
+      // and answers 401 anyway — which is precisely how an ungated
+      // functions/api/ebay/listing.js onRequestPost passed this matrix while
+      // being reachable by anyone. The body shape is what matters here.
+      const method = fn === "onRequestPost" ? "POST" : "GET";
+      const status = await anonStatus(rel, mod, fn, env, method);
       probes++;
       assert.ok(
         REFUSALS.has(status),
-        `${rel} ${fn} answered ${status} to an anonymous GET. Expected 401/403 ` +
+        `${rel} ${fn} answered ${status} to an anonymous ${method}. Expected 401/403 ` +
           `(no session), 405 (method not offered) or 204 (preflight). Anything else ` +
           `means an unauthenticated caller reached the handler body — add the gate ` +
           `or allowlist the route with a reason.`

@@ -370,6 +370,19 @@ async function bestEffortKvStore(env, tok, ebayEnv) {
 }
 
 export async function onRequestPost(context) {
+  // Session gate for the route that does the work.
+  //
+  // This was missing. The GET below was hardened to sit behind "the same
+  // session gate as the POST that actually does work" — but the POST never had
+  // one, so an anonymous caller reached loadDurableToken() and, the day
+  // EBAY_CLIENT_ID/EBAY_CLIENT_SECRET are configured, could have published to
+  // the owner's eBay account. It was invisible to tests because
+  // tests/api-auth-matrix.test.mjs probes every handler with GET: req.json()
+  // throws, the handler falls through to "no eBay token", and that 401 is
+  // counted as a hard gate without ever exercising onRequestPost.
+  const auth = await requireAuth(context.request, context.env);
+  if (!auth.ok) return auth.response;
+
   const env = context.env || {};
   const req = context.request;
   const secure = (req.url || "").startsWith("https:") ? "; Secure" : "";
