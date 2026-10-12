@@ -1,5 +1,5 @@
 
-const API = "https://fashionistas-api.fashionistas1979.workers.dev";
+const API = "/w";
 let TOKEN = localStorage.getItem("fash_token") || "";
 let USER = JSON.parse(localStorage.getItem("fash_user") || "null");
 let S = { listings: [], orders: [], items: [] };
@@ -77,7 +77,7 @@ async function api(path, opts={}) {
 
 /* ================= AUTH ================= */
 // Demo CTA on the auth screen. Uses the seeded demo-seller credentials.
-function demoLogin(){ $("#login-u").value = "demo"; $("#login-p").value = "Primetime2026!"; doLogin(); }
+async function demoLogin(){ try { const d = await api("/api/auth/demo", { method:"POST", body:"{}" }); afterAuth(d); } catch(e){ toast(e.message); } }
 async function doLogin(){
  const u = $("#login-u").value.trim(), p = $("#login-p").value;
  if (!u || !p) return toast("Enter username and password");
@@ -120,11 +120,10 @@ async function restoreSession(){
  } catch(e){ /* offline or the API is unreachable: keep what we have */ }
 }
 
-/* 402 guidance — turn "you need a plan" into the actual next step. */
+/* 402 — the site is free. A direct eBay/Etsy post is off because keys are unset,
+   not because the seller needs a plan. Send them to copy-and-open. */
 function guideSubscribe(what){
- toast(what + " needs the $14.99/mo plan before it can post.", 4500);
- const open = confirm(what + " needs an active $14.99/mo plan to post.\n\nOK — open the plan page to start it.\nCancel — keep browsing.");
- if (open) window.location.href = "/pricing/";
+ toast(what + " has no direct post yet. The site is free — copy the listing and open their sell page.", 5500);
 }
 function showAuth(tab){
   $("#view-app").classList.add("hidden");
@@ -943,7 +942,7 @@ async function renderShop(el){
   if (S.photoPending){ S.photoPending = false; setTimeout(photoSearchGo, 90); }
   stopRolls();
   el.innerHTML = `<div class="closet-tools ux-search">`
-  + `<input class="input" id="market-search" placeholder="Search" value="${escapeAttr(S.marketQ||"")}" oninput="marketQ(this.value)" aria-label="Search" style="margin:0">`
+  + `<input class="input" id="market-search" placeholder="Search brand, size, or item" value="${escapeAttr(S.marketQ||"")}" oninput="marketQ(this.value)" aria-label="Search brand, size, or item" style="margin:0">`
   + `<select class="input" id="market-sort" onchange="marketSort(this.value)" data-tip="Change the order of the items you see." style="margin:0">`
   + `<option value="new"${S.marketSort==="new"?" selected":""}>Newest</option>`
   + `<option value="price-lo"${S.marketSort==="price-lo"?" selected":""}>Price low to high</option>`
@@ -962,20 +961,47 @@ async function renderShop(el){
 /* Department -> subcategory browser plus breadcrumb. Split out of renderShop so
    picking a department repaints the nav in place instead of refetching the
    whole feed (which also would have thrown away whatever the shopper typed). */
+function marketChip(path, label){
+  const on = (S.marketCat || "") === path;
+  return `<button type="button" class="chip${on?" on":""}" aria-pressed="${on?"true":"false"}" onclick="marketPick(decodeURIComponent('${taxQ(path)}'))">${escapeHtml(label)}</button>`;
+}
+/* Departments come from the shared category table, not a hardcoded women's
+   row. A men's jacket and a coffee maker were on the feed and invisible the
+   moment a shopper left All, because the only chips were Women's tops, jeans,
+   dresses, jackets and bags. */
 function marketNavHtml(){
-  const kinds = [["","All"],["Women/Tops","Tops"],["Women/Jeans","Jeans"],["Women/Dresses","Dresses"],["Women/Coats & Jackets","Jackets"],["Women/Bags & Handbags","Bags"]];
-  return `<div class="chips" id="market-subs" aria-label="Find">` + kinds.map(([path, label]) => {
-    const on = (S.marketCat || "") === path;
-    return `<button type="button" class="chip${on?" on":""}" aria-pressed="${on?"true":"false"}" onclick="marketPick(decodeURIComponent('${taxQ(path)}'))">${escapeHtml(label)}</button>`;
-  }).join("") + `</div>`;
+  const cat = S.marketCat || "";
+  const dept = cat && cat !== "__other__" ? taxDept(cat) : "";
+  let h = `<div class="chips" id="market-subs" aria-label="Find">`;
+  h += marketChip("", "All");
+  for (const d of taxDepts()) h += marketChip(d, d);
+  if (shopPublicRows(S.market || []).some(m => !taxPath(m.category))) h += marketChip("__other__", "Other");
+  h += `</div>`;
+  if (dept && taxSubs(dept).length){
+    h += `<div class="chips" aria-label="${escapeAttr(dept)} categories">`;
+    for (const s of taxSubs(dept)) h += marketChip(dept + "/" + s, s);
+    h += `</div>`;
+  }
+  return h;
 }
 function marketQ(v){ S.marketQ = v || ""; marketRefresh(); }
 function marketSort(v){ S.marketSort = v || "new"; marketRefresh(); }
 function marketPick(path){
   /* Normalise through taxPath so "Women's Clothing/Tops & Shirts" (and any
      stray legacy spelling) land on one canonical value. Tapping the step you
-     are already on climbs one level back up, so the nav is never a dead end. */
-  const p = taxPath(taxUnq(path));
+     are already on climbs one level back up, so the nav is never a dead end.
+     "__other__" is not a category path — it is the chip for listings the
+     table could not file. taxPath() would turn it into "" and clear the filter. */
+  const raw = taxUnq(path);
+  if (raw === "__other__"){
+    S.marketCat = S.marketCat === "__other__" ? "" : "__other__";
+    const nav = document.getElementById("market-nav");
+    if (nav) nav.innerHTML = marketNavHtml();
+    marketRefresh();
+    refreshTips();
+    return;
+  }
+  const p = taxPath(raw);
   S.marketCat = (p && p === S.marketCat) ? (taxSub(p) ? taxDept(p) : "") : p;
   const nav = document.getElementById("market-nav");
   if (nav) nav.innerHTML = marketNavHtml();
@@ -994,7 +1020,8 @@ function marketRows(){
       m.title, m.description, m.category, m.brand, m.color, m.material, m.size,
       m.condition, m.seller && m.seller.username, m.seller && m.seller.display_name,
     ].filter(Boolean).join(" ").toLowerCase().includes(q));
-  if (S.marketCat) rows = rows.filter(m => taxMatches(m.category, S.marketCat));
+  if (S.marketCat === "__other__") rows = rows.filter(m => !taxPath(m.category));
+  else if (S.marketCat) rows = rows.filter(m => taxMatches(m.category, S.marketCat));
   const n2 = v => Number(v) || 0;
   rows.sort((a,b)=>{
     if (S.marketSort === "price-lo") return n2(a.price) - n2(b.price);
@@ -1037,6 +1064,7 @@ function marketRefresh(){
 /* " in Women's Clothing › Tops & Shirts", or "" at the top of the catalogue. */
 function marketWhere(){
   if (!S.marketCat) return "";
+  if (S.marketCat === "__other__") return " with no department";
   const d = taxDept(S.marketCat), s = taxSub(S.marketCat);
   return " in " + d + (s ? " › " + s : "");
 }
@@ -1112,7 +1140,8 @@ function placementCtaHtml(item){
   const bits = [];
   bits.push(`<div class="ux-try">`);
   if (mode === "clothing"){
-    bits.push(`<a class="btn btn-accent" href="/try-on/${qs("")}">Try it on</a>`);
+    bits.push(`<a class="btn btn-accent" href="/try-on/${qs("")}">See it on you</a>`);
+    bits.push(`<p class="ux-item-note">A photo of you wearing it. The model redraws the picture — it is not a sticker on top.</p>`);
   } else if (mode === "wall"){
     bits.push(btn("/see-in-space/" + qs("wall"), "See it on my wall", "Add a photo of your wall and hang this on it. Free."));
   } else if (mode === "floor"){
@@ -1705,7 +1734,7 @@ function xlShopOpenGuide(id){
   if (title) title.textContent = "Connect " + shop.name;
   if (sub) sub.textContent = shop.oauth
     ? "Free guide · your developer keys · OAuth opens on eBay"
-    : "Connect your account · fashionistas.ai posts for you";
+    : "The extension fills this shop in your browser. You still press Post there.";
   xlShopPaintStatus(shop.id);
 
   const hiveLis = (shop.hive || []).map(s => `<li>${s}</li>`).join("");
@@ -1913,8 +1942,8 @@ document.addEventListener("DOMContentLoaded", () => {
 /* Canonical fee table — Vinted 0% seller fee, Poshmark flat $2.95 under $15 / 20% at $15+.
    Multilist "kept" figures use this so Vinted stays 0% even if API feePct drifts. */
 const FEE_TABLE = [
-  { id:"depop", name:"Depop", feePct:10, note:"~10% seller fee (US typical)" },
-  { id:"ebay", name:"eBay", feePct:13.25, note:"~13.25% managed payments (varies by category)" },
+  { id:"depop", name:"Depop", feePct:3.3, feeFixed:0.45, note:"0% commission + 3.3% + $0.45 processing" },
+  { id:"ebay", name:"eBay", feePct:13.6, feeFixed:0.4, note:"13.6% final value fee + $0.40 per order" },
   { id:"poshmark", name:"Poshmark", feePct:20, note:"20% at $15+; $2.95 under $15", special:"posh" },
   { id:"mercari", name:"Mercari", feePct:10, note:"~10% selling fee" },
   { id:"vinted", name:"Vinted", feePct:0, note:"0% seller fee in most countries" },
@@ -1928,7 +1957,7 @@ function feeEstimateAmount(m, price){
   const p = Number(price)||0;
   if (!m) return 0;
   if (m.special === "posh") return p < 15 ? 2.95 : p * 0.20;
-  return p * ((Number(m.feePct)||0)/100);
+  return p * ((Number(m.feePct)||0)/100) + (Number(m.feeFixed)||0);
 }
 function marketsForSixDisplay(apiMarkets){
   /* Prefer the six FEE_TABLE shops; merge API maxChar/signup when present. */
@@ -1940,6 +1969,7 @@ function marketsForSixDisplay(apiMarkets){
       id: ft.id,
       name: api.name || ft.name,
       feePct: ft.feePct,
+      feeFixed: ft.feeFixed || api.feeFixed || 0,
       special: ft.special || null,
       note: ft.note,
       maxChar: api.maxChar || ({depop:80,ebay:80,poshmark:80,mercari:80,vinted:100,grailed:80}[ft.id]) || null,
@@ -3194,7 +3224,6 @@ const HANDOFF_API_HOSTS = { ebay: "/api/list/ebay", etsy: "/api/list/etsy" };
 /* Shops beyond the six Connect rows — same handoff path, no API claimed. */
 const HANDOFF_EXTRA_SHOPS = [
   { id: "facebook",  name: "Facebook Marketplace", createListing: "https://www.facebook.com/marketplace/create/" },
-  { id: "kidizen",   name: "Kidizen",              createListing: "https://www.kidizen.com/sell/" },
   { id: "vestiaire", name: "Vestiaire Collective", createListing: "https://us.vestiairecollective.com/sell/" },
   { id: "whatnot",   name: "Whatnot",              createListing: "https://www.whatnot.com/sell" }
 ];
@@ -3608,7 +3637,7 @@ function handoffReset(shopId, lid){
 
 /**
  * Real API post for eBay / Etsy. Maps the gate's own answers to plain words:
- * 401 → sign in, 402 → subscribe, 503 → name the missing key. Never claims a
+ * 401 → sign in, 402 → copy-and-open (no plan to buy), 503 → name the missing key. Never claims a
  * listing when the API did not return an id.
  */
 async function handoffApi(shopId, lid){
@@ -4557,7 +4586,7 @@ const GUIDE_MPS = {
 
 const GUIDE_STEPS = [
  { title:"Welcome to fashionistas.ai", emoji:"<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='#ff4e3a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-3px;margin-right:6px'><path d='M12 3.2 20 7.6v8.8L12 20.8 4 16.4V7.6z'/></svg>",
- body:"fashionistas.ai is $14.99 a month — photos, listings and orders included. The AI runs on the app's built-in model, so there is no key or setup step. Snap a clothing item and the AI identifies it, suggests a price, then Sell everywhere posts it to eleven marketplaces.",
+ body:"fashionistas.ai is free while we're in launch. Snap a clothing item and the AI identifies it and suggests a price. The listing goes on fashionistas.ai. Other shops are not posted for you — you copy the listing and press Post there.",
  action:null },
  { title:"Create your account", emoji:"<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='#ff4e3a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-3px;margin-right:6px'><path d='M12 3.2 20 7.6v8.8L12 20.8 4 16.4V7.6z'/></svg>",
  body:"One tap opens the real sign-up form behind this card: username + email + password and you're in. Your photos and listings are saved to your account. Prefer to poke around first? Tap 'Log in as demo seller' on the auth screen.",
@@ -4811,8 +4840,8 @@ function hcMarketStep(mkt){
 const HC_STEPS = [
  { id:"A", title:"Welcome to fashionistas.ai", sub:"5-minute guided tour",
  render: ()=>`
- <p>fashionistas.ai turns one photo into a finished listing for <b>Poshmark, Mercari, Depop, Vinted, Grailed, eBay, Etsy, Facebook, Kidizen, Vestiaire and Whatnot</b> and posts it for you — then tracks sales and profit you record.</p>
-  <p class="mut">It's <b>$14.99/mo</b> — cancel anytime. The AI works out of the box with no key or setup. Nothing here needs a developer or an API.</p>
+ <p>fashionistas.ai turns one photo into a finished listing for <b>Poshmark, Mercari, Depop, Vinted, Grailed, eBay, Etsy, Facebook, Vestiaire and Whatnot</b>. Where the shop has no posting API, you press Post in your own tab. Kidizen shut down.</p>
+  <p class="mut">It's free while we're in launch — no card and nothing to cancel. The AI works out of the box with no key or setup.</p>
  <p class="mut">You'll follow A through T, one <b>real</b> action at a time. Tap Next to begin.</p>` },
  { id:"B", title:"Where everything lives", sub:"where you'll work",
  render: ()=>`
@@ -5014,7 +5043,7 @@ async function hcRender(){
  } catch(e){ body.innerHTML = `<p class="mut">This step hit a snag — tap Next to continue the tour.</p>`; }
 }
 
-function hcDemoLogin(){ hcSuspend(); demoLogin(); toast("Signed in as demo — tap '? Help A→Z' to resume"); }
+async function hcDemoLogin(){ hcSuspend(); await demoLogin(); toast("Signed in as demo — tap '? Help A→Z' to resume"); }
 function hcCam(cam){
  if (!TOKEN) return toast("Create your account first (step C) — then snap");
  hcSuspend();
@@ -5167,6 +5196,7 @@ if (!routePath()) homeOrAuth();
 syncSessionChrome();
 function openFromHash(){
   var openHash = (location.hash || "").replace("#", "");
+  if (openHash === "login" || openHash === "signup") { if (!TOKEN) showAuth(openHash === "signup" ? "signup" : "login"); return; }
   if (openHash === "shop" || openHash === "sell") enterBrowse(openHash);
 }
 window.addEventListener("hashchange", openFromHash);

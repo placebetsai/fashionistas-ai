@@ -19,7 +19,7 @@
 <meta name="twitter:image" content="https://fashionistas.ai/og.png">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/site.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to use the fashionistas.ai virtual try-on","description":"Upload a photo of a person and a garment photo, press Try it on, then download, save or share the render.","step":[{"@type":"HowToStep","name":"Add a photo of yourself","text":"Pick or drop a photo of the person wearing the garment."},{"@type":"HowToStep","name":"Add a garment","text":"Pick or drop a photo of the item you want to see on."},{"@type":"HowToStep","name":"Try it on","text":"Press Try it on. Photoreal mode posts person and garment to /api/tryon/hd (Pro or a try-on credit). Instant mode is an experimental on-device overlay for placement only."},{"@type":"HowToStep","name":"Keep the result","text":"Download, save or share the rendered image."}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to use the fashionistas.ai virtual try-on","description":"Upload a photo of a person and a garment photo, press Try it on, then download, save or share the render.","step":[{"@type":"HowToStep","name":"Add a photo of yourself","text":"Pick or drop a photo of the person wearing the garment."},{"@type":"HowToStep","name":"Add a garment","text":"Pick or drop a photo of the item you want to see on."},{"@type":"HowToStep","name":"Try it on","text":"Press Try it on. The signed-in render posts the person and garment to /api/tryon/hd, which redraws the person wearing the garment."},{"@type":"HowToStep","name":"Keep the result","text":"Download, save or share the rendered image."}]}</script>
 <style>
 /* ═════════════════════════════════════════════════════════════════════════
    RENDER STUDIO — a dark instrument panel around the same try-on engine.
@@ -357,12 +357,11 @@ body{-webkit-font-smoothing:antialiased}
 <a href="/pricing/">Pricing</a><a href="/guide/">Guide</a></nav>
 </header>
 <script src="/topnav.js"></script>
-<script src="/countdown.js" defer></script>
 <main id="main">
 
 <span class="badge to-badge">AI virtual try-on</span>
 <h1 class="to-h1" aria-label="See it on you before you buy it"><span class="w" style="--i:0" aria-hidden="true">See</span> <span class="w" style="--i:1" aria-hidden="true">it</span> <span class="w" style="--i:2" aria-hidden="true">on</span> <span class="w sh" style="--i:3" aria-hidden="true">you</span> <span class="w" style="--i:4" aria-hidden="true">before</span> <span class="w sh" style="--i:5" aria-hidden="true">you</span> <span class="w" style="--i:6" aria-hidden="true">buy</span> <span class="w" style="--i:7" aria-hidden="true">it</span></h1>
-<p class="lede to-lede">Add a photo of yourself and see the item on you before you buy it. Open anything in the shop and press <b>Try it on</b> — the garment loads itself, so one photo is all it takes. <b>Quick preview</b> is free and instant, right on your phone; HD needs Pro or a try-on credit and takes about a minute. Download it, save it or share it when you like what you see. No sign-in needed either — the shop loads its own stock into the strip below, so the only photo you ever add is of yourself.</p>
+<p class="lede to-lede">Add a photo of yourself. The model redraws you wearing the garment — it is not a sticker laid on the picture. Open anything in the shop and press <b>See it on you</b> and the garment loads itself. Sign in first (free, no card). A render takes about a minute. You can download, save, or share it.</p>
 
 <div class="to-rot">
  <span>Works on any piece</span>
@@ -406,21 +405,10 @@ body{-webkit-font-smoothing:antialiased}
  </div>
  <p class="to-warn" id="warn" hidden></p>
 
- <div class="to-mode" role="radiogroup" aria-label="Render mode">
- <label class="to-mode-opt on" id="lab-hd">
-  <input type="radio" name="to-mode" value="hd" checked>
-  <span class="to-mode-t">Best quality</span>
-  <span class="to-mode-d">Looks like a real photo. Needs Pro or a try-on credit · about a minute.</span>
- </label>
- <label class="to-mode-opt" id="lab-device">
-  <input type="radio" name="to-mode" value="device">
-  <span class="to-mode-t">Quick preview</span>
-  <span class="to-mode-d">Free and instant, right on your phone. A rough fit, not a real photo.</span>
- </label>
-</div>
+ <p class="to-mode-d" id="lab-hd">You, wearing it. The model redraws the photo. About a minute. Free while we're in launch — sign in, six a day.</p>
 
 <div class="to-acts">
-  <button class="btn btn-accent" id="btn-go" data-tip="Shows the clothing on your photo.">Try it on</button>
+  <button class="btn btn-accent" id="btn-go" data-tip="Redraws you wearing the garment.">See yourself wearing it</button>
   <button class="to-btn" id="btn-retry" disabled data-tip="Run the try-on again with the same two photos.">Retry</button>
   <button class="to-btn" id="btn-download" disabled data-tip="Save the render as a file on this device.">Download</button>
   <button class="to-btn" id="btn-save" disabled data-tip="Keep the render in this browser so you can come back to it.">Save</button>
@@ -466,14 +454,12 @@ body{-webkit-font-smoothing:antialiased}
 <div class="to-toast" id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
-import { TryOnPipeline } from "/try-on/tryon_pipeline.js";
 import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
 
 (function(){
   "use strict";
-  // FREE tier default: on-device warp+composite. Nothing is uploaded, so it
-  // costs $0 at any scale and works with no account and no keys.
-  // "hd" is the credit/Pro lane -> /api/tryon/hd (402 if not entitled).
+  // The only try-on is FASHN VTON 1.5 on Modal: it redraws the person wearing
+  // the garment. There is no on-device sticker path.
   var API_HD = "/api/tryon/hd";
   var mode = "hd";
   var kindPick = "auto";
@@ -549,6 +535,8 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
       return;
     }
     files[kind] = file;
+    var grid = document.querySelector(".to-grid");
+    if (grid) grid.hidden = false;
     $("name-person");
     $("name-" + kind).textContent = file.name + " · " + Math.max(1, Math.round(file.size/1024)) + " KB";
     $("zone-" + kind).classList.add("has");
@@ -612,7 +600,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
      offer a thumbnail strip to swap which piece is being tried on. Signed-out
      visitors keep the manual picker; a garment chosen by hand is remembered
      locally so the next visit is prefilled too. */
-  var API_HOST = "https://fashionistas-api.fashionistas1979.workers.dev";
+  var API_HOST = "/w";
   var GARMENT_KEY = "fash_tryon_garment_v1";
   var garmentPrefilled = false;
 
@@ -775,10 +763,13 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
     var img = $("out-img");
     var paint = function(url){
       img.src = url;
+      var grid = document.querySelector(".to-grid");
+      if (grid) grid.hidden = true;
       $("out").classList.add("on");
       $("ok").classList.add("on");
       $("out-meta").textContent = note || "";
-      say("Done. Download, save or share it below.", false);
+      say("Done. This is a new photo of you wearing it.", false);
+      try { $("out").scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
       keepEnabled();
       var box = $("out");
       if (box.scrollIntoView) box.scrollIntoView({ behavior:"smooth", block:"nearest" });
@@ -806,46 +797,6 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
       img.onerror = function(){ URL.revokeObjectURL(url); rej(new Error("That photo could not be decoded in this browser.")); };
       img.src = url;
     });
-  }
-
-  // INSTANT (experimental) — layers 1 and 2 of /try-on/tryon_pipeline.js: canvas warp+composite
-  // using MediaPipe body anchors (or the documented default layout if the pose
-  // model is not available). Everything happens inside this tab: no upload, no
-  // request, no account, no key. This is why the free tier costs $0 at any
-  // scale — there is no server round trip to pay for.
-  function runDevice(){
-    var person, garment;
-    return Promise.all([loadImage(files.person), loadImage(files.garment)])
-      .then(function(imgs){
-        person = imgs[0]; garment = imgs[1];
-        var pipe = new TryOnPipeline({ useGenerative: false });
-        return pipe.run({
-          personImage: person,
-          garmentImage: garment,
-          kindOverride: kindPick,
-          onStage: function(st){ if (st === "cutout_ai") say("Removing the garment background on this device… (first time loads a 44 MB model)", false); },
-          width: person.naturalWidth || person.width || 720,
-          height: person.naturalHeight || person.height || 960
-        });
-      })
-      .then(function(out){
-        try { window.__lastStages = out && out.stages; } catch (_) {}
-        if (out && out.error === "bottoms_need_legs"){ warn(""); throw new Error(LEGS_MSG); }
-        warn(out && (out.framing === "cropped" || out.framing === "none") ? CROP_MSG : "");
-        if (!out || !out.ok || !out.canvas){
-          throw new Error("On-device composition failed: " + ((out && out.error) || "no canvas returned"));
-        }
-        // The caption under the picture is for the person looking at it, not
-        // for us: no pose-model names, no stage names.
-        var note = "Quick preview · your photos stayed on your phone";
-        return new Promise(function(res, rej){
-          out.canvas.toBlob(function(b){
-            if (!b) return rej(new Error("The on-device renderer produced no image."));
-            showResult(b, null, note);
-            res();
-          }, "image/png");
-        });
-      });
   }
 
   // ---- No-person guard, browser half -------------------------------------
@@ -933,7 +884,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
         var el = Date.now() - t0;
         prog(Math.min(0.95, el / EST));
         say("Rendering your photoreal try-on… " + Math.round(el / 1000) + "s (usually 10–30s)", false);
-        fetch(API_HD + "?job=" + encodeURIComponent(job), { credentials:"include", headers:{ Accept:"application/json" } })
+        fetch(API_HD + "?job=" + encodeURIComponent(job), { credentials:"include", headers: authHeaders() })
           .then(function(r){
             if (r.status === 202) return r.json().then(function(j){ setTimeout(tick, (j && j.poll_after_ms) || 2500); });
             resolve(r);
@@ -943,7 +894,8 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
     });
   }
 
-  function runHd(){
+  function runHd(attempt){
+    attempt = attempt || 0;
     var t0 = Date.now();
     prog(0.04);
     return Promise.all([shrink(files.person, 1280), shrink(files.garment, 1280), hdCategory()]).then(function(parts){
@@ -960,39 +912,54 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
       say("Rendering your photoreal try-on… " + Math.round(el / 1000) + "s" + (el > 30000 ? " (waking up the GPU — first render of the day takes longer)" : ""), false);
     }, 1000);
     var stopTick = function(x){ clearInterval(ticker); return x; };
-    return fetch(API_HD, { method:"POST", body: fd, credentials:"include", headers: { Accept: "application/json, image/*" } })
-      .then(stopTick, function(e){ stopTick(); throw e; })
+    function wake(){
+      var w = new Error("wake");
+      w.wake = true;
+      return w;
+    }
+    return fetch(API_HD, { method:"POST", body: fd, credentials:"include", headers: authHeaders() })
+      .then(stopTick, function(e){
+        // A cold GPU can outlive Cloudflare's proxy. The container is awake
+        // after that, so one more call returns the worn photo. Never a paste.
+        stopTick();
+        if (attempt < 1) throw wake();
+        throw e;
+      })
       .then(function(res){
-        if (res.status === 202) return res.json().then(function(j){ return pollJob(j.job, t0); });
+        if (res && res.status === 202) return res.json().then(function(j){ return pollJob(j.job, t0); });
+        if (res && !res.ok && attempt < 1 && (res.status === 502 || res.status === 503 || res.status === 504 || res.status >= 520)) {
+          throw wake();
+        }
         return res;
       })
       .then(function(res){
         var ct = (res.headers.get("content-type") || "").toLowerCase();
         if (!res.ok){
           return res.text().then(function(t){
-            var msg = "Best quality didn't work this time. Try again, or use Quick preview.";
+            var msg = "The try-on didn't finish. Nothing was pasted on top of your photo. Try again.";
             try {
               var j = JSON.parse(t);
               if (res.status === 401) {
-                msg = (j && j.detail) || "Sign in to use Best quality.";
-              } else if (res.status === 402) {
-                msg = (j && j.detail) || "Best quality needs Pro or a try-on credit. Quick preview is free.";
+                msg = "Sign in first — it's free. Then this redraws you wearing the garment.";
+              } else if (res.status === 429) {
+                msg = (j && j.detail) || "You've used today's try-ons. They reset tomorrow.";
               } else if (j && (j.detail || j.error || j.message)) {
                 msg = "Best quality didn't work: " + (j.detail || j.error || j.message);
               }
-            } catch(e){ if (t) msg = "Best quality didn't work this time. Try again, or use Quick preview."; }
+            } catch(e){ if (t) msg = "The try-on didn't finish. Nothing was pasted on your photo. Try again."; }
             throw new Error(msg);
           });
         }
         if (ct.indexOf("image/") === 0){
-          return res.blob().then(function(b){ showResult(b, null, "Best quality"); });
+          return res.blob().then(function(b){ showResult(b, null, "You wearing it"); });
         }
         return res.text().then(function(t){
           var src = null, blobNote = "Best quality";
           try {
             var j = JSON.parse(t);
             src = j && j.url ? j.url : pickImage(j);
-            if (j && j.category) blobNote += " · " + j.category;
+            blobNote = "You wearing it";
+          if (j && j.category) blobNote += " · " + j.category;
             if (j && typeof j.ms === "number") blobNote += " · " + Math.round(j.ms / 1000) + "s";
           } catch(e){ src = null; }
           if (!src) throw new Error("The photoreal endpoint returned no image.");
@@ -1002,46 +969,52 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
           showResult(null, src, blobNote);
         });
       });
-    }).catch(function(e){ prog(null); throw e; });
+    }).catch(function(e){
+      if (e && e.wake && attempt < 1) {
+        say("The model was waking up. Rendering you wearing it now.", false);
+        return runHd(attempt + 1);
+      }
+      prog(null);
+      throw e;
+    });
   }
 
+  function sessionToken(){
+    try { return localStorage.getItem("fash_token") || ""; } catch (e) { return ""; }
+  }
+  function authHeaders(){
+    var h = { Accept: "application/json, image/*" };
+    var t = sessionToken();
+    if (t) h.Authorization = "Bearer " + t;
+    return h;
+  }
   function run(){
     if (busy) return;
+    if (!sessionToken()){
+      say("Sign in first — it's free, no card. Then we redraw you wearing it.", true);
+      var st = $("status");
+      if (st && !document.getElementById("to-signin")){
+        var a = document.createElement("a");
+        a.id = "to-signin";
+        a.href = "/#login";
+        a.className = "btn btn-accent";
+        a.style.marginTop = "10px";
+        a.textContent = "Sign in";
+        st.insertAdjacentElement("afterend", a);
+      }
+      return;
+    }
     if (!files.person || !files.garment){
-      say("Add both a person photo and a garment photo first.", true);
+      say("Add a photo of yourself and the garment.", true);
       return;
     }
     $("ok").classList.remove("on");
     setBusy(true);
-    var job;
-    if (mode === "hd"){
-      // Guard first: nothing is uploaded and no GPU second is billed until a
-      // person has actually been found in the photo.
-      say("Checking your photo…", false);
-      job = personInPhoto(files.person).then(function(ok){
-        if (!ok) throw new Error(NO_PERSON_MSG);
-        say("Rendering — sending to the model…", false);
-        return runHd();
-      });
-    } else {
-      // The free path runs the SAME guard. It is not about money — nothing is
-      // uploaded and no GPU second is billed either way — it is that the
-      // on-device pipeline composites from body anchors, and a photo with no
-      // person in it has none to composite onto: the garment lands on the
-      // default layout and the visitor gets a meaningless picture with no
-      // explanation of why. The paid path already refused that photo; the free
-      // one has to refuse it too, or the two tiers disagree about what the
-      // product can do. If MediaPipe could not load, personInPhoto returns
-      // true rather than blocking — here there is no server to fall through
-      // to, and refusing on a free path over a CDN hiccup would be worse than
-      // the picture.
-      say("Checking your photo…", false);
-      job = personInPhoto(files.person).then(function(ok){
-        if (!ok) throw new Error(NO_PERSON_MSG);
-        say("Making your preview…", false);
-        return runDevice();
-      });
-    }
+    var job = personInPhoto(files.person).then(function(ok){
+      if (!ok) throw new Error(NO_PERSON_MSG);
+      say("Redrawing you wearing it. First one after a quiet period can take about a minute.", false);
+      return runHd();
+    });
     job
       .catch(function(err){
         fail(err && err.message ? err.message : "The try-on did not go through. Try again.");
@@ -1049,18 +1022,12 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
       .then(function(){ setBusy(false); });
   }
 
-  // Mode switch — the free/on-device lane is the default and needs no session.
+  // One render: the model redraws the person wearing the garment.
+  mode = "hd";
   Array.prototype.forEach.call(document.querySelectorAll('input[name="to-mode"]'), function(radio){
     radio.addEventListener("change", function(){
       if (!radio.checked) return;
-      mode = radio.value;
-      var dev = $("lab-device"), hd = $("lab-hd");
-      if (dev) dev.classList.toggle("on", mode === "device");
-      if (hd) hd.classList.toggle("on", mode === "hd");
-      say(mode === "hd"
-            ? "Best quality: looks like a real photo. Needs Pro or a try-on credit — takes about a minute."
-            : "Quick preview: free, made on your phone. A rough fit, not a real photo.",
-          false);
+      mode = "hd";
     });
   });
 
@@ -1149,13 +1116,13 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
   }
   function tick(){
     var mode = document.querySelector('input[name="to-mode"]:checked');
-    txt("tel-mode", mode && mode.value === "device" ? "INSTANT" : "HD");
+    txt("tel-mode", "WEAR");
     txt("tel-in", inputs() + " / 2");
     var st = document.getElementById("status");
     var t = st ? (st.textContent || "").trim() : "";
     var state = "IDLE";
     if (st && st.classList.contains("err")) state = "FAULT";
-    else if (/rendering|uploading|making|checking|waking/i.test(t)) state = "BUSY";
+    else if (/rendering|uploading|making|checking|waking|redraw/i.test(t)) state = "BUSY";
     else if (/done|render ready/i.test(t)) state = "COMPLETE";
     else if (inputs() === 2) state = "READY";
     else if (t) state = "AWAITING";

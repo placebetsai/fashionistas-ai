@@ -78,7 +78,7 @@
 <main class="wrap" id="app"><div class="hero"><h1>Connecting…</h1></div></main>
 
 <script>
-const API = "https://fashionistas-api.fashionistas1979.workers.dev";
+const API = "/w";
 const app = document.getElementById("app");
 const tok = () => { try { return localStorage.getItem("fash_token") || ""; } catch(e){ return ""; } };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -106,7 +106,7 @@ async function call(path, opts = {}) {
 /* The OAuth landing opens in a new tab and posts back here when it finishes,
    so the tile flips to Connected without the seller reloading anything. */
 window.addEventListener("message", (e) => {
-  if (e.origin !== API && e.origin !== "https://fashionistas.ai") return;
+  if (e.origin !== location.origin) return;
   if (e.data && e.data.fashionistas) load();
 });
 
@@ -152,7 +152,7 @@ function render(signedIn) {
       <b>Post with the extension.</b> <span>Nothing to register, nothing to paste. It works because it's your own browser, already signed into your own shops.</span>
     </div></div>
     <div class="step"><div class="step-n">2</div><div class="step-t">
-      <b>Optional: connect a shop for true one-click.</b> <span>eBay, Etsy and Whatnot have official seller APIs that create the listing outright. Good if you post a lot.</span>
+      <b>Optional: connect a shop for true one-click.</b> <span>eBay, Etsy and Whatnot have seller APIs in this app, but none of them are connected on this site yet. Until a shop shows Connected, the extension fills the form and you press Post yourself.</span>
     </div></div>
 
     <div class="chans">${cards}</div>
@@ -160,7 +160,7 @@ function render(signedIn) {
     ${signedIn ? `
     <div class="post">
       <h2>Post a listing</h2>
-      <p class="sub">Anything already in your closet. It goes live on the shop you pick.</p>
+      <p class="sub">Anything already in your closet. This does not publish it. You still press Post on that shop.</p>
       <div class="row">
         <select class="input" id="p-listing" style="flex:2;min-width:200px">
           ${opts || `<option value="">Add an item to your closet first</option>`}

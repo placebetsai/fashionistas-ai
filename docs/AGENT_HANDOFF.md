@@ -1,6 +1,97 @@
 # Agent handoff — fashionistas.ai
 
-## LATEST — 2026-10-10 (read this first)
+## LATEST — 2026-10-12 ET (read this first)
+
+The app loop that was broken is the shop, the session, and a paywall the site does not sell. Do not put the women's-only chip row back. Do not default a blank category to `Women/Tops`. Do not send a 402 to `/pricing/` as a $14.99 plan.
+
+**Shop.** `marketNavHtml` in `/assets/app.ba3f42b8d601.js` builds chips from the category table (`Women`, `Men`, `Kids`, `Home`, `Art`), then that department's subcategories. Listings with no resolvable category get an **Other** chip (`__other__`). The old chips were only Women's tops, jeans, dresses, jackets, and bags, so the men's polo, the men's jean jacket, the cup, and the Keurig disappeared as soon as a shopper left All. `index.html` points at `app.ba3f42b8d601.js`. Leave `app.da08c2d586e1.js` and `app.151b586e54d8.js` in place; hashed files stay immutable. `app.da08c2d586e1.js` is the previous shop-nav bundle and still contains the $14.99 confirm. Do not point `index.html` back at it.
+
+**Direct post.** `guideSubscribe` no longer says eBay or Etsy needs the $14.99/mo plan, and it no longer opens `/pricing/`. A 402 now says that shop has no direct post yet and the site is free — copy the listing and open their sell page. Server list routes can still return 402 when there is no subscription row; that is not a plan to buy. Stripe stays unset.
+
+**Chat.** `functions/api/chat/_lib/grounding.js` pricing facts say the site is free during launch and that $14.99 is not being charged. Try-on facts stay one FASHN redraw; Instant and Photoreal are not modes. `npm test`: 413 pass, 0 fail (2026-10-12).
+
+**Listing.** `listing-wizard.js?v=3` no longer writes `Women/Tops` when identify or List it has no category. List it opens the category picker and stops. A seller still has to pick Women, Men, Home, or another department.
+
+**Sign-in.** `functions/api/auth/me.js` uses `requireAuth`, so a Worker HMAC token and the `fash_session` cookie are the same credential. It used to read only the D1 `sessions` table and answer 401 to a person who was signed in.
+
+**Still not true.** eBay, Etsy, and Whatnot are not connected. After List it, other shops are copy-and-open. Reserve writes an order and moves no money. Stripe stays unset. Three live rows still have no category (vintage denim jacket, blue henley, Keurig) because the title does not say a department; they show under Other. Do not invent photos or a gender for them.
+
+Not committed. Newest deploy `https://23ab4228.fashionistas-ai.pages.dev` (project `fashionistas-ai`, branch `main`). The shop and session code first went out on `https://47d80f69.fashionistas-ai.pages.dev`. Checked on `https://fashionistas.ai/` 2026-10-12: the page loads `app.ba3f42b8d601.js` and `listing-wizard.js?v=3`. `GET /w/api/market?category=Men` returns the polo and the jean jacket. `?category=Home` returns the cup. `GET /api/auth/me` with no credential is still `401`.
+
+## LATEST — 2026-10-11 late ET (read this first)
+
+Personal Gmail addresses are off the public contact forms. The forms stay. Do not put a personal Gmail back in a page, a footer, or a `form action`. Full federation writeup is nexus `handoff.md` §20. The fashionistas night section below still stands.
+
+Live checks, 2026-10-11 ~21:00 ET, no `gmail` in the HTML:
+
+- `https://scooter.exchange/contact` posts to `https://api.scooter.exchange/api/contact`. Pages `https://fef83535.scooters-exchange.pages.dev` (project `scooters-exchange`, branch `main`). Worker `scooters-exchange-api` version `2e94858d-8083-4790-9f9a-a4bfed526962`. Forwards only when `RESEND_API_KEY` and `CONTACT_DEST` are both set. Bad POST returns `400 {"error":"valid email required"}`.
+- `https://marketpicks.ai/contact` posts to `/api/contact`. Pages `https://d0aec8e2.marketpicks-ai.pages.dev` (project `marketpicks-ai`, branch `main`). Rows go in D1 `marketpicks-db` table `site_contacts` (created, not a wipe). Inbox forward only if the Pages secret `CONTACT_EMAIL` is set. It is not set. Bad POST returns `400`.
+- `https://fashionistas.ai/` was already clean (night section below).
+- `https://placebets.ai/contact` has no personal Gmail. The form still posts to `info@placebets.ai`. The subscribe handler in `Placebetsai-src/app/api/subscribe/route.js` no longer hardcodes a Gmail; that edit is not deployed.
+
+Not committed.
+
+## LATEST — 2026-10-11 night ET (read this first)
+
+Three production changes on `fashionistas-ai`, wrangler Pages only, not git. Newest deploy `https://94967eab.fashionistas-ai.pages.dev`. Do not restore any of the three things below.
+
+### 1. Try-on is a redraw
+
+`https://fashionistas.ai/try-on/` only `POST`s `/api/tryon/hd` (Modal FASHN VTON 1.5). No `TryOnPipeline`, no `runDevice`, no sticker fallback. `try-on/tryon_pipeline.js` and `core/tryon_pipeline.js` `run()` return `{ ok:false, source:"removed" }` before any canvas work. Cold-GPU timeout retries the model once. Signed in, 6/day, no Pro.
+
+Proven 2026-10-11 ~19:35 ET: signed-in POST of the FASHN sample pair (white tee person + black FASHN tee) → `200` in 26.2s, `provider:"modal"`, `ms:22876`, image `https://fashionistas.ai/api/tryon/image/bf739e5a2c464390803e28f5bdc032f6.webp` (576×864 webp, 46668 bytes). Same person, hat, pants, boots, tattoo, now in the black shirt. Detail in the next section. Pipeline-refusal deploy was `https://10ee83e5.fashionistas-ai.pages.dev`.
+
+### 2. The Gmail address is off the public site
+
+User: get `fashionistas1979@gmail.com` off the sites, replace it with nothing, the contact form is enough, and do not print `info@fashionistas.ai` either.
+
+Checked live before the change: sitemap pages, `/contact/`, `/about/`, `/privacy/` did not print the Gmail. It was still the FormSubmit recipient inside `functions/api/contact.js`, and the browser called `https://fashionistas-api.fashionistas1979.workers.dev` (the Cloudflare account name) from the app script, try-on, and `/connect/`.
+
+What shipped (`https://7c68edd1.fashionistas-ai.pages.dev`):
+
+- Contact form still posts to `/api/contact`. The recipient is server-only: `env.CONTACT_TO`, otherwise `info@fashionistas.ai`. The address is not in the HTML. Do not put either address back in a page, a footer, or a `form action`.
+- The app, try-on, and connect call `API = "/w"`. `functions/w/[[path]].js` forwards `/w/*` to the worker. Proven: `GET https://fashionistas.ai/w/api/health` → `200 {"ok":true,"version":"3.1.0"}`.
+- Live after that deploy: `/`, `/contact/`, `/about/`, `/privacy/`, `/try-on/`, `/connect/`, `/pricing/`, and the app bundle contained no `gmail` and no `fashionistas1979`. `/functions/api/contact.js` is 404 (functions are not served as files).
+- Server-side fetches (shop SSR, sitemap, channel callback, feed, try-on Modal URL, the extension) still name the worker host. That host is not in the HTML. Do not copy it back into a page or the app bundle.
+
+### 3. Gemini's audit was not a reason to tear the site down
+
+Gemini said the landing page was a mock: fake countdown, Levi's card as a broken shop, no OAuth, no session, `$14.99` with no Stripe, footer Gmail. User said do that prompt if it was accurate.
+
+It was not. Not done: no Stripe checkout, no "3 free listings" gate, no deletion of Sell / try-on / shop. Sign-in is a real Worker account (a throwaway register returned `201` and a token; that token ran the try-on above). Landing card already said Free. Checkout stays closed because `STRIPE_SECRET_KEY` is unset — do not invent a checkout URL. The Gmail line was already gone.
+
+What was true, and what shipped (`https://94967eab.fashionistas-ai.pages.dev`):
+
+- `countdown.js` no longer paints "Public launch" (deadline had been `2026-10-14T09:45:00-04:00`). The file stays as a no-op that removes `#lc-bar`, because an old cached page may still request it. Script tags removed from `index.html`, `try-on/index.html`, `see-in-space/index.html`. Live `/` does not reference `countdown.js`. Older notes below that say the countdown is live are stale.
+- Hero phone card is labeled `Example · Vintage Levi's Denim Jacket`. It is a picture, not a listing.
+- Homepage FAQ no longer says eBay, Etsy, or Whatnot post through their API, and no longer says a sale pulls eBay/Etsy down automatically. About page says the same: you take a sold item down yourself. Pricing no longer says "on-device try-on".
+- In-app guide first step no longer says `$14.99/mo` or that Sell everywhere posts to eleven marketplaces. It says the site is free during launch, the listing goes on fashionistas.ai, and other shops are copy-then-Post.
+- App bundle is `/assets/app.151b586e54d8.js`. Hashed assets are immutable for a year. Edit by renaming the file and changing the `index.html` script src. Do not edit `app.151b586e54d8.js` in place.
+
+**Still not true, do not write it back:** eBay, Etsy, and Whatnot are not connected. Stripe is off. There is no legal entity name. Try-on is not a sticker.
+
+## LATEST — 2026-10-11 evening ET (try-on detail)
+
+**The try-on is a redraw, not a sticker.** The button on `https://fashionistas.ai/try-on/` only `POST`s `/api/tryon/hd`. It does not import `TryOnPipeline` and it has no `runDevice`. Confirmed on the live HTML after deploy: those names are absent.
+
+**What was wrong.** `try-on/tryon_pipeline.js` warped the garment and drew it on top of the person photo. That is the result the user rejected ("superimposes the images"). The real model (FASHN VTON 1.5 on Modal) was already deployed and had worked, but the page could still paint the sticker — including when the GPU call failed. There is no fallback to that paste.
+
+**What changed.**
+- `try-on/index.html`: only the model. A cold-GPU timeout (Cloudflare cuts a long request) retries `/api/tryon/hd` once. It never composites. When the picture comes back, the two uploads hide so the screen is the worn photo.
+- `try-on/tryon_pipeline.js` and `core/tryon_pipeline.js`: `run()` returns `{ ok:false, source:"removed" }` before any canvas work, so a stale tab that still imports the file cannot paste.
+- Chat grounding no longer describes an "Instant" overlay or a Pro credit.
+
+**Proven on production, 2026-10-11 ~19:35 ET**, signed-in `POST https://fashionistas.ai/api/tryon/hd` (FASHN sample person in a white tee + the black FASHN tee as the garment):
+
+- HTTP 200 in 26.2s, `provider: "modal"`, `model: "modal/fashn-vton-1.5"`, `ms: 22876`
+- Image `https://fashionistas.ai/api/tryon/image/bf739e5a2c464390803e28f5bdc032f6.webp` — 200, `image/webp`, 46,668 bytes, 576×864
+- Same person, hat, pants, boots, tattoo. The shirt is the black logo shirt from the garment photo. The second model's face and body are not in the frame.
+
+Signed-in accounts get 6 renders a UTC day (`tryon_daily_cap` / 429). No Pro purchase. First call after the GPU has slept can take about a minute; warm is ~20–30s. Do not put the canvas composite back.
+
+Page + pipeline refusal shipped in Pages deployment `https://10ee83e5.fashionistas-ai.pages.dev` (project `fashionistas-ai`). The 200 above was against `https://fashionistas.ai/api/tryon/hd` before that deploy; `hd.js` was not changed in it. After it, live `/try-on/` has no `TryOnPipeline` / `runDevice`, and live `/try-on/tryon_pipeline.js` `run()` returns `source:"removed"`.
+
+## LATEST — 2026-10-10 (older)
 
 **Production HAS changed.** `https://fashionistas.ai/version.txt` = `496ef1d2cdc70d395deddde8631e42af7686bff4`, identical to local HEAD. Branch `tryon-open`. `origin/main` is still `a841924` and must never be pushed. Shipped with `bash scripts/deploy-local.sh` (no `DEPLOY_BRANCH`); the script verified against the live domain and every check below was re-run on prod by hand, not taken from the deploy log. The last prod SHA before this chain was `4aae2ae`.
 

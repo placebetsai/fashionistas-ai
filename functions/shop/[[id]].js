@@ -101,7 +101,10 @@ export async function onRequestGet(context) {
     });
   }
 
-  return new Response(injectHead(demoteShellH1(body), itemHead(listing, origin)), {
+  const sellerUser = String(listing.seller && listing.seller.username || "").trim().toLowerCase();
+  const sellerName = String(listing.seller && (listing.seller.display_name || listing.seller.username) || "").trim().toLowerCase();
+  const demoSeller = sellerUser === "demo" || sellerName === "demo";
+  return new Response(injectHead(demoteShellH1(body), itemHead(listing, origin), { noindex: demoSeller }), {
     headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" },
   });
 }

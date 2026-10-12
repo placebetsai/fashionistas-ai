@@ -1,13 +1,10 @@
 /**
  * POST /api/contact — the contact form's relay.
  *
- * The form used to post straight to `https://formsubmit.co/<our address>`,
- * which put that address in the page source of the contact page, in three
- * meta tags, and in the footer of a dozen other pages. It is now read from
- * here instead: the `functions/` directory is consumed by the Pages router
- * and is never served as a static file — verified on the live site, where
- * `/functions/api/billing/checkout.js` answers 404 — so a visitor's browser
- * only ever sees `/api/contact`.
+ * The form used to post straight to FormSubmit with an address in the
+ * action URL, which put that address in the page source. The page now posts
+ * here. This file is a Pages Function and is not served as a static file, so
+ * the recipient is never in the HTML. Do not write an address into the page.
  *
  * Everything the form submits is forwarded unchanged apart from the
  * recipient, so delivery behaviour is untouched, including FormSubmit's own
@@ -19,8 +16,10 @@
  * user data of any kind.
  */
 
-const TO = "fashionistas1979@gmail.com";
-const RELAY = "https://formsubmit.co/" + TO;
+function recipient(env) {
+  const fromEnv = String((env && env.CONTACT_TO) || "").trim();
+  return fromEnv || "info@fashionistas.ai";
+}
 
 const LIMITS = { name: 120, email: 200, message: 5000 };
 
@@ -32,7 +31,8 @@ function json(body, status = 200) {
 }
 
 export async function onRequestPost(context) {
-  const { request } = context;
+  const { request, env } = context;
+  const relay = "https://formsubmit.co/" + recipient(env);
 
   const type = request.headers.get("content-type") || "";
   if (!type.includes("application/x-www-form-urlencoded")) {
@@ -74,7 +74,7 @@ export async function onRequestPost(context) {
   outbound.set("message", message);
 
   try {
-    const res = await fetch(RELAY, {
+    const res = await fetch(relay, {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded" },
       body: outbound.toString(),

@@ -393,7 +393,16 @@ export class TryOnPipeline {
    * @returns {Promise<{ok:boolean, canvas?:object, url?:string,
    *   source:"compose"|"generative", stages:object, error?:string}>}
    */
-  async run({ personImage, garmentImage, width, height } = {}) {
+  async run() {
+    return {
+      ok: false,
+      source: "removed",
+      stages: {},
+      error: "The sticker try-on was removed. The page redraws you wearing the garment."
+    };
+  }
+
+  async _runRetired({ personImage, garmentImage, width, height } = {}) {
     const stages = { pose: null, compose: null, generative: null, cache: null };
 
     // ── stage 1: pose (best-effort; compose can still proceed without it)

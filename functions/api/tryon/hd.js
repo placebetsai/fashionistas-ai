@@ -1,9 +1,9 @@
 /**
  * POST /api/tryon/hd — photoreal try-on backed by FASHN VTON v1.5.
  *
- * This is the credit/Pro-only lane. The free tier never reaches it: the free
- * tier runs the on-device warp+composite pipeline in try-on/tryon_pipeline.js,
- * which makes no network call at all.
+ * While checkout is closed, any signed-in account can run this. It is the
+ * try-on: the model redraws the person wearing the garment. The on-device
+ * sticker composite is not this route and is not offered as the result.
  *
  * BACKEND: FASHN VTON v1.5, Apache-2.0 (commercial use allowed).
  *   Replaces Leffa, which was retired on 2026-10-04 for three independent,
@@ -27,7 +27,7 @@
  *
  * Response 200: { ok, url, type, size, model, category, steps, seed, ms,
  *                 entitled_via, credits_left, cost_usd, charged }
- * Failures:     401 no session · 402 not entitled · 405 wrong method
+ * Failures:     401 no session · 429 daily cap · 405 wrong method
  *               422 bad category · 500 upstream bug
  *               503 not configured / over budget / QUOTA EXHAUSTED · 502 upstream failure
  *               Never a placeholder image.
@@ -38,9 +38,8 @@
  * no fallback to the on-device composite — the user explicitly rejected that
  * result, and a silent degradation would be a lie about what the button does.
  *
- * Entitlement (402 otherwise):
- *   Pro     = subscriptions.status 'active' (same check /api/list/* uses), OR
- *   credits = positive balance in tryon_credits.
+ * Entitlement: a signed-in account, up to LAUNCH_DAILY_CAP renders a day.
+ *   Pro and credits are not required while the site is free.
  *
  * MAX_MONTHLY_TRYON_SPEND (default 0) is a hard ceiling on METERED spend for
  * this route. FASHN runs are $0 metered, so the default admits them.
@@ -53,7 +52,7 @@
  * every $0 run as a charge and trip this route's own cap.
  */
 
-import { requireAuth, subscriptionState } from "../_lib/auth.js";
+import { requireAuth } from "../_lib/auth.js";
 import { json, toTryonError, sniffImageType, extForType } from "../_tryon/http.js";
 import { parseTryonForm } from "../_tryon/multipart.js";
 import { requireBucket, putImage, resultKey, publicUrl } from "../_tryon/r2.js";
@@ -61,6 +60,7 @@ import { findD1 } from "../_tryon/ledger.js";
 import { cacheKey, cacheObjectKey, runProvider } from "../_tryon/provider.js";
 import { PAID, pickProviders, paidSubmit, paidPoll, downloadResult, modalReady, modalRun } from "../_tryon/vton-paid.js";
 
+const LAUNCH_DAILY_CAP = 6;
 const MODEL_VERSION = "fashn-vton-1.5";
 const DEFAULT_SPACE = "https://fashn-ai-fashn-vton-1-5.hf.space";
 const UPSTREAM_TIMEOUT_MS = 5 * 60 * 1000; // Space measured 12-27s; leave headroom
@@ -116,6 +116,28 @@ function intField(raw, fallback, { min, max }) {
 
 function spaceUrl(env) {
   return String((env && env.FASHN_SPACE_URL) || DEFAULT_SPACE).replace(/\/+$/, "");
+}
+
+function launchKey(userId) {
+  return `tryon:launch:${userId}:${new Date().toISOString().slice(0, 10)}`;
+}
+
+function launchCache(env) {
+  return env && (env.CACHE || env.FASHIONISTAS_KV);
+}
+
+async function launchUses(env, userId) {
+  const cache = launchCache(env);
+  if (!cache || typeof cache.get !== "function") return 0;
+  return Number(await cache.get(launchKey(userId))) || 0;
+}
+
+async function bumpLaunch(env, userId) {
+  const cache = launchCache(env);
+  if (!cache || typeof cache.put !== "function") return;
+  const key = launchKey(userId);
+  const used = Number(await cache.get(key)) || 0;
+  await cache.put(key, String(used + 1), { expirationTtl: 60 * 60 * 36 });
 }
 
 /** Append one run to cost_ledger with THIS route's economics (fashn, $0). */
@@ -458,42 +480,22 @@ export async function onRequestPost(context) {
   if (!auth.ok) return auth.response;
   const userId = auth.user.id;
 
-  // --- 2. are you entitled? (402 otherwise) ---------------------------
-  let entitled = false;
-  let via = null;
-  let credits = 0;
-
-  // QA allow-list (secret TRYON_TEST_EMAILS, comma-separated). Lets a named
-  // test account prove the live photoreal path end to end without Stripe or a
-  // DB write. Unset in normal operation = no effect.
-  const testList = String(env.TRYON_TEST_EMAILS || "").toLowerCase().split(",").map((x) => x.trim()).filter(Boolean);
-  const isTest = !!(auth.user.email && testList.includes(String(auth.user.email).toLowerCase()));
-  const sub = isTest ? { ok: true, status: "active" } : await subscriptionState(env, userId);
-  if (isTest) {
-    entitled = true;
-    via = "test";
-  } else if (sub.ok && sub.status === "active") {
-    entitled = true;
-    via = "pro";
-  } else {
-    credits = await creditBalance(env, userId);
-    if (credits > 0) {
-      entitled = true;
-      via = "credits";
-    }
-  }
-  if (!entitled) {
+  // --- 2. signed in is enough while checkout is closed ------------------
+  // The render redraws the person in the garment. A sticker overlay is not a
+  // substitute, so this route does not send anyone there. The daily cap is the
+  // only limit: six renders per account, then it resets the next UTC day.
+  const via = "launch";
+  const credits = 0;
+  const used = await launchUses(env, userId);
+  if (used >= LAUNCH_DAILY_CAP) {
     return json(
       {
         ok: false,
-        error: "payment_required",
-        code: "not_entitled",
-        detail:
-          "Photoreal try-on requires Pro or a try-on credit. Sign in and subscribe, " +
-          "or pick Instant (experimental overlay) which stays on your device.",
-        credits: 0,
+        error: "tryon_daily_cap",
+        detail: `You've used today's ${LAUNCH_DAILY_CAP} try-ons. They reset tomorrow.`,
+        cap: LAUNCH_DAILY_CAP,
       },
-      402
+      429
     );
   }
 
@@ -659,6 +661,9 @@ async function finalize(env, request, bucket, o) {
   const url = extForType(type) === "png" ? `/api/tryon/image/${uuid}` : `/api/tryon/image/${uuidWithExt}`;
 
   await recordRun(env, { ms, status: "ok", garments: 1, error: null, model, cost });
+  if (via === "launch") {
+    try { await bumpLaunch(env, userId); } catch { /* a missed tally must not hide the picture */ }
+  }
 
   if (via === "credits") {
     const d1 = findD1(env);

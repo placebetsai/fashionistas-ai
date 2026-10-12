@@ -128,7 +128,9 @@ test("try-on Instant vs Photoreal is in scope", () => {
   assert.ok(scope.topics.includes("try_on"));
   const sites = siteSources(scope.topics, "try-on help");
   assert.ok(sites.some((s) => s.id === "try_on"));
-  assert.ok(sites.find((s) => s.id === "try_on").facts.some((f) => /Photoreal/i.test(f)));
+  const facts = sites.find((s) => s.id === "try_on").facts;
+  assert.ok(facts.some((f) => /FASHN|redraw/i.test(f)));
+  assert.ok(facts.some((f) => /Instant mode — those were removed|no on-device overlay/i.test(f)));
 });
 
 test("Connect shops and Chrome extension / Sell everywhere are in scope", () => {
@@ -151,7 +153,9 @@ test("listing from photo and $14.99 plan are in scope", () => {
   assert.ok(plan.ok && plan.topics.includes("pricing_plan"));
   const sites = siteSources(plan.topics, "pricing");
   assert.ok(sites.some((s) => s.id === "pricing_plan"));
-  assert.ok(sites.find((s) => s.id === "pricing_plan").facts.some((f) => /14\.99/.test(f)));
+  const facts = sites.find((s) => s.id === "pricing_plan").facts;
+  assert.ok(facts.some((f) => /free during launch/i.test(f)));
+  assert.ok(facts.some((f) => /not being charged/i.test(f)));
 });
 
 test("siteSources for Depop how-to includes catalogue + guide facts, no fake posted claim", () => {
@@ -215,7 +219,7 @@ test("a cited site id resolves to the supplied site fact", () => {
   const sites = siteSources(["try_on"], "try-on help");
   const res = validateChatAnswer(
     {
-      answer: "Photoreal needs Pro; Instant is an on-device overlay.",
+      answer: "The only try-on redraws the person wearing the garment. Instant was removed.",
       sources: [{ type: "site", id: "try_on" }],
     },
     sites

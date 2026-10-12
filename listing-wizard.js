@@ -419,7 +419,6 @@
       if (!d || d.source === "error") throw new Error((d && d.error) || "could not read the photo");
       applyAi(d, force);
       W.aiState = "done"; save(); coach("identify");
-      if (!W.f.path) W.f.path = "Women/Tops";
       if (!W.f.cond) W.f.cond = "good";
       renderStep();
     }).catch(function (e) {
@@ -714,7 +713,7 @@
     if (!PHOTOS.length) { say("Add a photo first."); return; }
     if (!String(W.f.title || "").trim()) { say("Add a title. Buyers search by it."); var i = $id("lw-title"); if (i) i.focus(); return; }
     if (!(parseFloat(W.f.price) > 0)) { say("Add a price."); var p = $id("lw-price"); if (p) p.focus(); return; }
-    if (!W.f.path) W.f.path = "Women/Tops";
+    if (!W.f.path) { say("Pick a department — Women, Men, Home, or another — so buyers can find it."); try { catOpen(true); } catch (e) {} var b = $id("lw-catbtn"); if (b) b.focus(); return; }
     if (!W.f.cond) W.f.cond = "good";
     coach("listing");
     submit();

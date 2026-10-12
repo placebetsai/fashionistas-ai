@@ -97,7 +97,7 @@ test("the bundle's handoffSellAll accepts an explicit pick list", () => {
 });
 
 test("the boot probe slides the session instead of only reading it", () => {
-  const fn = bundle.slice(bundle.indexOf("async function restoreSession()"), bundle.indexOf("/* 402 guidance"));
+  const fn = bundle.slice(bundle.indexOf("async function restoreSession()"), bundle.indexOf("/* 402 — the site is free."));
   assert.match(fn, /const d = await r\.json\(\)/);
   assert.match(fn, /if \(d && d\.token && d\.token !== TOKEN\)\{ TOKEN = d\.token; localStorage\.setItem\("fash_token", TOKEN\); \}/);
   assert.match(fn, /return;/, "a 401 returns early — a dead token never stores anything");

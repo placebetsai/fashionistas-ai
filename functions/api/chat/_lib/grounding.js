@@ -229,8 +229,8 @@ export function feeSources(price, ids = BREAKDOWN_IDS) {
  * a Chrome Web Store ID (FASH_EXT_IDS is empty until publish).
  *
  * Sources:
- *   /pricing/                          $14.99/mo Pro
- *   /try-on/                           Photoreal vs Instant
+ *   /pricing/                          free during launch
+ *   /try-on/                           one FASHN redraw; Instant removed
  *   index.html FAQ + Multilist copy    photo → Sell everywhere, 11 shops
  *   docs/MULTILIST-ONE-CLICK.md        Load unpacked + Verify session path
  *   docs/MULTILIST_CONNECT.md          Connect status model
@@ -305,11 +305,12 @@ const PRODUCT_FACTS = [
   {
     id: "pricing_plan",
     topics: ["pricing_plan"],
-    title: "fashionistas.ai Pro pricing",
+    title: "fashionistas.ai pricing",
     facts: [
-      "Pro is $14.99 per month (USD), billed monthly, cancel anytime.",
+      "The site is free during launch. There is no Pro charge, no card, and no checkout.",
+      "A question about a $14.99 plan: that price is not being charged. Do not tell the seller to subscribe.",
       "No per-listing fee and no cut of marketplace sales — you keep what the shop pays you.",
-      "Pro includes Sell everywhere, live per-shop status, fee take-home while pricing, and virtual try-on.",
+      "While it is free: Sell everywhere, live per-shop status, fee take-home while pricing, and virtual try-on.",
       "Details: https://fashionistas.ai/pricing/",
     ],
   },
@@ -332,7 +333,7 @@ const PRODUCT_FACTS = [
       "Multilist → Connect opens a guidance panel per marketplace. We never invent API credentials, never take marketplace passwords, never fake auto account creation.",
       "Status model (local): Needs account → Ready to guide → Unverified (manual I've connected) → Connected (extension Verify session saw a live session).",
       "For each shop: open Connect → signup / create-listing URL → create account if needed → stay logged in in this Chrome profile → Verify session.",
-      "Shops with extension adapters include Poshmark, Mercari, Depop, Vinted, Grailed, Facebook, Kidizen, Vestiaire, Whatnot, eBay, Etsy.",
+      "Shops with extension adapters include Poshmark, Mercari, Depop, Vinted, Grailed, Facebook, Vestiaire, Whatnot, eBay, Etsy. Kidizen shut down and is not a shop we list on.",
       "Stored locally as fash_connect_v1. See docs/MULTILIST_CONNECT.md.",
     ],
   },
@@ -352,12 +353,12 @@ const PRODUCT_FACTS = [
   {
     id: "try_on",
     topics: ["try_on"],
-    title: "Virtual try-on: Photoreal vs Instant",
+    title: "Virtual try-on",
     facts: [
-      "Open /try-on/: add a photo of the person and a photo of the garment, then Try it on.",
-      "Photoreal · Pro: full render (fabric/drape/light); needs Pro or a try-on credit; takes about a minute or two.",
-      "Instant · experimental overlay: on-device browser warp/composite for placement only — not photoreal; photos stay on the device; free.",
-      "If Photoreal returns 402, Instant overlay remains available on-device.",
+      "Open /try-on/: add a photo of the person and a photo of the garment, sign in, then See yourself wearing it.",
+      "The only try-on is FASHN VTON 1.5. It redraws the person wearing the garment. It is not a sticker and there is no on-device overlay.",
+      "Signed-in accounts get six renders a day during launch. No Pro plan and no credit pack. The first render after the GPU has been idle can take about a minute; a warm one is about 20–30 seconds.",
+      "If it fails, say so. Do not describe a pasted composite, a Quick preview, or an Instant mode — those were removed.",
       "Download, save or share the render when it completes.",
     ],
   },
@@ -366,7 +367,7 @@ const PRODUCT_FACTS = [
     topics: ["how_to_list", "connect_shops", "chrome_extension", "listing_from_photo"],
     title: "Eleven marketplaces overview",
     facts: [
-      "Eleven shops: Poshmark, Mercari, Depop, Vinted, Grailed, eBay, Etsy, Facebook Marketplace, Kidizen, Vestiaire Collective, Whatnot.",
+      "Ten shops: Poshmark, Mercari, Depop, Vinted, Grailed, eBay, Etsy, Facebook Marketplace, Vestiaire Collective, Whatnot. Kidizen shut down.",
       "Connect each shop once, then Sell everywhere posts to the ones you tick and shows queued / posting / posted.",
       "Signup and create-listing links come from this app's shop catalogue — use those, do not invent URLs or keys.",
     ],
@@ -468,10 +469,10 @@ export function buildRefusal(reason) {
     reason,
     answer:
       "I can help with your closet listings, marketplace fee take-home, connecting shops, " +
-      "the Chrome Crosslister / Sell everywhere setup, try-on (Photoreal vs Instant), " +
-      "listing from a photo, the $14.99/mo plan, and how to list on supported shops — " +
+      "the Chrome Crosslister / Sell everywhere setup, virtual try-on, " +
+      "listing from a photo, pricing (free during launch), and how to list on supported shops — " +
       "nothing outside that (no crypto, medical, or general trivia). Ask about Depop setup, " +
-      "try-on modes, fees, or Multilist Connect.",
+      "try-on, fees, or Multilist Connect.",
     sources: [],
     allowedTopics: ALLOWED_TOPICS,
   };
@@ -487,7 +488,7 @@ Hard rules:
   - "sources" must list at least one context id you actually used: listing ids are numbers, fee ids are strings like "poshmark", site ids are strings like "try_on" or "shop_depop".
   - Every number you state must appear verbatim in LISTINGS, FEES, or SITE. Never invent a listing, brand, price, fee rate, Chrome Web Store ID, or successful post.
   - Be conversational and practical. Prefer step lists for Connect / extension / how-to-list questions.
-  - Getting-started / onboarding questions ("how does this work", "what should I do first", "what about <shop>") ARE in scope: answer them from SITE facts — first steps are photo → draft listing → connect shops → Sell everywhere, plus the $14.99 plan and the try-on modes. Every number and every link must still come verbatim from SITE; never invent numbers or URLs.
+  - Getting-started / onboarding questions ("how does this work", "what should I do first", "what about <shop>") ARE in scope: answer them from SITE facts — first steps are photo → draft listing → connect shops → Sell everywhere. The site is free during launch and try-on is one redraw. Every number and every link must still come verbatim from SITE; never invent numbers or URLs.
   - Greetings and smalltalk ("hey", "how's it going", "thanks", "cool", "nice") ARE in scope: reply warmly in one or two sentences and name what you can help with (a listing from a photo, fee take-home while pricing, connecting shops, try-on). Cite one site source. Never refuse a greeting or a thank-you.
   - Only genuinely out-of-domain questions (trivia, crypto, medical, sports, politics, weather, code help, stocks) get the refusal JSON.
   - If the question is not answerable from the context, reply {"refused": true, "reason": "out_of_scope", "answer": "<one sentence on what you cover>", "sources": []}.`;

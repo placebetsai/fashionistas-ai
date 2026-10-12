@@ -39,7 +39,39 @@ if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; th
   exit 1
 fi
 
-# --- refuse to ship a dirty tree -------------------------------------------
+# --- refuse to ship untested code -------------------------------------------
+# This gate exists because the site has shipped builds nobody ran. Nothing below
+# uploads anything, so a red run costs nothing but the ~45s it took.
+if [ "${SKIP_TESTS:-0}" -eq 1 ]; then
+  echo "deploy-local: SKIP_TESTS=1 — tests were NOT run. This deploy is unverified." >&2
+else
+  echo "deploy-local: running npm test before anything is uploaded ..."
+  if ! npm test; then
+    echo "deploy-local: TESTS FAILED — nothing was uploaded." >&2
+    exit 1
+  fi
+  echo "deploy-local: tests passed."
+fi
+
+# --- refuse to ship an unnamed or unreviewed commit ---------------------------
+# A detached HEAD is what a stash, a bisect or a worktree leaves behind; its
+# SHA describes a state nobody can name afterwards. And every run of this script
+# publishes to fashionistas.ai production, so a stray lane checkout must be a
+# deliberate choice rather than whatever happened to be checked out.
+BRANCH_NOW="$(git branch --show-current)"
+if [ "$DRY_RUN" -eq 0 ]; then
+  if [ -z "$BRANCH_NOW" ] || [ "$BRANCH_NOW" = "HEAD" ]; then
+    echo "deploy-local: detached HEAD — refusing to publish an unnamed commit." >&2
+    exit 1
+  fi
+  if [ "$BRANCH_NOW" != "main" ] && [ "${ALLOW_BRANCH:-}" != "$BRANCH_NOW" ]; then
+    echo "deploy-local: branch '$BRANCH_NOW' is not main, and this script deploys to production." >&2
+    echo "deploy-local: re-run as ALLOW_BRANCH=$BRANCH_NOW npm run deploy if that is intended." >&2
+    exit 1
+  fi
+fi
+
+# --- refuse to ship a dirty tree ---------------------------------------------
 # version.txt must equal the deployed commit. If the working tree has uncommitted
 # changes, the SHA would describe a state that is not what we upload.
 if [ "$DRY_RUN" -eq 0 ] && [ -n "$(git status --porcelain)" ]; then
@@ -49,7 +81,7 @@ if [ "$DRY_RUN" -eq 0 ] && [ -n "$(git status --porcelain)" ]; then
 fi
 
 SHA="$(git rev-parse HEAD)"
-echo "deploy-local: deploying $SHA from $(pwd)"
+echo "deploy-local: deploying $SHA from $(pwd) (branch $BRANCH_NOW)"
 
 # --- extension zip (served from /chrome-store/*.zip on Pages) ----------------
 bash scripts/zip-extension.sh

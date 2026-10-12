@@ -437,7 +437,19 @@ export class TryOnPipeline {
    * @returns {Promise<{ok:boolean, canvas?:object, url?:string,
    *   source:"compose"|"generative", stages:object, error?:string}>}
    */
-  async run({ personImage, garmentImage, width, height, kindOverride = "auto", onStage = null } = {}) {
+  async run() {
+    // The canvas warp that drew the garment on top of the photo is not a try-on.
+    // Kept so an old cached page that still imports this file fails closed
+    // instead of painting a sticker. The live page never calls it.
+    return {
+      ok: false,
+      source: "removed",
+      stages: {},
+      error: "The sticker try-on was removed. The page redraws you wearing the garment."
+    };
+  }
+
+  async _runRetired({ personImage, garmentImage, width, height, kindOverride = "auto", onStage = null } = {}) {
     const stages = { pose: null, compose: null, generative: null, cache: null };
 
     // ── stage 1: pose (best-effort; compose can still proceed without it)
