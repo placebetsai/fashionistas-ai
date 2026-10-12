@@ -8,7 +8,16 @@ node_modules/
 __pycache__/
 *.pyc
 
-# Extension zips are committed so Pages can serve /chrome-store/*.zip
-# (wrangler pages deploy respects .gitignore and would otherwise omit them).
-# Regenerate with: bash scripts/zip-extension.sh
+# Extension zips are NOT committed. They used to be, so Pages could serve
+# /chrome-store/*.zip, but the download was withdrawn: the extension's backend
+# was never built (nothing serves /api/jobs or /api/sessions), so the published
+# zip was a product that could only ever fail. With them tracked, `git add -A`
+# quietly restored them the moment a deploy regenerated one on disk — which is
+# exactly how they came back after being removed in 74c086b.
+#
+# Consequence to know before re-shipping: wrangler uploads what is present on
+# disk, and deploy-local.sh only rebuilds these when SHIP_EXTENSION=1. If you
+# implement the backend and opt in, you will likely also need to drop the
+# `chrome-store/*.zip` line above so the regenerated zip is tracked again.
+chrome-store/*.zip
 version.txt
