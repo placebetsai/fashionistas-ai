@@ -39,6 +39,12 @@ function sync(){var c=q("#seller-coach-panel");var f={"h-app":vis("view-app"),"h
 for(var k in f)if(h.classList.contains(k)!==f[k])h.classList.toggle(k,f[k])}
 new MutationObserver(sync).observe(h,{childList:true,subtree:true,attributes:true,attributeFilter:["class"]});
 d.addEventListener("DOMContentLoaded",sync);})();</script>
+<script>/* Speed: serve the server-embedded market list (shop/item pages) to the app's
+   first anonymous /w/api/market request instead of fetching it again. */
+(function(){var of=window.fetch;if(!of)return;window.fetch=function(u,o){var M=window.__FASH_MARKET__;
+if(M&&u==="/w/api/market"&&!(o&&o.headers&&o.headers.Authorization)){window.__FASH_MARKET__=null;
+return Promise.resolve(new Response(JSON.stringify(M),{status:200,headers:{"Content-Type":"application/json"}}))}
+return of.apply(this,arguments)}})();</script>
 <link rel="preconnect" href="https://fashionistas-api.fashionistas1979.workers.dev">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

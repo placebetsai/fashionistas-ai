@@ -14,12 +14,19 @@
  */
 import { itemHead, injectHead, itemBody, shopBody, injectBody } from "../_lib/item-meta.js";
 
-async function market() {
+async function marketBody() {
   try {
-    const r = await fetch(`${API}/api/market?sort=new`, { headers: { Accept: "application/json" } });
-    if (r.ok) return ((await r.json()) || {}).market || [];
+    const r = await fetch(`${API}/api/market`, { headers: { Accept: "application/json" } });
+    if (r.ok) return (await r.json()) || null;
   } catch (_) {}
-  return [];
+  return null;
+}
+async function market() { const b = await marketBody(); return (b && b.market) || []; }
+/* Speed: hand the app the exact /api/market body the server already fetched, so
+   the first shop/item paint doesn't wait for a second round trip after the JS runs.
+   The shim in index.html serves it once to the app's first anonymous /w/api/market call. */
+function embedMarket(b) {
+  return b && Array.isArray(b.market) ? `<script>window.__FASH_MARKET__=${JSON.stringify(b).replace(/</g, "\\u003c")}</script>` : "";
 }
 
 const API = "https://fashionistas-api.fashionistas1979.workers.dev";
@@ -67,17 +74,19 @@ export async function onRequestGet(context) {
   let body;
   try { body = await shell(context); } catch (_) { return context.next(); }
   // Speed: the homepage hero photos are preloaded in the shell; shop/item never show them.
-  body = body.replace(/<link rel="preload" as="image" href="\/assets\/rd\/[^"]+"[^>]*>/g, "");
+  body = body.replace(/<link rel="preload" as="image" href="\/assets\/rd\/[^"]+"[^>]*>/g, "")
+    .replace('<img src="/assets/rd/thrift-hands.webp" alt="" width="900" height="600" fetchpriority="high">', '<img src="/assets/rd/thrift-hands.webp" alt="" width="900" height="600" loading="lazy" decoding="async">');
 
   if (!idStr) {
-    const items = await market();
+    const mb = await marketBody();
+    const items = (mb && mb.market) || [];
     return new Response(
       injectHead(
         injectBody(demoteShellH1(body), shopBody(items)),
         `<title>Shop — fashionistas.ai</title>` +
           `<meta name="description" content="Everything for sale on fashionistas.ai — clothing, decor and objects listed by real sellers. One photo in, every shop updated.">` +
           `<link rel="canonical" href="${origin}/shop">` +
-          lcpPreload(items.slice(0, 2).map((m) => m && m.photo_url))
+          lcpPreload(items.slice(0, 2).map((m) => m && m.photo_url)) + embedMarket(mb)
       ),
       { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" } }
     );
@@ -90,7 +99,7 @@ export async function onRequestGet(context) {
     });
   }
 
-  const morePromise = market(); // in parallel with the listing fetch
+  const morePromise = marketBody(); // in parallel with the listing fetch
   let listing = null;
   let missing = false;
   try {
@@ -123,8 +132,9 @@ export async function onRequestGet(context) {
   const sellerUser = String(listing.seller && listing.seller.username || "").trim().toLowerCase();
   const sellerName = String(listing.seller && (listing.seller.display_name || listing.seller.username) || "").trim().toLowerCase();
   const demoSeller = sellerUser === "demo" || sellerName === "demo";
-  const more = await morePromise;
-  return new Response(injectHead(injectBody(demoteShellH1(body), itemBody(listing, more)), itemHead(listing, origin) + lcpPreload([listing.photo_url]), { noindex: demoSeller }), {
+  const mb = await morePromise;
+  const more = (mb && mb.market) || [];
+  return new Response(injectHead(injectBody(demoteShellH1(body), itemBody(listing, more)), itemHead(listing, origin) + lcpPreload([listing.photo_url]) + embedMarket(mb), { noindex: demoSeller }), {
     headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" },
   });
 }
