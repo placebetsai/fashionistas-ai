@@ -1,5 +1,52 @@
 # Agent handoff — fashionistas.ai
 
+## LATEST — 2026-10-13 ~15:10 ET: SHIPPED TO PRODUCTION (read this first)
+
+Production `fashionistas.ai` = git `main` @ `41a9b34` (local only, never pushed). Branches: `oneclick` (c375bea), `blog-preview` (= main), `seo-index` (~/fa-seo-index), `blog-batch` (~/fa-blog). The sections below this one are older and some say "preview only". They are superseded.
+
+**Shipped today (in order)**
+| What | Pages deploy | Rollback to |
+|---|---|---|
+| oneclick site (fa032f2: passkey sign-in, try-on redesign + flat-lay fix, /setup/ helper, List everywhere). Deployed by another agent ~14:32 ET | `1cd79547` | `9bfc53bf` (551fa31) |
+| Worker `fashionistas-api` version `e32faf7d` at 100% (passkeys, one-tap account, warm, from-link) | wrangler versions deploy | Worker version `7d5480ce` (`wrangler versions deploy 7d5480ce-8471-483d-8b55-63ba62d22fe8@100% --name fashionistas-api`) |
+| + seo-index merge (c375bea: SSR item/shop HTML, real footer links, sitemap without demo/noindex items, robots `Disallow: /w/`, 301 bare fashionistas-ai.pages.dev → fashionistas.ai, SSR block hidden once the app is up) | `7517d8b9` | `1cd79547` |
+| + blog (41a9b34: 20 posts in /blog/ + index, 21 sitemap lines, Blog in main nav and footer, blog header = site logo/wordmark, sticky, follows system light/dark) | `b150f833` | `7517d8b9` |
+Roll back Pages with `wrangler pages deployment rollback`, or in the dashboard: Deployments → the ID → Rollback.
+
+Prod Pages secrets: GPU_PROVIDER, GROQ_API_KEY, MAX_MONTHLY_TRYON_SPEND (cap $6 kept), MODAL_ENDPOINT, MODAL_PROXY_KEY/SECRET, MODAL_TOKEN, REPLICATE_API_TOKEN, SESSION_SECRET, TRYON_TEST_EMAILS. `WORKER_UPSTREAM` is preview-only on purpose.
+
+**Verified on production** (Playwright): passkey sign-up and paste-a-Poshmark-link try-on produce a real result on Pixel 7 and Galaxy 360, light and dark (4/4, 41–98 s incl. cold GPU); remembered photo works. /setup/ flow 6/6. 72-check regression on c375bea: all PASS. Blog: 21/21 URLs 200, nav and footer link present, header sticky, light/dark, no JS errors. 200 on /, /shop/, /setup/, /try-on/, /guide/, /blog/, robots, sitemap; bare pages.dev 301. Screenshots: `/workspace/oneclick-qa/final/`, `/workspace/oneclick-qa/blog-*.png`, `/workspace/fash-bench/reg-final*/`.
+
+**Audit:** `/workspace/audits/fashionistas-indexing-2026-10-13.md` (box).
+
+**Still broken / not true**
+- No auto-post to any shop. eBay/Etsy need keys. Poshmark/Depop/Mercari/Vinted/Grailed are copy-and-open only. The extension is not on the Chrome Web Store.
+- Try-on from links: eBay and Vinted return 403 to Cloudflare egress, and a stale Depop URL gave 410. Only Poshmark is proven.
+- Home/shop/item pages are slow on phones (Lighthouse 35–63, LCP 6–9 s): 1,400-line inline index.html, 325 KB bundle, AdSense.
+- Shop: only 1 real seller item. 4 demo items are noindex. 24 stale /shop/<id> items still return 200. 141 id probes are 404.
+- Main menu links are still `javascript:` (enterBrowse/go), so crawlers rely on the footer and SSR links.
+- Try-on spend cap is $6/mo, so it stops when that's hit. The GPU scales to zero, so cold starts take 60–150 s. Always-warm ≈ $580/mo, evening window ≈ $120/mo, not enabled.
+- Previews share the production D1 database (QA users exist: seller7512, qabuyer…, qa10135148).
+- Google One Tap and magic link are built but dark.
+
+**Next scalability plan**
+1. Speed: split the app bundle per route, move inline head CSS/JS out, server-render the shop grid, defer AdSense (update the pinned test). Target LCP < 2.5 s.
+2. Separate preview D1 (binding per environment) so tests stop writing prod rows.
+3. Try-on capacity: queue + per-user rate limit in KV, evening warm window when traffic justifies it, raise the cap with the user's OK.
+4. Real inventory: seller onboarding via /setup/, retire the 24 stale items (410), real listings.
+5. eBay/Etsy direct post the day keys arrive (code already in the Worker channels.js), then publish the extension.
+6. Crawlable `<a href>` main nav; image CDN resizing.
+
+**USER-ONLY (Iz)**
+- eBay: `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`, `EBAY_RU_NAME`, `EBAY_ENV` + payment/return/fulfillment policy IDs (developer.ebay.com, then Business Policies).
+- Etsy: `ETSY_API_KEY`, `ETSY_API_SECRET`.
+- $5 Chrome Web Store developer account (publish the extension).
+- `GOOGLE_CLIENT_ID` (One Tap), `RESEND_API_KEY` (magic link).
+- Search Console: resubmit sitemap.xml and "Validate fix" on the Page indexing issues, using the Google account that owns the property.
+- Stripe + a legal entity (only when charging; site is free now).
+- Real listings.
+- An analytics token.
+
 ## LATEST — 2026-10-13 ET (read this first)
 
 **Setup assistant + List everywhere, 2026-10-13 ~13:30 ET (preview, commits dbc51ec, 3721416, + this).** New `/setup/` page: chat-style one-step-per-screen stepper, sticky header with progress, detects Android/iPhone/desktop Chrome. Per shop: Open <shop> (login page; App Link opens the app on phones) → I'm signed in / I don't sell there. State in localStorage `fash_setup_v1` and it writes `fash_lw_shops_v1`, so the wizard's step 4 pre-selects exactly the shops set up; reopening `/setup/` shows "You're set". No passwords or cookies touched. eBay/Etsy steps show "Coming soon" because `GET /api/ebay/status` now returns `configured` (false: no `EBAY_CLIENT_ID`/`EBAY_SANDBOX_CLIENT_ID`); Worker secrets are only GROQ_API_KEY, HIVE_TOKEN, HIVE_URL, MOD_TOKEN, SESSION_SECRET. Missing for direct post: `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`, `EBAY_RU_NAME`, `EBAY_ENV` (+ payment/return/fulfillment policy IDs), `ETSY_API_KEY`, `ETSY_API_SECRET`. Chrome extension is NOT on the Chrome Web Store (searched 2026-10-13); desktop step says "Coming soon" — publishing needs Iz's $5 developer account and Google review. Wizard (`listing-wizard.js?v=4`): "Set up your shops once" button on step 4 and the post screen; post button renamed "List everywhere · N shops" (walks each shop: copies its kit + opens its sell page; extension path if installed). QA: `/workspace/oneclick-qa/list-setup-{pixel7,g360,desktop}-{light,dark}-{top,poshmark,ebay,done-scrolled}.png`, 6/6 flows pass, no overflow, no JS errors; regression `/workspace/fash-bench/reg.js` all PASS. Deploys went from a temporary clean worktree because another agent had uncommitted try-on edits in the main tree (left untouched, not committed by me).
