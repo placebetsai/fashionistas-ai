@@ -159,6 +159,16 @@ export async function requireAuth(request, env) {
     }
   }
 
+  // Preview branches have no SESSION_SECRET. When WORKER_UPSTREAM is set
+  // (preview only), let the Worker that signed the token say whether it is
+  // valid. Production has SESSION_SECRET and never reaches this.
+  if (token.indexOf(".") > 0 && env && !env.SESSION_SECRET && env.WORKER_UPSTREAM) {
+    try {
+      const r = await fetch(String(env.WORKER_UPSTREAM).replace(/\/+$/, "") + "/api/auth/me", { headers: { Authorization: "Bearer " + token } });
+      if (r.ok) { const d = await r.json(); if (d && d.id) return { ok: true, user: { id: d.id, email: "" }, token }; }
+    } catch {}
+  }
+
   const db = getDB(env);
   if (!db) {
     return {

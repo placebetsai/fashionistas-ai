@@ -461,6 +461,16 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
   // The only try-on is FASHN VTON 1.5 on Modal: it redraws the person wearing
   // the garment. There is no on-device sticker path.
   var API_HD = "/api/tryon/hd";
+  // Wake the GPU while the buyer is still choosing photos (see /api/tryon/warm).
+  var gpuState = "unknown", warmAt = 0;
+  function warmGpu(){
+    var t = ""; try { t = localStorage.getItem("fash_token") || ""; } catch (e) {}
+    if (!t || Date.now() - warmAt < 110000) return;
+    warmAt = Date.now();
+    fetch("/api/tryon/warm", { method:"POST", headers:{ Authorization:"Bearer " + t } })
+      .then(function(r){ return r.json(); }).then(function(j){ if (j && j.state) gpuState = j.state; }).catch(function(){});
+  }
+  try { warmGpu(); } catch (e) {}
   var mode = "hd";
   var kindPick = "auto";
   var CROP_MSG = "Photo too cropped — we need your head to your knees. Stand back about 2 m (6 ft), hold the phone at chest height, and keep your whole body from head to knees in the frame.";
@@ -535,6 +545,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
       return;
     }
     files[kind] = file;
+    try { warmGpu(); } catch (e) {}
     var grid = document.querySelector(".to-grid");
     if (grid) grid.hidden = false;
     $("name-person");
@@ -905,11 +916,13 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
     fd.append("category", parts[2]);
     say("Uploading and starting the render…", false);
     // The render can take 20 s warm, up to ~90 s when the GPU is waking up.
-    var EST = 45000;
+    var warmMs = warmAt ? Date.now() - warmAt : 0;
+    var EST = gpuState === "warm" || warmMs > 150000 ? 25000 : Math.max(30000, 170000 - warmMs);
     var ticker = setInterval(function(){
       var el = Date.now() - t0;
       prog(Math.min(0.92, el / EST));
-      say("Rendering your photoreal try-on… " + Math.round(el / 1000) + "s" + (el > 30000 ? " (waking up the GPU — first render of the day takes longer)" : ""), false);
+      var left = Math.max(5, Math.round((EST - el) / 1000));
+      say("Redrawing you in it… " + Math.round(el / 1000) + "s" + (EST > 40000 ? " · the try-on engine was asleep, about " + left + "s more. After this one it takes ~20s." : " · usually about 20s"), false);
     }, 1000);
     var stopTick = function(x){ clearInterval(ticker); return x; };
     function wake(){
@@ -922,12 +935,12 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
         // A cold GPU can outlive Cloudflare's proxy. The container is awake
         // after that, so one more call returns the worn photo. Never a paste.
         stopTick();
-        if (attempt < 1) throw wake();
+        if (attempt < 2) throw wake();
         throw e;
       })
       .then(function(res){
         if (res && res.status === 202) return res.json().then(function(j){ return pollJob(j.job, t0); });
-        if (res && !res.ok && attempt < 1 && (res.status === 502 || res.status === 503 || res.status === 504 || res.status >= 520)) {
+        if (res && !res.ok && attempt < 2 && (res.status === 502 || res.status === 503 || res.status === 504 || res.status >= 520)) {
           throw wake();
         }
         return res;
@@ -970,7 +983,8 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
         });
       });
     }).catch(function(e){
-      if (e && e.wake && attempt < 1) {
+      if (e && e.wake && attempt < 2) {
+        gpuState = "waking";
         say("The model was waking up. Rendering you wearing it now.", false);
         return runHd(attempt + 1);
       }
