@@ -265,3 +265,30 @@ export function injectHead(html, head, opts = {}) {
   if (rest && /<\/head>/i.test(out)) return out.replace(/<\/head>/i, `${rest}\n</head>`);
   return rest ? `${rest}\n${out}` : out;
 }
+
+/**
+ * Server-rendered, crawlable body content. /shop and /shop/<id> used to ship the
+ * homepage body byte-for-byte (only the <head> differed), so Google saw every
+ * item page as a duplicate of "/" and dropped it. This puts the item's real
+ * text, photo and links into the HTML itself, at the <!--SSR-SEO--> marker.
+ * Once the app view is on screen it renders the same item itself, so the block
+ * is hidden then (still in the DOM, links still crawlable) to avoid showing it twice.
+ */
+const e2 = (v) => String(v == null ? "" : v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const wrap = (inner) => `<style>body:has(#view-app:not(.hidden)) .ssr-seo{display:none}</style><section class="ssr-seo" style="max-width:1080px;margin:24px auto;padding:0 18px;color:var(--ink,#111)">${inner}</section>`;
+export function itemBody(l, more = []) {
+  const facts = [l.brand, l.size && `Size ${l.size}`, l.condition && `Condition: ${l.condition}`, l.category, l.color].filter(Boolean).map(e2).join(" · ");
+  const img = l.photo_url ? `<img src="${e2(l.photo_url)}" alt="${e2(l.title || "Item for sale")}" width="480" height="480" loading="lazy" style="max-width:100%;height:auto;border-radius:12px">` : "";
+  const links = more.filter((m) => m && m.id && m.id !== l.id).slice(0, 12).map((m) => `<li><a href="/shop/${Number(m.id)}">${e2(m.title || "Item")}${m.price ? ` · $${Number(m.price)}` : ""}</a></li>`).join("");
+  return wrap(`<nav aria-label="Breadcrumb" style="font-size:13px"><a href="/">Home</a> › <a href="/shop">Shop</a></nav>
+<h1>${e2(l.title || "Listing")}</h1>${l.price ? `<p style="font-size:20px;font-weight:800">$${Number(l.price)}</p>` : ""}${img}
+${facts ? `<p>${facts}</p>` : ""}${l.description ? `<p>${e2(String(l.description).slice(0, 1200))}</p>` : ""}
+<p><a href="/try-on/">Try it on with your own photo</a></p>${links ? `<h2>More in the shop</h2><ul>${links}</ul>` : ""}`);
+}
+export function shopBody(items = []) {
+  const li = items.filter((m) => m && m.id).map((m) => `<li><a href="/shop/${Number(m.id)}">${e2(m.title || "Item")}${m.price ? ` · $${Number(m.price)}` : ""}</a></li>`).join("");
+  return wrap(`<h1>Shop secondhand clothing, decor and more</h1><p>Everything for sale on fashionistas.ai, listed by real sellers. Open any item to try it on with your own photo.</p>${li ? `<ul>${li}</ul>` : ""}<p><a href="/guide/">How to sell on Poshmark, eBay, Depop and more</a></p>`);
+}
+export function injectBody(html, block) {
+  return String(html).includes("<!--SSR-SEO-->") ? String(html).replace("<!--SSR-SEO-->", block) : String(html).replace(/<\/body>/i, `${block}</body>`);
+}

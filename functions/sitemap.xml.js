@@ -13,6 +13,8 @@
 const API = "https://fashionistas-api.fashionistas1979.workers.dev";
 const iso = (v) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : new Date().toISOString().slice(0, 10));
 
+const isDemo = (it) => { const s = it.seller || {}; return [s.username, s.display_name].some((v) => String(v || "").trim().toLowerCase() === "demo"); };
+
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
   const origin = url.origin;
@@ -32,7 +34,7 @@ export async function onRequestGet({ request, env }) {
   } catch (_) {}
 
   const urls = items
-    .filter((it) => it && it.id)
+    .filter((it) => it && it.id && !isDemo(it))
     .map(
       (it) =>
         `  <url><loc>${origin}/shop/${Number(it.id)}</loc><lastmod>${iso(it.listed_at)}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`

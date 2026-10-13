@@ -12,7 +12,15 @@
  * (still shell, so the SPA can say "no longer for sale"), and if the Worker is
  * unreachable we fall back to a plain 200 shell rather than lying either way.
  */
-import { itemHead, injectHead } from "../_lib/item-meta.js";
+import { itemHead, injectHead, itemBody, shopBody, injectBody } from "../_lib/item-meta.js";
+
+async function market() {
+  try {
+    const r = await fetch(`${API}/api/market?sort=new`, { headers: { Accept: "application/json" } });
+    if (r.ok) return ((await r.json()) || {}).market || [];
+  } catch (_) {}
+  return [];
+}
 
 const API = "https://fashionistas-api.fashionistas1979.workers.dev";
 
@@ -54,9 +62,10 @@ export async function onRequestGet(context) {
   try { body = await shell(context); } catch (_) { return context.next(); }
 
   if (!idStr) {
+    const items = await market();
     return new Response(
       injectHead(
-        body,
+        injectBody(demoteShellH1(body), shopBody(items)),
         `<title>Shop — fashionistas.ai</title>` +
           `<meta name="description" content="Everything for sale on fashionistas.ai — clothing, decor and objects listed by real sellers. One photo in, every shop updated.">` +
           `<link rel="canonical" href="${origin}/shop">`
@@ -104,7 +113,8 @@ export async function onRequestGet(context) {
   const sellerUser = String(listing.seller && listing.seller.username || "").trim().toLowerCase();
   const sellerName = String(listing.seller && (listing.seller.display_name || listing.seller.username) || "").trim().toLowerCase();
   const demoSeller = sellerUser === "demo" || sellerName === "demo";
-  return new Response(injectHead(demoteShellH1(body), itemHead(listing, origin), { noindex: demoSeller }), {
+  const more = await market();
+  return new Response(injectHead(injectBody(demoteShellH1(body), itemBody(listing, more)), itemHead(listing, origin), { noindex: demoSeller }), {
     headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" },
   });
 }

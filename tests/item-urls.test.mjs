@@ -69,7 +69,7 @@ test("a cold /shop/<id> opens that item, guest or not", () => {
 });
 
 test("the shop route serves a head for a live item, 404 for a dead one", () => {
-  assert.match(shopFn, /import \{ itemHead, injectHead \} from "\.\.\/_lib\/item-meta\.js";/);
+  assert.match(shopFn, /import \{ itemHead, injectHead[^}]*\} from "\.\.\/_lib\/item-meta\.js";/);
   assert.match(shopFn, /env\.ASSETS\.fetch/, "shell comes from the asset layer");
   assert.match(shopFn, /status: missing \? 404 : 200/, "an honest status code");
   assert.match(shopFn, /status: 404/, "non-numeric ids are 404");
