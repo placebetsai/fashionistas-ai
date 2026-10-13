@@ -1247,3 +1247,10 @@ npx wrangler pages deployment list --project-name=fashionistas-ai
 - Rollback: f408459d-5d27-4523-acbd-0d7711c8f6d3 (1c174ff, flicker fix only). Older: 45b2aecb-3cf5-4659-9a88-b3090771bbec (58af13b).
 - Deployed via scripts/deploy-local.sh (no DEPLOY_BRANCH) after rm -rf node_modules/.cache/wrangler and unsetting CF_ACCOUNT_ID; version.txt verified == 2eb3f16; /.env* /.git/config 404.
 - Live QA (Pixel 7 + Galaxy 360, light+dark, landing + demo app): header pinned (top 0) and tab bar visible at y=0 and y=2000; 0 JS errors; Shop "Try it on" vs chat button overlap 0/26 and 0/27 positions; "What's next" menu row opens the checklist; DOM mutations 13 per 3s (hero word rotators), identical to the rollback deploy; layout shift 0.
+
+### SPEED round 3 (branch `speed`, preview only)
+- Shop is hydrated in place: the SSR grid (`#market-grid[data-ssr]`) is wired up by `hydrateShop()` in the app bundle rather than redrawn, so the painted images stay (verified: the LCP IMG is the server node, nothing is removed).
+- `lateScripts(html,{home})` in `functions/_lib/prerender.js`: app scripts start after the first frames are painted, then on idle (home 2.5 s timeout, shop/item 1.5 s), or at once on the first tap/key, for a signed-in visitor (`fash_token`), or on home with a query/hash. Taps on buttons/[onclick] made before boot are held and replayed. Plain links navigate normally.
+- `functions/index.js` applies that to `/`.
+- content-visibility is now only on `#land-showcase` (on `#land-start` it hid `#oneclick` from the regression suite).
+- Resize-on-upload still needs a Worker deploy. Until then, re-run `scripts/backfill-thumbs.py` after uploads (a missing thumb falls back to the original via a 302).
