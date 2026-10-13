@@ -35,3 +35,8 @@
 .pc-kw{padding:4px 14px 0;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
 .pc-t{padding:0 14px;font-weight:800;font-size:17px;line-height:1.3}.pc-d{padding:0 14px 14px;font-size:14px;color:var(--mut);line-height:1.45}
 .postcard:hover,.relcard:hover{border-color:var(--accent)}
+/* header matches the main site: tile logo + serif wordmark */
+.blog-brand{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);min-height:44px}
+.blog-brand img{width:36px;height:36px;border-radius:10px;flex:none}
+.blog-brand .bn{font-family:var(--display,"Instrument Serif",Georgia,serif);font-weight:400;font-size:23px;line-height:1;letter-spacing:-.015em;white-space:nowrap}
+.blog-brand .wai{font-style:italic;color:#e2412b;-webkit-text-fill-color:#e2412b;background:none}
