@@ -45,7 +45,7 @@ async function robotsAllows(u) {
 }
 const meta = (html, prop) => {
   const re = new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]*content=["']([^"']+)["']|<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']${prop}["']`, "i");
-  const m = re.exec(html); return m ? (m[1] || m[2]).replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'") : null;
+  const m = re.exec(html); return m ? (m[1] || m[2]).replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#x?([0-9a-f]+);/gi, (m, n) => String.fromCodePoint(parseInt(n, /x/i.test(m) ? 16 : 10))).replace(/[\u200e\u200f]/g, "") : null;
 };
 
 export async function onRequestGet({ request, env }) {

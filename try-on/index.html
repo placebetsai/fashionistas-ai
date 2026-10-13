@@ -696,7 +696,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
   }
 
   (function prefillOwnCloset(){
-    if (new URLSearchParams(location.search).get("item")) return; // buyer link already loads it
+    var _q = new URLSearchParams(location.search); if (_q.get("item") || _q.get("shared_url") || _q.get("shared_text")) return; // buyer link already loads it
     var token = null;
     try { token = localStorage.getItem("fash_token"); } catch (e) {}
     if (!token) { loadShopStrip(); return; }
@@ -1168,7 +1168,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
   } catch (e) {}
 })();
 </script>
-<script>
+<script type="module">
 (function(){
   var setFile = window.__toSetFile; if (!setFile) return;
   var cb = document.getElementById("remember-me"), fg = document.getElementById("forget-me");
