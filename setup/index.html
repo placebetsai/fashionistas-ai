@@ -25,6 +25,7 @@ main{max-width:560px;margin:0 auto;padding:18px 16px 120px}
 .acts{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:grid;gap:8px}
 .acts>div{max-width:560px;margin:0 auto;width:100%;display:grid;gap:8px}
 .btn{display:block;width:100%;text-align:center;border:0;border-radius:14px;padding:15px;font:600 16px system-ui,sans-serif;background:var(--acc);color:#fff;text-decoration:none;cursor:pointer}
+.btn.t{background:transparent;color:var(--mut);padding:8px;font-weight:500}
 .btn.g{background:transparent;color:var(--ink);border:1px solid var(--line)}
 .list{display:grid;gap:8px;margin:6px 0 0;padding:0;list-style:none}
 .list li{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
@@ -67,7 +68,7 @@ function logo(s){return '<i class="logo" style="background:'+s.c+'">'+s.l+'</i>'
 function st(id){var v=S.shops[id];return v==="connected"?'<span class="st ok">Connected</span>':v==="ready"?'<span class="st ok">Signed in ✓</span>':v==="skip"?'<span class="st">Skipped</span>':v==="soon"?'<span class="st">Coming soon</span>':'<span class="st">Not set up</span>'}
 var STEPS=["hi"].concat(SHOPS.map(function(s){return s.id}),["done"]);
 function head(){var n=STEPS.length-1;$("bar").style.width=Math.round(S.i/n*100)+"%";$("hs").textContent=S.i===0?"About 2 minutes · only once":S.i>=n?"All set":"Step "+S.i+" of "+(n-1)}
-function acts(btns){$("a").innerHTML=btns.map(function(b,k){return b.href?'<a class="btn'+(b.g?" g":"")+'" href="'+b.href+'" target="_blank" rel="noopener" data-k="'+k+'">'+esc(b.t)+'</a>':'<button type="button" class="btn'+(b.g?" g":"")+'" data-k="'+k+'">'+esc(b.t)+'</button>'}).join("");
+function acts(btns){$("a").innerHTML=btns.map(function(b,k){return b.href?'<a class="btn'+(b.g?" g":"")+(b.x?" t":"")+'" href="'+b.href+'" target="_blank" rel="noopener" data-k="'+k+'">'+esc(b.t)+'</a>':'<button type="button" class="btn'+(b.g?" g":"")+(b.x?" t":"")+'" data-k="'+k+'">'+esc(b.t)+'</button>'}).join("");
   [].forEach.call($("a").children,function(el){var b=btns[+el.getAttribute("data-k")];el.addEventListener("click",function(){b.f&&b.f()})})}
 function go(i){S.i=Math.max(0,Math.min(STEPS.length-1,i));save();render();window.scrollTo(0,0)}
 function next(){go(S.i+1)}
@@ -76,7 +77,7 @@ function render(){
  head();var k=STEPS[S.i],h="";
  if(k==="hi"){
   h+='<div class="bub"><p>Hi! I\'ll get you set up to list everywhere. You do this <b>once</b> — after that every item goes out with one tap.</p></div>';
-  h+='<div class="bub"><p>You\'re on a <b>'+esc(dev)+'</b>. '+(isMobile?'On phones the shop apps keep you signed in, so for each shop we just make sure you\'re signed in there. When you list, we copy your listing and open that shop with your photos ready.':'On a computer you sign in to each shop in this browser. When you list, we copy the listing and open each shop\'s sell page in a new tab.')+'</p><p>We never ask for or store your shop passwords.</p></div>';
+  h+='<div class="bub"><p>You\'re on '+(/^[AEIOU]/.test(dev)?'an':'a')+' <b>'+esc(dev)+'</b>. '+(isMobile?'On phones the shop apps keep you signed in, so for each shop we just make sure you\'re signed in there. When you list, we copy your listing and open that shop with your photos ready.':'On a computer you sign in to each shop in this browser. When you list, we copy the listing and open each shop\'s sell page in a new tab.')+'</p><p>We never ask for or store your shop passwords.</p></div>';
   h+='<ul class="list">'+SHOPS.map(function(s){return '<li>'+logo(s)+'<span>'+s.n+'</span>'+st(s.id)+'</li>'}).join("")+'</ul>';
   $("m").innerHTML=h;acts([{t:"Let's go",f:next}]);return;
  }
@@ -96,7 +97,7 @@ function render(){
    acts([{t:"Connect "+s.n,f:function(){location.href=s.oauth==="ebay"?"/api/ebay/oauth/start?return=/setup/":"/api/etsy/oauth/start"}},{t:"Skip",g:1,f:function(){set(s.id,"skip");next()}}]);return}
   h+='<div class="bub"><p><span class="tag">Coming soon</span></p><p>Direct posting to '+s.n+' is almost ready — it needs '+s.n+'\'s approval on our side. Until then, List everywhere copies your listing and opens '+s.n+'\'s sell page, like the other shops.</p></div>';
   h+='<div class="bub"><p>Are you signed in to '+s.n+' on this '+(isMobile?"phone":"browser")+'?</p></div>';
-  $("m").innerHTML=h;acts([{t:"Open "+s.n+" to sign in",href:s.login,f:function(){S.pending=s.id;save()}},{t:"I'm signed in",f:function(){set(s.id,"ready");next()}},{t:"I don't sell on "+s.n,g:1,f:function(){set(s.id,"skip");next()}}]);return;
+  $("m").innerHTML=h;acts([{t:"Open "+s.n+" to sign in",href:s.login,f:function(){S.pending=s.id;save()}},{t:"I'm signed in",g:1,f:function(){set(s.id,"ready");next()}},{t:"I don't sell on "+s.n,x:1,f:function(){set(s.id,"skip");next()}}]);return;
  }
  if(isMobile){
   h+='<div class="bub"><p>Do you have the '+s.n+' app on this phone, and are you signed in?</p></div>';
@@ -107,7 +108,7 @@ function render(){
  }
  if(S.shops[s.id]==="ready")h+='<div class="bub me">Done — signed in ✓</div>';
  $("m").innerHTML=h;
- acts([{t:"Open "+s.n,href:s.login,f:function(){S.pending=s.id;save()}},{t:"I'm signed in",f:function(){set(s.id,"ready");next()}},{t:"I don't sell on "+s.n,g:1,f:function(){set(s.id,"skip");next()}}]);
+ acts([{t:"Open "+s.n,href:s.login,f:function(){S.pending=s.id;save()}},{t:"I'm signed in",g:1,f:function(){set(s.id,"ready");next()}},{t:"I don't sell on "+s.n,x:1,f:function(){set(s.id,"skip");next()}}]);
 }
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&S.pending&&STEPS[S.i]===S.pending){var b=$("a").children[1];if(b){b.focus();b.style.outline="3px solid var(--acc)";}}});
 render();
