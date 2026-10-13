@@ -43,7 +43,7 @@
     done(d);
   }
   async function passkeyCreate() {
-    var name = (document.getElementById("oc-name") || {}).value || "";
+    var name = "";
     if (condAbort) { try { condAbort.abort(); } catch (e) {} condAbort = null; }
     var o = await post("/api/auth/passkey/register-options", { name: name.trim() });
     var pk = o.publicKey;
@@ -70,23 +70,25 @@
 
   box.innerHTML =
     '<div class="oc">' +
+    '<div class="oc-head"><img src="/assets/fashionistas-app-icon-512.svg" alt="" width="44" height="44"><b>fashionistas<span>.ai</span></b><p>Try clothes on before you buy. Sell yours in a snap.</p></div>' +
     (hasPK ? '<button type="button" class="btn btn-primary oc-btn" id="oc-pk-in"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 10a2 2 0 0 0-2 2c0 2.5-.5 4.5-1.5 6"/><path d="M14 12c0 3-.6 5.6-1.6 7.6"/><path d="M7.3 7.5A6 6 0 0 1 18 12c0 1.6-.1 3.1-.4 4.5"/><path d="M6 12c0 1.7-.3 3.2-.9 4.5"/><path d="M4.6 5.6A9 9 0 0 1 21 12"/></svg><span>Sign in with fingerprint</span></button>' +
-      '<div class="oc-or">New here?</div>' +
-      '<input class="input oc-name" id="oc-name" placeholder="Your name or shop name (optional)" autocomplete="nickname" maxlength="40">' +
-      '<button type="button" class="btn btn-accent oc-btn" id="oc-pk-new"><span>Create my account with one tap</span></button>' : '') +
+      '<button type="button" class="btn btn-accent oc-btn" id="oc-pk-new"><span>New here? Create an account</span></button>' : '') +
+    '<button type="button" class="oc-more" id="oc-more" aria-expanded="false">Other ways to sign in</button>' +
+    '<div id="oc-other" hidden>' +
     '<div id="oc-google" class="oc-google" hidden></div>' +
     '<form id="oc-mail" class="oc-mail" hidden><input class="input" id="oc-email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required><button class="btn btn-soft" type="submit"><span>Email me a link</span></button></form>' +
-    '<p class="oc-note" id="oc-msg">No password needed. Your phone keeps you signed in.</p>' +
-    '<button type="button" class="oc-more" id="oc-more" aria-expanded="false">Use a username and password instead</button>' +
-    '</div>';
+    '<p class="oc-note" id="oc-msg"></p>' +
+    '</div></div>';
 
   // Old username/password UI stays, folded under one link.
   var tabs = document.getElementById("auth-tab-login"), legacy = [];
   if (tabs) legacy.push(tabs.parentElement);
   ["auth-login", "auth-signup"].forEach(function (id) { var n = document.getElementById(id); if (n) legacy.push(n); });
-  var wrap = document.createElement("div"); wrap.id = "oc-legacy"; wrap.hidden = true;
-  if (legacy.length) { legacy[0].parentNode.insertBefore(wrap, legacy[0]); legacy.forEach(function (n) { wrap.appendChild(n); }); }
-  document.getElementById("oc-more").onclick = function () { wrap.hidden = !wrap.hidden; this.setAttribute("aria-expanded", String(!wrap.hidden)); if (!wrap.hidden) { var i = document.getElementById("login-u"); if (i) i.focus(); } };
+  var wrap = document.createElement("div"); wrap.id = "oc-legacy";
+  var other = document.getElementById("oc-other");
+  if (legacy.length) { legacy.forEach(function (n) { wrap.appendChild(n); }); other.appendChild(wrap); }
+  document.getElementById("oc-more").onclick = function () { other.hidden = !other.hidden; this.setAttribute("aria-expanded", String(!other.hidden)); };
+  var card = box.closest(".land-card"); if (card) card.classList.add("oc-sheet");
 
   if (hasPK) {
     var bin = document.getElementById("oc-pk-in"), bnew = document.getElementById("oc-pk-new");

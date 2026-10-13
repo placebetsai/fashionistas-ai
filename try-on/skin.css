@@ -1,0 +1,44 @@
+/* try-on skin 2026-10-13: shopping app, not a console. Uses site.css tokens so
+   light and dark match the app (html[data-theme]). Loaded after the inline style. */
+:root{--mono:var(--font);--cyan:var(--accent)}
+body{background:var(--bg)!important;color:var(--ink)}
+.to-sky,.hud-tel,.hud-tag,.to-rot,.to-badge,#ok,.to-prog,.to-ic,.sheen::after{display:none!important}
+.to-h1{font-family:var(--display,"Instrument Serif",Georgia,serif)!important;font-weight:400!important;font-size:clamp(34px,8vw,56px)!important;line-height:1.02!important;letter-spacing:-.02em!important;text-transform:none!important;margin:8px 0 6px!important}
+.to-h1 .w{animation:none!important;opacity:1!important;transform:none!important;background:none!important;-webkit-text-fill-color:currentColor!important}
+.to-lede{font-size:15px!important;color:var(--mut)!important;max-width:52ch;margin:0 0 14px!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.to-card{background:var(--card)!important;border:1px solid var(--line)!important;border-radius:24px!important;box-shadow:0 10px 40px rgba(0,0,0,.08)!important;padding:16px!important;backdrop-filter:none!important}
+.to-card *{letter-spacing:normal!important;text-transform:none!important}
+.to-grid{grid-template-columns:1fr 1fr!important;gap:10px!important}
+.to-zone{background:var(--bg-tint)!important;border:1.5px dashed var(--line-2)!important;border-radius:18px!important;min-height:150px;padding:12px!important;box-shadow:none!important;text-align:center}
+.to-zone.has{border-style:solid!important;border-color:var(--line)!important}
+.to-zone-t{font-size:15px!important;font-weight:700!important;color:var(--ink)!important}
+.to-name{font-size:12.5px!important;color:var(--mut)!important;word-break:normal!important}
+.to-zone img{border-radius:12px!important;max-height:190px;object-fit:cover}
+.to-link{margin:12px 0 4px!important}
+.to-link-in{background:var(--bg-tint)!important;border:1px solid var(--line)!important;color:var(--ink)!important;border-radius:14px!important}
+.to-btn,.to-kind span{font-size:14px!important;font-weight:600!important;border-radius:999px!important;background:var(--bg-tint)!important;border:1px solid var(--line)!important;color:var(--ink)!important;box-shadow:none!important}
+.to-acts{margin-top:12px!important}
+.to-acts .to-btn{display:none!important}
+#btn-go{width:100%;min-height:56px;font-size:17px!important;font-weight:700!important;border-radius:999px!important;background:var(--accent)!important;color:#fff!important;box-shadow:0 10px 24px color-mix(in srgb,var(--accent) 35%,transparent)!important;font-family:var(--font)!important}
+.to-mode-d{text-align:center;font-size:13px!important;color:var(--mut)!important;margin:10px 0 0!important}
+.to-status{padding-left:0!important;font-size:14px!important;color:var(--mut)!important;text-align:center;margin-top:8px!important}
+.to-status::before{content:none!important}
+.tx-kind{margin:8px 0 0}.tx-kind summary{font-size:13.5px;color:var(--mut);cursor:pointer;min-height:40px;display:flex;align-items:center;justify-content:center;list-style:none}
+.tx-kind summary::-webkit-details-marker{display:none}.tx-kind .to-kind{justify-content:center;margin-top:4px}
+.to-remember{justify-content:center;color:var(--mut)}
+/* skeleton: the photo shimmering into place, honest seconds underneath */
+.tx-skel{margin:0 0 14px}.tx-skel-img{aspect-ratio:2/3;border-radius:20px;background:linear-gradient(100deg,var(--bg-tint) 30%,color-mix(in srgb,var(--card) 70%,var(--accent) 6%) 50%,var(--bg-tint) 70%);background-size:220% 100%;animation:txShimmer 1.6s linear infinite}
+.tx-skel-t{text-align:center;font-size:15px;color:var(--ink);margin:12px 4px 0}
+@keyframes txShimmer{to{background-position:-120% 0}}
+@media (prefers-reduced-motion:reduce){.tx-skel-img{animation:none}}
+.tx-busy .to-grid,.tx-busy .to-link,.tx-busy .to-remember,.tx-busy .tx-kind,.tx-busy .to-status,.tx-busy .to-mode-d{display:none!important}
+/* result hero */
+.to-out{margin:0 0 16px!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important}
+.to-out::before,.to-out::after{display:none!important}
+.to-out img{width:100%;border-radius:20px;display:block}
+.tx-bar{display:flex;gap:10px;align-items:center;margin-top:12px}
+.tx-primary{flex:1;min-height:52px;display:flex;align-items:center;justify-content:center;border-radius:999px;background:var(--ink);color:var(--bg)!important;font-weight:700;font-size:16px;text-decoration:none}
+.tx-ic{width:48px;height:48px;border-radius:999px;display:grid;place-items:center;background:var(--bg-tint);border:1px solid var(--line);color:var(--ink)}
+.to-out .note{font-size:12.5px;color:var(--mut);text-align:center;margin:8px 0 0}
+.tx-done #btn-go{background:var(--bg-tint)!important;color:var(--ink)!important;box-shadow:none!important;min-height:48px;font-size:15px!important}
+.to-tips{background:var(--card)!important;border:1px solid var(--line)!important}

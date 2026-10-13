@@ -19,6 +19,7 @@
 <meta name="twitter:image" content="https://fashionistas.ai/og.png">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/site.css">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to use the fashionistas.ai virtual try-on","description":"Upload a photo of a person and a garment photo, press Try it on, then download, save or share the render.","step":[{"@type":"HowToStep","name":"Add a photo of yourself","text":"Pick or drop a photo of the person wearing the garment."},{"@type":"HowToStep","name":"Add a garment","text":"Pick or drop a photo of the item you want to see on."},{"@type":"HowToStep","name":"Try it on","text":"Press Try it on. The signed-in render posts the person and garment to /api/tryon/hd, which redraws the person wearing the garment."},{"@type":"HowToStep","name":"Keep the result","text":"Download, save or share the rendered image."}]}</script>
 <style>
 /* ═════════════════════════════════════════════════════════════════════════
@@ -335,6 +336,7 @@ body{-webkit-font-smoothing:antialiased}
 </style>
 <meta name="color-scheme" content="dark">
 <script>if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).catch(function(){});if(window.caches)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})}).catch(function(){})}</script>
+<link rel="stylesheet" href="/try-on/skin.css?v=1">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -375,20 +377,31 @@ body{-webkit-font-smoothing:antialiased}
   <span><i>INPUTS</i><b id="tel-in">0 / 2</b></span>
   <span><i>STATUS</i><b id="tel-st">IDLE</b></span>
  </div>
+ <div class="tx-skel" id="tx-skel" hidden aria-hidden="true"><div class="tx-skel-img"></div><p class="tx-skel-t" id="tx-skel-t">Redrawing you in it…</p></div>
+ <div class="to-out hud4" id="out">
+  <img id="out-img" alt="You wearing it">
+  <div class="tx-bar">
+   <a class="tx-primary" id="tx-primary" href="#" role="button">Save to my looks</a>
+   <button class="tx-ic" type="button" aria-label="Share" title="Share" onclick="document.getElementById('btn-share').click()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg></button>
+   <button class="tx-ic" type="button" aria-label="Download" title="Download" onclick="document.getElementById('btn-download').click()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg></button>
+   <button class="tx-ic" type="button" aria-label="Try again" title="Try again" onclick="document.getElementById('btn-retry').click()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
+  </div>
+  <p class="note" id="out-meta"></p>
+ </div>
  <div class="to-grid">
   <div class="to-zone sheen" id="zone-person">
    <span class="hud-tag">Station 01 · Subject</span>
    <span class="to-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5ee7ff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4"/></svg></span>
-   <b class="to-zone-t">Person photo</b>
-   <span class="to-name" id="name-person">Tap to add a full-length photo of you</span>
+   <b class="to-zone-t">You</b>
+   <span class="to-name" id="name-person">Head-to-knees photo</span>
    <img id="prev-person" alt="Person photo preview" class="hidden" style="display:none">
    <input type="file" id="file-person" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose the person photo">
   </div>
   <div class="to-zone sheen" id="zone-garment">
    <span class="hud-tag">Station 02 · Garment</span>
    <span class="to-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5ee7ff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 3.5 12 5.4l3.5-1.9 4.5 2.4-2.2 4-2.1-1V21H8.3V8.9l-2.1 1-2.2-4z"/></svg></span>
-   <b class="to-zone-t">Garment photo</b>
-   <span class="to-name" id="name-garment">Tap to add the clothing</span>
+   <b class="to-zone-t">The item</b>
+   <span class="to-name" id="name-garment">Photo or shop link</span>
    <img id="prev-garment" alt="Garment photo preview" class="hidden" style="display:none">
    <input type="file" id="file-garment" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose the garment photo">
   </div>
@@ -398,20 +411,20 @@ body{-webkit-font-smoothing:antialiased}
  <label class="to-remember"><input type="checkbox" id="remember-me"> Remember my photo on this phone <button type="button" class="to-forget" id="forget-me" hidden>Forget it</button></label>
  <div class="to-closet" id="closet-strip" hidden><span class="to-closet-l">Your listings</span></div>
 
+ <details class="tx-kind"><summary>Not the right kind of item? Change it</summary>
  <div class="to-kind" role="radiogroup" aria-label="Garment type">
-  <span class="to-kind-l">Garment type</span>
   <label><input type="radio" name="to-kind" value="auto" checked><span>Auto</span></label>
   <label><input type="radio" name="to-kind" value="top"><span>Top</span></label>
   <label><input type="radio" name="to-kind" value="bottom"><span>Bottom</span></label>
   <label><input type="radio" name="to-kind" value="dress"><span>Dress</span></label>
   <label><input type="radio" name="to-kind" value="outerwear"><span>Outerwear</span></label>
- </div>
+ </div></details>
  <p class="to-warn" id="warn" hidden></p>
 
- <p class="to-mode-d" id="lab-hd">You, wearing it. The model redraws the photo. About a minute. Free while we're in launch — sign in, six a day.</p>
+ <p class="to-mode-d" id="lab-hd">Free · 6 a day · about 20 seconds</p>
 
 <div class="to-acts">
-  <button class="btn btn-accent" id="btn-go" data-tip="Redraws you wearing the garment.">See yourself wearing it</button>
+  <button class="btn btn-accent" id="btn-go" data-tip="Redraws you wearing the garment.">Try it on</button>
   <button class="to-btn" id="btn-retry" disabled data-tip="Run the try-on again with the same two photos.">Retry</button>
   <button class="to-btn" id="btn-download" disabled data-tip="Save the render as a file on this device.">Download</button>
   <button class="to-btn" id="btn-save" disabled data-tip="Keep the render in this browser so you can come back to it.">Save</button>
@@ -422,10 +435,6 @@ body{-webkit-font-smoothing:antialiased}
  <div class="to-prog" id="prog" hidden><i id="prog-bar"></i></div>
  <div class="to-ok" id="ok">Render ready — download it, save it to this browser, or share it.</div>
 
- <div class="to-out hud4" id="out">
-  <img id="out-img" alt="Virtual try-on result">
-  <p class="note" id="out-meta" style="margin-bottom:0"></p>
- </div>
 </div>
 
 <details class="card to-tips" style="margin-top:18px">
@@ -891,7 +900,13 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
         }
         var wide = maxX - minX, tall = maxY - minY;
         if (!(wide > 0) || !(tall > 0)) return false;
-        if (tall / wide < 1.5) return false;   // lying down: an animal, not a customer
+        // Lying down = an animal, not a customer. Judge the TORSO (shoulders ->
+        // hips), not the whole skeleton's box: an arm held out with a shopping
+        // bag made a standing woman's box 1.45 tall-to-wide and got her refused.
+        var sh = pts[11] && pts[12] ? { x:(pts[11].x+pts[12].x)/2, y:(pts[11].y+pts[12].y)/2 } : null;
+        var hp = pts[23] && pts[24] ? { x:(pts[23].x+pts[24].x)/2, y:(pts[23].y+pts[24].y)/2 } : null;
+        if (sh && hp) { if (Math.abs(hp.y - sh.y) < Math.abs(hp.x - sh.x) * 1.2 || hp.y <= sh.y) return false; }
+        else if (tall / wide < 1.5) return false;
         return true;
       }).catch(function(){ return true; });
     });
@@ -1195,5 +1210,16 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
 })();
 </script>
 <style>.to-link{display:flex;gap:8px;margin:12px 0 6px}.to-link-in{flex:1;min-width:0;min-height:46px;border-radius:12px;padding:0 12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:inherit;font-size:15px}.to-link-res{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:14px;margin:4px 0 8px}.to-buy{min-height:44px;display:inline-flex;align-items:center}.to-remember{display:flex;gap:8px;align-items:center;font-size:14px;margin:6px 0;min-height:40px}.to-forget{background:none;border:0;color:inherit;text-decoration:underline;opacity:.8}</style>
+<script type="module">
+(function(){
+  var prim = document.getElementById("tx-primary"); if (!prim) return;
+  prim.addEventListener("click", function(e){ var d = window.__toBuy; if (d && d.buy_url) { prim.href = d.buy_url; prim.target = "_blank"; prim.rel = "noopener nofollow sponsored"; return; } e.preventDefault(); document.getElementById("btn-save").click(); prim.textContent = "Saved"; });
+  function syncPrim(){ var d = window.__toBuy; prim.textContent = d && d.shop ? "Buy on " + d.shop : "Save to my looks"; }
+  var skel = document.getElementById("tx-skel"), pr = document.getElementById("prog"), st = document.getElementById("status"), sk = document.getElementById("tx-skel-t"), out = document.getElementById("out"), card = document.querySelector(".to-card");
+  new MutationObserver(function(){ var on = !pr.hidden; skel.hidden = !on; card.classList.toggle("tx-busy", on); if (on) { syncPrim(); try { skel.scrollIntoView({ block:"center", behavior:"smooth" }); } catch (e) {} } }).observe(pr, { attributes:true, attributeFilter:["hidden"] });
+  new MutationObserver(function(){ sk.textContent = st.textContent.replace(/^>\s*/, ""); }).observe(st, { childList:true, characterData:true, subtree:true });
+  new MutationObserver(function(){ if (out.classList.contains("on")) { skel.hidden = true; syncPrim(); card.classList.add("tx-done"); try { out.scrollIntoView({ block:"start", behavior:"smooth" }); } catch (e) {} } }).observe(out, { attributes:true, attributeFilter:["class"] });
+})();
+</script>
 </body>
 </html>
