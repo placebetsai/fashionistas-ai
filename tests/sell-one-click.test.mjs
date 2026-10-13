@@ -57,7 +57,7 @@ test("every photo path funnels into one ingest() that filters to images", () => 
 
 test("the everywhere screen has one primary button wired to LW.sellAll", () => {
   assert.match(wizard, /class="lw-next lw-go lw-all" onclick="LW\.sellAll\(\)"/);
-  assert.match(wizard, /"Post everywhere · "/, "label counts the pending shops");
+  assert.match(wizard, /"List everywhere · "/, "label counts the pending shops");
   assert.match(wizard, /sellAll: sellAll/, "exported on window.LW");
   // The button only renders while something is actually left to post.
   assert.match(wizard, /var pend = pendingShops\(\);\s*\n\s*if \(pend\.length\) \{/);

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Set up your shops once | fashionistas.ai</title>
+<meta name="robots" content="noindex, follow">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<script>try{var t=localStorage.getItem("fash_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+:root{--bg:#fff;--ink:#14121a;--mut:#666270;--card:#f6f4f8;--line:#e6e2ea;--acc:#c2185b;--ok:#1b8a4b;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f0e12;--ink:#f3f1f6;--mut:#a8a3b0;--card:#1b1920;--line:#2c2933;--acc:#ff5c9a;--ok:#4ad286;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#0f0e12;--ink:#f3f1f6;--mut:#a8a3b0;--card:#1b1920;--line:#2c2933;--acc:#ff5c9a;--ok:#4ad286;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:12px}
+header a{color:var(--ink);text-decoration:none;font-size:22px;line-height:1;padding:4px}
+header .t{flex:1;min-width:0}header b{display:block;font-size:16px}header small{color:var(--mut);font-size:13px}
+.bar{height:4px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc);transition:width .25s}
+main{max-width:560px;margin:0 auto;padding:18px 16px 120px}
+.bub{background:var(--card);border:1px solid var(--line);border-radius:18px 18px 18px 6px;padding:14px 16px;margin:0 0 12px;max-width:92%}
+.bub p{margin:0 0 8px}.bub p:last-child{margin:0}.me{margin-left:auto;background:var(--acc);color:#fff;border:0;border-radius:18px 18px 6px 18px;width:max-content;max-width:80%}
+.logo{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:12px;color:#fff;font-weight:800;font-size:18px;vertical-align:middle;margin-right:10px}
+.shopline{display:flex;align-items:center;margin:4px 0 12px;font-size:20px;font-weight:700}
+.acts{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:grid;gap:8px}
+.acts>div{max-width:560px;margin:0 auto;width:100%;display:grid;gap:8px}
+.btn{display:block;width:100%;text-align:center;border:0;border-radius:14px;padding:15px;font:600 16px system-ui,sans-serif;background:var(--acc);color:#fff;text-decoration:none;cursor:pointer}
+.btn.g{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.list{display:grid;gap:8px;margin:6px 0 0;padding:0;list-style:none}
+.list li{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.list li .logo{width:32px;height:32px;font-size:15px;margin:0}.list li span{flex:1}
+.st{font-size:13px;font-weight:600;color:var(--mut)}.st.ok{color:var(--ok)}
+ol.how{margin:6px 0 0;padding-left:20px}ol.how li{margin:4px 0}
+.tag{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;background:var(--line);color:var(--ink)}
+</style>
+</head>
+<body>
+<header><a href="/" aria-label="Back to fashionistas.ai">‹</a><div class="t"><b id="h">Set up your shops once</b><small id="hs"></small><div class="bar"><i id="bar" style="width:0"></i></div></div></header>
+<main id="m" aria-live="polite"></main>
+<div class="acts"><div id="a"></div></div>
+<script>
+(function(){
+"use strict";
+var KEY="fash_setup_v1", SHOPKEY="fash_lw_shops_v1";
+var ua=navigator.userAgent, isAndroid=/Android/i.test(ua), isIOS=/iPhone|iPad|iPod/i.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+var isMobile=isAndroid||isIOS||/Mobi/i.test(ua), isChrome=/Chrome\//.test(ua)&&!/Edg\/|OPR\//.test(ua)&&!isMobile;
+var dev=isAndroid?"Android phone":isIOS?"iPhone":isChrome?"computer with Chrome":"computer";
+var SHOPS=[
+ {id:"poshmark",n:"Poshmark",c:"#7f0353",l:"P",login:"https://poshmark.com/login",app:true},
+ {id:"depop",n:"Depop",c:"#ff2300",l:"D",login:"https://www.depop.com/login/",app:true},
+ {id:"mercari",n:"Mercari",c:"#5356ee",l:"M",login:"https://www.mercari.com/login/",app:true},
+ {id:"vinted",n:"Vinted",c:"#09b1ba",l:"V",login:"https://www.vinted.com/",app:true},
+ {id:"grailed",n:"Grailed",c:"#111111",l:"G",login:"https://www.grailed.com/",app:true},
+ {id:"ebay",n:"eBay",c:"#0064d2",l:"e",login:"https://signin.ebay.com/",oauth:"ebay"},
+ {id:"etsy",n:"Etsy",c:"#f1641e",l:"E",login:"https://www.etsy.com/signin",oauth:"etsy"}
+];
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||"null")||{}}catch(e){return{}}}
+var S=load(); S.shops=S.shops||{}; if(S.i==null)S.i=0;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));
+  var ls={};SHOPS.forEach(function(s){ls[s.id]=S.shops[s.id]==="ready"||S.shops[s.id]==="connected"?1:0});
+  localStorage.setItem(SHOPKEY,JSON.stringify(ls))}catch(e){}}
+var EB={ebay:null,etsy:null};
+fetch("/api/ebay/status",{credentials:"same-origin"}).then(function(r){return r.json()}).then(function(d){EB.ebay=d||{};render()}).catch(function(){EB.ebay={}});
+function $(i){return document.getElementById(i)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function logo(s){return '<i class="logo" style="background:'+s.c+'">'+s.l+'</i>'}
+function st(id){var v=S.shops[id];return v==="connected"?'<span class="st ok">Connected</span>':v==="ready"?'<span class="st ok">Signed in ✓</span>':v==="skip"?'<span class="st">Skipped</span>':v==="soon"?'<span class="st">Coming soon</span>':'<span class="st">Not set up</span>'}
+var STEPS=["hi"].concat(SHOPS.map(function(s){return s.id}),["done"]);
+function head(){var n=STEPS.length-1;$("bar").style.width=Math.round(S.i/n*100)+"%";$("hs").textContent=S.i===0?"About 2 minutes · only once":S.i>=n?"All set":"Step "+S.i+" of "+(n-1)}
+function acts(btns){$("a").innerHTML=btns.map(function(b,k){return b.href?'<a class="btn'+(b.g?" g":"")+'" href="'+b.href+'" target="_blank" rel="noopener" data-k="'+k+'">'+esc(b.t)+'</a>':'<button type="button" class="btn'+(b.g?" g":"")+'" data-k="'+k+'">'+esc(b.t)+'</button>'}).join("");
+  [].forEach.call($("a").children,function(el){var b=btns[+el.getAttribute("data-k")];el.addEventListener("click",function(){b.f&&b.f()})})}
+function go(i){S.i=Math.max(0,Math.min(STEPS.length-1,i));save();render();window.scrollTo(0,0)}
+function next(){go(S.i+1)}
+function set(id,v){S.shops[id]=v;save()}
+function render(){
+ head();var k=STEPS[S.i],h="";
+ if(k==="hi"){
+  h+='<div class="bub"><p>Hi! I\'ll get you set up to list everywhere. You do this <b>once</b> — after that every item goes out with one tap.</p></div>';
+  h+='<div class="bub"><p>You\'re on a <b>'+esc(dev)+'</b>. '+(isMobile?'On phones the shop apps keep you signed in, so for each shop we just make sure you\'re signed in there. When you list, we copy your listing and open that shop with your photos ready.':'On a computer you sign in to each shop in this browser. When you list, we copy the listing and open each shop\'s sell page in a new tab.')+'</p><p>We never ask for or store your shop passwords.</p></div>';
+  h+='<ul class="list">'+SHOPS.map(function(s){return '<li>'+logo(s)+'<span>'+s.n+'</span>'+st(s.id)+'</li>'}).join("")+'</ul>';
+  $("m").innerHTML=h;acts([{t:"Let's go",f:next}]);return;
+ }
+ if(k==="done"){
+  var ready=SHOPS.filter(function(s){return S.shops[s.id]==="ready"||S.shops[s.id]==="connected"});
+  h+='<div class="bub"><p><b>You\'re set.</b> '+(ready.length?ready.length+' shop'+(ready.length>1?'s are':' is')+' ready. Your next listing goes to all of them from the <b>List everywhere</b> button.':'No shops set up yet — you can still list on fashionistas.ai and add shops any time.')+'</p></div>';
+  h+='<ul class="list">'+SHOPS.map(function(s){return '<li>'+logo(s)+'<span>'+s.n+'</span>'+st(s.id)+'</li>'}).join("")+'</ul>';
+  $("m").innerHTML=h;acts([{t:"List an item",f:function(){location.href="/?sell=1"}},{t:"Change a shop",g:1,f:function(){go(1)}}]);return;
+ }
+ var s=SHOPS.filter(function(x){return x.id===k})[0];
+ h+='<div class="shopline">'+logo(s)+s.n+'</div>';
+ if(s.oauth){
+  var live=s.oauth==="ebay"&&EB.ebay&&EB.ebay.configured!==false&&EB.ebay.connected;
+  var conf=s.oauth==="ebay"?(EB.ebay&&EB.ebay.configured):false;
+  if(live){set(s.id,"connected");h+='<div class="bub"><p>'+s.n+' is connected. We post your listings there directly.</p></div>';$("m").innerHTML=h;acts([{t:"Next",f:next}]);return}
+  if(conf){h+='<div class="bub"><p>Tap Connect. '+s.n+' shows its own sign-in and asks if fashionistas can post for you. Then you come straight back here.</p></div>';$("m").innerHTML=h;
+   acts([{t:"Connect "+s.n,f:function(){location.href=s.oauth==="ebay"?"/api/ebay/oauth/start?return=/setup/":"/api/etsy/oauth/start"}},{t:"Skip",g:1,f:function(){set(s.id,"skip");next()}}]);return}
+  h+='<div class="bub"><p><span class="tag">Coming soon</span></p><p>Direct posting to '+s.n+' is almost ready — it needs '+s.n+'\'s approval on our side. Until then, List everywhere copies your listing and opens '+s.n+'\'s sell page, like the other shops.</p></div>';
+  h+='<div class="bub"><p>Are you signed in to '+s.n+' on this '+(isMobile?"phone":"browser")+'?</p></div>';
+  $("m").innerHTML=h;acts([{t:"Open "+s.n+" to sign in",href:s.login,f:function(){S.pending=s.id;save()}},{t:"I'm signed in",f:function(){set(s.id,"ready");next()}},{t:"I don't sell on "+s.n,g:1,f:function(){set(s.id,"skip");next()}}]);return;
+ }
+ if(isMobile){
+  h+='<div class="bub"><p>Do you have the '+s.n+' app on this phone, and are you signed in?</p></div>';
+  h+='<div class="bub"><p>Tap <b>Open '+s.n+'</b>. If it opens the app and you see your account, you\'re good — come back here and tap <b>I\'m signed in</b>.</p><p>When you list, we copy everything and send your photos to the '+s.n+' app. You paste and press Post.</p></div>';
+ }else{
+  h+='<div class="bub"><p>Sign in to '+s.n+' in this browser so its sell page opens ready to go.</p><ol class="how"><li>Tap <b>Open '+s.n+'</b> — it opens in a new tab.</li><li>Sign in there (tick “keep me signed in”).</li><li>Come back to this tab and tap <b>I\'m signed in</b>.</li></ol></div>';
+  if(isChrome)h+='<div class="bub"><p><span class="tag">Coming soon</span> A Chrome add-on that fills '+s.n+'\'s form for you, from the Chrome Web Store. Until then, we copy the listing for you to paste.</p></div>';
+ }
+ if(S.shops[s.id]==="ready")h+='<div class="bub me">Done — signed in ✓</div>';
+ $("m").innerHTML=h;
+ acts([{t:"Open "+s.n,href:s.login,f:function(){S.pending=s.id;save()}},{t:"I'm signed in",f:function(){set(s.id,"ready");next()}},{t:"I don't sell on "+s.n,g:1,f:function(){set(s.id,"skip");next()}}]);
+}
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&S.pending&&STEPS[S.i]===S.pending){var b=$("a").children[1];if(b){b.focus();b.style.outline="3px solid var(--acc)";}}});
+render();
+})();
+</script>
+</body>
+</html>

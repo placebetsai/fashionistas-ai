@@ -650,6 +650,12 @@
     if (id === "ebay" || id === "etsy") return '<span class="lw-mode">Guided · direct posting coming soon</span>';
     return '<span class="lw-mode">Guided · about 1 min</span>';
   }
+  function setupDone() { try { var o = JSON.parse(localStorage.getItem("fash_setup_v1") || "null"); return !!(o && o.shops && Object.keys(o.shops).length); } catch (e) { return false; } }
+  function setupNudge() {
+    return setupDone()
+      ? '<p class="lw-hint"><a class="lw-link" href="/setup/">Change which shops you sell on</a></p>'
+      : '<a class="lw-next lw-ghost" style="display:block;text-align:center;text-decoration:none;margin:8px 0" href="/setup/">Set up your shops once (2 min) &rsaquo;</a>';
+  }
   function cover0() { return PHOTOS[0] ? (PHOTOS[0].src || PHOTOS[0].url) : ""; }
   function step4() {
     ebayCheck();
@@ -663,6 +669,7 @@
       return h;
     }
     h += '<div class="lw-lab lw-lab-top"><span class="lw-labt">Where to list</span><span class="lw-opt" id="lw-shopcount"></span></div>';
+    h += setupNudge();
     h += '<div class="lw-shop lw-shop-fixed">' + FASH_LOGO + '<span class="lw-sn"><b>fashionistas.ai</b><span class="lw-mode auto">Live the moment you tap List it</span></span><span class="lw-tgl on locked" aria-hidden="true"><i></i></span></div>';
     h += SHOPS.map(function (s) {
       var ok = shopTakes(s.id, f.path), on = ok && !!W.shops[s.id];
@@ -879,6 +886,7 @@
       condFor(id, l), shopDesc(id, l)].filter(Boolean).join("\n");
     P.flags[id] = Object.assign({}, P.flags[id], { opened: true });
     window.open(s.sell, "_blank", "noopener");
+    P.lastKit = text;
     var copied = false;
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -907,12 +915,13 @@
       h += '<button type="button" class="lw-next lw-go lw-all" onclick="LW.sellAll()">' +
         (walking
           ? ("Next: " + esc((nextS && nextS.name) || "shop") + " · " + P.walkAt + "/" + P.walk.length)
-          : ("Post everywhere · " + pend.length + (pend.length === 1 ? " shop" : " shops"))) +
+          : ("List everywhere · " + pend.length + (pend.length === 1 ? " shop" : " shops"))) +
         '</button>';
     }
     h += P.shops.map(function (id) { return shopCard(id, path); }).join("");
     var rest = SHOPS.filter(function (s) { return P.shops.indexOf(s.id) < 0 && shopTakes(s.id, path); });
     if (rest.length) h += '<div class="lw-addshops"><span class="lw-labt">Add a shop</span><div class="lw-chips">' + rest.map(function (s) { return '<button type="button" class="lw-chip lw-chip-shop" data-v="' + s.id + '" onclick="LW.addShop(this.getAttribute(\'data-v\'))">' + logo(s, 22) + esc(s.name) + '<span aria-hidden="true">+</span></button>'; }).join("") + '</div></div>';
+    h += setupNudge();
     h += '<p class="lw-hint lw-how">Tap a shop — we copy the whole listing and open it. You press their Post button. Nothing to install.</p>';
     h += '<div class="lw-foot"><button type="button" class="lw-next lw-ghost" onclick="LW.done()">' + (n && d === n ? "All done — see my items" : "Finish later — it's saved") + '</button></div>';
     h += '</div>';

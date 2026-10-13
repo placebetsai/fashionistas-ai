@@ -43,6 +43,7 @@ export async function onRequestGet(context) {
   if (!tok || !tok.access_token) {
     return json({
       ok: true,
+      configured: !!(context.env && (context.env.EBAY_CLIENT_ID || context.env.EBAY_SANDBOX_CLIENT_ID)),
       connected: false,
       hasAccessToken: false,
       hasRefreshToken: false,
@@ -57,6 +58,7 @@ export async function onRequestGet(context) {
 
   return json({
     ok: true,
+    configured: true,
     connected: true,
     hasAccessToken: true,
     hasRefreshToken: !!tok.refresh_token,
