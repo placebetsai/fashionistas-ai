@@ -801,18 +801,21 @@ function affCard(){
       <div class="af-b">
         <b>${escapeHtml(p.n)}</b>
       </div>
-      <a class="btn btn-soft btn-sm af-go" href="${p.u}" target="_blank" rel="noopener noreferrer sponsored" data-tip="Opens ${escapeHtml(p.n)} in a new tab, searched for what you typed." title="Opens ${escapeHtml(p.n)} in a new tab, searched for what you typed.">Also listed on ${escapeHtml(p.n)} ↗</a>
+      <a class="btn btn-soft btn-sm af-go" href="${p.u}" target="_blank" rel="noopener noreferrer sponsored" data-tip="Opens ${escapeHtml(p.n)} in a new tab, searched for what you typed." title="Opens ${escapeHtml(p.n)} in a new tab, searched for what you typed.">Search ${escapeHtml(p.n)} ↗</a>
     </div>`).join("");
+  /* Every href above is that shop's own SEARCH url for the query, not a listing
+     of ours. Labeling the button as a cross-listing promised one we do not
+     have — a dead promise. Say what the click does. */
   return `
   <div class="aff">
     <div class="aff-head">
-      <span class="af-kick">Also listed</span>
-      <h3>Can't find it here? It may be listed on these shops.</h3>
+      <span class="af-kick">Search around</span>
+      <h3>Can't find it here? Search these shops for the same thing.</h3>
     </div>
     ${rows}
     <div class="af-rest">
-      <span>Other marketplaces may also have this item. Check each site directly.</span>
-      <span class="af-date">Updated for your search.</span>
+      <span>Each link opens that marketplace's search for what you typed — we don't post there for you.</span>
+      <span class="af-date">Search links, not our listings.</span>
     </div>
   </div>`;
 }

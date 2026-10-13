@@ -733,6 +733,22 @@
     if (BUSY) return;
     if (!TOKEN) { flush(); say("Sign in first — your draft is saved.", 4000); try { showAuth("login"); } catch (e) {} return; }
     for (var n = 1; n <= 3; n++) if (!validateQuiet(n)) { W.step = n; renderStep(); validate(n); return; }
+    /* The sample is our own stock illustration, not the seller's item, and only
+       PHOTOS[0] is uploaded as photo_url. Publishing it turned a $68 "Vintage
+       denim jacket" into a live shop card whose bytes were md5-identical to
+       /sample-jacket.jpg — a buyer would pay for a picture of a drawing.
+       Promote a real photo when one exists; refuse outright when every photo is
+       the sample. Checked BEFORE the upload so nothing half-made reaches D1. */
+    var coverIsSample = !!(PHOTOS[0] && PHOTOS[0].hint === "sample"), realIdx = -1;
+    for (var pi = 0; pi < PHOTOS.length; pi++) if (PHOTOS[pi].hint !== "sample") { realIdx = pi; break; }
+    if (coverIsSample && realIdx > 0) {
+      PHOTOS.unshift(PHOTOS.splice(realIdx, 1)[0]);
+      save(); renderStep();
+      say("Sample photo moved down — your own photo now leads the listing.");
+    } else if (coverIsSample) {
+      say("That's our sample photo, not your item. Add a photo of what you're selling.", 5000);
+      return;
+    }
     BUSY = true;
     var b = $id("lw-next"); if (b) { b.disabled = true; b.innerHTML = '<span class="lw-spin sm" aria-hidden="true"></span> Uploading photo…'; }
     var f = W.f, c = condBy(f.cond), cov = PHOTOS[0];
