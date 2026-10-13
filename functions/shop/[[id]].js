@@ -13,6 +13,7 @@
  * unreachable we fall back to a plain 200 shell rather than lying either way.
  */
 import { itemHead, injectHead, itemBody, shopBody, injectBody } from "../_lib/item-meta.js";
+import { shopScreen, itemScreen, prerenderInto } from "../_lib/prerender.js";
 
 async function marketBody() {
   try {
@@ -82,7 +83,7 @@ export async function onRequestGet(context) {
     const items = (mb && mb.market) || [];
     return new Response(
       injectHead(
-        injectBody(demoteShellH1(body), shopBody(items)),
+        injectBody(prerenderInto(demoteShellH1(body), "Shop", shopScreen(items)), shopBody(items)),
         `<title>Shop — fashionistas.ai</title>` +
           `<meta name="description" content="Everything for sale on fashionistas.ai — clothing, decor and objects listed by real sellers. One photo in, every shop updated.">` +
           `<link rel="canonical" href="${origin}/shop">` +
@@ -134,7 +135,7 @@ export async function onRequestGet(context) {
   const demoSeller = sellerUser === "demo" || sellerName === "demo";
   const mb = await morePromise;
   const more = (mb && mb.market) || [];
-  return new Response(injectHead(injectBody(demoteShellH1(body), itemBody(listing, more)), itemHead(listing, origin) + lcpPreload([listing.photo_url]) + embedMarket(mb), { noindex: demoSeller }), {
+  return new Response(injectHead(injectBody(prerenderInto(demoteShellH1(body), "", itemScreen(listing)), itemBody(listing, more)), itemHead(listing, origin) + lcpPreload([listing.photo_url]) + embedMarket(mb), { noindex: demoSeller }), {
     headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" },
   });
 }
