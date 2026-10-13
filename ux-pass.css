@@ -132,3 +132,4 @@ html:has(#view-app:not(.hidden)) #guide-fab,html:has(#view-app:not(.hidden)) #hc
 .oc-note{font-size:13px;opacity:.75;text-align:center;margin:2px 0}
 .oc-more{background:none;border:0;color:inherit;opacity:.8;text-decoration:underline;font-size:14px;min-height:44px;cursor:pointer}
 .oc-or{font-size:13px;opacity:.7;text-align:center;margin-top:6px}
+.oc [hidden],#oc-legacy[hidden]{display:none!important}

@@ -70,7 +70,7 @@
 
   box.innerHTML =
     '<div class="oc">' +
-    (hasPK ? '<button type="button" class="btn btn-primary oc-btn" id="oc-pk-in"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 11v3m-4-1a4 4 0 0 1 8 0v2m-10-2a6 6 0 0 1 12 0m-14 0a8 8 0 0 1 16 0"/></svg><span>Sign in with fingerprint</span></button>' +
+    (hasPK ? '<button type="button" class="btn btn-primary oc-btn" id="oc-pk-in"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 10a2 2 0 0 0-2 2c0 2.5-.5 4.5-1.5 6"/><path d="M14 12c0 3-.6 5.6-1.6 7.6"/><path d="M7.3 7.5A6 6 0 0 1 18 12c0 1.6-.1 3.1-.4 4.5"/><path d="M6 12c0 1.7-.3 3.2-.9 4.5"/><path d="M4.6 5.6A9 9 0 0 1 21 12"/></svg><span>Sign in with fingerprint</span></button>' +
       '<div class="oc-or">New here?</div>' +
       '<input class="input oc-name" id="oc-name" placeholder="Your name or shop name (optional)" autocomplete="nickname" maxlength="40">' +
       '<button type="button" class="btn btn-accent oc-btn" id="oc-pk-new"><span>Create my account with one tap</span></button>' : '') +
