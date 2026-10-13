@@ -275,7 +275,7 @@ export function injectHead(html, head, opts = {}) {
  * is hidden then (still in the DOM, links still crawlable) to avoid showing it twice.
  */
 const e2 = (v) => String(v == null ? "" : v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-const wrap = (inner) => `<style>body:has(#view-app:not(.hidden)) .ssr-seo{display:none}</style><section class="ssr-seo" style="max-width:1080px;margin:24px auto;padding:0 18px;color:var(--ink,#111)">${inner}</section>`;
+const wrap = (inner) => `<style>html.h-app body .ssr-seo{display:none}</style><section class="ssr-seo" style="max-width:1080px;margin:24px auto;padding:0 18px;color:var(--ink,#111)">${inner}</section>`;
 export function itemBody(l, more = []) {
   const facts = [l.brand, l.size && `Size ${l.size}`, l.condition && `Condition: ${l.condition}`, l.category, l.color].filter(Boolean).map(e2).join(" · ");
   const img = l.photo_url ? `<img src="${e2(l.photo_url)}" alt="${e2(l.title || "Item for sale")}" width="480" height="480" loading="lazy" style="max-width:100%;height:auto;border-radius:12px">` : "";

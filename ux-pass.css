@@ -77,13 +77,13 @@ a.ux-try-link{position:absolute;left:10px;top:calc(125cqw - 44px);z-index:2;marg
   #view-sub{display:none!important}
   #view-title{font-size:22px!important}
   #screen-head{margin:0 0 10px!important}
-  html:has(.ux-item) #screen-head{display:none!important}
+  html.h-item #screen-head{display:none!important}
   .ux-item-img{margin:0 -14px}
   /* product page: sticky buy bar sits above the tab bar; the chat bubble steps aside */
   .ux-buybar{position:fixed;left:0;right:0;bottom:var(--tb,0px);margin:0;padding:10px 14px;border-top:1px solid var(--line);z-index:84}
-  html:has(.ux-buybar) .wrap{padding-bottom:calc(var(--tb) + 96px)!important}
-  html:has(.ux-buybar) #guide-fab,html:has(.ux-buybar) #hc-fab{display:none!important}
-  html:has(.sheet) .ux-buybar{display:none!important}
+  html.h-buybar .wrap{padding-bottom:calc(var(--tb) + 96px)!important}
+  html.h-buybar #guide-fab,html.h-buybar #hc-fab{display:none!important}
+  html.h-sheet .ux-buybar{display:none!important}
   #market-grid{grid-template-columns:1fr 1fr;gap:16px 10px}
   .ux-search{display:grid;grid-template-columns:1fr;gap:8px}
   .rd-hero .stat-row{display:none}
@@ -94,7 +94,7 @@ a.ux-try-link{position:absolute;left:10px;top:calc(125cqw - 44px);z-index:2;marg
 
 /* Desktop: a shop, not a stretched phone. */
 @media (min-width:900px){
-  html:has(#view-app:not(.hidden)) .wrap{max-width:1280px;padding:8px 32px 72px}
+  html.h-app .wrap{max-width:1280px;padding:8px 32px 72px}
   .ux-search{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:10px;align-items:center}
   #market-subs{gap:8px}
   #market-subs .chip{min-height:36px;padding:0 14px;border-radius:999px}
@@ -118,7 +118,7 @@ a.ux-try-link{position:absolute;left:10px;top:calc(125cqw - 44px);z-index:2;marg
 #topnav a[data-v="snap"],#topnav a[data-v="home"],#topnav a[data-v="closet"],#topnav a[data-v="xl"]{display:none}
 #market-subs{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 #market-subs .chip{flex:none}
-html:has(#view-app:not(.hidden)) #guide-fab,html:has(#view-app:not(.hidden)) #hc-fab,html:has(.lw) #screen-head,.lw-help{display:none!important}
+html.h-app #guide-fab,html.h-app #hc-fab,html.h-lw #screen-head,.lw-help{display:none!important}
 @media (max-width:767px){
   #view-auth .rd-hero-art{display:none}
 }
@@ -148,5 +148,5 @@ html:has(#view-app:not(.hidden)) #guide-fab,html:has(#view-app:not(.hidden)) #hc
 .oc-note:empty{display:none}
 .oc-more{font-size:13.5px;opacity:.75}
 @media (max-width:767px){.rd-start-copy{display:none!important}.rd-start{padding-top:8px!important}}
-body:has(#view-auth:not(.hidden)) #guide-fab{display:none!important}
+html.h-auth body #guide-fab{display:none!important}
 .ux-try{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px}.ux-try .btn{width:100%;white-space:nowrap;min-height:52px;justify-content:center}.ux-try .ux-item-note{margin:0 0 12px}

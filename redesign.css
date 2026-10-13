@@ -1,5 +1,5 @@
 /* ===== fashionistas.ai landing redesign (preview) — scoped to #view-auth ===== */
-.wrap:has(#view-auth:not(.hidden)){max-width:none!important;padding-left:0!important;padding-right:0!important;padding-top:0!important}
+html.h-auth .wrap{max-width:none!important;padding-left:0!important;padding-right:0!important;padding-top:0!important}
 #view-auth{overflow-x:clip}
 #view-auth .rd-c{max-width:1240px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
 .rd-grad{background:linear-gradient(95deg,#ffb37a,#ff6a4d 40%,#d990ff 80%,#ffb37a);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:rdSheen 8s linear infinite}
@@ -199,7 +199,7 @@
 /* floating tour button: hidden while the hero is on screen (body.rd-hero-on), lifted clear of content */
 body.rd-hero-on #hc-fab{opacity:0;pointer-events:none;transform:scale(.8)}
 #hc-fab{transition:opacity .25s,transform .25s}
-@media (max-width:767px){body:has(#view-auth:not(.hidden)) #hc-fab{bottom:calc(16px + env(safe-area-inset-bottom));width:44px;height:44px}}
+@media (max-width:767px){html.h-auth body #hc-fab{bottom:calc(16px + env(safe-area-inset-bottom));width:44px;height:44px}}
 /* marquee: clean pills */
 #view-auth .rd-sec .dest .ship{height:auto;padding:9px 16px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.04em;margin-right:8px}
 /* tap targets + iOS no-zoom inputs */
@@ -353,8 +353,8 @@ body.rd-hero-on #hc-fab{opacity:0;pointer-events:none;transform:scale(.8)}
 }
 
 /* v12 — mobile calm: no endless motion, no blur repaint on scroll, landing chrome hidden in the app */
-body:has(#view-app:not(.hidden)) .land-site-footer,
-body:has(#view-app:not(.hidden)) .rd-bcta{display:none!important}
+html.h-app body .land-site-footer,
+html.h-app body .rd-bcta{display:none!important}
 @media (max-width:767px), (prefers-reduced-motion:reduce){
   .fash-word,.hero-tick .ht-dot,.land-card::before,.dest-track,[class*="shimmer"],.sheen::before,.sheen::after{animation:none!important}
   #topbar,#tabbar,.tabbar,.rd-bcta,.land-nav,#screen-head,.seller-coach-banner,[class*="sticky"]{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
@@ -480,7 +480,7 @@ body:has(#view-app:not(.hidden)) .rd-bcta{display:none!important}
 }
 @media (max-width:899px){
   /* expanded checklist: the chat button steps aside instead of covering it */
-  html.mt-app:has(#seller-coach-panel:not(.collapsed):not(.hidden)) #guide-fab{display:none!important}
+  html.mt-app.h-coach #guide-fab{display:none!important}
   /* snackbar sits in the chat-button row, left of it — never on top of it or the tab bar */
   html.mt-app .toast{left:12px!important;right:68px!important;bottom:calc(var(--tb) + 16px)!important;transform:none!important;max-width:none!important;
     border-radius:14px!important;text-align:left!important;font-size:13.5px!important;line-height:1.35;padding:11px 14px!important}

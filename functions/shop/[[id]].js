@@ -66,6 +66,8 @@ export async function onRequestGet(context) {
 
   let body;
   try { body = await shell(context); } catch (_) { return context.next(); }
+  // Speed: the homepage hero photos are preloaded in the shell; shop/item never show them.
+  body = body.replace(/<link rel="preload" as="image" href="\/assets\/rd\/[^"]+"[^>]*>/g, "");
 
   if (!idStr) {
     const items = await market();
