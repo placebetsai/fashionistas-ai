@@ -71,14 +71,18 @@
       if (hit) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
     });
   }
-  function measure() {
+  var lastH = 0, lastT = 0, mq = 0;
+  function measureNow() {
     if (!MQ.matches) return;
     var h = signedIn() ? document.getElementById("topbar") : document.getElementById("land-nav");
     var hh = h ? Math.ceil(h.getBoundingClientRect().height) : 0;
     var tb = bar ? Math.ceil(bar.getBoundingClientRect().height) : 0;
-    if (hh) root.style.setProperty("--mh", hh + "px");
-    if (tb) root.style.setProperty("--tb", tb + "px");
+    /* write only on change: every write restyles the whole page, and the
+       ResizeObserver above re-fires on the result (Lighthouse: ~2 s of main thread) */
+    if (hh && hh !== lastH) { lastH = hh; root.style.setProperty("--mh", hh + "px"); }
+    if (tb && tb !== lastT) { lastT = tb; root.style.setProperty("--tb", tb + "px"); }
   }
+  function measure() { if (mq) return; mq = requestAnimationFrame(function () { mq = 0; measureNow(); }); }
   function init() {
     build();
     var ro = window.ResizeObserver ? new ResizeObserver(measure) : null;
