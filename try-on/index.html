@@ -735,11 +735,17 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
       .then(function(r){ if (!r.ok) throw new Error("http " + r.status); return r.json(); })
       .then(function(d){
         var rows = (d && d.market) || [];
-        var items = rows.filter(function(x){ return x && x.photo_url; });
+        // Only things you can wear, and never a pre-picked item: a plastic cup
+        // was being loaded as "the garment" for every new visitor.
+        var items = rows.filter(function(x){
+          if (!x || !x.photo_url) return false;
+          var c = String(x.category || "").toLowerCase(), t = String(x.title || "").toLowerCase();
+          if (/^(home|art)\b|bags|handbag|jewel|shoe|accessor/.test(c)) return false;
+          if (!c && !/shirt|tee|top|blouse|polo|jacket|coat|dress|jean|pant|skirt|hoodie|sweater/.test(t)) return false;
+          return true;
+        });
         if (!items.length) return;
-        renderStrip(items, "In the shop — tap to try one on");
-        if (already) return;
-        return loadItem(items[0]);
+        renderStrip(items, "Or try one from the shop");
       })
       .catch(function(){ /* leave whatever restoreLastGarment() managed to restore */ });
   }
