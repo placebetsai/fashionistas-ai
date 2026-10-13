@@ -9,6 +9,8 @@
  * the path. Cached 6 h. Nothing is posted anywhere and no account is used.
  * Affiliate params come later from env (AFF_<SHOP>, e.g. AFF_EBAY="campid=...").
  */
+import { requireAuth } from "../_lib/auth.js";
+
 const SHOPS = {
   "depop.com": "Depop", "poshmark.com": "Poshmark", "vinted.com": "Vinted", "vinted.co.uk": "Vinted",
   "vinted.fr": "Vinted", "ebay.com": "eBay", "ebay.co.uk": "eBay", "etsy.com": "Etsy",
@@ -47,6 +49,9 @@ const meta = (html, prop) => {
 };
 
 export async function onRequestGet({ request, env }) {
+  // Signed-in only: try-on needs an account anyway, and this keeps it from being an open fetch proxy.
+  const auth = await requireAuth(request, env);
+  if (!auth.ok) return auth.response;
   const q = new URL(request.url).searchParams;
   const img = q.get("img");
   if (img) {

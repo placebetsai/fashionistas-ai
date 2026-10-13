@@ -1176,11 +1176,12 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
   cb.addEventListener("change", function(){ if (!cb.checked) { localStorage.removeItem("fash_me_photo"); fg.hidden = true; } });
   fg.addEventListener("click", function(){ localStorage.removeItem("fash_me_photo"); cb.checked = false; fg.hidden = true; });
   var res = document.getElementById("link-res");
+  function H(){ var t = ""; try { t = localStorage.getItem("fash_token") || ""; } catch (e) {} return t ? { Authorization: "Bearer " + t } : {}; }
   function useLink(link){
     if (!link) return; res.hidden = false; res.textContent = "Getting the photo from that listing…";
-    fetch("/api/tryon/from-link?url=" + encodeURIComponent(link)).then(function(r){ return r.json(); }).then(function(d){
+    fetch("/api/tryon/from-link?url=" + encodeURIComponent(link), { headers: H() }).then(function(r){ return r.json(); }).then(function(d){
       if (!d.ok) { res.textContent = d.error || "Couldn't use that link."; return; }
-      return fetch(d.image).then(function(r){ if (!r.ok) throw new Error(); return r.blob(); }).then(function(b){
+      return fetch(d.image, { headers: H() }).then(function(r){ if (!r.ok) throw new Error(); return r.blob(); }).then(function(b){
         setFile("garment", new File([b], "listing.jpg", { type: b.type || "image/jpeg" }));
         res.innerHTML = ""; var t = document.createElement("span"); t.textContent = d.title + (d.price ? " · $" + d.price : "");
         var a = document.createElement("a"); a.href = d.buy_url; a.target = "_blank"; a.rel = "noopener nofollow sponsored"; a.className = "btn btn-accent to-buy"; a.textContent = "Buy on " + d.shop;
