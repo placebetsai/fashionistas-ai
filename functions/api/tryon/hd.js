@@ -372,7 +372,7 @@ export function findFileData(node) {
  * Full try-on round trip against the Space.
  * Throws with `code` set so the caller can distinguish quota from a generic fault.
  */
-export async function runFashn(env, { personBytes, garmentBytes, category, steps, seed }) {
+export async function runFashn(env, { personBytes, garmentBytes, category, steps, seed, photoType }) {
   const space = spaceUrl(env);
   const timeoutMs = intField(env && env.FASHN_TIMEOUT_MS, UPSTREAM_TIMEOUT_MS, {
     min: 30_000,
@@ -389,7 +389,7 @@ export async function runFashn(env, { personBytes, garmentBytes, category, steps
       fileData(personPath, "person.jpg", space),
       fileData(garmentPath, "garment.jpg", space),
       FASHN_CATEGORY[category], // tops | bottoms | one-pieces
-      "model", // photo type
+      photoType === "model" ? "model" : "flat-lay",
       steps,
       guidance,
       seed,
@@ -516,6 +516,7 @@ export async function onRequestPost(context) {
     );
   }
 
+  const photoType = form.photoType === "model" ? "model" : "flat-lay";
   const category = String(garment.category || "upper_body").trim().toLowerCase();
   if (!CATEGORIES.includes(category)) {
     return json(
@@ -538,7 +539,7 @@ export async function onRequestPost(context) {
     else {
       const tm = Date.now();
       try {
-        const out = await modalRun(env, { personBytes: form.person.bytes, garmentBytes: garment.file.bytes, category, seed, steps: 20 });
+        const out = await modalRun(env, { personBytes: form.person.bytes, garmentBytes: garment.file.bytes, category, seed, steps: 20, photoType });
         return finalize(env, request, bucket, {
           bytes: out, ms: Date.now() - tm, via, userId, credits, category, steps: 20, seed, provider: "modal", cost: PAID.modal.costUsd,
         });
@@ -559,6 +560,7 @@ export async function onRequestPost(context) {
       category,
       steps,
       seed,
+      photoType,
     });
   } catch (err) {
     const ms = Date.now() - t0;
@@ -568,12 +570,15 @@ export async function onRequestPost(context) {
 
     // --- 5b. last resort: pay-per-use APIs, only if a key is configured -----
   for (const provider of pickProviders(env)) {
+    // prunaai/p-image-try-on redraws the whole photo from a prompt. That is the
+    // painted result. This route only returns a FASHN redraw.
+    if (provider === "replicate") { tried.push("replicate:not_a_tryon"); continue; }
     const cost = PAID[provider].costUsd;
     if ((await monthSpendUsd(env)) + cost > spendCap(env)) { tried.push(`${provider}:spend_cap`); continue; }
     const tp = Date.now();
     try {
       const r = await paidSubmit(provider, env, {
-        personBytes: form.person.bytes, garmentBytes: garment.file.bytes, category, seed,
+        personBytes: form.person.bytes, garmentBytes: garment.file.bytes, category, seed, photoType,
       });
       if (r.done) {
         const out = await downloadResult(r.url);

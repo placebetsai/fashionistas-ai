@@ -67,17 +67,15 @@ function boolField(form, name, def) {
 }
 
 /**
- * Which photo the person image is:
- *   "model"    the person photo IS the model shot (the product's normal case)
- *   "flat-lay" the person image is a flat garment laid flat, not a person
- * Passed through to the provider as `photo_type` and mixed into the cache key,
- * because "same person photo + same garment" means a different render per mode.
- * Unvalidated here on purpose: the route owns the 422 so the error shape stays
- * with the other route-level field errors.
+ * FASHN's garment photo type, not a description of the person photo:
+ *   "flat-lay" a product shot, hanger, or ghost mannequin (the usual upload)
+ *   "model"    someone is already wearing the garment in that photo
+ * Sending "model" for a product shot makes the redraw invent a body and the
+ * result comes back painted. Empty means flat-lay.
  */
 function photoTypeField(form) {
   const raw = readField(form, "photo_type");
-  if (raw === null || raw === undefined || raw === "") return "model";
+  if (raw === null || raw === undefined || raw === "") return "flat-lay";
   return String(raw).trim().toLowerCase();
 }
 

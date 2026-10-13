@@ -866,13 +866,14 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
 
   // true  -> a person is plausibly in frame, go ahead
   // false -> no usable pose, refuse with the friendly message
-  function personInPhoto(file){
+  function personInPhoto(file, ifUnknown){
+    if (ifUnknown === undefined) ifUnknown = true;
     return loadPose().then(function(landmarker){
-      if (!landmarker) return true;                     // could not check here
+      if (!landmarker) return ifUnknown;                // could not check here
       return createImageBitmap(file).then(function(bmp){
         var out;
         try { out = landmarker.detect(bmp); }
-        catch (e) { return true; }                      // let the server decide
+        catch (e) { return ifUnknown; }                 // let the server decide
         finally { if (bmp.close) bmp.close(); }
         var poses = (out && out.landmarks) || [];
         if (!poses.length) return false;
@@ -914,7 +915,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
         if (sh && hp) { if (Math.abs(hp.y - sh.y) < Math.abs(hp.x - sh.x) * 1.2 || hp.y <= sh.y) return false; }
         else if (tall / wide < 1.5) return false;
         return true;
-      }).catch(function(){ return true; });
+      }).catch(function(){ return ifUnknown; });
     });
   }
 
@@ -938,8 +939,9 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
     });
   }
 
-  function runHd(attempt){
+  function runHd(attempt, photoType){
     attempt = attempt || 0;
+    photoType = photoType === "model" ? "model" : "flat-lay";
     var t0 = Date.now();
     prog(0.04);
     return Promise.all([shrink(files.person, 1280), shrink(files.garment, 1280), hdCategory()]).then(function(parts){
@@ -947,6 +949,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
     fd.append("person", parts[0]);
     fd.append("garment", parts[1]);
     fd.append("category", parts[2]);
+    fd.append("photo_type", photoType);
     say("Uploading and starting the render…", false);
     // The render can take 20 s warm, up to ~90 s when the GPU is waking up.
     var warmMs = warmAt ? Date.now() - warmAt : 0;
@@ -1019,7 +1022,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
       if (e && e.wake && attempt < 2) {
         gpuState = "waking";
         say("The model was waking up. Rendering you wearing it now.", false);
-        return runHd(attempt + 1);
+        return runHd(attempt + 1, photoType);
       }
       prog(null);
       throw e;
@@ -1059,8 +1062,12 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
     setBusy(true);
     var job = personInPhoto(files.person).then(function(ok){
       if (!ok) throw new Error(NO_PERSON_MSG);
+      // A product shot sent as "model" makes FASHN invent a body. The result
+      // is a painting. "model" only when someone is already wearing it.
+      return personInPhoto(files.garment, false);
+    }).then(function(garmentWorn){
       say("Redrawing you wearing it. First one after a quiet period can take about a minute.", false);
-      return runHd();
+      return runHd(0, garmentWorn ? "model" : "flat-lay");
     });
     job
       .catch(function(err){

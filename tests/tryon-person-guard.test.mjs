@@ -175,8 +175,11 @@ test("if the bitmap cannot be decoded, the request falls through too", async () 
 
 test("the guard runs before runHd() and uses the shared friendly message", () => {
   assert.match(html, /personInPhoto\(files\.person\)/, "run() must call the guard");
+  assert.match(html, /personInPhoto\(files\.garment, false\)/, "a product shot must not be sent as a model photo");
+  assert.match(html, /fd\.append\("photo_type", photoType\)/);
+  assert.match(readFileSync(join(ROOT, "functions/api/tryon/hd.js"), "utf8"), /replicate:not_a_tryon/);
   assert.ok(
-    html.indexOf("personInPhoto(files.person)") < html.indexOf("return runHd();"),
+    html.indexOf("personInPhoto(files.person)") < html.indexOf("return runHd(0,"),
     "guard must be awaited before runHd()",
   );
   assert.match(html, /throw new Error\(NO_PERSON_MSG\)/, "rejection must use NO_PERSON_MSG");

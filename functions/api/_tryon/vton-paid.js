@@ -32,7 +32,7 @@ export function modalReady(env) {
   return !!(env && env.MODAL_PROXY_KEY && env.MODAL_PROXY_SECRET) && String((env && env.TRYON_PROVIDER) || "") !== "hf";
 }
 
-export async function modalRun(env, { personBytes, garmentBytes, category, seed, steps }) {
+export async function modalRun(env, { personBytes, garmentBytes, category, seed, steps, photoType }) {
   const url = String(env.FASHN_MODAL_URL || DEFAULT_MODAL_URL).replace(/\/+$/, "");
   const cat = FASHN_CAT[category] || "tops";
   let res;
@@ -46,7 +46,7 @@ export async function modalRun(env, { personBytes, garmentBytes, category, seed,
       },
       body: JSON.stringify({
         person: b64(personBytes), garment: b64(garmentBytes), category: cat,
-        photo_type: "model", steps: Math.max(10, Math.min(50, steps || 20)), seed: seed || 42,
+        photo_type: photoType === "model" ? "model" : "flat-lay", steps: Math.max(10, Math.min(50, steps || 20)), seed: seed || 42,
         segmentation_free: true,
       }),
       signal: AbortSignal.timeout(145000), // Modal cuts web requests at 150 s
@@ -142,7 +142,7 @@ async function replicatePoll(env, id) {
 }
 
 /* ---------------------------------------------------------------- fashn */
-async function fashnSubmit(env, { personBytes, garmentBytes, category, seed }) {
+async function fashnSubmit(env, { personBytes, garmentBytes, category, seed, photoType }) {
   const res = await fetch("https://api.fashn.ai/v1/run", {
     method: "POST",
     headers: { authorization: `Bearer ${env.FASHN_API_KEY}`, "content-type": "application/json" },
@@ -152,6 +152,7 @@ async function fashnSubmit(env, { personBytes, garmentBytes, category, seed }) {
         model_image: dataUri(personBytes, sniff(personBytes)),
         garment_image: dataUri(garmentBytes, sniff(garmentBytes)),
         category: FASHN_CAT[category] || "auto",
+        garment_photo_type: photoType === "model" ? "model" : "flat-lay",
         seed,
       },
     }),
