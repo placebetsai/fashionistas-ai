@@ -1087,9 +1087,17 @@ function marketClearFilters(){
    what the fuck are you trying on". The CTA still exists exactly where it
    means something, on the item itself: placementCtaHtml() is called from the
    detail render, so you open the item and then decide. */
+/* Speed: responsive WebP thumbnails from /img/<w>/<key> (R2, see functions/img).
+   A missing thumb redirects to the original, so this is always safe to use. */
+function thumbAttrs(u, sizes){
+  const m = /^https:\/\/fashionistas-api\.fashionistas1979\.workers\.dev\/api\/images\/(u\/\d+\/[\w.\-]+)$/.exec(String(u||""));
+  if (!m) return `src="${escapeAttr(u)}"`;
+  const k = m[1];
+  return `src="/img/480/${k}" srcset="/img/240/${k} 240w, /img/480/${k} 480w, /img/800/${k} 800w" sizes="${sizes}"`;
+}
 function marketCard(m, i){
   const photo = m.photo_url
-    ? `<img loading="lazy" src="${escapeAttr(m.photo_url)}" alt="" onerror="this.remove()">`
+    ? `<img loading="lazy" ${thumbAttrs(m.photo_url, "(max-width:640px) 50vw, 240px")} alt="" onerror="this.remove()">`
     : `<div class="ph"><span class="ph-ico">${catEmoji(m.category||"item")}</span></div>`;
   const sub = [m.size, m.condition].map(v => String(v||"").trim()).filter(v => v && !/^(n\/?a|none|not visible|unknown|-)$/i.test(v)).join(" · ");
   return `<div class="ux-tile" style="--gi:${Number(i)||0}">`
@@ -1242,7 +1250,7 @@ async function openMarketItem(id, opts){
   kineticTitle(""); $("#view-sub").textContent = "";
   el.innerHTML = `<div class="ux-item">`
   + `<button type="button" class="ux-back" onclick="go('shop')" aria-label="Back to Shop"><svg class='i20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M15 5l-7 7 7 7'/></svg></button>`
-  + (m.photo_url ? `<div class="ux-item-img"><img src="${escapeAttr(m.photo_url)}" alt="${escapeAttr(m.title||"")}" onerror="this.parentNode.remove()"></div>` : "")
+  + (m.photo_url ? `<div class="ux-item-img"><img ${thumbAttrs(m.photo_url, "(max-width:640px) 100vw, 560px")} alt="${escapeAttr(m.title||"")}" onerror="this.parentNode.remove()"></div>` : "")
   + `<div class="ux-item-body">`
   + `<div class="ux-item-price">${money(m.price)}</div>`
   + `<h1 class="ux-item-title">${escapeHtml(m.title||"Untitled")}</h1>`

@@ -13,7 +13,7 @@
  * unreachable we fall back to a plain 200 shell rather than lying either way.
  */
 import { itemHead, injectHead, itemBody, shopBody, injectBody } from "../_lib/item-meta.js";
-import { shopScreen, itemScreen, prerenderInto } from "../_lib/prerender.js";
+import { shopScreen, itemScreen, prerenderInto, thumbPreload, TILE_SIZES, ITEM_SIZES } from "../_lib/prerender.js";
 
 async function marketBody() {
   try {
@@ -59,12 +59,6 @@ export function demoteShellH1(html) {
   );
 }
 
-/* Speed: the first photo(s) the app will paint are known on the server, so the
-   browser starts fetching them with the HTML instead of after the app JS runs. */
-function lcpPreload(urls) {
-  return (urls || []).filter((u) => typeof u === "string" && /^https:\/\//.test(u)).map((u) =>
-    `<link rel="preload" as="image" href="${u.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" fetchpriority="high">`).join("");
-}
 export async function onRequestGet(context) {
   const { request, params } = context;
   const raw = params && params.id;
@@ -87,7 +81,7 @@ export async function onRequestGet(context) {
         `<title>Shop — fashionistas.ai</title>` +
           `<meta name="description" content="Everything for sale on fashionistas.ai — clothing, decor and objects listed by real sellers. One photo in, every shop updated.">` +
           `<link rel="canonical" href="${origin}/shop">` +
-          lcpPreload(items.filter((m) => m && m.photo_url).sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0)).slice(0, 1).map((m) => m && m.photo_url)) + embedMarket(mb)
+          items.filter((m) => m && m.photo_url).sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0)).slice(0, 1).map((m) => thumbPreload(m.photo_url, TILE_SIZES)).join("") + embedMarket(mb)
       ),
       { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" } }
     );
@@ -135,7 +129,7 @@ export async function onRequestGet(context) {
   const demoSeller = sellerUser === "demo" || sellerName === "demo";
   const mb = await morePromise;
   const more = (mb && mb.market) || [];
-  return new Response(injectHead(injectBody(prerenderInto(demoteShellH1(body), "", itemScreen(listing)), itemBody(listing, more)), itemHead(listing, origin) + lcpPreload([listing.photo_url]) + embedMarket(mb), { noindex: demoSeller }), {
+  return new Response(injectHead(injectBody(prerenderInto(demoteShellH1(body), "", itemScreen(listing)), itemBody(listing, more)), itemHead(listing, origin) + thumbPreload(listing.photo_url, ITEM_SIZES) + embedMarket(mb), { noindex: demoSeller }), {
     headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" },
   });
 }
