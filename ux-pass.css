@@ -149,3 +149,4 @@ html:has(#view-app:not(.hidden)) #guide-fab,html:has(#view-app:not(.hidden)) #hc
 .oc-more{font-size:13.5px;opacity:.75}
 @media (max-width:767px){.rd-start-copy{display:none!important}.rd-start{padding-top:8px!important}}
 body:has(#view-auth:not(.hidden)) #guide-fab{display:none!important}
+.ux-try{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px}.ux-try .btn{width:100%;white-space:nowrap;min-height:52px;justify-content:center}.ux-try .ux-item-note{margin:0 0 12px}
