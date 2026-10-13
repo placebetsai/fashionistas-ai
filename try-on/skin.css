@@ -42,3 +42,13 @@ body{background:var(--bg)!important;color:var(--ink)}
 .to-out .note{font-size:12.5px;color:var(--mut);text-align:center;margin:8px 0 0}
 .tx-done #btn-go{background:var(--bg-tint)!important;color:var(--ink)!important;box-shadow:none!important;min-height:48px;font-size:15px!important}
 .to-tips{background:var(--card)!important;border:1px solid var(--line)!important}
+.to-zone.has .to-name{display:none!important}
+#btn-go::before,#btn-go::after{display:none!important}
+#btn-go{background-image:none!important}
+.to-link-res{font-size:13.5px!important;color:var(--mut);justify-content:center;text-align:center}
+.tx-busy .to-link-res{display:none!important}
+.to-remember{font-weight:500!important;font-size:13.5px!important}
+.to-tips summary{font-family:var(--font)!important;font-size:15px!important;font-weight:600!important}
+.to-tips summary *{font-family:inherit!important}
+.tx-skel-img{background:linear-gradient(100deg,var(--bg-tint) 25%,color-mix(in srgb,var(--accent) 14%,var(--bg-tint)) 50%,var(--bg-tint) 75%)!important;background-size:220% 100%!important}
+.to-tips summary{text-transform:none!important;letter-spacing:normal!important}

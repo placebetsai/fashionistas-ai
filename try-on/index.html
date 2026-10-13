@@ -336,7 +336,7 @@ body{-webkit-font-smoothing:antialiased}
 </style>
 <meta name="color-scheme" content="dark">
 <script>if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).catch(function(){});if(window.caches)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})}).catch(function(){})}</script>
-<link rel="stylesheet" href="/try-on/skin.css?v=1">
+<link rel="stylesheet" href="/try-on/skin.css?v=2">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -362,8 +362,8 @@ body{-webkit-font-smoothing:antialiased}
 <main id="main">
 
 <span class="badge to-badge">AI virtual try-on</span>
-<h1 class="to-h1" aria-label="See it on you before you buy it"><span class="w" style="--i:0" aria-hidden="true">See</span> <span class="w" style="--i:1" aria-hidden="true">it</span> <span class="w" style="--i:2" aria-hidden="true">on</span> <span class="w sh" style="--i:3" aria-hidden="true">you</span> <span class="w" style="--i:4" aria-hidden="true">before</span> <span class="w sh" style="--i:5" aria-hidden="true">you</span> <span class="w" style="--i:6" aria-hidden="true">buy</span> <span class="w" style="--i:7" aria-hidden="true">it</span></h1>
-<p class="lede to-lede">Add a photo of yourself. The model redraws you wearing the garment — it is not a sticker laid on the picture. Open anything in the shop and press <b>See it on you</b> and the garment loads itself. Sign in first (free, no card). A render takes about a minute. You can download, save, or share it.</p>
+<h1 class="to-h1">See it on you before you buy it</h1>
+<p class="lede to-lede">Add your photo and any item — a shop link works too. We redraw you wearing it.</p>
 
 <div class="to-rot">
  <span>Works on any piece</span>
@@ -799,7 +799,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
       if (grid) grid.hidden = true;
       $("out").classList.add("on");
       $("ok").classList.add("on");
-      $("out-meta").textContent = note || "";
+      $("out-meta").textContent = (note || "").replace(/ · (tops|bottoms|one-pieces|upper_body|lower_body|dresses|modal|replicate|fashn)/g, "");
       say("Done. This is a new photo of you wearing it.", false);
       try { $("out").scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
       keepEnabled();
@@ -1200,7 +1200,9 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
         setFile("garment", new File([b], "listing.jpg", { type: b.type || "image/jpeg" }));
         res.innerHTML = ""; var t = document.createElement("span"); t.textContent = d.title + (d.price ? " · $" + d.price : "");
         var a = document.createElement("a"); a.href = d.buy_url; a.target = "_blank"; a.rel = "noopener nofollow sponsored"; a.className = "btn btn-accent to-buy"; a.textContent = "Buy on " + d.shop;
-        res.appendChild(t); res.appendChild(a); window.__toBuy = d;
+        res.appendChild(t); window.__toBuy = d;
+        var tt = (d.title || "").toLowerCase(), kind = /dress|jumpsuit|romper|gown/.test(tt) ? "dress" : /jean|pant|trouser|skirt|short|legging|chino/.test(tt) && !/jacket|shirt|coat/.test(tt) ? "bottom" : /jacket|coat|blazer|hoodie|cardigan|sweater/.test(tt) ? "outerwear" : /shirt|tee|top|blouse|polo|tank|sweat/.test(tt) ? "top" : null;
+        if (kind) { var r = document.querySelector('input[name="to-kind"][value="' + kind + '"]'); if (r) { r.checked = true; r.dispatchEvent(new Event("change", { bubbles:true })); } }
       });
     }).catch(function(){ res.textContent = "Couldn't load that listing's photo. Save the photo and add it instead."; });
   }
