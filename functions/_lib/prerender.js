@@ -99,7 +99,7 @@ addEventListener("click",function(ev){if(ready)return;var t=ev.target&&ev.target
 if(!t)return;ev.preventDefault();ev.stopImmediatePropagation();held=t;start()},true);
 ["pointerdown","keydown","touchstart"].forEach(function(t){addEventListener(t,start,{once:true,capture:true,passive:true})});
 var now=H&&(location.search||location.hash||(function(){try{return localStorage.getItem("fash_token")}catch(e){}})());
-function later(){if(H&&w.requestIdleCallback)requestIdleCallback(start,{timeout:2500});else setTimeout(start,0)}
+function later(){requestAnimationFrame(function(){requestAnimationFrame(function(){setTimeout(function(){if(w.requestIdleCallback)requestIdleCallback(start,{timeout:H?2500:1500});else start()},0)})})}
 if(now)start();else if(d.readyState==="complete")later();else addEventListener("load",later,{once:true});})();</script>`;
   return s.slice(0, a) + loader + s.slice(b + endTag.length);
 }
