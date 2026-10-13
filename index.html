@@ -31,6 +31,7 @@
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "fashionistas.ai", "alternateName": "fashionistas.ai — AI Closet & Resale Studio", "applicationCategory": "BusinessApplication", "operatingSystem": "Web", "description": "fashionistas.ai is an AI closet and resale studio. Snap a photo for an item ID, price and your real take-home after fees — then one button prepares the listing for the shops you sell on. Where a shop has no posting API, you press Post in your own browser tab.", "url": "https://fashionistas.ai", "image": "https://fashionistas.ai/og.png", "offers": {"@type": "Offer", "price": "0.00", "priceCurrency": "USD"}, "publisher": {"@type": "Organization", "name": "fashionistas.ai", "url": "https://fashionistas.ai"}}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Organization", "name": "fashionistas.ai", "url": "https://fashionistas.ai", "logo": {"@type": "ImageObject", "url": "https://fashionistas.ai/icon.svg"}}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What does fashionistas.ai do?","acceptedAnswer":{"@type":"Answer","text":"You photograph an item. fashionistas.ai suggests what it is and a price, and the listing goes on fashionistas.ai. Other shops are not posted for you. eBay, Etsy and Whatnot are not connected. On the rest, you can copy the listing and press Post yourself."}},{"@type":"Question","name":"Which marketplaces does it post to?","acceptedAnswer":{"@type":"Answer","text":"It posts on fashionistas.ai. It does not post to eBay, Etsy, Whatnot, Poshmark, Mercari, Depop, Vinted, Grailed, Facebook or Vestiaire. Those connections are not set up. You still sell there by copying the listing and pressing Post on that shop."}},{"@type":"Question","name":"Does it cost money to sell with fashionistas.ai?","acceptedAnswer":{"@type":"Answer","text":"No, not while we're in launch. There is no plan, no card and nothing to cancel, and checkout is not open. Browsing, the shop and try-on are free."}},{"@type":"Question","name":"Does fashionistas.ai offer AR or virtual try-on?","acceptedAnswer":{"@type":"Answer","text":"Yes. Open Try it on, add a photo of the person and a photo of the garment, and fashionistas.ai renders the piece on that photo. Download, save or share the render in one click."}},{"@type":"Question","name":"What happens when something sells?","acceptedAnswer":{"@type":"Answer","text":"You take the listing down yourself on each shop. Nothing is removed from eBay, Etsy or any other shop automatically."}}]}</script><!--SEO-END-->
+<link rel="preconnect" href="https://fashionistas-api.fashionistas1979.workers.dev">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=optional"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=optional" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=optional"></noscript>
@@ -1291,7 +1292,7 @@ textarea.input{font-family:inherit}
  <div class="land-card">
  <div class="card window">
  <div class="auth-head">
- <span class="brand"><span class="mark" aria-hidden="true"><svg class="mark-fb" width="17" height="17" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"><path d="M32 28v-4.5a6 6 0 1 1 6-6"/><path d="M10 46 32 28l22 18z"/></svg><img class="mark-img" src="assets/fashionistas-app-icon-512.svg" alt="" width="32" height="32" onerror="this.remove()" loading="lazy" decoding="async"></span>fashionistas.ai</span>
+ <span class="brand"><span class="mark" aria-hidden="true"><svg class="mark-fb" width="17" height="17" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"><path d="M32 28v-4.5a6 6 0 1 1 6-6"/><path d="M10 46 32 28l22 18z"/></svg><img class="mark-img" src="/assets/fashionistas-app-icon-512.svg" alt="" width="32" height="32" onerror="this.remove()" loading="lazy" decoding="async"></span>fashionistas.ai</span>
  <span class="pill">Free</span>
  </div>
  <div id="oneclick"></div>
@@ -1355,7 +1356,7 @@ textarea.input{font-family:inherit}
  <div id="topbar">
  <button id="nav-burger" class="btn btn-soft btn-sm" onclick="navDrawer(true)" data-tip="Opens the menu so you can jump to any part of the app." title="Open the menu" aria-label="Open the menu" aria-controls="drawer" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
  <a class="fash-brand" href="javascript:go('shop')" title="fashionistas.ai" aria-label="fashionistas.ai shop">
- <span class="app-mark" aria-hidden="true"><svg class="mark-fb" width="21" height="21" viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"><path d="M32 30v-5a6.5 6.5 0 1 1 6.5-6.5"/><path d="M9 46.5 32 30l23 16.5"/></svg><img class="mark-img" src="assets/fashionistas-app-icon-512.svg" alt="" width="38" height="38" onerror="this.remove()" loading="lazy" decoding="async"></span>
+ <span class="app-mark" aria-hidden="true"><svg class="mark-fb" width="21" height="21" viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"><path d="M32 30v-5a6.5 6.5 0 1 1 6.5-6.5"/><path d="M9 46.5 32 30l23 16.5"/></svg><img class="mark-img" src="/assets/fashionistas-app-icon-512.svg" alt="" width="38" height="38" onerror="this.remove()" loading="lazy" decoding="async"></span>
  <span class="fash-name"><span class="fash-word">fashionistas</span><span class="wai" aria-hidden="true">.ai</span></span>
  </a>
  <span class="topbar-actions">
@@ -1495,7 +1496,15 @@ window.IdentifyFill = IdentifyFill;
    document's head; it must never be deferred or module-loaded, or nothing
    drains window.adsbygoogle and no impression is ever reported. */
 import { mountAllAdSlots } from "/site-adsense.js?v=2";
-mountAllAdSlots();
+/* Speed: the loader above still arrives in the head untouched; only filling the
+   slots waits until the first tap/scroll/key or the page is idle (max ~4 s), so
+   ad rendering doesn't compete with the first paint. */
+(function () {
+  var done = false, go = function () { if (done) return; done = true; ["pointerdown", "scroll", "keydown", "touchstart"].forEach(function (e) { removeEventListener(e, go, true); }); mountAllAdSlots(); };
+  ["pointerdown", "scroll", "keydown", "touchstart"].forEach(function (e) { addEventListener(e, go, { capture: true, passive: true, once: true }); });
+  var idle = function () { (window.requestIdleCallback || function (f) { setTimeout(f, 1); })(go, { timeout: 2000 }); };
+  if (document.readyState === "complete") setTimeout(idle, 2000); else addEventListener("load", function () { setTimeout(idle, 2000); }, { once: true });
+})();
 </script>
 </body>
 </html>

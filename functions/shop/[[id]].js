@@ -51,6 +51,12 @@ export function demoteShellH1(html) {
   );
 }
 
+/* Speed: the first photo(s) the app will paint are known on the server, so the
+   browser starts fetching them with the HTML instead of after the app JS runs. */
+function lcpPreload(urls) {
+  return (urls || []).filter((u) => typeof u === "string" && /^https:\/\//.test(u)).map((u) =>
+    `<link rel="preload" as="image" href="${u.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" fetchpriority="high">`).join("");
+}
 export async function onRequestGet(context) {
   const { request, params } = context;
   const raw = params && params.id;
@@ -68,7 +74,8 @@ export async function onRequestGet(context) {
         injectBody(demoteShellH1(body), shopBody(items)),
         `<title>Shop — fashionistas.ai</title>` +
           `<meta name="description" content="Everything for sale on fashionistas.ai — clothing, decor and objects listed by real sellers. One photo in, every shop updated.">` +
-          `<link rel="canonical" href="${origin}/shop">`
+          `<link rel="canonical" href="${origin}/shop">` +
+          lcpPreload(items.slice(0, 2).map((m) => m && m.photo_url))
       ),
       { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" } }
     );
@@ -81,6 +88,7 @@ export async function onRequestGet(context) {
     });
   }
 
+  const morePromise = market(); // in parallel with the listing fetch
   let listing = null;
   let missing = false;
   try {
@@ -113,8 +121,8 @@ export async function onRequestGet(context) {
   const sellerUser = String(listing.seller && listing.seller.username || "").trim().toLowerCase();
   const sellerName = String(listing.seller && (listing.seller.display_name || listing.seller.username) || "").trim().toLowerCase();
   const demoSeller = sellerUser === "demo" || sellerName === "demo";
-  const more = await market();
-  return new Response(injectHead(injectBody(demoteShellH1(body), itemBody(listing, more)), itemHead(listing, origin), { noindex: demoSeller }), {
+  const more = await morePromise;
+  return new Response(injectHead(injectBody(demoteShellH1(body), itemBody(listing, more)), itemHead(listing, origin) + lcpPreload([listing.photo_url]), { noindex: demoSeller }), {
     headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" },
   });
 }
