@@ -15,7 +15,10 @@ export async function onRequest(context) {
   const incoming = new URL(request.url);
   let path = incoming.pathname.replace(/^\/w/, "") || "/";
   if (!path.startsWith("/")) path = "/" + path;
-  const dest = new URL(path + incoming.search, UPSTREAM);
+  // WORKER_UPSTREAM lets a preview branch talk to a Worker *version* preview
+  // without touching production traffic. Production leaves it unset.
+  const upstream = (context.env && context.env.WORKER_UPSTREAM) || UPSTREAM;
+  const dest = new URL(path + incoming.search, upstream);
 
   const headers = new Headers(request.headers);
   headers.delete("host");
