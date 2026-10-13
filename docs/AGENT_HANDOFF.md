@@ -1,5 +1,8 @@
 # Agent handoff — fashionistas.ai
 
+## SPEED branch — 2026-10-13 evening (preview only, NOT shipped)
+Clean copy `~/fa-speed`, branch `speed` off main 8c18e0c, preview https://speed.fashionistas-ai.pages.dev. Lighthouse mobile medians, before → after: home 45 → ~65, shop 48 → ~68, item 54 → ~67, try-on 99 → 99. LCP is still 6.8–8.3 s simulated (about 1.5–2.5 s observed). Target 85 / 2.5 s NOT met. Done: fixed a relative icon path (2×137 KB 404 on /shop); ad slots fill on idle or first interaction (head loader byte-identical, tests pass); `<html>` state classes (h-app, h-auth, h-item, h-buybar, h-sheet, h-lw, h-coach) replace document-wide :has(); shop and item get a server-rendered first paint (`functions/_lib/prerender.js`, mirrors marketCard/item top, keep in sync with the app bundle) + embedded market JSON (`window.__FASH_MARKET__`, served once by a fetch shim) + LCP photo preload; Inter self-hosted (latin variable, `/assets/fonts/`, immutable); parallel item fetch. Left: the 325 KB bundle runs before the app re-renders (route split); seller photos are full-size 80–280 KB JPEGs with no resizing (needs a resize path in the Worker or Cloudflare Images); 91 KB inline CSS and the required head AdSense loader; about 80 animations / 38 backdrop-filters in the first frame.
+
 ## LATEST — 2026-10-13 ~15:10 ET: SHIPPED TO PRODUCTION (read this first)
 
 Production `fashionistas.ai` = git `main` @ `41a9b34` (local only, never pushed). Branches: `oneclick` (c375bea), `blog-preview` (= main), `seo-index` (~/fa-seo-index), `blog-batch` (~/fa-blog). The sections below this one are older and some say "preview only". They are superseded.
