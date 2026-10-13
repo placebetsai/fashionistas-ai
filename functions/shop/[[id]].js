@@ -87,7 +87,7 @@ export async function onRequestGet(context) {
         `<title>Shop — fashionistas.ai</title>` +
           `<meta name="description" content="Everything for sale on fashionistas.ai — clothing, decor and objects listed by real sellers. One photo in, every shop updated.">` +
           `<link rel="canonical" href="${origin}/shop">` +
-          lcpPreload(items.slice(0, 2).map((m) => m && m.photo_url)) + embedMarket(mb)
+          lcpPreload(items.filter((m) => m && m.photo_url).sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0)).slice(0, 1).map((m) => m && m.photo_url)) + embedMarket(mb)
       ),
       { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" } }
     );

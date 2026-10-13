@@ -23,7 +23,7 @@ export function isJunk(m) {
 const clean = (v) => { v = String(v || "").trim(); return v && !/^(n\/?a|none|not visible|unknown|-)$/i.test(v) ? v : ""; };
 function tile(m, i) {
   const sub = [m.size, m.condition].map(clean).filter(Boolean).join(" · ");
-  const img = `<img ${i < 2 ? 'fetchpriority="high"' : 'loading="lazy"'} src="${e(m.photo_url)}" alt="" onerror="this.remove()">`;
+  const img = `<img ${i === 0 ? 'fetchpriority="high"' : i < 4 ? "" : 'loading="lazy"'} src="${e(m.photo_url)}" alt="" onerror="this.remove()">`;
   return `<div class="ux-tile" style="--gi:${i}"><a class="ux-tile-open" href="/shop/${Number(m.id)}"><span class="ux-tile-img">${img}</span>` +
     `<span class="ux-tile-p">${money(m.price)}</span><span class="ux-tile-t">${e(m.title || "Untitled")}</span>` +
     (sub ? `<span class="ux-tile-s">${e(sub)}</span>` : "") + `</a></div>`;
