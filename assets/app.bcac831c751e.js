@@ -920,7 +920,10 @@ function photoResultsHtml(d, secs){
 }
 
 async function renderShop(el){
-  el.innerHTML = showLoader("<p class='mut' style='text-align:center'>Loading what is for sale…</p>");
+  /* Speed: /shop arrives server-rendered (functions/_lib/prerender.js). Keep that
+     markup and its painted images; only wire it up, instead of redrawing. */
+  const ssrGrid = el.querySelector("#market-grid[data-ssr]");
+  if (!ssrGrid) el.innerHTML = showLoader("<p class='mut' style='text-align:center'>Loading what is for sale…</p>");
   refreshTips();
   let httpStatus = 0, body = null, failMsg = "";
   try{
@@ -944,6 +947,7 @@ async function renderShop(el){
   if (S.photoPending){ S.photoPending = false; setTimeout(photoSearchGo, 90); }
   if (S.photoPending){ S.photoPending = false; setTimeout(photoSearchGo, 90); }
   stopRolls();
+  if (ssrGrid && ssrGrid.isConnected && hydrateShop(el, ssrGrid)) { refreshTips(); startRolls(el); countUp(el); return; }
   el.innerHTML = `<div class="closet-tools ux-search">`
   + `<input class="input" id="market-search" placeholder="Search brand, size, or item" value="${escapeAttr(S.marketQ||"")}" oninput="marketQ(this.value)" aria-label="Search brand, size, or item" style="margin:0">`
   + `<select class="input" id="market-sort" onchange="marketSort(this.value)" data-tip="Change the order of the items you see." style="margin:0">`
@@ -960,6 +964,38 @@ async function renderShop(el){
   marketRefresh();
   startRolls(el);
   countUp(el);
+}
+function shopToolsHtml(){
+  return `<div class="closet-tools ux-search">`
+  + `<input class="input" id="market-search" placeholder="Search brand, size, or item" value="${escapeAttr(S.marketQ||"")}" oninput="marketQ(this.value)" aria-label="Search brand, size, or item" style="margin:0">`
+  + `<select class="input" id="market-sort" onchange="marketSort(this.value)" data-tip="Change the order of the items you see." style="margin:0">`
+  + `<option value="new"${S.marketSort==="new"?" selected":""}>Newest</option>`
+  + `<option value="price-lo"${S.marketSort==="price-lo"?" selected":""}>Price low to high</option>`
+  + `<option value="price-hi"${S.marketSort==="price-hi"?" selected":""}>Price high to low</option>`
+  + `</select></div>`;
+}
+function hydrateShop(el, grid){
+  const tools = el.querySelector(".closet-tools");
+  const typed = el.querySelector("#ssr-q");
+  if (typed && typed.value) S.marketQ = typed.value;
+  const focused = document.activeElement === typed;
+  if (tools) tools.outerHTML = shopToolsHtml();
+  if (focused){ const q = document.getElementById("market-search"); if (q){ q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }
+  const nav = document.getElementById("market-nav");
+  if (nav) nav.innerHTML = marketNavHtml();
+  const ids = marketRows().map(m => Number(m.id)).join(",");
+  if (ids === grid.getAttribute("data-ssr")){
+    grid.querySelectorAll("a.ux-tile-open").forEach(a => {
+      const id = Number((a.getAttribute("href")||"").split("/").pop());
+      a.setAttribute("onclick", `openMarketItem(${id});return false`);
+      a.setAttribute("data-tip", "Opens the full details for this item.");
+    });
+    const cc = document.getElementById("market-count");
+    if (cc && S.marketQ) marketRefresh(); else if (cc) { const n = marketRows().length; cc.textContent = n ? n + (n===1?" item":" items") + marketWhere() : ""; }
+  } else marketRefresh();
+  grid.removeAttribute("data-ssr");
+  grid.insertAdjacentHTML("afterend", photoSearchCard() + affCard());
+  return true;
 }
 /* Department -> subcategory browser plus breadcrumb. Split out of renderShop so
    picking a department repaints the nav in place instead of refetching the

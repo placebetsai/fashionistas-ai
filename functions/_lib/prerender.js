@@ -49,9 +49,9 @@ export function shopScreen(market) {
   const other = rows.some((m) => !DEPTS.includes(String(m.category || "").split("/")[0]));
   return `<div class="closet-tools ux-search"><input class="input" id="ssr-q" placeholder="Search brand, size, or item" aria-label="Search brand, size, or item" style="margin:0">` +
     `<select class="input" aria-label="Sort" style="margin:0"><option>Newest</option></select></div>` +
-    `<div><div class="chips" aria-label="Find">${chip("All", true)}${DEPTS.map((d) => chip(d, false)).join("")}${other ? chip("Other", false) : ""}</div></div>` +
-    `<p class="mut" style="margin:2px 0 8px">${rows.length ? rows.length + (rows.length === 1 ? " item" : " items") : ""}</p>` +
-    `<div class="grid">${rows.map(tile).join("")}</div>`;
+    `<div id="market-nav"><div class="chips" id="market-subs" aria-label="Find">${chip("All", true)}${DEPTS.map((d) => chip(d, false)).join("")}${other ? chip("Other", false) : ""}</div></div>` +
+    `<p class="mut" id="market-count" style="margin:2px 0 8px">${rows.length ? rows.length + (rows.length === 1 ? " item" : " items") : ""}</p>` +
+    `<div class="grid" id="market-grid" data-ssr="${rows.map((m) => Number(m.id)).join(",")}">${rows.map(tile).join("")}</div>`;
 }
 export function itemScreen(m) {
   return `<div class="ux-item"><a class="ux-back" href="/shop" aria-label="Back to Shop"><svg class='i20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M15 5l-7 7 7 7'/></svg></a>` +
@@ -75,7 +75,8 @@ export function prerenderInto(html, title, screen) {
  * competing with the first paint. The scripts were written for `defer`, so while
  * they load late a DOMContentLoaded/load listener they add runs right away.
  */
-export function lateScripts(html) {
+export function lateScripts(html, opts) {
+  const home = !!(opts && opts.home);
   const s = String(html);
   const a = s.indexOf('<script src="/assets/categories.js');
   const endTag = '<script src="/mobile-nav.js?v=4" defer></script>';
@@ -84,14 +85,21 @@ export function lateScripts(html) {
   const block = s.slice(a, b + endTag.length);
   const srcs = [...block.matchAll(/<script src="([^"]+)" defer><\/script>|<script type="module">\s*import \* as IdentifyFill from "([^"]+)";[\s\S]*?<\/script>/g)]
     .map((m) => (m[1] ? { s: m[1] } : { m: m[2] }));
-  const loader = `<script>(function(){var L=${JSON.stringify(srcs)},go=false,d=document,w=window;
+  /* Tap replay: until the app has booted, a click on a button/chip/[onclick]
+     (not a plain link, which navigates fine on its own) is held, the app load
+     starts at once, and the same element is clicked again when it is ready. */
+  const loader = `<script>(function(){var L=${JSON.stringify(srcs)},go=false,ready=false,held=null,d=document,w=window,H=${home};
 function start(){if(go)return;go=true;var ae=d.addEventListener,we=w.addEventListener;
 d.addEventListener=function(t,f){if(t==="DOMContentLoaded"){setTimeout(f,0);return}return ae.apply(this,arguments)};
 w.addEventListener=function(t,f){if(t==="load"&&d.readyState==="complete"){setTimeout(f,0);return}return we.apply(this,arguments)};
-var i=0;(function next(){if(i>=L.length){d.addEventListener=ae;w.addEventListener=we;return}var x=L[i++];
+var i=0;(function next(){if(i>=L.length){d.addEventListener=ae;w.addEventListener=we;setTimeout(function(){ready=true;w.__FASH_READY__=true;if(held&&held.isConnected)held.click();held=null},30);return}var x=L[i++];
 if(x.m){import(x.m).then(function(M){w.IdentifyFill=M}).catch(function(){}).then(next);return}
 var e=d.createElement("script");e.src=x.s;e.async=false;e.onload=e.onerror=next;d.body.appendChild(e)})()}
+addEventListener("click",function(ev){if(ready)return;var t=ev.target&&ev.target.closest&&ev.target.closest("button,[onclick],[role=button]");
+if(!t)return;ev.preventDefault();ev.stopImmediatePropagation();held=t;start()},true);
 ["pointerdown","keydown","touchstart"].forEach(function(t){addEventListener(t,start,{once:true,capture:true,passive:true})});
-if(d.readyState==="complete")setTimeout(start,0);else addEventListener("load",function(){setTimeout(start,0)},{once:true});})();</script>`;
+var now=H&&(location.search||location.hash||(function(){try{return localStorage.getItem("fash_token")}catch(e){}})());
+function later(){if(H&&w.requestIdleCallback)requestIdleCallback(start,{timeout:2500});else setTimeout(start,0)}
+if(now)start();else if(d.readyState==="complete")later();else addEventListener("load",later,{once:true});})();</script>`;
   return s.slice(0, a) + loader + s.slice(b + endTag.length);
 }
