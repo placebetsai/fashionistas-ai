@@ -393,6 +393,9 @@ body{-webkit-font-smoothing:antialiased}
    <input type="file" id="file-garment" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose the garment photo">
   </div>
  </div>
+ <form class="to-link" id="link-form" autocomplete="off"><input class="to-link-in" id="link-in" type="url" inputmode="url" placeholder="Paste a Depop, Poshmark, Vinted, eBay… link" aria-label="Listing link"><button class="to-btn" type="submit" id="link-go">Use link</button></form>
+ <div class="to-link-res" id="link-res" hidden></div>
+ <label class="to-remember"><input type="checkbox" id="remember-me"> Remember my photo on this phone <button type="button" class="to-forget" id="forget-me" hidden>Forget it</button></label>
  <div class="to-closet" id="closet-strip" hidden><span class="to-closet-l">Your listings</span></div>
 
  <div class="to-kind" role="radiogroup" aria-label="Garment type">
@@ -461,6 +464,12 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
   // The only try-on is FASHN VTON 1.5 on Modal: it redraws the person wearing
   // the garment. There is no on-device sticker path.
   var API_HD = "/api/tryon/hd";
+  // Saved buyer photo: kept ONLY on this phone (localStorage), opt-in, one tap to forget.
+  function rememberPerson(file){
+    var cb = document.getElementById("remember-me"); if (!cb || !cb.checked) return;
+    var fr = new FileReader(); fr.onload = function(){ try { localStorage.setItem("fash_me_photo", fr.result); var f = document.getElementById("forget-me"); if (f) f.hidden = false; } catch (e) {} }; fr.readAsDataURL(file);
+  }
+  function dataUrlFile(d, name){ var a = d.split(","), mime = (/:(.*?);/.exec(a[0]) || [])[1] || "image/jpeg", bin = atob(a[1]), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return new File([u], name, { type: mime }); }
   // Wake the GPU while the buyer is still choosing photos (see /api/tryon/warm).
   var gpuState = "unknown", warmAt = 0;
   function warmGpu(){
@@ -538,6 +547,8 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
     $("btn-share").disabled = !last.at;
   }
 
+  window.__toSetFile = function(k, f){ return setFile(k, f); };
+  window.__toDataUrlFile = function(d, n){ return dataUrlFile(d, n); };
   function setFile(kind, file){
     if (!file) return;
     if (!/^image\//.test(file.type || "")){
@@ -545,6 +556,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
       return;
     }
     files[kind] = file;
+    if (kind === "person") try { rememberPerson(file); } catch (e) {}
     try { warmGpu(); } catch (e) {}
     var grid = document.querySelector(".to-grid");
     if (grid) grid.hidden = false;
@@ -917,7 +929,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
     say("Uploading and starting the render…", false);
     // The render can take 20 s warm, up to ~90 s when the GPU is waking up.
     var warmMs = warmAt ? Date.now() - warmAt : 0;
-    var EST = gpuState === "warm" || warmMs > 150000 ? 25000 : Math.max(30000, 170000 - warmMs);
+    var EST = gpuState === "warm" || warmMs > 150000 ? 25000 : Math.max(25000, 90000 - warmMs);
     var ticker = setInterval(function(){
       var el = Date.now() - t0;
       prog(Math.min(0.92, el / EST));
@@ -1156,5 +1168,31 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
   } catch (e) {}
 })();
 </script>
+<script>
+(function(){
+  var setFile = window.__toSetFile; if (!setFile) return;
+  var cb = document.getElementById("remember-me"), fg = document.getElementById("forget-me");
+  try { var saved = localStorage.getItem("fash_me_photo"); if (saved) { cb.checked = true; fg.hidden = false; setFile("person", window.__toDataUrlFile(saved, "my-photo.jpg")); } } catch (e) {}
+  cb.addEventListener("change", function(){ if (!cb.checked) { localStorage.removeItem("fash_me_photo"); fg.hidden = true; } });
+  fg.addEventListener("click", function(){ localStorage.removeItem("fash_me_photo"); cb.checked = false; fg.hidden = true; });
+  var res = document.getElementById("link-res");
+  function useLink(link){
+    if (!link) return; res.hidden = false; res.textContent = "Getting the photo from that listing…";
+    fetch("/api/tryon/from-link?url=" + encodeURIComponent(link)).then(function(r){ return r.json(); }).then(function(d){
+      if (!d.ok) { res.textContent = d.error || "Couldn't use that link."; return; }
+      return fetch(d.image).then(function(r){ if (!r.ok) throw new Error(); return r.blob(); }).then(function(b){
+        setFile("garment", new File([b], "listing.jpg", { type: b.type || "image/jpeg" }));
+        res.innerHTML = ""; var t = document.createElement("span"); t.textContent = d.title + (d.price ? " · $" + d.price : "");
+        var a = document.createElement("a"); a.href = d.buy_url; a.target = "_blank"; a.rel = "noopener nofollow sponsored"; a.className = "btn btn-accent to-buy"; a.textContent = "Buy on " + d.shop;
+        res.appendChild(t); res.appendChild(a); window.__toBuy = d;
+      });
+    }).catch(function(){ res.textContent = "Couldn't load that listing's photo. Save the photo and add it instead."; });
+  }
+  document.getElementById("link-form").addEventListener("submit", function(e){ e.preventDefault(); useLink(document.getElementById("link-in").value.trim()); });
+  var q = new URLSearchParams(location.search), shared = q.get("shared_url") || ((q.get("shared_text") || "").match(/https:\/\/\S+/) || [])[0];
+  if (shared) { document.getElementById("link-in").value = shared; useLink(shared); }
+})();
+</script>
+<style>.to-link{display:flex;gap:8px;margin:12px 0 6px}.to-link-in{flex:1;min-width:0;min-height:46px;border-radius:12px;padding:0 12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:inherit;font-size:15px}.to-link-res{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:14px;margin:4px 0 8px}.to-buy{min-height:44px;display:inline-flex;align-items:center}.to-remember{display:flex;gap:8px;align-items:center;font-size:14px;margin:6px 0;min-height:40px}.to-forget{background:none;border:0;color:inherit;text-decoration:underline;opacity:.8}</style>
 </body>
 </html>
