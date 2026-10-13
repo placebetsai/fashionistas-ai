@@ -34,6 +34,10 @@
 /assets/app.*
   Cache-Control: public, max-age=31536000, immutable
 
+/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+  Access-Control-Allow-Origin: *
+
 /assets/rd/*
   Cache-Control: public, max-age=2592000
 
