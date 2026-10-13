@@ -26,11 +26,13 @@
   }
   function busy(btn, on, label) { if (!btn) return; btn.disabled = on; if (label) btn.querySelector("span").textContent = label; }
 
+  var condAbort = null;
   async function passkeyLogin(conditional) {
+    if (condAbort) { try { condAbort.abort(); } catch (e) {} condAbort = null; }
     var o = await post("/api/auth/passkey/login-options");
     var pk = o.publicKey;
     var opts = { publicKey: { challenge: u2b(pk.challenge), rpId: pk.rpId, userVerification: pk.userVerification, timeout: pk.timeout, allowCredentials: [] } };
-    if (conditional) opts.mediation = "conditional";
+    if (conditional) { opts.mediation = "conditional"; condAbort = new AbortController(); opts.signal = condAbort.signal; }
     var c = await navigator.credentials.get(opts);
     if (!c) return;
     var d = await post("/api/auth/passkey/login", {
@@ -42,6 +44,7 @@
   }
   async function passkeyCreate() {
     var name = (document.getElementById("oc-name") || {}).value || "";
+    if (condAbort) { try { condAbort.abort(); } catch (e) {} condAbort = null; }
     var o = await post("/api/auth/passkey/register-options", { name: name.trim() });
     var pk = o.publicKey;
     var c = await navigator.credentials.create({ publicKey: {
