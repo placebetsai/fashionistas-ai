@@ -48,7 +48,7 @@ export const ADAPTERS = {
     return id ? { ok: true, remote_id: id, url: null, note: "Square: add the photo in Square Dashboard (image upload needs a file, not a URL)" } : { ok: false, error: "Square returned no id" };
   },
   async wix(c, p) {
-    const h = { "Content-Type": "application/json", Authorization: c.api_key, "wix-site-id": String(c.site_id || "").trim() };
+    const h = { "Content-Type": "application/json", Authorization: c.api_key || c.access_token }; if (c.site_id) h["wix-site-id"] = String(c.site_id).trim();
     const r = await fetch("https://www.wixapis.com/stores/v1/products", { method: "POST", headers: h, body: JSON.stringify({ product: { name: p.title.slice(0, 80), productType: "physical", priceData: { price: Number(p.price) }, description: esc(p.description).replace(/\n/g, "<br>"), sku: p.sku, visible: true } }) });
     if (!r.ok) return bad(r, "Wix");
     const d = (await r.json()).product || {}; if (!d.id) return { ok: false, error: "Wix returned no id" };
