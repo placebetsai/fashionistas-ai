@@ -214,6 +214,7 @@ function enterBrowse(v){
   go(v || "shop");
 }
 async function go(v){
+  try{ document.documentElement.dataset.view = v; }catch(e){}
   document.querySelectorAll("nav.tabbar a, #topnav a, #drawer-links a").forEach(a => a.classList.toggle("on", a.dataset.v === v));
   navDrawer(false);
   /* A sheet belongs to the screen you opened it from. Leave it hanging around

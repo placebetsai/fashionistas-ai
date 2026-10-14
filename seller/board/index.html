@@ -38,9 +38,44 @@
 <main id="main">
 <span class="badge">Seller · free</span>
 <h1>Crosslist board</h1>
-<p class="lede">Every item, every shop, one screen. Your fashionistas.ai listing is live the moment you post — free. For other shops: <b>Copy &amp; open</b> copies the title, price and description and opens that shop's new-listing page (the browser extension auto-fills the form). Then tap <b>Listed</b> or <b>Sold</b> so this board stays true. <a href="/seller/stats/">Stats →</a></p>
-<div class="card"><p id="b-msg">Loading…</p><div id="b-list"></div></div>
-<style>.bl{padding:12px 0;border-bottom:1px solid var(--line,#ddd)}.bl-h{display:flex;gap:10px;align-items:center}.bl-h img{width:52px;height:52px;object-fit:cover;border-radius:8px}.bl-h b{display:block}.bl-s{display:grid;grid-template-columns:1fr auto;gap:6px 8px;align-items:center;margin-top:8px;font-size:14px}.st{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line,#ccc);margin-left:6px}.st-listed{background:#e6f6ec;color:#11683a;border-color:#9bd3ad}.st-sold{background:#111;color:#fff}.st-copied{background:#fff6dd;color:#7a5600}.bl-a{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}.bl-a button,.bl-a a{font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid var(--line,#ccc);background:transparent;color:inherit;cursor:pointer;text-decoration:none}[data-theme=dark] .st-listed{background:#123d24;color:#b9f0cc}[data-theme=dark] .st-sold{background:#fff;color:#111}[data-theme=dark] .st-copied{background:#3d300c;color:#ffe39a}@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .st-listed{background:#123d24;color:#b9f0cc}:root:not([data-theme=light]) .st-sold{background:#fff;color:#111}:root:not([data-theme=light]) .st-copied{background:#3d300c;color:#ffe39a}}</style>
+<p class="lede">Every item, every shop, one place. Live on fashionistas.ai the moment you post. Elsewhere: <b>Copy &amp; open</b>, then mark it <b>Listed</b> or <b>Sold</b>. <a href="/seller/stats/">Stats&nbsp;→</a></p>
+<p id="b-msg" class="b-msg">Loading…</p><div id="b-list"></div>
+<style>
+.b-msg{color:var(--mut);font-size:14px;margin:4px 0 14px}
+.b-empty{text-align:center;padding:40px 22px;border:1px dashed var(--line-2);border-radius:22px;background:var(--card)}
+.b-empty .ic{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;margin:0 auto 12px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);font-size:28px}
+.b-empty h2{font-family:ui-serif,"New York",Georgia,serif;font-weight:500;font-size:24px;margin:0 0 6px}
+.b-empty p{color:var(--mut);margin:0 0 16px}
+.b-btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 22px;border-radius:999px;background:var(--accent);color:#fff!important;font-weight:700;text-decoration:none!important}
+.bl{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px;margin:0 0 14px;box-shadow:var(--sh-1)}
+.bl-h{display:flex;gap:12px;align-items:center}
+.bl-h img{width:64px;height:80px;object-fit:cover;border-radius:14px;flex:none;background:var(--soft)}
+.bl-h .t{min-width:0;flex:1}
+.bl-h b{display:block;font-size:16px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bl-h .pr{font-weight:800;font-size:15px}
+.bl-sum{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip-s{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--soft);color:var(--mut)}
+.bl-d{margin-top:12px;border-top:1px solid var(--line)}
+.bl-d summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:12px 2px 4px;font-weight:700;font-size:14px}
+.bl-d summary::-webkit-details-marker{display:none}
+.bl-d summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--mut);border-bottom:2px solid var(--mut);transform:rotate(45deg);transition:transform .2s}
+.bl-d[open] summary::after{transform:rotate(-135deg)}
+.bl-s{list-style:none;margin:0;padding:0}
+.bl-shop{padding:12px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.bl-shop:last-child{border-bottom:0}
+.bl-r1{display:flex;align-items:center;gap:10px;min-width:0}
+.bl-ic{width:32px;height:32px;border-radius:10px;flex:none;display:grid;place-items:center;font-weight:800;font-size:13px;background:var(--soft);color:var(--ink)}
+.bl-nm{flex:1;min-width:0;font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bl-nm a{font-weight:700;margin-left:4px}
+.st{flex:none;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--soft);color:var(--mut);white-space:nowrap}
+.st-listed{background:#e3f4ea;color:#11683a}.st-sold{background:#16151a;color:#fff}.st-copied{background:#fff2d1;color:#7a5600}
+.bl-a{display:flex;gap:8px;margin:10px 0 0 42px}
+.bl-a button,.bl-a a{flex:1;min-height:38px;padding:0 10px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+.bl-a .pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.bl-a button:active,.bl-a a:active{transform:scale(.97)}
+:root[data-theme=dark] .st-listed{background:#123d24;color:#b9f0cc}:root[data-theme=dark] .st-sold{background:#fff;color:#111}:root[data-theme=dark] .st-copied{background:#3d300c;color:#ffe39a}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .st-listed{background:#123d24;color:#b9f0cc}:root:not([data-theme=light]) .st-sold{background:#fff;color:#111}:root:not([data-theme=light]) .st-copied{background:#3d300c;color:#ffe39a}}
+</style>
 </main>
 
 <footer class="site-footer">
@@ -63,21 +98,27 @@
   var CLS={listed:'st-listed',active:'st-listed',sold:'st-sold',copied:'st-copied',pending:'st-copied',queued:'st-copied'};
   var data=null, msg=document.getElementById('b-msg'), list=document.getElementById('b-list');
   function copyText(l){return [l.title, l.price!=null?('$'+l.price):'', [l.brand,l.size,l.condition,l.color].filter(Boolean).join(' · '), l.description||''].filter(Boolean).join('\n');}
+  var OPEN={};
   function render(){
-    if(!data.listings.length){ msg.innerHTML='Nothing posted yet. <a href="/">Post an item</a> — it goes live here instantly, free.'; list.innerHTML=''; return; }
-    msg.textContent=data.listings.length+' item'+(data.listings.length>1?'s':'')+'. Statuses are what you (or a connected shop API) confirmed — nothing is guessed.';
-    list.innerHTML=data.listings.map(function(l){
+    if(!data.listings.length){ msg.textContent=''; list.innerHTML='<div class="b-empty"><div class="ic">✦</div><h2>Nothing posted yet</h2><p>Snap one item — it\'s live on fashionistas.ai in seconds, free. Then send it everywhere from here.</p><a class="b-btn" href="/">Post your first item</a></div>'; return; }
+    msg.textContent=data.listings.length+' item'+(data.listings.length>1?'s':'')+' · statuses are only what you or a connected shop confirmed.';
+    list.innerHTML=data.listings.map(function(l,i){
+      var nListed=0,soldOn='';
       var rows=data.shops.map(function(s){
         var st=(l.shops[s.id]||{}).status||'not_started', url=(l.shops[s.id]||{}).url;
-        var a='';
-        if(s.id==='fashionistas'){ a='<a href="/shop/'+Number(l.id)+'">View</a>'+(st!=='sold'?'<button data-act="sold" data-p="fashionistas" data-id="'+l.id+'">Sold</button>':''); }
+        if(st==='listed'||st==='active') nListed++; if(st==='sold') soldOn=s.name;
+        var a='', d='data-p="'+s.id+'" data-id="'+l.id+'"';
+        if(s.id==='fashionistas'){ a='<a href="/shop/'+Number(l.id)+'">View</a>'+(st!=='sold'?'<button data-act="sold" '+d+'>Sold</button>':''); }
         else if(st!=='sold'){
-          a='<button data-act="copy" data-p="'+s.id+'" data-id="'+l.id+'">'+(s.api_ready?'Post via API':'Copy &amp; open')+'</button>'+(st!=='listed'&&st!=='active'?'<button data-act="listed" data-p="'+s.id+'" data-id="'+l.id+'">Listed</button>':'')+'<button data-act="sold" data-p="'+s.id+'" data-id="'+l.id+'">Sold</button>'+(st==='listed'?'<button data-act="delisted" data-p="'+s.id+'" data-id="'+l.id+'">Delist</button>':'');
+          a='<button class="pri" data-act="copy" '+d+'>'+(s.api_ready?'Post via API':'Copy &amp; open')+'</button>'+(st==='listed'||st==='active'?'<button data-act="delisted" '+d+'>Delist</button>':'<button data-act="listed" '+d+'>Listed</button>')+'<button data-act="sold" '+d+'>Sold</button>';
         }
-        return '<div>'+esc(s.name)+'<span class="st '+(CLS[st]||'')+'">'+esc(LBL[st]||st)+'</span>'+(url&&/^https:/.test(url)?' <a href="'+esc(url)+'" target="_blank" rel="noopener">↗</a>':'')+'</div><div class="bl-a">'+a+'</div>';
+        return '<li class="bl-shop"><div class="bl-r1"><span class="bl-ic" aria-hidden="true">'+esc(s.name.charAt(0))+'</span><span class="bl-nm">'+esc(s.name)+(url&&/^https:/.test(url)?'<a href="'+esc(url)+'" target="_blank" rel="noopener" aria-label="Open listing">↗</a>':'')+'</span><span class="st '+(CLS[st]||'')+'">'+esc(LBL[st]||st)+'</span></div>'+(a?'<div class="bl-a">'+a+'</div>':'')+'</li>';
       }).join('');
-      return '<div class="bl"><div class="bl-h">'+(l.photo_url?'<img src="'+esc(l.photo_url)+'" alt="" loading="lazy">':'')+'<div><b>'+esc(l.title||'Untitled')+'</b><small>'+(l.price!=null?'$'+esc(l.price):'')+'</small></div></div><div class="bl-s">'+rows+'</div></div>';
+      var open=(l.id in OPEN)?OPEN[l.id]:i===0;
+      var sum='<span class="chip-s">'+(l.status==='sold'?'Sold'+(soldOn?' on '+esc(soldOn):''):'Live here')+'</span><span class="chip-s">Listed on '+nListed+' other'+(nListed===1?'':'s')+'</span>';
+      return '<article class="bl"><div class="bl-h">'+(l.photo_url?'<img src="'+esc(l.photo_url)+'" alt="" loading="lazy">':'')+'<div class="t"><b>'+esc(l.title||'Untitled')+'</b><span class="pr">'+(l.price!=null?'$'+esc(l.price):'')+'</span><div class="bl-sum">'+sum+'</div></div></div><details class="bl-d" data-id="'+l.id+'"'+(open?' open':'')+'><summary>Shops ('+data.shops.length+')</summary><ul class="bl-s">'+rows+'</ul></details></article>';
     }).join('');
+    [].forEach.call(list.querySelectorAll('details.bl-d'),function(d){d.addEventListener('toggle',function(){OPEN[d.getAttribute('data-id')]=d.open;});});
   }
   function load(){
     fetch('/api/crosslist/board',{credentials:'include',headers:h}).then(function(r){return r.json().then(function(j){return {r:r,j:j};});}).then(function(x){

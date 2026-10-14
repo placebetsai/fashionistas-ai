@@ -33,7 +33,7 @@ try{
  ok('S3 post to fashionistas.ai is instant and free',!!listingId,'id '+listingId+' in '+((Date.now()-t0)/1000).toFixed(1)+'s');
  // S4 crosslist board: all marketplaces, copy&open, mark listed, mark sold
  await p.goto(B+'/seller/board/',{waitUntil:'networkidle'});await p.waitForTimeout(1500);
- const shops=await p.evaluate(()=>document.querySelectorAll('.bl')[0]?document.querySelectorAll('.bl')[0].querySelectorAll('.bl-s > div:nth-child(odd)').length:0);
+ const shops=await p.evaluate(()=>document.querySelectorAll('.bl')[0]?document.querySelectorAll('.bl')[0].querySelectorAll('.bl-shop').length:0);
  ok('S4a board lists every marketplace for the item',shops>=17,shops+' shops');
  const [pop]=await Promise.all([ctx.waitForEvent('page',{timeout:8000}).catch(()=>null),p.click(`.bl button[data-act=copy][data-p=poshmark][data-id="${listingId}"]`)]);
  await p.waitForTimeout(1500);if(pop) await pop.close();
