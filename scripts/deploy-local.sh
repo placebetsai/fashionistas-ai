@@ -136,7 +136,7 @@ trap 'rm -rf "$STAGE"' EXIT
 rsync -a --delete \
   --exclude='.*' \
   --exclude='node_modules/' --exclude='__pycache__/' --exclude='*.pyc' --exclude='*.log' \
-  --exclude='*.env' --exclude='*.pem' --exclude='*.key' \
+  --exclude='*.env' --exclude='*.pem' --exclude='*.key' --exclude='e2e/' --exclude='mobile/' \
   ./ "$STAGE/"
 # Hard fail if any dotfile or key material made it into the stage.
 leak="$(find "$STAGE" \( -name '.*' -o -name '*.env' -o -name '*.pem' -o -name '*.key' \) -print | head -5)"

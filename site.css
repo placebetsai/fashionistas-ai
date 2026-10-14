@@ -48,6 +48,24 @@
   --ring:0 0 0 3px rgba(255,78,58,.18);
   color-scheme:light;
 }
+/* follow the phone's light/dark setting until the user picks one (the app already did; static pages did not) */
+@media (prefers-color-scheme: light){
+:root:not([data-theme="dark"]){
+  --bg:#faf7f2; --bg-tint:#f4efe7;
+  --card:#ffffff; --card-2:#fffdfa;
+  --line:#e9e2d8; --line-2:#ddd3c5;
+  --ink:#12121a; --mut:#74747e;
+  --input-bg:#ffffff; --soft:#eee9e0;
+  --good:#1f7a4d; --good-soft:#e2efe7; --bad:#c0392b;
+  --sheen:rgba(255,255,255,.55);
+  --sh-1:0 1px 2px rgba(24,16,10,.05);
+  --shadow:0 10px 34px rgba(24,16,10,.09);
+  --ring:0 0 0 3px rgba(255,78,58,.18);
+  color-scheme:light;
+}
+:root:not([data-theme="dark"]) body{background:radial-gradient(46% 34% at 8% 2%,rgba(255,138,61,.10),transparent 62%),radial-gradient(38% 30% at 94% 0%,rgba(124,92,255,.08),transparent 64%),var(--bg)}
+}
+
 
 *{box-sizing:border-box}
 html{background:var(--bg)}
@@ -154,3 +172,10 @@ textarea.input{min-height:140px;resize:vertical}
 [data-ad-slot]{display:block;min-height:280px;margin:28px 0}
 [data-ad-slot]:has(ins[data-ad-status="unfilled"]){min-height:0;margin:0}
 [data-ad-slot] ins[data-ad-status="unfilled"]{display:none!important}
+
+/* premium polish: editorial headings, softer cards, gentle motion */
+h1{font-family:ui-serif,"New York","Iowan Old Style",Georgia,serif;font-weight:600;letter-spacing:-.015em;line-height:1.12}
+.card{border-radius:18px;box-shadow:var(--sh-1)}
+.btn{transition:transform .12s ease,background-color .2s ease,border-color .2s ease}
+.btn:active{transform:scale(.97)}
+@media (prefers-reduced-motion:no-preference){main{animation:fa-in .35s ease both}@keyframes fa-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}}
