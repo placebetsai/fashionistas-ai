@@ -45,19 +45,54 @@ async function runDelist(job) {
 }
 // Session detection: request each sell page with the seller's own cookies (host permissions) and see
 // whether the site bounces to a login page. Reads only the final URL/status — never cookies' values, never passwords.
+// A sell page can render 200 for signed-out visitors (client-side apps), so a 200 alone proves nothing.
+// Step 1: request with the seller's cookies — a bounce to a login URL = logged out.
+// Step 2: otherwise load the page in a background, unfocused window and look at the rendered DOM:
+//   a visible password field or "Log in / Sign up" control = logged out; a visible account/avatar/sign-out control = connected;
+//   anything else (bot challenge, empty shell) = unknown, shown to the seller as "Log in" — never a false "Connected".
+// Never reads cookie values, never reads or stores passwords.
+let probeWin = null;
+async function probeWindow() {
+  if (probeWin) { try { await chrome.windows.get(probeWin); return probeWin; } catch (e) { probeWin = null; } }
+  const w = await chrome.windows.create({ url: "about:blank", focused: false, state: "minimized" }); probeWin = w.id; return probeWin;
+}
+async function domProbe(s) {
+  const win = await probeWindow();
+  const tab = await chrome.tabs.create({ windowId: win, url: s.check || s.sell, active: false });
+  try {
+    await waitLoaded(tab.id); await sleep(3500);
+    const t = await chrome.tabs.get(tab.id); if (LOGIN_RE.test(t.url || "")) return "logged_out";
+    const [{ result } = {}] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => {
+      const vis = (e) => e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== "hidden";
+      if ([...document.querySelectorAll('input[type="password"]')].some(vis)) return "logged_out";
+      const re = /^(log ?in|sign ?in|sign ?up|join|join now|log in or sign up|create account|register)$/i;
+      if ([...document.querySelectorAll('a,button,[role="button"]')].some((x) => vis(x) && re.test((x.textContent || x.getAttribute("aria-label") || "").trim()))) return "logged_out";
+      // Positive evidence only: an account/avatar/sign-out control. Challenge pages and empty shells stay "unknown".
+      if (/just a moment|attention required|access denied|captcha/i.test(document.title)) return "unknown";
+      const pos = /(log ?out|sign ?out|my account|my profile|your profile|your account|account menu|avatar|my closet|my shop|seller hub|my listings)/i;
+      if ([...document.querySelectorAll('a,button,img,[role="button"],[aria-label]')].some((x) => vis(x) && (pos.test(x.getAttribute("aria-label") || "") || pos.test(x.getAttribute("alt") || "") || pos.test((x.textContent || "").trim().slice(0, 40)) || /logout|signout|sign_out|log_out/i.test(x.getAttribute("href") || "")))) return "connected";
+      return "unknown";
+    } }).catch(() => [{ result: "unknown" }]);
+    return result || "unknown";
+  } finally { chrome.tabs.remove(tab.id).catch(() => {}); }
+}
 async function checkOne(id) {
   const s = SITES[id]; if (!s) return { id, state: "unknown" };
   try {
-    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 12000);
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 10000);
     const r = await fetch(s.check || s.sell, { credentials: "include", redirect: "follow", signal: ctl.signal, cache: "no-store" });
     clearTimeout(t);
-    if (r.status === 401 || r.status === 403 && LOGIN_RE.test(r.url)) return { id, state: "logged_out" };
-    if (LOGIN_RE.test(r.url) || new URL(r.url).host !== new URL(s.sell).host && /signin|login|accounts\./i.test(r.url)) return { id, state: "logged_out" };
-    if (r.ok) return { id, state: "connected" };
-    return { id, state: "unknown", status: r.status };
-  } catch (e) { return { id, state: "unknown" }; }
+    if (r.status === 401 || LOGIN_RE.test(r.url)) return { id, state: "logged_out", how: "redirect" };
+  } catch (e) { /* fall through to DOM probe */ }
+  try { return { id, state: await domProbe(s), how: "dom" }; } catch (e) { return { id, state: "unknown" }; }
 }
-async function checkAll(ids) { const list = (ids && ids.length ? ids : Object.keys(SITES)).filter((i) => SITES[i]); const out = {}; (await Promise.all(list.map(checkOne))).forEach((x) => { out[x.id] = x; }); await chrome.storage.local.set({ sessions: out, sessionsAt: Date.now() }); return out; }
+async function checkAll(ids, tabId) {
+  const list = (ids && ids.length ? ids : Object.keys(SITES)).filter((i) => SITES[i]); const out = {}; let i = 0;
+  const worker = async () => { while (i < list.length) { const id = list[i++]; const x = await checkOne(id); out[id] = x; if (tabId) chrome.tabs.sendMessage(tabId, { type: "FA_SESSIONS", sessions: { [id]: x }, partial: true }).catch(() => {}); } };
+  await Promise.all([worker(), worker(), worker()]);
+  if (probeWin) { chrome.windows.remove(probeWin).catch(() => {}); probeWin = null; }
+  await chrome.storage.local.set({ sessions: out, sessionsAt: Date.now() }); return out;
+}
 // "Log in": open the marketplace login in a new tab; re-check when the seller closes it or lands back off the login page.
 function openLogin(id, sender) {
   const s = SITES[id]; if (!s) return;
@@ -69,7 +104,7 @@ function openLogin(id, sender) {
   });
 }
 chrome.runtime.onMessage.addListener((m, sender, reply) => {
-  if (m.type === "FA_CHECK") { checkAll(m.sites).then((sessions) => reply({ ok: true, sessions })); return true; }
+  if (m.type === "FA_CHECK") { checkAll(m.sites, sender.tab && sender.tab.id).then((sessions) => reply({ ok: true, sessions })); return true; }
   if (m.type === "FA_OPEN_LOGIN") { openLogin(m.site, sender); reply({ ok: true }); return; }
   if (m.type === "FA_SITES") { reply({ ok: true, sites: Object.keys(SITES) }); return; }
   if (m.type === "token" && m.token) { chrome.storage.local.set({ token: m.token, origin: m.origin }); return; }

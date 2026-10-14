@@ -388,8 +388,8 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
   function connectedIds(){ return MK.filter(function(m){return SESS[m[0]]&&SESS[m[0]].state==='connected';}).map(function(m){return m[0];}); }
   function savePref(list){ PREF=list; fetch('/api/seller/prefs',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({marketplaces:list})}).catch(function(){}); }
   window.addEventListener('message',function(e){ if(e.source!==window||!e.data) return;
-    if(e.data.type==='FA_SESSIONS'){ CHECKING=false; var s=e.data.sessions||{}; for(var k in s) SESS[k]=s[k];
-      if(PREF===null){ var c=connectedIds(); if(c.length) savePref(c); } // first run: default = every connected shop
+    if(e.data.type==='FA_SESSIONS'){ if(!e.data.partial) CHECKING=false; var s=e.data.sessions||{}; for(var k in s) SESS[k]=s[k];
+      if(PREF===null&&!e.data.partial){ var c=connectedIds(); if(c.length) savePref(c); } // first run: default = every connected shop
       sxRender(); }
     if(e.data.type==='FA_PROGRESS') pgUpdate(e.data);
   });

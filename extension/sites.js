@@ -1,7 +1,7 @@
 // Per-site sell pages, field hints (selectors first, then label/placeholder keywords), submit button and listing-URL pattern.
 // Selectors are best-effort from public markup and fall back to label matching; sites change their forms often.
 // login: where "Log in" sends the seller. check: a page that redirects to a login page when signed out.
-export const LOGIN_RE = /\/(login|signin|sign-in|sign_in|signup|ap\/signin|account\/login|auth)([/?#]|$)|[?&](redirect|return_?to|next)=.*(sell|create)/i;
+export const LOGIN_RE = /\/(login|signin|sign-in|sign_in|signup|ap\/signin|account\/login|auth|lander|session-service)([/?#]|$)|[?&](redirect|return_?to|next)=.*(sell|create)/i;
 export const SITES = {
   poshmark: { login: "https://poshmark.com/login", name: "Poshmark", sell: "https://poshmark.com/create-listing", listed: /poshmark\.com\/listing\/[^/?#]+/,
     f: { title: ['input[data-vv-name="title"]', "title"], description: ['textarea[data-vv-name="description"]', "description"], price: ['input[data-vv-name="listingPrice"]', "listing price"], brand: ['input[placeholder*="Brand" i]', "brand"], size: [null, "size"], condition: [null, "condition"], category: [null, "category"] },
