@@ -86,7 +86,9 @@ export async function onRequestPost(context) {
     return json({ ok: false, error: "Could not reach the mail relay. Try again in a minute." }, 502);
   }
 
-  return json({ ok: true });
+  return (request.headers.get("accept") || "").includes("text/html")
+    ? Response.redirect(new URL("/contact/?sent=1", request.url).toString(), 303)
+    : json({ ok: true });
 }
 
 export async function onRequestGet() {
