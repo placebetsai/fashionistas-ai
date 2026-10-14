@@ -38,7 +38,7 @@
 <main id="main">
 <span class="badge">Seller · free</span>
 <h1>Crosslist board</h1>
-<p class="lede">Every item, every shop, one place. Live on fashionistas.ai the moment you post. Elsewhere: <b>Copy &amp; open</b>, then mark it <b>Listed</b> or <b>Sold</b>. <a href="/seller/stats/">Stats&nbsp;→</a></p>
+<p class="lede">Every item, every shop, one place. Live on fashionistas.ai the moment you post. Elsewhere: install the extension once, then <b>Post everywhere</b> — it fills each shop in your own logged-in tabs. <a href="/seller/stats/">Stats&nbsp;→</a></p>
 <div id="ch-flash" class="ch-flash" hidden role="status"></div><section id="ob" class="ob" hidden></section>
 <section class="sx" id="sx" aria-label="Connect your shops">
  <div class="sx-step" id="sx-ext"><span class="sx-n">1</span><div class="sx-tx"><b>Install the Fashionistas extension</b><small>Posts from your own browser, where you're already logged in. No passwords, no keys.</small></div><a class="sx-cta" id="sx-ext-cta" href="/seller/get-extension/">Install</a></div>
@@ -366,16 +366,16 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
   var SESS={}, PREF=null, CHECKING=false;
   function mkInitials(n){ return n.replace(/^The /,'').split(/\s+/).map(function(w){return w.charAt(0);}).join('').slice(0,2); }
   function sxRender(){
-    var ext=EXT(), stepE=document.getElementById('sx-ext');
+    var ext=EXT(), stepE=document.getElementById('sx-ext'); document.getElementById('sx-re').hidden=!ext;
     stepE.classList.toggle('done',ext);
     stepE.querySelector('b').textContent=ext?'Extension installed':'Install the Fashionistas extension';
     stepE.querySelector('small').textContent=ext?'v'+document.documentElement.dataset.faExt+' · posting runs in your own logged-in tabs.':'Posts from your own browser, where you\u2019re already logged in. No passwords, no keys.';
     var on=0;
     document.getElementById('sx-grid').innerHTML=MK.map(function(m){
-      var id=m[0], st, sel=PREF?PREF.indexOf(id)>=0:false;
+      var id=m[0], st, sel=!!(PREF&&PREF.indexOf(id)>=0&&SESS[id]&&SESS[id].state==='connected');
       if(m[3]==='app') st='<span class="mk-s"><i></i>Phone app only</span>';
       else if(m[3]==='consign') st='<span class="mk-s"><i></i>Consignment</span>';
-      else if(!ext) st='<span class="mk-s"><i></i>Needs extension</span>';
+      else if(!ext) st='<span class="mk-s"><i></i>Extension</span>';
       else if(CHECKING&&!SESS[id]) st='<span class="mk-s wait"><i></i>Checking\u2026</span>';
       else if(SESS[id]&&SESS[id].state==='connected'){ on++; st='<span class="mk-s on"><i></i>Connected</span>'; }
       else if(SESS[id]&&SESS[id].state==='waiting') st='<span class="mk-s wait"><i></i>Waiting for login\u2026</span>';
@@ -389,7 +389,7 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
   function savePref(list){ PREF=list; fetch('/api/seller/prefs',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({marketplaces:list})}).catch(function(){}); }
   window.addEventListener('message',function(e){ if(e.source!==window||!e.data) return;
     if(e.data.type==='FA_SESSIONS'){ if(!e.data.partial) CHECKING=false; var s=e.data.sessions||{}; for(var k in s) SESS[k]=s[k];
-      if(PREF===null&&!e.data.partial){ var c=connectedIds(); if(c.length) savePref(c); } // first run: default = every connected shop
+      if((!PREF||!PREF.length)&&!e.data.partial){ var c=connectedIds(); if(c.length) savePref(c); } // first run: default = every connected shop
       sxRender(); }
     if(e.data.type==='FA_PROGRESS') pgUpdate(e.data);
   });
