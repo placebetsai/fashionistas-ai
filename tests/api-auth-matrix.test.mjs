@@ -63,6 +63,9 @@ const ROUTE_FILES = walk(API);
  * `expect` is the anonymous status asserted for a body-less GET.
  */
 const PUBLIC = {
+  "crosslist/links.js":
+    "the item page shows signed-out buyers where else the seller listed it. Returns only shop name + the " +
+    "https link the seller confirmed, for active listings, and no user or seller data.",
   "events.js":
     "buyers are mostly signed out, and a view/save/try-on/click counter that needs a session would only " +
     "ever count sellers. It writes one aggregate counter row per listing/day/kind, accepts only known " +

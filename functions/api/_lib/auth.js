@@ -293,7 +293,7 @@ export async function requireActiveSubscriber(request, env) {
           error: "subscription_required",
           status: sub.status,
           detail:
-            "Direct posting to this shop is not live yet, so there is nothing to buy and no plan to upgrade to — the site is free while it is in launch. See /api/marketplaces for what each shop can actually do today. Copy this listing and post it on the shop yourself; /pricing/ shows the fee take-home so you know what you would keep.",
+            "Direct posting to this shop is not live yet, so there is nothing to buy and no plan to upgrade to — the site is free for good. See /api/marketplaces for what each shop can actually do today. Copy this listing and post it on the shop yourself; /pricing/ shows the fee take-home so you know what you would keep.",
         },
         402
       ),

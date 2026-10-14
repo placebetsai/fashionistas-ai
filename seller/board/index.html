@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crosslist board — fashionistas.ai</title>
+<meta name="description" content="Track every item across every marketplace.">
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://fashionistas.ai/seller/board/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="fashionistas.ai">
+<meta property="og:title" content="Crosslist board — fashionistas.ai">
+<meta property="og:description" content="Track every item across fashionistas.ai, eBay, Etsy, Poshmark, Mercari, Depop and more.">
+<meta property="og:url" content="https://fashionistas.ai/seller/board/">
+<meta property="og:image" content="https://fashionistas.ai/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Crosslist board — fashionistas.ai">
+<meta name="twitter:description" content="Track every item across fashionistas.ai, eBay, Etsy, Poshmark, Mercari, Depop and more.">
+<meta name="twitter:image" content="https://fashionistas.ai/og.png">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/site.css">
+<meta name="color-scheme" content="dark light">
+<script>if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).catch(function(){});if(window.caches)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})}).catch(function(){})}</script>
+<script>try{var t=localStorage.getItem("fash_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="wrap">
+<header class="topnav">
+<a class="brand" href="/">fashionistas<span>.ai</span></a>
+<nav aria-label="Main">
+<a href="/about/">About</a>
+<a href="/privacy/">Privacy</a><a href="/terms/">Terms</a>
+<a href="/contact/">Contact</a>
+<a href="/">App</a>
+<a href="/pricing/">Pricing</a><a href="/guide/">Guide</a></nav>
+</header>
+<main id="main">
+<span class="badge">Seller · free</span>
+<h1>Crosslist board</h1>
+<p class="lede">Every item, every shop, one screen. Your fashionistas.ai listing is live the moment you post — free. For other shops: <b>Copy &amp; open</b> copies the title, price and description and opens that shop's new-listing page (the browser extension auto-fills the form). Then tap <b>Listed</b> or <b>Sold</b> so this board stays true. <a href="/seller/stats/">Stats →</a></p>
+<div class="card"><p id="b-msg">Loading…</p><div id="b-list"></div></div>
+<style>.bl{padding:12px 0;border-bottom:1px solid var(--line,#ddd)}.bl-h{display:flex;gap:10px;align-items:center}.bl-h img{width:52px;height:52px;object-fit:cover;border-radius:8px}.bl-h b{display:block}.bl-s{display:grid;grid-template-columns:1fr auto;gap:6px 8px;align-items:center;margin-top:8px;font-size:14px}.st{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line,#ccc);margin-left:6px}.st-listed{background:#e6f6ec;color:#11683a;border-color:#9bd3ad}.st-sold{background:#111;color:#fff}.st-copied{background:#fff6dd;color:#7a5600}.bl-a{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}.bl-a button,.bl-a a{font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid var(--line,#ccc);background:transparent;color:inherit;cursor:pointer;text-decoration:none}[data-theme=dark] .st-listed{background:#123d24;color:#b9f0cc}[data-theme=dark] .st-sold{background:#fff;color:#111}[data-theme=dark] .st-copied{background:#3d300c;color:#ffe39a}@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .st-listed{background:#123d24;color:#b9f0cc}:root:not([data-theme=light]) .st-sold{background:#fff;color:#111}:root:not([data-theme=light]) .st-copied{background:#3d300c;color:#ffe39a}}</style>
+</main>
+
+<footer class="site-footer">
+<nav aria-label="Footer">
+<a href="/">Home</a>
+<a href="/contact/">Contact</a>
+<a href="/about/">About</a>
+<a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="/pricing/">Pricing</a><a href="/guide/">Guide</a><a href="/try-on/">Try it on</a><a href="/see-in-space/">See in my space</a>
+<a href="/#view-auth">Open app</a>
+</nav>
+<p>fashionistas.ai — photograph your closet, list it everywhere. <a href="/contact/">Contact</a></p>
+</footer>
+</div>
+<script>
+(function(){
+  var tok=''; try{ tok=localStorage.getItem('fash_token')||''; }catch(e){}
+  var h={'Content-Type':'application/json'}; if(tok) h.Authorization='Bearer '+tok;
+  var esc=function(v){return String(v==null?'':v).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+  var LBL={not_started:'not posted',draft:'not posted',copied:'copied, not confirmed',pending:'copied, not confirmed',queued:'copied, not confirmed',listed:'listed',active:'listed',sold:'sold',delisted:'delisted'};
+  var CLS={listed:'st-listed',active:'st-listed',sold:'st-sold',copied:'st-copied',pending:'st-copied',queued:'st-copied'};
+  var data=null, msg=document.getElementById('b-msg'), list=document.getElementById('b-list');
+  function copyText(l){return [l.title, l.price!=null?('$'+l.price):'', [l.brand,l.size,l.condition,l.color].filter(Boolean).join(' · '), l.description||''].filter(Boolean).join('\n');}
+  function render(){
+    if(!data.listings.length){ msg.innerHTML='Nothing posted yet. <a href="/">Post an item</a> — it goes live here instantly, free.'; list.innerHTML=''; return; }
+    msg.textContent=data.listings.length+' item'+(data.listings.length>1?'s':'')+'. Statuses are what you (or a connected shop API) confirmed — nothing is guessed.';
+    list.innerHTML=data.listings.map(function(l){
+      var rows=data.shops.map(function(s){
+        var st=(l.shops[s.id]||{}).status||'not_started', url=(l.shops[s.id]||{}).url;
+        var a='';
+        if(s.id==='fashionistas'){ a='<a href="/shop/'+Number(l.id)+'">View</a>'+(st!=='sold'?'<button data-act="sold" data-p="fashionistas" data-id="'+l.id+'">Sold</button>':''); }
+        else if(st!=='sold'){
+          a='<button data-act="copy" data-p="'+s.id+'" data-id="'+l.id+'">'+(s.api_ready?'Post via API':'Copy &amp; open')+'</button>'+(st!=='listed'&&st!=='active'?'<button data-act="listed" data-p="'+s.id+'" data-id="'+l.id+'">Listed</button>':'')+'<button data-act="sold" data-p="'+s.id+'" data-id="'+l.id+'">Sold</button>'+(st==='listed'?'<button data-act="delisted" data-p="'+s.id+'" data-id="'+l.id+'">Delist</button>':'');
+        }
+        return '<div>'+esc(s.name)+'<span class="st '+(CLS[st]||'')+'">'+esc(LBL[st]||st)+'</span>'+(url&&/^https:/.test(url)?' <a href="'+esc(url)+'" target="_blank" rel="noopener">↗</a>':'')+'</div><div class="bl-a">'+a+'</div>';
+      }).join('');
+      return '<div class="bl"><div class="bl-h">'+(l.photo_url?'<img src="'+esc(l.photo_url)+'" alt="" loading="lazy">':'')+'<div><b>'+esc(l.title||'Untitled')+'</b><small>'+(l.price!=null?'$'+esc(l.price):'')+'</small></div></div><div class="bl-s">'+rows+'</div></div>';
+    }).join('');
+  }
+  function load(){
+    fetch('/api/crosslist/board',{credentials:'include',headers:h}).then(function(r){return r.json().then(function(j){return {r:r,j:j};});}).then(function(x){
+      if(x.r.status===401){ msg.innerHTML='Sign in to see your board. <a href="/#view-auth">Sign in</a>'; return; }
+      if(!x.j.ok){ msg.textContent="Couldn't load your board. Try again in a minute."; return; }
+      data=x.j; render();
+    }).catch(function(){ msg.textContent="Couldn't load your board. Check your connection."; });
+  }
+  function setStatus(id,p,status,extra){
+    var b={listing_id:id,platform:p,status:status}; for(var k in (extra||{})) b[k]=extra[k];
+    return fetch('/api/crosslist/status',{method:'POST',credentials:'include',headers:h,body:JSON.stringify(b)}).then(function(r){return r.json();}).then(function(j){ if(!j.ok) alert("Couldn't save — try again."); load(); });
+  }
+  list.addEventListener('click',function(e){
+    var b=e.target.closest('button[data-act]'); if(!b) return;
+    var id=Number(b.getAttribute('data-id')), p=b.getAttribute('data-p'), act=b.getAttribute('data-act');
+    var l=data.listings.filter(function(x){return x.id===id;})[0], s=data.shops.filter(function(x){return x.id===p;})[0];
+    if(act==='copy'){
+      if(s.api_ready){ window.location.href='/'; return; }
+      var t=copyText(l); (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).catch(function(){ prompt('Copy this listing:',t); });
+      if(s.sell) window.open(s.sell,'_blank','noopener');
+      setStatus(id,p,'copied');
+    } else if(act==='listed'){
+      var u=prompt('Listed on '+s.name+'! Paste the listing link (optional):','')||'';
+      setStatus(id,p,'listed',{url:u});
+    } else if(act==='sold'){
+      var pr=prompt('Sold on '+s.name+' — sale price ($):',l.price!=null?String(l.price):''); if(pr===null) return;
+      setStatus(id,p,'sold',{price:Number(pr)||0});
+    } else setStatus(id,p,act);
+  });
+  load();
+})();
+</script>
+</body>
+</html>

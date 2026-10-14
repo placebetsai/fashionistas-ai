@@ -3,7 +3,7 @@
  * No raw event log in D1. Kinds are real, client- or server-observed events only.
  */
 export const KINDS = ["view", "save", "tryon", "click", "share"];
-export const MARKETS = ["", "fashionistas", "ebay", "etsy", "shopify", "depop", "poshmark", "mercari", "vinted", "grailed", "facebook", "whatnot", "other"];
+export const MARKETS = ["", "fashionistas", "ebay", "etsy", "shopify", "depop", "poshmark", "mercari", "vinted", "grailed", "facebook", "whatnot", "vestiaire", "kidizen", "curtsy", "amazon", "walmart", "thredup", "therealreal", "other"];
 
 export function statsDb(env) {
   for (const n of ["DB", "FASHIONISTAS_DB"]) if (env && env[n] && typeof env[n].prepare === "function") return env[n];

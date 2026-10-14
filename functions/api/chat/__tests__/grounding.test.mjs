@@ -154,7 +154,7 @@ test("listing from photo and $14.99 plan are in scope", () => {
   const sites = siteSources(plan.topics, "pricing");
   assert.ok(sites.some((s) => s.id === "pricing_plan"));
   const facts = sites.find((s) => s.id === "pricing_plan").facts;
-  assert.ok(facts.some((f) => /free during launch/i.test(f)));
+  assert.ok(facts.some((f) => /free for good/i.test(f)));
   assert.ok(facts.some((f) => /not being charged/i.test(f)));
 });
 

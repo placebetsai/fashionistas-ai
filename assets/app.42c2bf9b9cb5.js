@@ -1443,6 +1443,13 @@ async function openMarketItem(id, opts){
   + `</div>`;
   setItemUrl(id, m, opts.url);
   refreshTips();
+  /* "Buy on <shop>" — only where the seller confirmed it's listed and gave the link. */
+  if (!isMine) fetch("/api/crosslist/links?id=" + Number(m.id)).then(r => r.json()).then(b => {
+    const L = (b && b.links) || []; const bar = el.querySelector(".ux-buybar"); if (!L.length || !bar) return;
+    const d = document.createElement("div"); d.className = "ux-also";
+    d.innerHTML = `<p class="ux-item-note">Also listed by this seller on:</p>` + L.map(x => `<a class="btn btn-ghost btn-sm" href="${escapeAttr(x.url)}" target="_blank" rel="noopener sponsored" onclick="fashTrack(${Number(m.id)},'click','${escapeAttr(x.platform)}')">Buy on ${escapeHtml(x.name)} ↗</a>`).join(" ");
+    bar.parentNode.insertBefore(d, bar);
+  }).catch(() => {});
 }
 /* ── Reserve / Message from an item page ─────────────────────────────────
    /api/dm/<peer> is addressed by numeric user id; sending a handle answers
@@ -4479,6 +4486,11 @@ async function renderMore(el){
  <p class="mut" style="margin-top:0">Your photo, any item from the shop or a link. See it on you.</p>
  <a class="btn btn-accent" style="width:100%" href="/try-on/">Open try-on</a>
  </div>
+ <div class="card">
+ <h3 style="margin-top:0">Crosslist board</h3>
+ <p class="mut" style="margin-top:0">Every item, every shop: copy &amp; open each marketplace, then mark it listed or sold. Free.</p>
+ <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px"><a class="btn btn-primary" href="/seller/board/">Open board</a><a class="btn btn-soft" href="/seller/stats/">Stats</a></div>
+ </div>
  <div class="card" data-tip="Messages between you and the other accounts on here.">
  <h3 style="margin-top:0">Messages</h3>
  <p class="mut" style="margin-top:0">Talk to other accounts directly — ask about an item, make an offer, answer a buyer.</p>
@@ -4780,7 +4792,7 @@ const GUIDE_MPS = {
 
 const GUIDE_STEPS = [
  { title:"Welcome to fashionistas.ai", emoji:"<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='#ff4e3a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-3px;margin-right:6px'><path d='M12 3.2 20 7.6v8.8L12 20.8 4 16.4V7.6z'/></svg>",
- body:"fashionistas.ai is free while we're in launch. Snap a clothing item and the AI identifies it and suggests a price. The listing goes on fashionistas.ai. Other shops are not posted for you — you copy the listing and press Post there.",
+ body:"fashionistas.ai is free for good. Snap a clothing item and the AI identifies it and suggests a price. The listing goes on fashionistas.ai. Other shops are not posted for you — you copy the listing and press Post there.",
  action:null },
  { title:"Create your account", emoji:"<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='#ff4e3a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-3px;margin-right:6px'><path d='M12 3.2 20 7.6v8.8L12 20.8 4 16.4V7.6z'/></svg>",
  body:"One tap opens the real sign-up form behind this card: username + email + password and you're in. Your photos and listings are saved to your account. Prefer to poke around first? Tap 'Log in as demo seller' on the auth screen.",
@@ -5035,7 +5047,7 @@ const HC_STEPS = [
  { id:"A", title:"Welcome to fashionistas.ai", sub:"5-minute guided tour",
  render: ()=>`
  <p>fashionistas.ai turns one photo into a finished listing for <b>Poshmark, Mercari, Depop, Vinted, Grailed, eBay, Etsy, Facebook, Vestiaire and Whatnot</b>. Where the shop has no posting API, you press Post in your own tab. Kidizen shut down.</p>
-  <p class="mut">It's free while we're in launch — no card and nothing to cancel. The AI works out of the box with no key or setup.</p>
+  <p class="mut">It's free for good — no card and nothing to cancel. Ads and affiliate links pay for it. The AI works out of the box with no key or setup.</p>
  <p class="mut">You'll follow A through T, one <b>real</b> action at a time. Tap Next to begin.</p>` },
  { id:"B", title:"Where everything lives", sub:"where you'll work",
  render: ()=>`
