@@ -97,6 +97,7 @@
 .ob-l{list-style:none;margin:0;padding:0}.ob-l li{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);font-size:14px}.ob-l li span:first-child{flex:1}.ob-h{color:var(--mut);font-size:12.5px}.ob-l a.chb{display:inline-flex;align-items:center;text-decoration:none;min-height:32px}
 .b-pe{display:block;width:calc(100% - 24px);margin:4px 12px 12px;min-height:44px;border-radius:999px;border:0;background:var(--accent,#e8452c);color:#fff;font:inherit;font-weight:800;font-size:14.5px;cursor:pointer}
 .chi form[hidden],.fg[hidden]{display:none!important}
+html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open body{overflow:hidden}
 .run{position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}.run[hidden]{display:none}
 .run-c{background:var(--bg);color:var(--ink);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:16px 18px calc(18px + env(safe-area-inset-bottom))}
 .run-top{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--mut)}.run-bar{flex:1;height:6px;border-radius:9px;background:var(--soft);overflow:hidden}.run-bar i{display:block;height:100%;background:var(--accent,#e8452c)}
@@ -232,7 +233,7 @@
   chLoad();
 
   // ---- “Post everywhere”: guided run-through for copy-&-paste sites ----
-  var RUN=null, rd=document.getElementById('run'); document.body.appendChild(rd);
+  var RUN=null, rd=document.getElementById('run');
   function crc32(u){ var c,t=crc32.t; if(!t){t=crc32.t=[];for(var n=0;n<256;n++){c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}} var x=-1; for(var i=0;i<u.length;i++) x=(x>>>8)^t[(x^u[i])&255]; return (x^-1)>>>0; }
   function zip(files){ // store-only zip, no library
     var parts=[],cd=[],off=0; function le(n,b){var a=[];for(var i=0;i<b;i++)a.push((n>>>(8*i))&255);return a;}
@@ -250,14 +251,14 @@
     if(!RUN) return; var l=RUN.l;
     if(RUN.i>=RUN.sites.length){ var tot=Math.round((Date.now()-RUN.t0)/1000); rd.innerHTML='<div class="run-c"><h2>All done ✓</h2><p>'+RUN.done+' site'+(RUN.done===1?'':'s')+' marked listed in '+tot+'s.'+(RUN.fail?' '+RUN.fail+' didn’t save — check the board.':'')+'</p><button class="chb pri" id="run-x">Close</button></div>'; rd.hidden=false; document.getElementById('run-x').onclick=runClose; return; }
     var s=RUN.sites[RUN.i]; RUN.ts=Date.now(); RUN.steps={};
-    rd.hidden=false;
+    rd.hidden=false; document.documentElement.classList.add('run-open');
     rd.innerHTML='<div class="run-c" role="dialog" aria-label="Post everywhere"><div class="run-top"><span>'+(RUN.i+1)+' of '+RUN.sites.length+'</span><div class="run-bar"><i style="width:'+Math.round(100*RUN.i/RUN.sites.length)+'%"></i></div><span id="run-t">0s</span><button class="chlink" id="run-x" aria-label="Close">✕</button></div>'
       +'<h2>'+esc(s.name)+'</h2><p class="run-it">'+esc(l.title||'')+(l.price!=null?' · $'+esc(l.price):'')+'</p>'
       +'<div class="run-s"><button class="chb pri" data-rs="title">1 · Copy title</button><button class="chb pri" data-rs="desc">2 · Copy description + price</button><button class="chb pri" data-rs="photos">3 · Photos</button>'+(s.sell?'<button class="chb pri" data-rs="open">4 · Open '+esc(s.name)+' sell page</button>':'')+'</div>'
       +'<div class="run-n"><button class="chb" data-rs="skip">Skip</button><button class="chb pri" data-rs="done">Done, next site →</button></div></div>';
     clearInterval(RUN.tk); RUN.tk=setInterval(function(){ var e=document.getElementById('run-t'); if(e&&RUN) e.textContent=Math.round((Date.now()-RUN.ts)/1000)+'s'; },500);
   }
-  function runClose(){ if(RUN) clearInterval(RUN.tk); RUN=null; rd.hidden=true; rd.innerHTML=''; load(); }
+  function runClose(){ document.documentElement.classList.remove('run-open'); if(RUN) clearInterval(RUN.tk); RUN=null; rd.hidden=true; rd.innerHTML=''; load(); }
   function cp(t,b){ return (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){ b.textContent='✓ '+b.textContent.replace(/^✓ /,''); b.classList.add('ok'); }).catch(function(){ prompt('Copy:',t); }); }
   rd.addEventListener('click',function(e){
     var b=e.target.closest('button'); if(!b||!RUN) return; if(b.id==='run-x') return runClose();
