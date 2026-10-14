@@ -406,6 +406,19 @@ body{-webkit-font-smoothing:antialiased}
    <input type="file" id="file-garment" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose the garment photo">
   </div>
  </div>
+ <div class="to-me-row"><button type="button" class="to-btn to-btn-soft" id="btn-selfie">Take a selfie</button><label class="to-btn to-btn-soft" for="file-person">Choose photo</label><input type="file" id="file-selfie" accept="image/*" capture="user" hidden></div>
+ <div class="to-cam" id="to-cam" hidden role="dialog" aria-label="Take a selfie">
+  <video id="to-cam-v" playsinline muted autoplay></video>
+  <svg class="to-cam-guide" viewBox="0 0 100 180" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 3" opacity=".85"><circle cx="50" cy="22" r="11"/><path d="M28 48q22-12 44 0l6 50h-9l-3 34 4 40H58l-8-38-8 38H30l4-40-3-34h-9z"/></g></svg>
+  <p class="to-cam-tip" id="to-cam-tip">Stand back about 2 m (6 ft) so you fit the outline, head to knees.</p>
+  <div class="to-cam-count" id="to-cam-count" hidden></div>
+  <div class="to-cam-bar">
+   <button type="button" class="to-btn to-btn-soft" id="to-cam-x">Cancel</button>
+   <div class="to-cam-t" role="radiogroup" aria-label="Timer"><label><input type="radio" name="to-cam-t" value="0"><span>Now</span></label><label><input type="radio" name="to-cam-t" value="3"><span>3s</span></label><label><input type="radio" name="to-cam-t" value="10" checked><span>10s</span></label></div>
+   <button type="button" class="to-cam-shot" id="to-cam-shot" aria-label="Take photo"></button>
+   <button type="button" class="to-btn to-btn-soft" id="to-cam-flip" aria-label="Switch camera">Flip</button>
+  </div>
+ </div>
  <div class="to-link-h">Saw something on Poshmark or Depop? Copy the listing link and paste it here. <details class="to-how"><summary>How?</summary>In the Poshmark or Depop app, open the item, tap Share, then Copy link. Come back here, tap the box below and choose Paste.</details></div>
  <form class="to-link" id="link-form" autocomplete="off"><input class="to-link-in" id="link-in" type="url" inputmode="url" placeholder="Paste the listing link here" aria-label="Listing link"><button class="to-btn" type="submit" id="link-go">Use link</button></form>
  <div class="to-link-res" id="link-res" hidden></div>
@@ -511,7 +524,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
       if (s === 1 && file.size < 1.5e6) return file;
       var c = document.createElement("canvas"); c.width = Math.round(w * s); c.height = Math.round(h * s);
       c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-      return new Promise(function(res){ c.toBlob(function(b){ res(b ? new File([b], (file.name || "photo").replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" }) : file); }, "image/jpeg", 0.9); });
+      return new Promise(function(res){ c.toBlob(function(b){ res(b ? new File([b], (file.name || "photo").replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" }) : file); }, "image/jpeg", 0.86); });
     });
   }
   function hdCategory(){
@@ -965,7 +978,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
     photoType = photoType === "model" ? "model" : "flat-lay";
     var t0 = Date.now();
     prog(0.04);
-    return Promise.all([shrink(files.person, 1280), shrink(files.garment, 1280), hdCategory()]).then(function(parts){
+    return Promise.all([shrink(files.person, 896), shrink(files.garment, 896), hdCategory()]).then(function(parts){
     var fd = new FormData();
     fd.append("person", parts[0]);
     fd.append("garment", parts[1]);
@@ -1257,5 +1270,39 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
   new MutationObserver(function(){ if (out.classList.contains("on")) { skel.hidden = true; syncPrim(); card.classList.add("tx-done"); try { out.scrollIntoView({ block:"start", behavior:"smooth" }); } catch (e) {} } }).observe(out, { attributes:true, attributeFilter:["class"] });
 })();
 </script>
+<style>.to-me-row{display:flex;gap:8px;margin:10px 0 0}.to-me-row .to-btn{flex:1;min-height:44px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.to-cam{position:fixed;inset:0;z-index:9999;background:#000;display:flex;flex-direction:column}.to-cam[hidden]{display:none}.to-cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.to-cam video.mirror{transform:scaleX(-1)}
+.to-cam-guide{position:absolute;left:50%;top:6%;height:74%;transform:translateX(-50%);pointer-events:none}.to-cam-tip{position:absolute;top:12px;left:12px;right:12px;margin:0;text-align:center;color:#fff;font-size:14px;text-shadow:0 1px 3px #000}
+.to-cam-count{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:96px;font-weight:800;text-shadow:0 2px 12px #000;pointer-events:none}.to-cam-count[hidden]{display:none}
+.to-cam-bar{position:absolute;left:0;right:0;bottom:0;padding:14px 12px calc(14px + env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:space-between;gap:8px;background:linear-gradient(transparent,rgba(0,0,0,.7))}
+.to-cam-shot{width:68px;height:68px;border-radius:50%;border:4px solid #fff;background:rgba(255,255,255,.25);flex:none}.to-cam-t{display:flex;gap:4px}.to-cam-t input{position:absolute;opacity:0}.to-cam-t span{display:inline-block;padding:6px 9px;border-radius:999px;color:#fff;font-size:13px;border:1px solid rgba(255,255,255,.5)}.to-cam-t input:checked+span{background:#fff;color:#000}
+.to-cam .to-btn{color:#fff;background:rgba(255,255,255,.15);border:0}</style>
+<script>(function(){
+  var $=function(i){return document.getElementById(i)}, box=$("to-cam"), v=$("to-cam-v"), stream=null, facing="user", timer=null;
+  function setPerson(f){ var inp=$("file-person"); try{ var dt=new DataTransfer(); dt.items.add(f); inp.files=dt.files; inp.dispatchEvent(new Event("change",{bubbles:true})); }catch(e){} }
+  function stop(){ if(timer){clearInterval(timer);timer=null;} $("to-cam-count").hidden=true; if(stream){stream.getTracks().forEach(function(t){t.stop()});stream=null;} box.hidden=true; document.documentElement.style.overflow=""; }
+  function open(){
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ $("file-selfie").click(); return; }
+    navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1080},height:{ideal:1920}},audio:false}).then(function(s){
+      stream=s; v.srcObject=s; v.classList.toggle("mirror",facing==="user"); box.hidden=false; document.documentElement.style.overflow="hidden";
+    }).catch(function(){ $("file-selfie").click(); });
+  }
+  function snap(){
+    var c=document.createElement("canvas"), w=v.videoWidth, h=v.videoHeight; if(!w) return;
+    c.width=w; c.height=h; var x=c.getContext("2d"); if(facing==="user"){x.translate(w,0);x.scale(-1,1);} x.drawImage(v,0,0,w,h);
+    c.toBlob(function(b){ stop(); if(b) setPerson(new File([b],"selfie.jpg",{type:"image/jpeg"})); },"image/jpeg",0.9);
+  }
+  function shoot(){
+    if(timer) return; var n=Number((document.querySelector('input[name="to-cam-t"]:checked')||{}).value||0);
+    if(!n){snap();return;} var el=$("to-cam-count"); el.hidden=false; el.textContent=n;
+    timer=setInterval(function(){ n--; if(n<=0){clearInterval(timer);timer=null;el.hidden=true;snap();} else el.textContent=n; },1000);
+  }
+  $("btn-selfie").addEventListener("click",open);
+  $("to-cam-x").addEventListener("click",stop);
+  $("to-cam-shot").addEventListener("click",shoot);
+  $("to-cam-flip").addEventListener("click",function(){ facing=facing==="user"?"environment":"user"; if(stream){stream.getTracks().forEach(function(t){t.stop()});} open(); });
+  $("file-selfie").addEventListener("change",function(){ var f=this.files&&this.files[0]; if(f) setPerson(f); });
+  document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&!box.hidden) stop(); });
+})();</script>
 </body>
 </html>
