@@ -9,15 +9,18 @@
 import { requireAuth, json } from "../_lib/auth.js";
 import { modalReady, DEFAULT_MODAL_URL } from "../_tryon/vton-paid.js";
 
+const WARM = new Map();
 export async function onRequestPost(context) {
   const { request, env } = context;
   const auth = await requireAuth(request, env);
   if (!auth.ok) return auth.response;
   if (!modalReady(env)) return json({ ok: false, error: "not_configured" }, 503);
   const key = "warm:" + auth.user.id;
-  const kv = env.KV || env.CACHE || env.FASHIONISTAS_KV || null;
-  try { if (kv && (await kv.get(key))) return json({ ok: true, skipped: true }); } catch {}
-  try { if (kv) await kv.put(key, "1", { expirationTtl: 120 }); } catch {}
+  // In-isolate throttle (was a KV put per wake; KV free tier = 1k writes/day).
+  const now = Date.now();
+  if ((WARM.get(key) || 0) > now) return json({ ok: true, skipped: true });
+  if (WARM.size > 5000) WARM.clear();
+  WARM.set(key, now + 120e3);
   const url = String(env.FASHN_MODAL_URL || DEFAULT_MODAL_URL).replace(/\/+$/, "") + "/healthz";
   const t = Date.now();
   const ping = fetch(url, { headers: { "Modal-Key": env.MODAL_PROXY_KEY, "Modal-Secret": env.MODAL_PROXY_SECRET }, signal: AbortSignal.timeout(25000) })

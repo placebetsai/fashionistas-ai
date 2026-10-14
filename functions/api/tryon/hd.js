@@ -126,18 +126,44 @@ function launchCache(env) {
   return env && (env.CACHE || env.FASHIONISTAS_KV);
 }
 
+// Daily try-on tally lives in D1 (KV free tier = 1k writes/day, shared account-wide).
+// Fail soft: if D1 is missing or errors, fall back to a read-only KV value / 0.
+let tallyReady = false;
+async function tallyDb(env) {
+  const db = env && (env.DB || env.FASHIONISTAS_DB);
+  if (!db) return null;
+  if (!tallyReady) {
+    await db.prepare("CREATE TABLE IF NOT EXISTS kv_counters (k TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0, exp INTEGER NOT NULL)").run();
+    tallyReady = true;
+  }
+  return db;
+}
+
 async function launchUses(env, userId) {
-  const cache = launchCache(env);
-  if (!cache || typeof cache.get !== "function") return 0;
-  return Number(await cache.get(launchKey(userId))) || 0;
+  const key = launchKey(userId);
+  try {
+    const db = await tallyDb(env);
+    if (db) {
+      const r = await db.prepare("SELECT n FROM kv_counters WHERE k=? AND exp>?").bind(key, Date.now()).first();
+      return Number(r && r.n) || 0;
+    }
+  } catch {}
+  try {
+    const cache = launchCache(env);
+    if (cache && typeof cache.get === "function") return Number(await cache.get(key)) || 0;
+  } catch {}
+  return 0;
 }
 
 async function bumpLaunch(env, userId) {
-  const cache = launchCache(env);
-  if (!cache || typeof cache.put !== "function") return;
-  const key = launchKey(userId);
-  const used = Number(await cache.get(key)) || 0;
-  await cache.put(key, String(used + 1), { expirationTtl: 60 * 60 * 36 });
+  try {
+    const db = await tallyDb(env);
+    if (!db) return;
+    const exp = Date.now() + 36 * 3600e3;
+    await db.prepare("INSERT INTO kv_counters (k,n,exp) VALUES (?1,1,?2) ON CONFLICT(k) DO UPDATE SET n = CASE WHEN exp > ?3 THEN n + 1 ELSE 1 END, exp = CASE WHEN exp > ?3 THEN exp ELSE ?2 END")
+      .bind(launchKey(userId), exp, Date.now()).run();
+    if (Math.random() < 0.02) await db.prepare("DELETE FROM kv_counters WHERE exp < ?").bind(Date.now()).run();
+  } catch {}
 }
 
 /** Append one run to cost_ledger with THIS route's economics (fashn, $0). */

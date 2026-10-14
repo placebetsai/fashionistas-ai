@@ -43,19 +43,16 @@ function cors(extra = {}) {
 // never gets parsed, so nothing is spent) and the 21st answered 429, which
 // proves KV is bound today and that flipping the failure branch cannot break
 // the working path.
+// In-isolate limiter: no KV writes (KV free tier = 1k writes/day), never blocks on storage.
+const RL = new Map();
 async function rateLimit(env, request) {
-  const cache = env && (env.CACHE || env.FASHIONISTAS_KV);
-  if (!cache || typeof cache.get !== "function") return { ok: false, reason: "limiter_unavailable" };
   const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "anon";
   const key = `ai-analyze:${ip}:${Math.floor(Date.now() / 60000)}`;
-  try {
-    const n = Number((await cache.get(key)) || 0);
-    if (n >= RATE_PER_MIN) return { ok: false, reason: "rate_limited" };
-    await cache.put(key, String(n + 1), { expirationTtl: 120 });
-    return { ok: true };
-  } catch {
-    return { ok: false, reason: "limiter_unavailable" };
-  }
+  if (RL.size > 5000) RL.clear();
+  const n = RL.get(key) || 0;
+  if (n >= RATE_PER_MIN) return { ok: false, reason: "rate_limited" };
+  RL.set(key, n + 1);
+  return { ok: true };
 }
 
 export async function onRequest(context) {
