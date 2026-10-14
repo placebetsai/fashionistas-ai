@@ -336,7 +336,7 @@ body{-webkit-font-smoothing:antialiased}
 </style>
 <meta name="color-scheme" content="dark">
 <script>if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).catch(function(){});if(window.caches)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})}).catch(function(){})}</script>
-<link rel="stylesheet" href="/try-on/skin.css?v=3">
+<link rel="stylesheet" href="/try-on/skin.css?v=4">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -347,18 +347,7 @@ body{-webkit-font-smoothing:antialiased}
   <span class="to-skyline"></span>
 </div>
 <div class="wrap">
-<header class="topnav">
-<a class="brand" href="/">fashionistas<span>.ai</span></a>
-<nav aria-label="Main">
-<a href="/see-in-space/">See in my space</a>
-<a href="/try-on/" aria-current="page">Try it on</a>
-<a href="/about/">About</a>
-<a href="/privacy/">Privacy</a><a href="/terms/">Terms</a>
-<a href="/contact/">Contact</a>
-<a href="/">App</a>
-<a href="/pricing/">Pricing</a><a href="/guide/">Guide</a></nav>
-</header>
-<script src="/topnav.js"></script>
+<header class="v2top"><a class="v2back" href="/" onclick="if(history.length>1){event.preventDefault();history.back()}" aria-label="Back"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a><h1 class="v2t">Try it on</h1></header>
 <main id="main">
 
 <span class="badge to-badge">AI virtual try-on</span>

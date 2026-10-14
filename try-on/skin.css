@@ -58,3 +58,12 @@ body{background:var(--bg)!important;color:var(--ink)}
 .to-zone{border-radius:22px;transition:border-color .2s,background .2s}
 #quick-look{border-radius:22px;box-shadow:0 1px 2px rgba(20,12,6,.04),0 8px 24px rgba(20,12,6,.06)}
 #ql-canvas{border-radius:16px}
+
+/* v2 design system (rebuild): same font, ink-black primary, app-style header */
+@font-face{font-family:Inter;src:url(/assets/fonts/inter-latin-normal.c940764593.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root{--font:Inter,system-ui,sans-serif!important;--accent:var(--ink)!important;--accent2:var(--ink)!important}
+body{font-family:Inter,system-ui,sans-serif!important}
+.v2top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;min-height:60px;padding:8px 16px;background:var(--bg)}
+.v2back{width:44px;height:44px;display:grid;place-items:center;border-radius:50%;color:var(--ink)}
+.v2t{font:650 20px/1.2 Inter,system-ui,sans-serif;margin:0;letter-spacing:-.01em;color:var(--ink)}
+#btn-go,.to-go,button.primary{background:var(--ink)!important;color:var(--bg)!important;box-shadow:none!important}
