@@ -97,7 +97,7 @@
 .ob-l{list-style:none;margin:0;padding:0}.ob-l li{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);font-size:14px}.ob-l li span:first-child{flex:1}.ob-h{color:var(--mut);font-size:12.5px}.ob-l a.chb{display:inline-flex;align-items:center;text-decoration:none;min-height:32px}
 .b-pe{display:block;width:calc(100% - 24px);margin:4px 12px 12px;min-height:44px;border-radius:999px;border:0;background:var(--accent,#e8452c);color:#fff;font:inherit;font-weight:800;font-size:14.5px;cursor:pointer}
 .chi form[hidden],.fg[hidden]{display:none!important}
-html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open body{overflow:hidden}
+html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,html.run-open body{overflow:hidden;overflow-x:hidden}
 .run{position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}.run[hidden]{display:none}
 .run-c{background:var(--bg);color:var(--ink);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:16px 18px calc(18px + env(safe-area-inset-bottom))}
 .run-top{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--mut)}.run-bar{flex:1;height:6px;border-radius:9px;background:var(--soft);overflow:hidden}.run-bar i{display:block;height:100%;background:var(--accent,#e8452c)}
@@ -248,7 +248,7 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open 
     RUN={l:l,sites:sites,i:0,t0:Date.now(),times:{},done:0}; runShow();
   }
   function runShow(){
-    if(!RUN) return; var l=RUN.l;
+    if(!RUN) return; var l=RUN.l; if(window.scrollX) window.scrollTo(0,window.scrollY);
     if(RUN.i>=RUN.sites.length){ var tot=Math.round((Date.now()-RUN.t0)/1000); rd.innerHTML='<div class="run-c"><h2>All done ✓</h2><p>'+RUN.done+' site'+(RUN.done===1?'':'s')+' marked listed in '+tot+'s.'+(RUN.fail?' '+RUN.fail+' didn’t save — check the board.':'')+'</p><button class="chb pri" id="run-x">Close</button></div>'; rd.hidden=false; document.getElementById('run-x').onclick=runClose; return; }
     var s=RUN.sites[RUN.i]; RUN.ts=Date.now(); RUN.steps={};
     rd.hidden=false; document.documentElement.classList.add('run-open');
