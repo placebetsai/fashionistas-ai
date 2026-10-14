@@ -48,8 +48,8 @@ var LOGO = '<svg class="fmark" viewBox="0 0 64 64" aria-hidden="true"><defs><lin
 var BRAND = '<a href="/" class="wordmark brand" data-link aria-label="fashionistas.ai home">' + LOGO + '<span>fashionistas<i>.ai</i></span></a>';
 var RMOTION = function () { return !!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches); };
 function countUp(root) { $$("[data-count]", root).forEach(function (el) { var to = Number(el.dataset.count) || 0, pre = el.dataset.pre || "", t0 = 0, D = 900; if (RMOTION() || !to) { el.textContent = pre + to; return; } function f(t) { if (!t0) t0 = t; var k = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - k, 3); el.textContent = pre + Math.round(to * e); if (k < 1) requestAnimationFrame(f); } requestAnimationFrame(f); }); }
-var IO = "IntersectionObserver" in window ? new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); IO.unobserve(e.target); } }); }, { rootMargin: "0px 0px -8% 0px" }) : null;
-function reveal(root) { $$(".rv:not(.in)", root).forEach(function (el) { if (IO) IO.observe(el); else el.classList.add("in"); }); }
+var IO = "IntersectionObserver" in window ? new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("shown"); IO.unobserve(e.target); } }); }, { rootMargin: "0px 0px -8% 0px" }) : null;
+function reveal(root) { $$(".rv:not(.shown)", root).forEach(function (el) { if (IO) IO.observe(el); else el.classList.add("shown"); }); }
 var LIKES = (function () { try { return JSON.parse(localStorage.getItem("fa_likes") || "{}"); } catch (e) { return {}; } })();
 var HEART = '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.2-8.6C1.3 8.4 3 5 6.4 5c2 0 3.3 1.1 4.1 2.3h3C14.3 6.1 15.6 5 17.6 5 21 5 22.7 8.4 21.2 11.4 19 15.6 12 20 12 20z"/></svg>';
 
