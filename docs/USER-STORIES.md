@@ -1,5 +1,7 @@
 # fashionistas.ai — user stories (tested end to end)
 
+> **Superseded** by docs/agile/BACKLOG.md and docs/agile/SPRINTS.md (2026-10-14).
+
 Every story has a Playwright check in `e2e/stories.spec.js`, which runs against a preview at 412×915. Run it with:
 `BASE=https://free-v2.fashionistas-ai.pages.dev node e2e/stories.spec.js`. It needs `.env.test-seller` (gitignored) and `playwright`.
 Each run deletes the listing it creates. No invented listings are left in the public shop.
