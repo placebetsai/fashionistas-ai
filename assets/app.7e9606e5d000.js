@@ -997,6 +997,7 @@ function hydrateShop(el, grid){
     if (cc && S.marketQ) marketRefresh(); else if (cc) { const n = marketRows().length; cc.textContent = n ? n + (n===1?" item":" items") + marketWhere() : ""; }
   } else marketRefresh();
   grid.removeAttribute("data-ssr");
+  marketUrlSync();
   grid.insertAdjacentHTML("afterend", photoSearchCard() + affCard());
   return true;
 }
@@ -1502,7 +1503,7 @@ function resumeAfterAuth(){
   const item = path.match(/^\/shop\/(\d+)$/);
   if (item){ openMarketItem(Number(item[1])); return true; }
   if (path === "/shop"){ go("shop"); return true; }
-  if (/^\/shop\/[cb]\//.test(path)){ if (window.__FASH_CAT__) S.marketCat = window.__FASH_CAT__; go("shop"); return true; }
+  if (/^\/shop\/[cb]\//.test(path)){ if (window.__FASH_CAT__) S.marketCat = window.__FASH_CAT__; go("shop"); setTimeout(marketUrlSync, 50); setTimeout(marketUrlSync, 900); return true; }
   go("home");
   return false;
 }
@@ -5374,7 +5375,7 @@ function routePath(){
   const id = itemFromPath();
   if (id){ enterBrowse("shop"); openMarketItem(id, { url: "replace" }); return true; }
   if ((location.pathname || "").replace(/\/$/, "") === "/shop"){ enterBrowse("shop"); return true; }
-  if (/^\/shop\/[cb]\//.test(location.pathname || "")){ if (window.__FASH_CAT__) S.marketCat = window.__FASH_CAT__; enterBrowse("shop"); return true; }
+  if (/^\/shop\/[cb]\//.test(location.pathname || "")){ if (window.__FASH_CAT__) S.marketCat = window.__FASH_CAT__; enterBrowse("shop"); setTimeout(marketUrlSync, 50); setTimeout(marketUrlSync, 900); return true; }
   return false;
 }
 function homeOrAuth(){
