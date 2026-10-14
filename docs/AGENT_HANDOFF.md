@@ -1,5 +1,18 @@
 # Agent handoff — fashionistas.ai
 
+## LATEST — 2026-10-14 ~10:30 ET: marketplace + AdSense/SEO on PREVIEW (not production)
+Production unchanged since contact fix: `452d7e8` (contact → fashionistas1979@gmail.com, live + verified).
+Preview `p0-preview` @ `4bd61d4` → https://p0-preview.fashionistas-ai.pages.dev (alias is edge-cached; newest unique deploy URL is in the deploy log). Awaiting Iz "ship it". Ship = `git checkout main && git merge p0-preview && bash scripts/deploy-local.sh`; record rollback first.
+Shipped on preview:
+- P0s: try-on queue (D1 `tryon_slots`), /account/delete/ + API, junk listing 155 hidden, TWA icons/manifest, docs/twa/.
+- Search/browse: Size/Colour/Condition/Price/Saved filters, sorts Newest/Popular/A–Z/Z–A/Price, 24-per-page "Show more", URL state (?q&sort&cat), Save button (localStorage), try-on links carry ?id=.
+- SEO: /shop/c/<dept>[/<sub>] category + /shop/b/<brand> pages (only when listings exist; CollectionPage+ItemList+Breadcrumb JSON-LD, OG, canonical; noindex when only demo listings), Breadcrumb JSON-LD on item pages, /price-guide/ (only categories with ≥3 real non-demo priced listings; currently none → noindex index page). sitemap.xml function now actually runs (static file renamed sitemap-static.xml) and adds items/categories/brands/guides (demo excluded).
+- Analytics: POST /api/events (view/save/tryon/click/share → D1 `listing_stats` daily aggregates, no raw log), GET /api/stats/popular, GET /api/seller/stats, page /seller/stats/ (drawer link when signed in). Orders table feeds sales.
+- AdSense: slots on 21 blog pages (in-content + bottom), in-feed shop/category slot only with 9+ items, item slot only with ≥120-char descriptions; space reserved via CSS, collapses when unfilled. Slot IDs reused from site-adsense.js.
+- Docs: docs/marketplace/CROSSLISTING.md, docs/marketplace/CHECKOUT-STRIPE-CONNECT.md.
+Bugs found/fixed: a rehash script had truncated tests/security-gates.test.mjs in f2d0a57 (restored).
+Pending / needs Iz: ship it; all 4 public listings are the "demo" account (shop is effectively demo inventory); eBay/Etsy keys; Shopify app (integration not built yet); Depop partner application; Stripe decision; Modal spend cap; Workers Paid; AdSense approval; Play account + signing SHA-256. One test view event on listing 148 was written to the shared D1 by preview testing (deploy token can't run D1 queries to remove it).
+
 ## LATEST — 2026-10-14 ~08:45 ET (chief of staff took over)
 - PRODUCTION = `452d7e8` (Pages deploy 7865a20b): contact form posts from the browser to FormSubmit AJAX → fashionistas1979@gmail.com (server /api/contact fallback). Live test "TEST from site setup" delivered to the Gmail inbox 12:21Z. Rollback = previous prod `c3070c5`.
 - PREVIEW `p0-preview` (https://p0-preview.fashionistas-ai.pages.dev, `f2d0a57`, = speed branch + main + P0s): try-on queue (D1 `tryon_slots`, max 2 in flight, 429 tryon_busy with place-in-line + auto-retry), /account/delete/ + POST /api/account/delete, junk listing 155 hidden (functions/_lib/hidden-listings.js), PNG + maskable icons, manifest id, docs/twa/. NOT in production until Iz says ship it.
