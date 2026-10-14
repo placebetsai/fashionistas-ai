@@ -1,0 +1,13 @@
+{
+  "appId": "ai.fashionistas.app",
+  "appName": "Fashionistas",
+  "webDir": "www",
+  "server": {
+    "url": "https://fashionistas.ai",
+    "cleartext": false,
+    "allowNavigation": ["fashionistas.ai", "*.fashionistas.ai", "fashionistas-api.fashionistas1979.workers.dev"]
+  },
+  "android": { "allowMixedContent": false, "backgroundColor": "#ffffff" },
+  "ios": { "contentInset": "always", "backgroundColor": "#ffffff", "limitsNavigationsToAppBoundDomains": true },
+  "plugins": { "SplashScreen": { "launchShowDuration": 600, "backgroundColor": "#ffffff", "showSpinner": false } }
+}

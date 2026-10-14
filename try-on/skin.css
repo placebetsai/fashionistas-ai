@@ -52,3 +52,9 @@ body{background:var(--bg)!important;color:var(--ink)}
 .to-tips summary *{font-family:inherit!important}
 .tx-skel-img{background:linear-gradient(100deg,var(--bg-tint) 25%,color-mix(in srgb,var(--accent) 14%,var(--bg-tint)) 50%,var(--bg-tint) 75%)!important;background-size:220% 100%!important}
 .to-tips summary{text-transform:none!important;letter-spacing:normal!important}
+/* premium polish */
+.to-wrap h1{font-family:var(--display);font-weight:400;letter-spacing:-.02em}
+.to-go{border-radius:999px;box-shadow:0 10px 24px color-mix(in srgb,var(--accent) 28%,transparent)}
+.to-zone{border-radius:22px;transition:border-color .2s,background .2s}
+#quick-look{border-radius:22px;box-shadow:0 1px 2px rgba(20,12,6,.04),0 8px 24px rgba(20,12,6,.06)}
+#ql-canvas{border-radius:16px}

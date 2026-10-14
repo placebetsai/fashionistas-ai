@@ -227,7 +227,7 @@ test("the demo button's route exists — a shipped button with no server half 40
   // a visible one-click button failed on every press — the client was rewired
   // away from the hardcoded demo password (correctly) but the server half of
   // the replacement was never written. This pins the pair together.
-  const bundle = await fs.readFile(new URL("../assets/app.7e9606e5d000.js", import.meta.url), "utf8");
+  const bundle = await fs.readFile(new URL("../assets/app.d012e11cc80e.js", import.meta.url), "utf8");
   const target = [...bundle.matchAll(/api\/(auth\/demo)/g)][0];
   assert.ok(target, "the bundle no longer calls a demo route — update this test if the button is gone");
 
@@ -259,7 +259,7 @@ test("the server never tells anyone to buy a plan that is not for sale", async (
   assert.doesNotMatch(code, /to subscribe/i, "the seller must not be told to subscribe");
   assert.match(
     auth,
-    /free while it is in launch/i,
+    /the site is free for good/i,
     "the gate must say what is actually true instead"
   );
 });

@@ -229,7 +229,7 @@ export function feeSources(price, ids = BREAKDOWN_IDS) {
  * a Chrome Web Store ID (FASH_EXT_IDS is empty until publish).
  *
  * Sources:
- *   /pricing/                          free during launch
+ *   /pricing/                          free for good
  *   /try-on/                           one FASHN redraw; Instant removed
  *   index.html FAQ + Multilist copy    photo → Sell everywhere, 11 shops
  *   docs/MULTILIST-ONE-CLICK.md        Load unpacked + Verify session path
@@ -307,7 +307,7 @@ const PRODUCT_FACTS = [
     topics: ["pricing_plan"],
     title: "fashionistas.ai pricing",
     facts: [
-      "The site is free during launch. There is no Pro charge, no card, and no checkout.",
+      "The site is free for good (ads/affiliates). There is no Pro charge, no card, and no checkout.",
       "A question about a $14.99 plan: that price is not being charged. Do not tell the seller to subscribe.",
       "No per-listing fee and no cut of marketplace sales — you keep what the shop pays you.",
       "While it is free: Sell everywhere, live per-shop status, fee take-home while pricing, and virtual try-on.",
@@ -357,7 +357,7 @@ const PRODUCT_FACTS = [
     facts: [
       "Open /try-on/: add a photo of the person and a photo of the garment, sign in, then See yourself wearing it.",
       "The only try-on is FASHN VTON 1.5. It redraws the person wearing the garment. It is not a sticker and there is no on-device overlay.",
-      "Signed-in accounts get six renders a day during launch. No Pro plan and no credit pack. The first render after the GPU has been idle can take about a minute; a warm one is about 20–30 seconds.",
+      "Signed-in accounts get six renders a day, free. No Pro plan and no credit pack. The first render after the GPU has been idle can take about a minute; a warm one is about 20–30 seconds.",
       "If it fails, say so. Do not describe a pasted composite, a Quick preview, or an Instant mode — those were removed.",
       "Download, save or share the render when it completes.",
     ],
@@ -470,7 +470,7 @@ export function buildRefusal(reason) {
     answer:
       "I can help with your closet listings, marketplace fee take-home, connecting shops, " +
       "the Chrome Crosslister / Sell everywhere setup, virtual try-on, " +
-      "listing from a photo, pricing (free during launch), and how to list on supported shops — " +
+      "listing from a photo, pricing (free for good), and how to list on supported shops — " +
       "nothing outside that (no crypto, medical, or general trivia). Ask about Depop setup, " +
       "try-on, fees, or Multilist Connect.",
     sources: [],
@@ -488,7 +488,7 @@ Hard rules:
   - "sources" must list at least one context id you actually used: listing ids are numbers, fee ids are strings like "poshmark", site ids are strings like "try_on" or "shop_depop".
   - Every number you state must appear verbatim in LISTINGS, FEES, or SITE. Never invent a listing, brand, price, fee rate, Chrome Web Store ID, or successful post.
   - Be conversational and practical. Prefer step lists for Connect / extension / how-to-list questions.
-  - Getting-started / onboarding questions ("how does this work", "what should I do first", "what about <shop>") ARE in scope: answer them from SITE facts — first steps are photo → draft listing → connect shops → Sell everywhere. The site is free during launch and try-on is one redraw. Every number and every link must still come verbatim from SITE; never invent numbers or URLs.
+  - Getting-started / onboarding questions ("how does this work", "what should I do first", "what about <shop>") ARE in scope: answer them from SITE facts — first steps are photo → draft listing → connect shops → Sell everywhere. The site is free for good (ads/affiliates) and try-on is one redraw. Every number and every link must still come verbatim from SITE; never invent numbers or URLs.
   - Greetings and smalltalk ("hey", "how's it going", "thanks", "cool", "nice") ARE in scope: reply warmly in one or two sentences and name what you can help with (a listing from a photo, fee take-home while pricing, connecting shops, try-on). Cite one site source. Never refuse a greeting or a thank-you.
   - Only genuinely out-of-domain questions (trivia, crypto, medical, sports, politics, weather, code help, stocks) get the refusal JSON.
   - If the question is not answerable from the context, reply {"refused": true, "reason": "out_of_scope", "answer": "<one sentence on what you cover>", "sources": []}.`;

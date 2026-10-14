@@ -622,6 +622,25 @@ async function renderAfterGate(request, env, userId, via, credits) {
   const seed = intField(form.seed, 42, { min: 0, max: 2 ** 31 - 1 });
   const bucket = requireBucket(env);
 
+  // --- 3b. cache: identical person + garment + settings → reuse the stored render ($0, no GPU) ---
+  let cacheKey = null;
+  try {
+    const parts = [form.person.bytes, garment.file.bytes, new TextEncoder().encode(`|${category}|${photoType}|${seed}`)];
+    const all = new Uint8Array(parts.reduce((n, x) => n + x.byteLength, 0)); let off = 0;
+    for (const x of parts) { all.set(new Uint8Array(x), off); off += x.byteLength; }
+    const h = [...new Uint8Array(await crypto.subtle.digest("SHA-256", all))].map((x) => x.toString(16).padStart(2, "0")).join("");
+    cacheKey = `tryon-cache/${h}`;
+    const hit = await bucket.get(cacheKey);
+    if (hit) {
+      const url = (await hit.text()).trim();
+      if (/^\/api\/tryon\/image\//.test(url)) {
+        await recordRun(env, { ms: 0, status: "ok", garments: 1, error: null, model: "cache", cost: 0 });
+        return json({ ok: true, url, provider: "cache", cached: true, category: FASHN_CATEGORY[category], ms: 0, cost_usd: 0, charged: 0, entitled_via: via }, 200, { "cache-control": "no-store" });
+      }
+    }
+  } catch (_) { cacheKey = cacheKey || null; }
+
+
   // --- 4a. self-hosted Modal first: cheapest (free monthly credit) ---------
   const tried = [];
   if (modalReady(env)) {
@@ -632,7 +651,7 @@ async function renderAfterGate(request, env, userId, via, credits) {
       const tm = Date.now();
       try {
         const out = await modalRun(env, { personBytes: form.person.bytes, garmentBytes: garment.file.bytes, category, seed, steps: 20, photoType });
-        return finalize(env, request, bucket, {
+        return finalize(env, request, bucket, { cacheKey,
           bytes: out, ms: Date.now() - tm, via, userId, credits, category, steps: 20, seed, provider: "modal", cost: PAID.modal.costUsd,
         });
       } catch (e) {
@@ -674,7 +693,7 @@ async function renderAfterGate(request, env, userId, via, credits) {
       });
       if (r.done) {
         const out = await downloadResult(r.url);
-        return finalize(env, request, bucket, {
+        return finalize(env, request, bucket, { cacheKey,
           bytes: out, ms: Date.now() - tp, via, userId, credits, category, steps, seed, provider, cost,
         });
       }
@@ -728,7 +747,7 @@ async function renderAfterGate(request, env, userId, via, credits) {
   }
 
   const ms = Date.now() - t0;
-  return finalize(env, request, bucket, { bytes, ms, via, userId, credits, category, steps, seed });
+  return finalize(env, request, bucket, { cacheKey, bytes, ms, via, userId, credits, category, steps, seed });
 }
 
 async function finalize(env, request, bucket, o) {
@@ -758,6 +777,7 @@ async function finalize(env, request, bucket, o) {
   const url = extForType(type) === "png" ? `/api/tryon/image/${uuid}` : `/api/tryon/image/${uuidWithExt}`;
 
   await recordRun(env, { ms, status: "ok", garments: 1, error: null, model, cost });
+  if (o.cacheKey) { try { await bucket.put(o.cacheKey, url, { httpMetadata: { contentType: "text/plain" } }); } catch (_) {} }
   if (via === "launch") {
     try { await bumpLaunch(env, userId); } catch { /* a missed tally must not hide the picture */ }
   }
