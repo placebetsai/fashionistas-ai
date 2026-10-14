@@ -1,5 +1,38 @@
 # Agent handoff — fashionistas.ai
 
+## LATEST — 2026-10-14 ~5:00 PM ET: seller-ux PREVIEW (not production; needs Iz's "ship it")
+- **Preview:** https://seller-ux.fashionistas-ai.pages.dev (branch `seller-ux`, HEAD `2200a8f`, on top of main `aa86c6d`; main hasn't moved, so no rebase was needed). Production is unchanged.
+- **Shipped to the preview one fix at a time:**
+  1. Dashboard (`4e372b1`): the greeting uses the seller's name and never "Fashionistas.ai". With no sales it shows a text empty state instead of a fake rising line, and the drifting SELL/NEW/SOLD words behind cards are gone. The bundle was renamed to `assets/app.d8c12daf443d.js` (immutable cache), and index.html and tests were updated.
+  2. Connect your shops, Vendoo-style (`0d49615`…`9eea91b`, ext `326d36d`):
+     - Board steps: install-extension step, then a 17-marketplace grid. Each shop shows its status from the seller's own browser session: Connected, or a Log in button that opens the site's login tab and rechecks automatically.
+     - No key, token or password fields. "Not built", partner and needs-keys rows are hidden. A collapsed "Advanced" section shows only connected stores, ready OAuth, and feeds.
+     - Posting: select items → pick marketplaces → Post everywhere → per-site progress panel. One-time consent is in-page.
+     - Saved in the backend: `seller_prefs` in D1 via `functions/api/seller/prefs.js` (GET/POST /api/seller/prefs, one row per seller). Per-item status stays in `listing_platforms`.
+     - Install page: `/seller/get-extension/`, with the zip at `/downloads/fashionistas-crosslister-0.2.0.zip`. Not on the Chrome Web Store yet.
+  3. Clean background (`8ad78ac`): turned off (`CLEAN_BG_ON=false`). Bring it back only with preview and undo.
+  4. AI autofill (`a8dcb2e`, `bfc61f3`, `2200a8f`):
+     - Under 85% sure: keeps the drafted title, price and details, but the seller picks the category. The card says "Not sure what this is — X?", not "Filled in for you".
+     - Category contradicts the item (e.g. a cup lid under Women › Bags): fills nothing and asks the seller.
+- **Extension 0.2.0 (`extension/`, `dist/fashionistas-crosslister-0.2.0.zip`):**
+  - Covers 14 sites: poshmark, mercari, depop, facebook, grailed, vinted, ebay, etsy, vestiaire, kidizen, whatnot, shopify, amazon, walmart.
+  - Bridge messages: FA_CHECK → FA_SESSIONS (streamed per site), FA_OPEN_LOGIN, FA_ACCEPT/FA_ACCEPTED, FA_POST/FA_PROGRESS (opening / filled / listed / no-url).
+  - Session check runs in two steps:
+    1. A request with the seller's cookies; a bounce to a login URL means logged out.
+    2. Otherwise, a probe in a minimized background tab. A visible account, avatar or sign-out control means Connected. A login form or link means logged out. Anything else is unknown and shows "Log in".
+  - It never reads cookie values or passwords.
+  - Shops are filled one after another. Their listing URLs are watched in parallel.
+- **Verified:**
+  - npm test 459/459.
+  - E2E 12/12 on the preview. The e2e now picks a category when the AI is unsure.
+  - With a fresh browser profile and no logins, every shop shows "Log in", so there are no false "Connected". An earlier build had false positives on Cloudflare challenge pages; that's fixed.
+  - The real temporary listing flow opens and fills the Poshmark tab and shows progress. The test listings were deleted.
+- **Unverified:**
+  - "Connected" detection and form filling against real logged-in seller accounts. Iz needs to load the extension and test with his own accounts.
+  - Marketplace selectors for the 6 new sites. They use label matching only.
+  - A multi-item run waits for each item's listing confirmations before starting the next item.
+- **Screenshots and progress log:** `/workspace/fash-ship-qa/seller-ux/` on the box (PROGRESS.md, fix1-*, fix2-*, fix3-*, fix4-*, e2e/).
+
 ## LATEST — 2026-10-14 ~11:55 ET: free-v3 SHIPPED TO PRODUCTION (Iz said "ship it")
 - **Production:** commit `d26cf1c` (main = merge of free-v3 `4e729e3` + handoff doc). Pages deploy `73a85ca4-39cc-457f-b41d-2eec08a2e3fd`. `version.txt` verified.
 - **Rollback:** `6c0d6cbf-e5f1-449c-8fc4-3de5e3adaf72` (commit `8211eb1`). Older rollbacks: `1ecaa1e8` (`4001c02`), `7865a20b` (`452d7e8`).
