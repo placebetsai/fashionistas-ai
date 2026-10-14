@@ -40,7 +40,7 @@
 <h1>Contact fashionistas.ai</h1>
 <p class="lede">Questions about listing drafts, fees, or your account? Send a message below — a person reads every one.</p>
 <div id="sent-banner" class="ok" hidden role="status">Thanks — your message is on its way. A person reads every one.</div>
-<div id="err-banner" class="ok" hidden role="alert" style="border-color:#e5484d">That didn't send. Try again in a minute, or email <a href="mailto:info@fashionistas.ai">info@fashionistas.ai</a>.</div>
+<div id="err-banner" class="ok" hidden role="alert" style="border-color:#e5484d">That didn't send. Try again in a minute, or email <a href="mailto:fashionistas1979@gmail.com">fashionistas1979@gmail.com</a>.</div>
 <div class="card">
 <form id="contact-form" action="/api/contact" method="POST">
 <input type="hidden" name="_subject" value="fashionistas.ai Contact Form">
@@ -88,7 +88,7 @@
     var ok = document.getElementById('sent-banner'), bad = document.getElementById('err-banner');
     ok.hidden = true; bad.hidden = true;
     function done(good){ btn.disabled = false; btn.textContent = 'Send message'; (good ? ok : bad).hidden = false; if (good) f.reset(); (good ? ok : bad).scrollIntoView({block:'center'}); }
-    fetch('https://formsubmit.co/ajax/info@fashionistas.ai', { method:'POST', headers:{ Accept:'application/json' }, body:data })
+    fetch('https://formsubmit.co/ajax/fashionistas1979@gmail.com', { method:'POST', headers:{ Accept:'application/json' }, body:data })
       .then(function(r){ return r.json(); })
       .then(function(j){ if (j && String(j.success) === 'true') return true; throw 0; })
       .catch(function(){

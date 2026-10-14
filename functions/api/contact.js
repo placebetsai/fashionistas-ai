@@ -18,7 +18,7 @@
 
 function recipient(env) {
   const fromEnv = String((env && env.CONTACT_TO) || "").trim();
-  return fromEnv || "info@fashionistas.ai";
+  return fromEnv || "fashionistas1979@gmail.com";
 }
 
 const LIMITS = { name: 120, email: 200, message: 5000 };
