@@ -39,6 +39,7 @@
 <span class="badge">Seller · free</span>
 <h1>Crosslist board</h1>
 <p class="lede">Every item, every shop, one place. Live on fashionistas.ai the moment you post. Elsewhere: <b>Copy &amp; open</b>, then mark it <b>Listed</b> or <b>Sold</b>. <a href="/seller/stats/">Stats&nbsp;→</a></p>
+<details class="ch" id="ch" open><summary><b>Where can it post automatically?</b><span id="ch-sum">Loading…</span></summary><div id="ch-body"></div></details>
 <p id="b-msg" class="b-msg">Loading…</p><div id="b-list"></div>
 <style>
 .b-msg{color:var(--mut);font-size:14px;margin:4px 0 14px}
@@ -75,6 +76,19 @@
 .bl-a button:active,.bl-a a:active{transform:scale(.97)}
 :root[data-theme=dark] .st-listed{background:#123d24;color:#b9f0cc}:root[data-theme=dark] .st-sold{background:#fff;color:#111}:root[data-theme=dark] .st-copied{background:#3d300c;color:#ffe39a}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]) .st-listed{background:#123d24;color:#b9f0cc}:root:not([data-theme=light]) .st-sold{background:#fff;color:#111}:root:not([data-theme=light]) .st-copied{background:#3d300c;color:#ffe39a}}
+.ch{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:4px 14px;margin:0 0 16px}
+.ch>summary{list-style:none;cursor:pointer;display:flex;flex-direction:column;gap:2px;padding:12px 0}
+.ch>summary::-webkit-details-marker{display:none}
+.ch>summary span{font-size:13px;color:var(--mut)}
+.chg{margin:4px 0 14px}.chg h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:10px 0 6px}
+.chg p.d{font-size:13px;color:var(--mut);margin:0 0 8px}
+.chi{border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding:10px 0}
+.chi-r{display:flex;align-items:center;gap:10px}.chi-r b{flex:1;font-size:14.5px}
+.chi small{display:block;color:var(--mut);font-size:12.5px;margin-top:4px;line-height:1.4}
+.chi form{display:grid;gap:8px;margin-top:10px}.chi input{min-height:42px;border-radius:12px;border:1px solid var(--line-2);background:var(--input-bg);color:var(--ink);padding:0 12px;font:inherit}
+.chb{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.chb.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.feed{display:flex;gap:8px;align-items:center;margin:6px 0}.feed code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;background:var(--soft);padding:9px 10px;border-radius:10px}
 </style>
 </main>
 
@@ -110,7 +124,7 @@
         var a='', d='data-p="'+s.id+'" data-id="'+l.id+'"';
         if(s.id==='fashionistas'){ a='<a href="/shop/'+Number(l.id)+'">View</a>'+(st!=='sold'?'<button data-act="sold" '+d+'>Sold</button>':''); }
         else if(st!=='sold'){
-          a='<button class="pri" data-act="copy" '+d+'>'+(s.api_ready?'Post via API':'Copy &amp; open')+'</button>'+(st==='listed'||st==='active'?'<button data-act="delisted" '+d+'>Delist</button>':'<button data-act="listed" '+d+'>Listed</button>')+'<button data-act="sold" '+d+'>Sold</button>';
+          a='<button class="pri" data-act="copy" '+d+'>'+(s.mode==='api_channel'?'Post via API':s.api_ready?'Post in app':'Copy &amp; open')+'</button>'+(st==='listed'||st==='active'?'<button data-act="delisted" '+d+'>Delist</button>':'<button data-act="listed" '+d+'>Listed</button>')+'<button data-act="sold" '+d+'>Sold</button>';
         }
         return '<li class="bl-shop"><div class="bl-r1"><span class="bl-ic" aria-hidden="true">'+esc(s.name.charAt(0))+'</span><span class="bl-nm">'+esc(s.name)+(url&&/^https:/.test(url)?'<a href="'+esc(url)+'" target="_blank" rel="noopener" aria-label="Open listing">↗</a>':'')+'</span><span class="st '+(CLS[st]||'')+'">'+esc(LBL[st]||st)+'</span></div>'+(a?'<div class="bl-a">'+a+'</div>':'')+'</li>';
       }).join('');
@@ -120,6 +134,43 @@
     }).join('');
     [].forEach.call(list.querySelectorAll('details.bl-d'),function(d){d.addEventListener('toggle',function(){OPEN[d.getAttribute('data-id')]=d.open;});});
   }
+  var CH=null;
+  var GROUPS=[['api_seller_key','Your own store — paste a key, posts for real','Works today with the key from your own store. No approval needed.'],['feed','Free product feed — paste once','Paste your feed URL into the service once; it pulls your listings on its own schedule.'],['api_oauth','Connected by sign-in','Real API; needs the site’s app keys.'],['partner','Real API, approval needed','We build these once the marketplace approves access.'],['guided','Copy & open only','No listing API for outside apps — automating them would break their rules.']];
+  function chRender(){
+    var b=document.getElementById('ch-body'),sum=document.getElementById('ch-sum');
+    var live=CH.channels.filter(function(c){return c.connected;}).length, auto=CH.channels.filter(function(c){return c.built;}).length;
+    sum.textContent=auto+' channels can post or sync automatically · '+live+' connected';
+    b.innerHTML=GROUPS.map(function(g){
+      var list=CH.channels.filter(function(c){return c.mode===g[0];}); if(!list.length) return '';
+      return '<div class="chg"><h3>'+g[1]+'</h3><p class="d">'+g[2]+'</p>'+list.map(function(c){
+        var right='',body='';
+        if(c.mode==='api_seller_key'){
+          if(!c.built) right='<span class="st">not built</span>', body='<small>'+esc(c.why||'')+'</small>';
+          else if(c.connected) right='<span class="st st-listed">connected</span><button class="chb" data-dc="'+c.id+'">Disconnect</button>', body='<small>'+esc(c.connected.label||'')+'</small>';
+          else if(!CH.vault) right='<span class="st">off — site key not set</span>';
+          else { right='<button class="chb pri" data-open="'+c.id+'">Connect</button>'; body='<form data-ch="'+c.id+'" hidden><small>'+esc(c.keyHelp||'')+'</small>'+c.sellerFields.map(function(f){return '<input name="'+f+'" placeholder="'+f.replace(/_/g,' ')+'" autocomplete="off" '+(/secret|token|key/.test(f)?'type="password"':'')+'>';}).join('')+'<button class="chb pri" type="submit">Save &amp; connect</button></form>'; }
+        } else if(c.mode==='feed'){
+          right='<span class="st st-listed">works now</span>'; body='<small>'+esc(c.api)+'</small>';
+        } else if(c.mode==='api_oauth'){
+          right=c.platformReady?'<span class="st st-listed">ready</span>':'<span class="st">needs site keys</span>'; body='<small>'+esc(c.approval)+'</small>';
+        } else if(c.mode==='partner'){ right='<span class="st">approval needed</span>'; body='<small>'+esc(c.approval)+'</small>'; }
+        else { right='<span class="st">copy &amp; open</span>'; }
+        return '<div class="chi"><div class="chi-r"><b>'+esc(c.name)+'</b>'+right+'</div>'+body+'</div>';
+      }).join('')+(g[0]==='feed'?'<div class="feed"><code>'+esc(CH.feed.xml)+'</code><button class="chb" data-copy="'+esc(CH.feed.xml)+'">Copy</button></div><div class="feed"><code>'+esc(CH.feed.csv)+'</code><button class="chb" data-copy="'+esc(CH.feed.csv)+'">Copy</button></div>':'')+'</div>';
+    }).join('');
+  }
+  function chLoad(){ fetch('/api/channels',{credentials:'include',headers:h}).then(function(r){return r.ok?r.json():null;}).then(function(j){ if(j&&j.ok){CH=j;chRender();} else { document.getElementById('ch').hidden=true; } }).catch(function(){}); }
+  document.getElementById('ch-body').addEventListener('click',function(e){
+    var t=e.target;
+    if(t.dataset.open){ var f=document.querySelector('form[data-ch="'+t.dataset.open+'"]'); if(f) f.hidden=!f.hidden; }
+    if(t.dataset.copy){ (navigator.clipboard?navigator.clipboard.writeText(t.dataset.copy):Promise.reject()).then(function(){t.textContent='Copied';}).catch(function(){prompt('Copy:',t.dataset.copy);}); }
+    if(t.dataset.dc){ fetch('/api/channels/connect?channel='+encodeURIComponent(t.dataset.dc),{method:'DELETE',credentials:'include',headers:h}).then(function(){chLoad();load();}); }
+  });
+  document.getElementById('ch-body').addEventListener('submit',function(e){
+    e.preventDefault(); var f=e.target, fields={}; [].forEach.call(f.elements,function(x){ if(x.name) fields[x.name]=x.value; });
+    fetch('/api/channels/connect',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({channel:f.dataset.ch,fields:fields})}).then(function(r){return r.json();}).then(function(j){ if(!j.ok) alert('Could not connect: '+(j.detail||j.error)); chLoad(); load(); });
+  });
+  chLoad();
   function load(){
     fetch('/api/crosslist/board',{credentials:'include',headers:h}).then(function(r){return r.json().then(function(j){return {r:r,j:j};});}).then(function(x){
       if(x.r.status===401){ msg.innerHTML='Sign in to see your board. <a href="/#view-auth">Sign in</a>'; return; }
@@ -136,6 +187,9 @@
     var id=Number(b.getAttribute('data-id')), p=b.getAttribute('data-p'), act=b.getAttribute('data-act');
     var l=data.listings.filter(function(x){return x.id===id;})[0], s=data.shops.filter(function(x){return x.id===p;})[0];
     if(act==='copy'){
+      if(s.mode==='api_channel'){ b.disabled=true; b.textContent='Posting…';
+        fetch('/api/channels/post',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({listing_id:id,channel:p})}).then(function(r){return r.json();}).then(function(j){ if(!j.ok) alert(s.name+' said no: '+(j.detail||j.error)); else if(j.note) alert(j.note); load(); });
+        return; }
       if(s.api_ready){ window.location.href='/'; return; }
       var t=copyText(l); (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).catch(function(){ prompt('Copy this listing:',t); });
       if(s.sell) window.open(s.sell,'_blank','noopener');
