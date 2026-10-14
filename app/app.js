@@ -131,7 +131,7 @@ document.addEventListener("click", function (e) {
 });
 window.addEventListener("popstate", render);
 $("#scrim").onclick = function () { closeSheet(); };
-addEventListener("scroll", function () { var t = $(".top"); if (t) t.classList.toggle("scrolled", scrollY > 4); }, { passive: true });
+addEventListener("scroll", function () { var t = $(".top"); if (t) t.classList.toggle("scrolled", scrollY > 4); var h = innerHeight; $$(".rv:not(.shown)").forEach(function (el) { if (el.getBoundingClientRect().top < h) el.classList.add("shown"); }); }, { passive: true });
 var _ps = history.pushState; history.pushState = function () { window.__navd = true; return _ps.apply(history, arguments); };
 
 /* ================= SHOP ================= */
