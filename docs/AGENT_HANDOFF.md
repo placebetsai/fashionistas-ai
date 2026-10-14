@@ -1526,3 +1526,9 @@ Honest status for every channel. **Built** means this repo creates the listing v
 9. TikTok Shop: Partner Center app, `TIKTOK_APP_KEY` and `TIKTOK_APP_SECRET`.
 10. Bonanza: email Bonanza for a dev ID and cert: `BONANZA_DEV_ID` and `BONANZA_CERT_ID`.
 11. Depop: partner application. Vinted Pro: allowlist only. Vestiaire: about 1,000 listings a month. Whatnot: closed to new applicants.
+
+## 2026-10-14: Channels SHIPPED
+
+- Live: 86d6d70 = deploy d8b758aa-0ed8-430d-a4e4-c780c7b90be9. Rollback: 73a85ca4-39cc-457f-b41d-2eec08a2e3fd (d26cf1c).
+- CHANNEL_KEY set on production (random 32 bytes, never printed). Losing or rotating it makes stored seller keys unreadable, so sellers must reconnect.
+- Verified live: version.txt, pages + board 200 with no JS errors, connect/disconnect of the fake WooCommerce store (removed), SSRF guard, /feeds/50.xml (3 items), ads.txt and sitemap (40 locs), e2e 12/12 (test listing cleaned up).
