@@ -199,7 +199,7 @@ function syncSessionChrome(){
   document.querySelectorAll("#signin-btn, #drawer-signin").forEach(function(b){
     b.style.display = on ? "none" : "";
   });
-  document.querySelectorAll('a[href="/account/delete/"]').forEach(function(a){
+  document.querySelectorAll('a[href="/account/delete/"], a[href="/seller/stats/"]').forEach(function(a){
     a.style.display = on ? (a.classList.contains("drawer-delete") ? "block" : "") : "none";
   });
 }

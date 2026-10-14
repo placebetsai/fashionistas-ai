@@ -128,7 +128,9 @@ export async function onRequestGet(context) {
             `<meta property="og:type" content="website"><meta property="og:title" content="Secondhand ${esc(nice)} — fashionistas.ai"><meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${canon}">` +
             (img ? `<meta property="og:image" content="${esc(img.photo_url)}">` : "") +
             ld.map((x) => `<script type="application/ld+json">${JSON.stringify(x).replace(/</g, "\\u003c")}</script>`).join("") +
-            (catPath ? `<script>window.__FASH_CAT__=${JSON.stringify(catPath)}</script>` : `<script>window.__FASH_Q__=${JSON.stringify(brandName)}</script>`) + embedMarket(mb)
+            (catPath ? `<script>window.__FASH_CAT__=${JSON.stringify(catPath)}</script>` : `<script>window.__FASH_Q__=${JSON.stringify(brandName)}</script>`) + embedMarket(mb),
+          // Demo-account listings are not real inventory: a page built only from them stays out of the index.
+          { noindex: items.every((m) => [m.seller && m.seller.username, m.seller && m.seller.display_name].some((v) => String(v || "").trim().toLowerCase() === "demo")) }
         ),
         { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=300" } }
       );

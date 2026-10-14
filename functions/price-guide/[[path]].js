@@ -9,7 +9,7 @@ const API = "https://fashionistas-api.fashionistas1979.workers.dev";
 const MIN_N = 3, AD_N = 5;
 const esc = (v) => String(v == null ? "" : v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 async function market() {
-  try { const r = await fetch(`${API}/api/market?limit=500`, { headers: { Accept: "application/json" } }); if (r.ok) return visible(((await r.json()) || {}).market || []); } catch (_) {}
+  try { const r = await fetch(`${API}/api/market?limit=500`, { headers: { Accept: "application/json" } }); if (r.ok) return visible(((await r.json()) || {}).market || []).filter((m) => String((m.seller && m.seller.username) || "").toLowerCase() !== "demo"); } catch (_) {}
   return [];
 }
 const median = (a) => (a.length % 2 ? a[(a.length - 1) / 2] : (a[a.length / 2 - 1] + a[a.length / 2]) / 2);

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your listing stats — fashionistas.ai</title>
+<meta name="description" content="Views, saves, try-ons, clicks and sales for your fashionistas.ai listings.">
+<meta name="robots" content="noindex">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://fashionistas.ai/seller/stats/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="fashionistas.ai">
+<meta property="og:title" content="Contact fashionistas.ai — Support &amp; feedback">
+<meta property="og:description" content="Contact fashionistas.ai. Send product questions or feedback — a person reads every message.">
+<meta property="og:url" content="https://fashionistas.ai/seller/stats/">
+<meta property="og:image" content="https://fashionistas.ai/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Contact fashionistas.ai — Support &amp; feedback">
+<meta name="twitter:description" content="Contact fashionistas.ai. Send product questions or feedback — a person reads every message.">
+<meta name="twitter:image" content="https://fashionistas.ai/og.png">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/site.css">
+<meta name="color-scheme" content="dark light">
+<script>if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).catch(function(){});if(window.caches)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})}).catch(function(){})}</script>
+<script>try{var t=localStorage.getItem("fash_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="wrap">
+<header class="topnav">
+<a class="brand" href="/">fashionistas<span>.ai</span></a>
+<nav aria-label="Main">
+<a href="/about/">About</a>
+<a href="/privacy/">Privacy</a><a href="/terms/">Terms</a>
+<a href="/contact/" aria-current="page">Contact</a>
+<a href="/">App</a>
+<a href="/pricing/">Pricing</a><a href="/guide/">Guide</a></nav>
+</header>
+<main id="main">
+<span class="badge">Seller</span>
+<h1>Your listing stats</h1>
+<p class="lede">Real counts only: views, saves, try-ons, shop clicks and sales. Counting started 14 Oct 2026, so older activity isn't here.</p>
+<div class="card" id="st-card"><p id="st-msg">Loading…</p>
+<div id="st-range" hidden style="display:flex;gap:8px;margin-bottom:12px"><button class="chip on" data-d="30">30 days</button><button class="chip" data-d="7">7 days</button><button class="chip" data-d="365">1 year</button></div>
+<div id="st-totals" class="st-grid"></div><h2 id="st-mh" hidden style="font-size:18px;margin:18px 0 8px">By marketplace</h2><div id="st-markets"></div>
+<h2 id="st-lh" hidden style="font-size:18px;margin:18px 0 8px">By listing</h2><div id="st-list"></div></div>
+<style>.st-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.st-k{border:1px solid var(--line,#ddd);border-radius:12px;padding:10px;text-align:center}.st-k b{display:block;font-size:22px}.st-k span{font-size:12px;opacity:.75}.st-row{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line,#ddd)}.st-row img{width:52px;height:52px;object-fit:cover;border-radius:8px}.st-row .t{flex:1;min-width:0}.st-row .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.st-row small{opacity:.75}</style>
+</main>
+
+<footer class="site-footer">
+<nav aria-label="Footer">
+<a href="/">Home</a>
+<a href="/contact/">Contact</a>
+<a href="/about/">About</a>
+<a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="/pricing/">Pricing</a><a href="/guide/">Guide</a><a href="/try-on/">Try it on</a><a href="/see-in-space/">See in my space</a>
+<a href="/#view-auth">Open app</a>
+</nav>
+<p>fashionistas.ai — photograph your closet, list it everywhere. <a href="/contact/">Contact</a></p>
+</footer>
+</div>
+<script>
+(function(){
+  var tok=''; try{ tok=localStorage.getItem('fash_token')||''; }catch(e){}
+  var h={}; if(tok) h.Authorization='Bearer '+tok;
+  var esc=function(v){return String(v==null?'':v).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+  var L={view:'Views',save:'Saves',tryon:'Try-ons',click:'Shop clicks',sales:'Sales',revenue:'Revenue'};
+  function k(n,l){return '<div class="st-k"><b>'+esc(n)+'</b><span>'+l+'</span></div>';}
+  function load(d){
+    fetch('/api/seller/stats?days='+d,{credentials:'include',headers:h}).then(function(r){return r.json().then(function(j){return {r:r,j:j};});}).then(function(x){
+      var msg=document.getElementById('st-msg');
+      if(x.r.status===401){ msg.innerHTML='Sign in to see your stats. <a href="/#view-auth">Sign in</a>'; return; }
+      if(!x.j.ok){ msg.textContent="Couldn't load stats. Try again in a minute."; return; }
+      var t=x.j.totals; msg.textContent=x.j.listings.length? 'Last '+x.j.days+' days.' : "You haven't listed anything yet.";
+      document.getElementById('st-range').hidden=false;
+      document.getElementById('st-totals').innerHTML=k(t.view,L.view)+k(t.save,L.save)+k(t.tryon,L.tryon)+k(t.click,L.click)+k(t.sales,L.sales)+k('$'+Math.round(t.revenue),L.revenue);
+      var mk=Object.keys(x.j.markets);
+      document.getElementById('st-mh').hidden=!mk.length;
+      document.getElementById('st-markets').innerHTML=mk.map(function(m){var v=x.j.markets[m];return '<div class="st-row"><div class="t"><b>'+esc(m)+'</b><small>'+v.click+' clicks · '+v.sales+' sales · $'+Math.round(v.revenue)+'</small></div></div>';}).join('');
+      document.getElementById('st-lh').hidden=!x.j.listings.length;
+      document.getElementById('st-list').innerHTML=x.j.listings.map(function(l){return '<a class="st-row" style="color:inherit;text-decoration:none" href="/shop/'+Number(l.id)+'">'+(l.photo_url?'<img src="'+esc(l.photo_url)+'" alt="" loading="lazy">':'')+'<div class="t"><b>'+esc(l.title||'Untitled')+'</b><small>'+l.view+' views · '+l.save+' saves · '+l.tryon+' try-ons · '+l.click+' clicks · '+l.sales+' sold</small></div></a>';}).join('');
+    }).catch(function(){ document.getElementById('st-msg').textContent="Couldn't load stats. Check your connection."; });
+  }
+  document.getElementById('st-range').addEventListener('click',function(e){var b=e.target.closest('[data-d]'); if(!b) return; [].forEach.call(this.children,function(c){c.classList.toggle('on',c===b);}); load(b.getAttribute('data-d'));});
+  load(30);
+})();
+</script>
+</body>
+</html>
