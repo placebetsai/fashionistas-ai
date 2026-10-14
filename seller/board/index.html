@@ -233,7 +233,7 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
   chLoad();
 
   // ---- “Post everywhere”: guided run-through for copy-&-paste sites ----
-  var RUN=null, rd=document.getElementById('run');
+  var RUN=null, rd=document.getElementById('run'); document.body.appendChild(rd); // main has a transform (entrance anim) that would trap position:fixed
   function crc32(u){ var c,t=crc32.t; if(!t){t=crc32.t=[];for(var n=0;n<256;n++){c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}} var x=-1; for(var i=0;i<u.length;i++) x=(x>>>8)^t[(x^u[i])&255]; return (x^-1)>>>0; }
   function zip(files){ // store-only zip, no library
     var parts=[],cd=[],off=0; function le(n,b){var a=[];for(var i=0;i<b;i++)a.push((n>>>(8*i))&255);return a;}
