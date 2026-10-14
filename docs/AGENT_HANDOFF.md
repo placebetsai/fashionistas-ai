@@ -1,5 +1,14 @@
 # Agent handoff — fashionistas.ai
 
+## LATEST — 2026-10-14 ~11:55 ET: free-v3 SHIPPED TO PRODUCTION (Iz said "ship it")
+- **Production:** commit `d26cf1c` (main = merge of free-v3 `4e729e3` + handoff doc). Pages deploy `73a85ca4-39cc-457f-b41d-2eec08a2e3fd`. `version.txt` verified.
+- **Rollback:** `6c0d6cbf-e5f1-449c-8fc4-3de5e3adaf72` (commit `8211eb1`). Older rollbacks: `1ecaa1e8` (`4001c02`), `7865a20b` (`452d7e8`).
+- **Live checks:**
+  - All 12 main pages return 200 with 0 JS errors and no overflow, in light and dark.
+  - `ads.txt` is intact; `sitemap.xml` has 40 URLs.
+  - E2E 12/12 in light and dark on production. Test listings 175 and 176 were deleted; the public shop shows only the original 4.
+  - Live screenshots on the box: `/workspace/fash-ship-qa/live3/closet-empty-{light,dark}.png`, `live3/sell-{light,dark}.png`, and the filled listing flow at `prod3-{light,dark}/s2-ai-filled.png`.
+
 ## LATEST — 2026-10-14 ~11:40 ET: free-v2 SHIPPED TO PRODUCTION (Iz said "ship it")
 - **Production:** commit `8211eb1` (main = merge of free-v2 `1496c2a` + handoff docs). Pages deploy `6c0d6cbf`. `version.txt` verified.
 - **Rollback:** `1ecaa1e8-40eb-40bd-8d2c-ee2a553627ce` (commit `4001c02`). The older rollback is `7865a20b` (`452d7e8`).
