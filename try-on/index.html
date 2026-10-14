@@ -503,6 +503,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
       .then(function(r){ return r.json(); }).then(function(j){ if (j && j.state) gpuState = j.state; }).catch(function(){});
   }
   try { warmGpu(); } catch (e) {}
+  var DOWN_MSG = "Try-on is temporarily down. Try again in a few minutes. Your photos are still here.";
   var mode = "hd";
   var kindPick = "auto";
   var CROP_MSG = "Photo too cropped — we need your head to your knees. Stand back about 2 m (6 ft), hold the phone at chest height, and keep your whole body from head to knees in the frame.";
@@ -1026,10 +1027,12 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
                 msg = "Sign in first — it's free. Then this redraws you wearing the garment.";
               } else if (res.status === 429) {
                 msg = (j && j.detail) || "You've used today's try-ons. They reset tomorrow.";
+              } else if (res.status >= 500) {
+                msg = DOWN_MSG;
               } else if (j && (j.detail || j.error || j.message)) {
                 msg = "Best quality didn't work: " + (j.detail || j.error || j.message);
               }
-            } catch(e){ if (t) msg = "The try-on didn't finish. Nothing was pasted on your photo. Try again."; }
+            } catch(e){ msg = res.status >= 500 ? DOWN_MSG : "The try-on didn't finish. Nothing was pasted on your photo. Try again."; }
             throw new Error(msg);
           });
         }
@@ -1059,6 +1062,9 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
         return runHd(attempt + 1, photoType);
       }
       prog(null);
+      /* Never fail silently: a cold GPU that never answered, a dropped
+         connection or a 5xx after the retries all mean the service is down. */
+      if (e && (e.wake || e.name === "TypeError" || e.name === "AbortError")) throw new Error(DOWN_MSG);
       throw e;
     });
   }
