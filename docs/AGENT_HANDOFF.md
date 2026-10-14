@@ -1,5 +1,20 @@
 # Agent handoff — fashionistas.ai
 
+## LATEST — 2026-10-14 ~11:40 ET: free-v2 SHIPPED TO PRODUCTION (Iz said "ship it")
+- **Production:** commit `8211eb1` (main = merge of free-v2 `1496c2a` + handoff docs). Pages deploy `6c0d6cbf`. `version.txt` verified.
+- **Rollback:** `1ecaa1e8-40eb-40bd-8d2c-ee2a553627ce` (commit `4001c02`). The older rollback is `7865a20b` (`452d7e8`).
+- **Live checks:**
+  - All 12 main pages (home, shop, search, item, try-on, sell, seller board, seller stats, pricing, contact, account delete, blog) return 200 with 0 JS errors and no horizontal overflow, in light and dark.
+  - `ads.txt` is intact (pub-7215975042937417). `sitemap.xml` has 40 URLs. `robots.txt` returns 200.
+  - E2E 12/12 against production in light and dark. Test listings 168 and 169 were deleted. The public shop still shows only the 4 original listings.
+  - Live screenshots on the box: `/workspace/fash-ship-qa/live-{home,shop,item}-{light,dark}.png`.
+- **New preview** https://free-v3.fashionistas-ai.pages.dev (branch `free-v3`, commit `4e729e3`), not in production:
+  - The empty closet shows one "Add an item" CTA (in the hero) plus a quiet "Or add one by hand".
+  - The listing flow has a Photos → Details → Post stepper and card sections, with a "ready" note.
+  - E2E 12/12 light and dark; npm test 447/447.
+  - Screenshots: `/workspace/fash-ship-qa/ds-v3/` and `v3-{light,dark}/`.
+  - Needs Iz's "ship it".
+
 ## LATEST — 2026-10-14 ~10:20 ET: "free-v2" build in progress, scope expanded by Iz (read first)
 
 **Production (unchanged):** commit `4001c02`, Pages deploy `1ecaa1e8`. Rollback: `7865a20b-2be6-4451-a8cc-b7aa131b2dae` (commit `452d7e8`).
