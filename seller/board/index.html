@@ -235,8 +235,8 @@
   function crc32(u){ var c,t=crc32.t; if(!t){t=crc32.t=[];for(var n=0;n<256;n++){c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}} var x=-1; for(var i=0;i<u.length;i++) x=(x>>>8)^t[(x^u[i])&255]; return (x^-1)>>>0; }
   function zip(files){ // store-only zip, no library
     var parts=[],cd=[],off=0; function le(n,b){var a=[];for(var i=0;i<b;i++)a.push((n>>>(8*i))&255);return a;}
-    files.forEach(function(f){ var nm=new TextEncoder().encode(f.name), c=crc32(f.data), hd=[].concat([80,75,3,4],le(20,2),le(0,2),le(0,2),le(0,4),le(c,4),le(f.data.length,4),le(f.data.length,4),le(nm.length,2),le(0,2));
-      parts.push(new Uint8Array(hd),nm,f.data); cd.push(new Uint8Array([].concat([80,75,1,2],le(20,2),le(20,2),le(0,2),le(0,2),le(0,4),le(c,4),le(f.data.length,4),le(f.data.length,4),le(nm.length,2),le(0,2),le(0,2),le(0,2),le(0,2),le(0,4),le(off,4))),nm); off+=hd.length+nm.length+f.data.length; });
+    files.forEach(function(f){ var nm=new TextEncoder().encode(f.name), c=crc32(f.data), hd=[].concat([80,75,3,4],le(20,2),le(0,2),le(0,2),le(33<<16,4),le(c,4),le(f.data.length,4),le(f.data.length,4),le(nm.length,2),le(0,2));
+      parts.push(new Uint8Array(hd),nm,f.data); cd.push(new Uint8Array([].concat([80,75,1,2],le(20,2),le(20,2),le(0,2),le(0,2),le(33<<16,4),le(c,4),le(f.data.length,4),le(f.data.length,4),le(nm.length,2),le(0,2),le(0,2),le(0,2),le(0,2),le(0,4),le(off,4))),nm); off+=hd.length+nm.length+f.data.length; });
     var cdl=cd.reduce(function(s,a){return s+a.length;},0); return new Blob(parts.concat(cd,[new Uint8Array([].concat([80,75,5,6],le(0,2),le(0,2),le(files.length,2),le(files.length,2),le(cdl,4),le(off,4),le(0,2)))]),{type:'application/zip'});
   }
   function photosOf(l){ var a=[]; if(Array.isArray(l.photos)) a=l.photos.slice(); if(l.photo_url&&a.indexOf(l.photo_url)<0) a.unshift(l.photo_url); return a.filter(Boolean).slice(0,10); }
@@ -247,7 +247,7 @@
   }
   function runShow(){
     if(!RUN) return; var l=RUN.l;
-    if(RUN.i>=RUN.sites.length){ var tot=Math.round((Date.now()-RUN.t0)/1000); rd.innerHTML='<div class="run-c"><h2>All done ✓</h2><p>'+RUN.done+' site'+(RUN.done===1?'':'s')+' marked listed in '+tot+'s.</p><button class="chb pri" id="run-x">Close</button></div>'; rd.hidden=false; document.getElementById('run-x').onclick=runClose; return; }
+    if(RUN.i>=RUN.sites.length){ var tot=Math.round((Date.now()-RUN.t0)/1000); rd.innerHTML='<div class="run-c"><h2>All done ✓</h2><p>'+RUN.done+' site'+(RUN.done===1?'':'s')+' marked listed in '+tot+'s.'+(RUN.fail?' '+RUN.fail+' didn’t save — check the board.':'')+'</p><button class="chb pri" id="run-x">Close</button></div>'; rd.hidden=false; document.getElementById('run-x').onclick=runClose; return; }
     var s=RUN.sites[RUN.i]; RUN.ts=Date.now(); RUN.steps={};
     rd.hidden=false;
     rd.innerHTML='<div class="run-c" role="dialog" aria-label="Post everywhere"><div class="run-top"><span>'+(RUN.i+1)+' of '+RUN.sites.length+'</span><div class="run-bar"><i style="width:'+Math.round(100*RUN.i/RUN.sites.length)+'%"></i></div><span id="run-t">0s</span><button class="chlink" id="run-x" aria-label="Close">✕</button></div>'
@@ -275,7 +275,7 @@
       var sec=Math.round((Date.now()-RUN.ts)/1000); RUN.times[s.id]=sec;
       try{ var lg=JSON.parse(localStorage.getItem('fa_run_times')||'{}'); (lg[s.id]=lg[s.id]||[]).push(sec); localStorage.setItem('fa_run_times',JSON.stringify(lg)); }catch(_){}
       var go=function(){ RUN.i++; runShow(); };
-      if(k==='done'){ RUN.done++; fetch('/api/crosslist/status',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({listing_id:l.id,platform:s.id,status:'listed'})}).then(go,go); } else go();
+      if(k==='done'){ RUN.done++; fetch('/api/crosslist/status',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({listing_id:l.id,platform:s.id,status:'listed'})}).then(function(r){return r.json();}).then(function(j){ if(!j.ok) RUN&&(RUN.fail=(RUN.fail||0)+1); }).catch(function(){ if(RUN) RUN.fail=(RUN.fail||0)+1; }); } go();
     }
   });
   function load(){
