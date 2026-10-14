@@ -1579,3 +1579,7 @@ Then: preview deploy, screenshots, e2e 12+/12, handoffs, report. No prod without
 - eBay keyset + RuName; Etsy app (ETSY_API_KEY/SECRET) — existing routes.
 - WooCommerce: none.
 - Partner applications still pending: Amazon SP-API, Walmart, TikTok Shop, Bonanza, Depop; Whatnot/Vinted waitlists.
+
+### Progress 2026-10-14 12:55 ET
+- Branch `easy` @ f25e95d deployed to https://easy.fashionistas-ai.pages.dev (456 tests pass). Built: `functions/_lib/oauth-apps.js` (providers, signed state, Shopify HMAC, refresh), `functions/api/oauth/[[path]].js` (POST /api/oauth/<p>/start → {url}; GET|POST /callback), refresh in channels/post.js, board: one-tap Connect + shop input, feed Connect / 3-step guide, onboarding checklist (#ob), Post-everywhere run-through (#run, zip/share photos, timer, progress), tests/oauth.test.mjs.
+- Next: verify on preview (woo start URL, forged-state rejection), timing run (box timing.js), fill MEASURED in board, screenshots 412x915 light/dark, e2e 12/12, report.
