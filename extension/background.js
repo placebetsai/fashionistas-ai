@@ -15,7 +15,7 @@ function waitLoaded(tabId) { return new Promise((res) => { const f = (id, info) 
 function watchListed(tabId, re, ms) { return new Promise((res) => { const f = (id, info, tab) => { const u = info.url || (tab && tab.url) || ""; if (id === tabId && re.test(u)) { chrome.tabs.onUpdated.removeListener(f); res(u.match(re)[0].replace(/^(?!https)/, "https://")); } }; chrome.tabs.onUpdated.addListener(f); setTimeout(() => { chrome.tabs.onUpdated.removeListener(f); res(null); }, ms); }); }
 async function runPost(job, origin, sender) {
   const { token, autoSubmit, accepted } = await get(["token", "autoSubmit", "accepted"]);
-  if (!accepted) { chrome.runtime.openOptionsPage(); return { ok: false, error: "Open the extension settings and accept the warning first" }; }
+  if (!accepted) return { ok: false, error: "needs_consent" };
   const item = { ...job.item, photos: await photosAsData(job.item.photos) };
   (async () => {
     for (const id of job.sites) {
@@ -105,6 +105,7 @@ function openLogin(id, sender) {
 }
 chrome.runtime.onMessage.addListener((m, sender, reply) => {
   if (m.type === "FA_CHECK") { checkAll(m.sites, sender.tab && sender.tab.id).then((sessions) => reply({ ok: true, sessions })); return true; }
+  if (m.type === "FA_ACCEPT") { chrome.storage.local.set({ accepted: true }).then(() => reply({ ok: true })); return true; }
   if (m.type === "FA_OPEN_LOGIN") { openLogin(m.site, sender); reply({ ok: true }); return; }
   if (m.type === "FA_SITES") { reply({ ok: true, sites: Object.keys(SITES) }); return; }
   if (m.type === "token" && m.token) { chrome.storage.local.set({ token: m.token, origin: m.origin }); return; }

@@ -271,7 +271,8 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
   var EXT_SITES=['poshmark','mercari','depop','facebook','grailed','vinted','ebay','etsy'];
   function EXT(){ return !!document.documentElement.dataset.faExt; }
   if(tok) setTimeout(function(){ if(EXT()) window.postMessage({type:'FA_TOKEN',token:tok},location.origin); },500);
-  window.addEventListener('message',function(e){ if(e.source!==window||!e.data) return; if(e.data.type==='FA_PROGRESS'&&e.data.step==='listed') load(); if(e.data.type==='FA_ACK'&&!e.data.ok){ if(PG&&PG.todo){ PG.todo.forEach(function(sid){PG.st[sid]=e.data.error||'Couldn\u2019t start';}); pgDraw(true);} else alert('Extension: '+(e.data.error||'could not start')); } });
+  window.addEventListener('message',function(e){ if(e.source!==window||!e.data) return; if(e.data.type==='FA_PROGRESS'&&e.data.step==='listed') load(); if(e.data.type==='FA_ACK'&&!e.data.ok&&e.data.error==='needs_consent'&&PG){ consent(); return; }
+    if(e.data.type==='FA_ACK'&&!e.data.ok){ if(PG&&PG.todo){ PG.todo.forEach(function(sid){PG.st[sid]=e.data.error||'Couldn\u2019t start';}); pgDraw(true);} else alert('Extension: '+(e.data.error||'could not start')); } });
   function extPost(id,btn){ var l=data.listings.filter(function(x){return x.id===id;})[0];
     var sites=EXT_SITES.filter(function(sid){ var st=(l.shops[sid]||{}).status; return st!=='listed'&&st!=='active'&&st!=='sold'; });
     window.postMessage({type:'FA_POST',job:{item:{id:l.id,title:l.title,description:l.description||'',price:l.price,brand:l.brand||'',size:l.size||'',condition:l.condition||'',category:l.category||'',photos:photosOf(l).map(function(u){return new URL(u,location.href).href;})},sites:sites}},location.origin);
@@ -417,6 +418,12 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
     document.getElementById('pk-none').onclick=function(){ [].forEach.call(rd.querySelectorAll('.pk input'),function(i){i.checked=false;}); };
     document.getElementById('pk-go').onclick=function(){ var sites=[].map.call(rd.querySelectorAll('.pk input:checked'),function(i){return i.value;}); if(!sites.length) return; savePref(sites); pgStart(ids,sites); };
   }
+  function consent(){
+    rd.hidden=false; document.documentElement.classList.add('run-open');
+    rd.innerHTML='<div class="run-c" role="dialog" aria-label="One-time permission"><h2>One quick yes</h2><p class="run-it">The extension will open each shop in your own logged-in tab and fill in the form. You check it and press the shop\u2019s own Post button. We never see your passwords.</p><p class="run-it" style="font-size:12.5px">Heads-up: some shops\u2019 rules limit automated tools, the same as with Vendoo or List Perfectly. Nothing posts without you pressing Post.</p><div class="run-n"><button class="chb" id="cs-no">Not now</button><button class="chb pri" id="cs-yes">I understand \u2014 start</button></div></div>';
+    document.getElementById('cs-no').onclick=function(){ PG=null; runClose(); };
+    document.getElementById('cs-yes').onclick=function(){ var g=PG; window.addEventListener('message',function f(e){ if(e.source===window&&e.data&&e.data.type==='FA_ACCEPTED'){ window.removeEventListener('message',f); if(g) pgStart(g.ids,g.sites); } }); window.postMessage({type:'FA_ACCEPT'},location.origin); };
+  }
   function pgStart(ids,sites){
     PG={ids:ids,sites:sites,i:0,st:{}}; pgNext();
   }
@@ -433,7 +440,7 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
     if(!PG) return; var l=PG.cur;
     var nDone=PG.sites.filter(function(s){return /Listed|Already|Not confirmed/.test(PG.st[s]||'');}).length;
     rd.hidden=false; document.documentElement.classList.add('run-open');
-    rd.innerHTML='<div class="run-c" role="dialog" aria-label="Posting"><div class="run-top"><span>Item '+Math.min(PG.i+1,PG.ids.length)+' of '+PG.ids.length+'</span><div class="run-bar"><i style="width:'+Math.round(100*(done?1:nDone/Math.max(1,PG.sites.length)))+'%"></i></div><button class="chlink" id="run-x" aria-label="Close">\u2715</button></div><h2>'+(done?'All sent \u2713':'Posting everywhere')+'</h2><p class="run-it">'+esc(l?l.title||'':'')+'</p><div class="pg">'+PG.sites.map(function(s){ var t=PG.st[s]||'Waiting', c=/Listed|Already/.test(t)?'ok':/Fill|Open|review/.test(t)?'go':/rror|Couldn|accept/.test(t)?'bad':''; return '<div class="pg-r '+c+'"><b>'+esc((MKBY[s]||[s,s])[1])+'</b><span>'+esc(t)+'</span></div>'; }).join('')+'</div>'+(done?'<div class="run-n"><button class="chb pri" id="pg-x">Done</button></div>':'<p class="run-it" style="font-size:12.5px">Keep this tab open. Statuses save to your board automatically.</p>')+'</div>';
+    rd.innerHTML='<div class="run-c" role="dialog" aria-label="Posting"><div class="run-top"><span>Item '+Math.min(PG.i+1,PG.ids.length)+' of '+PG.ids.length+'</span><div class="run-bar"><i style="width:'+Math.round(100*(done?1:nDone/Math.max(1,PG.sites.length)))+'%"></i></div><button class="chlink" id="run-x" aria-label="Close">\u2715</button></div><h2>'+(done?(PG.sites.some(function(x){return /Listed|Filled|Already/.test(PG.st[x]||'');})?'All sent \u2713':'Nothing was sent'):'Posting everywhere')+'</h2><p class="run-it">'+esc(l?l.title||'':'')+'</p><div class="pg">'+PG.sites.map(function(s){ var t=PG.st[s]||'Waiting', c=/Listed|Already/.test(t)?'ok':/Fill|Open|review/.test(t)?'go':/rror|Couldn|accept/.test(t)?'bad':''; return '<div class="pg-r '+c+'"><b>'+esc((MKBY[s]||[s,s])[1])+'</b><span>'+esc(t)+'</span></div>'; }).join('')+'</div>'+(done?'<div class="run-n"><button class="chb pri" id="pg-x">Done</button></div>':'<p class="run-it" style="font-size:12.5px">Keep this tab open. Statuses save to your board automatically.</p>')+'</div>';
     document.getElementById('run-x').onclick=function(){ PG=null; runClose(); };
     var x=document.getElementById('pg-x'); if(x) x.onclick=function(){ PG=null; runClose(); };
   }
