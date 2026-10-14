@@ -1607,3 +1607,10 @@ Then: preview deploy, screenshots, e2e 12+/12, handoffs, report. No prod without
 - Production: `89bf396` (merge of revenue 1039402, incl. ext 735c21a + easy b0a4855) = deploy `47a70a52-041e-4e46-b7c4-7c620c1ccfb6`. **Rollback:** `d8b758aa-0ed8-430d-a4e4-c780c7b90be9` (86d6d70).
 - Verified live: version.txt; /, /shop/, /seller/board/, /pricing/, /try-on/, /blog/ 200, no JS errors; checklist + Post-everywhere run (test listing, cleaned); extension loads + board detects it (faExt 0.1.0); Woo OAuth start URL ok, Shopify app_not_registered, forged callbacks rejected; /api/crosslist/links affiliate:false (no EPN_CAMPID/AMAZON_TAG); ads.txt + sitemap (40) intact; e2e 12/12; test seller 0 listings / 0 connections. CHANNEL_KEY untouched.
 - Pending on Iz: EPN_CAMPID / AMAZON_TAG secrets, OAuth app registrations, Chrome Web Store upload of dist/fashionistas-crosslister-0.1.0.zip, real-account selector testing for the extension.
+
+## 2026-10-14 15:45 ET — Cloudflare "exceeded free CPU 10ms" alert (account fashionistas1979)
+- NOT Fashionistas. GraphQL analytics (24h): fashionistas-ai Pages (pages-worker--12510043) 0 exceededResources, p50 3ms; fashionistas-api Worker p90 2.5ms. Revenue deploy 47a70a52 is clean.
+- Culprit: marketpicks-ai Pages (pages-worker--13772260): 1,955 prod + 56 preview exceededResources, p50 14ms, p90 193ms. Tail: AhrefsBot/SemrushBot crawling uncached SSR long-tail (/congress/ticker/*, /insider-trades?ticker=*) at 120-350ms CPU each.
+- Fix (backend only): SEO-tool bot guard in marketpicks scripts/edge-cache-wrapper.mjs (cached copy or 503 Retry-After; Googlebot/Bing/humans unchanged). Prod 280dc36b (preview b059dbaf verified). Rollback 0cb3f854.
+- Other >10ms scripts on the account (smaller): federation-watch cron p50 14ms (96/day), placebets-scheduler p50 10ms (110/day), marketpicks-ai-api p90 34ms + 76 exceptions.
+- Post everywhere 13/17: likely by design — run-through drops ThredUp/RealReal/Amazon/Walmart/Whatnot (see Board notes above); not re-verified.
