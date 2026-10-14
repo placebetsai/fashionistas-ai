@@ -32,6 +32,19 @@
    - E2E listings it creates are deleted at the end of each run. No invented public listings.
    - (User 129 is an unused account from the Pages register path. Ignore it.)
 
+### Update ~10:35 ET: preview `16fbea8` (https://free-v2.fashionistas-ai.pages.dev)
+- **E2E: 12/12 stories pass in light AND dark.** Spec: `e2e/stories.spec.js`; doc: `docs/USER-STORIES.md`. 0 page errors. Each run deletes its own test listing (ids 156–161 are all gone).
+- **Fixed a real bug:** "List on fashionistas" did nothing when tapped while the keyboard was open. The tap blurred the input first and the click was lost. Fixed with pointerdown preventDefault in `listing-wizard.js`, bumped to v=5.
+- **Crosslist board:** `/seller/board/` covers 18 rows (ours + 17 shops). Buyers now see "Buy on <shop> ↗" on item pages.
+- **Capacitor configs:** `mobile/capacitor/` (appId `ai.fashionistas.app`, remote `server.url`). TWA remains in `docs/twa/`. `e2e/` and `mobile/` are excluded from deploys.
+- **Design:** static pages now follow the phone's light/dark setting (they were always dark). Also serif h1, rounded cards, tap and entry motion. A deeper app-wide design pass is still open.
+- **Not done:**
+  - Deeper visual redesign.
+  - Native camera plugin wiring.
+  - Store accounts (Iz).
+  - Marketplace API keys (Iz).
+- Production is still `4001c02` and needs "ship it".
+
 ### Rules
 - Wrangler only (`scripts/deploy-local.sh`). Never GitHub Actions.
 - Never print secrets. Never invent data. Keep the demo listings. Keep everything free for users.
