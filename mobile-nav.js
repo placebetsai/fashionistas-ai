@@ -46,11 +46,9 @@
     bar.innerHTML = want === "app"
       ? tab("shop", "Shop", "shop", "javascript:go('shop')") +
         tab("snap", "Sell", "cam", "javascript:go('snap')", " mt-center") +
-        tab("tryon", "Try on", "tryon", "/try-on/") +
-        tab("more", "Account", "user", "javascript:go('more')")
+        tab("more", "You", "user", "javascript:go('more')")
       : tab("l-shop", "Shop", "shop", "#") +
         tab("l-sell", "Sell", "cam", "#", " mt-center") +
-        tab("l-tryon", "Try on", "tryon", "/try-on/") +
         tab("l-acct", "Sign in", "user", "#");
     root.classList.toggle("mt-app", want === "app");
     root.classList.toggle("mt-land", want === "land");

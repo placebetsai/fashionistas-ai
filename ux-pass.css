@@ -150,3 +150,6 @@ html.h-app #guide-fab,html.h-app #hc-fab,html.h-lw #screen-head,.lw-help{display
 @media (max-width:767px){.rd-start-copy{display:none!important}.rd-start{padding-top:8px!important}}
 html.h-auth body #guide-fab{display:none!important}
 .ux-try{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px}.ux-try .btn{width:100%;white-space:nowrap;min-height:52px;justify-content:center}.ux-try .ux-item-note{margin:0 0 12px}
+
+.ux-tile-try{position:absolute;top:8px;right:8px;z-index:2;padding:6px 10px;border-radius:999px;background:rgba(17,17,17,.78);color:#fff;font-size:12px;font-weight:700;text-decoration:none;line-height:1;-webkit-backdrop-filter:none;backdrop-filter:none}
+.ux-tile-try:active{transform:scale(.96)}

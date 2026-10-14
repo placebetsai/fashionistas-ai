@@ -1143,7 +1143,13 @@ function marketCard(m, i){
   + `<span class="ux-tile-t">${escapeHtml(m.title||"Untitled")}</span>`
   + (sub ? `<span class="ux-tile-s">${escapeHtml(sub)}</span>` : "")
   + `</a>`
+  + tileTryHtml(m)
   + `</div>`;
+}
+/* Wearable tiles get their own "Try it on" (same rule as the server-rendered grid). */
+function tileTryHtml(m){
+  if (!m || !m.photo_url || !/^(women|men|kids)/i.test(String(m.category || ""))) return "";
+  return `<a class="ux-tile-try" href="/try-on/?item=${encodeURIComponent(m.photo_url)}&title=${encodeURIComponent(String(m.title || "").slice(0, 80))}" aria-label="Try it on: ${escapeAttr(m.title || "this item")}">Try it on</a>`;
 }
 
 /* ================= PLACEMENT MODE (P0-B/C — free Instant space placer) ================
@@ -1187,7 +1193,7 @@ function placementCtaHtml(item){
   const bits = [];
   bits.push(`<div class="ux-try">`);
   if (mode === "clothing"){
-    bits.push(`<a class="btn btn-accent" href="/try-on/${qs("")}">See it on you</a>`);
+    bits.push(`<a class="btn btn-accent" href="/try-on/${qs("")}">Try it on</a>`);
     bits.push(`<p class="ux-item-note">A photo of you wearing it. The model redraws the picture — it is not a sticker on top.</p>`);
   } else if (mode === "wall"){
     bits.push(btn("/see-in-space/" + qs("wall"), "See it on my wall", "Add a photo of your wall and hang this on it. Free."));
@@ -4333,6 +4339,11 @@ async function guideSend(){
 /* ================= MORE ================= */
 async function renderMore(el){
  el.innerHTML = `
+ <div class="card">
+ <h3 style="margin-top:0">Try it on</h3>
+ <p class="mut" style="margin-top:0">Your photo, any item from the shop or a link. See it on you.</p>
+ <a class="btn btn-accent" style="width:100%" href="/try-on/">Open try-on</a>
+ </div>
  <div class="card" data-tip="Messages between you and the other accounts on here.">
  <h3 style="margin-top:0">Messages</h3>
  <p class="mut" style="margin-top:0">Talk to other accounts directly — ask about an item, make an offer, answer a buyer.</p>

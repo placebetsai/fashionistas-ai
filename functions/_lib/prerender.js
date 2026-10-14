@@ -41,7 +41,8 @@ function tile(m, i) {
   const img = `<img ${i === 0 ? 'fetchpriority="high"' : i < 4 ? "" : 'loading="lazy"'} ${thumbAttrs(m.photo_url, TILE_SIZES)} alt="" onerror="this.remove()">`;
   return `<div class="ux-tile" style="--gi:${i}"><a class="ux-tile-open" href="/shop/${Number(m.id)}"><span class="ux-tile-img">${img}</span>` +
     `<span class="ux-tile-p">${money(m.price)}</span><span class="ux-tile-t">${e(m.title || "Untitled")}</span>` +
-    (sub ? `<span class="ux-tile-s">${e(sub)}</span>` : "") + `</a></div>`;
+    (sub ? `<span class="ux-tile-s">${e(sub)}</span>` : "") + `</a>` +
+    (m.photo_url && /^(women|men|kids)/i.test(String(m.category || "")) ? `<a class="ux-tile-try" href="/try-on/?item=${encodeURIComponent(m.photo_url)}&title=${encodeURIComponent(String(m.title || "").slice(0, 80))}" aria-label="Try it on: ${e(m.title || "this item")}">Try it on</a>` : "") + `</div>`;
 }
 export function shopScreen(market) {
   const rows = (market || []).filter((m) => !isJunk(m)).sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
@@ -79,7 +80,7 @@ export function lateScripts(html, opts) {
   const home = !!(opts && opts.home);
   const s = String(html);
   const a = s.indexOf('<script src="/assets/categories.js');
-  const endTag = '<script src="/mobile-nav.js?v=4" defer></script>';
+  const endTag = '<script src="/mobile-nav.js?v=5" defer></script>';
   const b = s.indexOf(endTag);
   if (a < 0 || b < a) return s;
   const block = s.slice(a, b + endTag.length);
