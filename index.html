@@ -26,6 +26,7 @@
 <meta name="twitter:image:alt" content="fashionistas.ai — snap it, list it, try it on">
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 64x64">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="apple-touch-icon" href="/icon.svg">
 <link rel="manifest" href="/manifest.webmanifest">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "fashionistas.ai", "alternateName": "fashionistas.ai — AI Closet & Resale Studio", "applicationCategory": "BusinessApplication", "operatingSystem": "Web", "description": "fashionistas.ai is an AI closet and resale studio. Snap a photo for an item ID, price and your real take-home after fees — then one button prepares the listing for the shops you sell on. Where a shop has no posting API, you press Post in your own browser tab.", "url": "https://fashionistas.ai", "image": "https://fashionistas.ai/og.png", "offers": {"@type": "Offer", "price": "0.00", "priceCurrency": "USD"}, "publisher": {"@type": "Organization", "name": "fashionistas.ai", "url": "https://fashionistas.ai"}}</script>
@@ -1380,7 +1381,7 @@ textarea.input{font-family:inherit}
  <span class="topbar-actions">
  <button class="btn btn-soft btn-sm theme-btn" data-tip="Switch between light and dark." onclick="toggleTheme()" title="Switch between light and dark theme" aria-label="Switch between light and dark theme"><svg class="ic-sun" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg><svg class="ic-moon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.8A8.7 8.7 0 0 1 9.2 3.5a8.7 8.7 0 1 0 11.3 11.3z"/></svg></button>
  <button class="btn btn-accent btn-sm" id="signin-btn" onclick="showAuth('login')" data-tip="Create an account or sign in — it takes seconds." title="Sign in">Sign in</button>
- <button class="btn btn-ghost btn-sm" onclick="logout()" data-tip="Signs you out on this device and clears your saved session." title="Signs you out on this device and clears your saved session.">Sign out</button>
+ <button class="btn btn-ghost btn-sm" onclick="logout()" data-tip="Signs you out on this device and clears your saved session." title="Signs you out on this device and clears your saved session.">Sign out</button> <a class="btn btn-ghost btn-sm" href="/account/delete/">Delete account</a>
  </span>
  </div>
  <nav id="topnav" aria-label="Main navigation"></nav>
@@ -1461,6 +1462,7 @@ textarea.input{font-family:inherit}
     <button class="btn btn-soft btn-sm" onclick="toggleTheme()" data-tip="Switch between light and dark." title="Switch between light and dark">Theme</button>
     <button class="btn btn-ghost btn-sm" id="drawer-signin" onclick="navDrawer(false);showAuth('login')" data-tip="Create an account or sign in." title="Sign in">Sign in</button>
     <button class="btn btn-ghost btn-sm" onclick="navDrawer(false);logout()" data-tip="Sign out and close your session on this device." title="Sign out">Sign out</button>
+    <a class="btn btn-ghost btn-sm" href="/account/delete/" onclick="navDrawer(false)">Delete account</a>
   </div>
 </aside>
 
@@ -1497,7 +1499,7 @@ textarea.input{font-family:inherit}
 
 
 <script src="/assets/categories.js?v=a51adc0" defer></script>
-<script src="/assets/app.994f9ef8f53e.js" defer></script>
+<script src="/assets/app.e9694d3782f0.js" defer></script>
 <script src="/auth-oneclick.js?v=4" defer></script>
 <script src="/listing-wizard.js?v=4" defer></script>
 <script type="module">

@@ -227,7 +227,7 @@ test("the demo button's route exists — a shipped button with no server half 40
   // a visible one-click button failed on every press — the client was rewired
   // away from the hardcoded demo password (correctly) but the server half of
   // the replacement was never written. This pins the pair together.
-  const bundle = await fs.readFile(new URL("../assets/app.994f9ef8f53e.js", import.meta.url), "utf8");
+  const bundle = await fs.readFile(new URL("../assets/app.e9694d3782f0.js", import.meta.url), "utf8");
   const target = [...bundle.matchAll(/api\/(auth\/demo)/g)][0];
   assert.ok(target, "the bundle no longer calls a demo route — update this test if the button is gone");
 

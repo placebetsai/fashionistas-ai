@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delete your account — fashionistas.ai</title>
+<meta name="description" content="Delete your fashionistas.ai account and the data stored with it.">
+<meta name="robots" content="noindex">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://fashionistas.ai/account/delete/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="fashionistas.ai">
+<meta property="og:title" content="Contact fashionistas.ai — Support &amp; feedback">
+<meta property="og:description" content="Contact fashionistas.ai. Send product questions or feedback — a person reads every message.">
+<meta property="og:url" content="https://fashionistas.ai/account/delete/">
+<meta property="og:image" content="https://fashionistas.ai/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Contact fashionistas.ai — Support &amp; feedback">
+<meta name="twitter:description" content="Contact fashionistas.ai. Send product questions or feedback — a person reads every message.">
+<meta name="twitter:image" content="https://fashionistas.ai/og.png">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/site.css">
+<meta name="color-scheme" content="dark light">
+<script>if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).catch(function(){});if(window.caches)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})}).catch(function(){})}</script>
+<script>try{var t=localStorage.getItem("fash_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="wrap">
+<header class="topnav">
+<a class="brand" href="/">fashionistas<span>.ai</span></a>
+<nav aria-label="Main">
+<a href="/about/">About</a>
+<a href="/privacy/">Privacy</a><a href="/terms/">Terms</a>
+<a href="/contact/" aria-current="page">Contact</a>
+<a href="/">App</a>
+<a href="/pricing/">Pricing</a><a href="/guide/">Guide</a></nav>
+</header>
+<main id="main">
+<span class="badge">Account</span>
+<h1>Delete your account</h1>
+<p class="lede">This permanently deletes your fashionistas.ai account: your listings, closet, passkeys, shop connections, messages, try-on records and uploaded photos. It can't be undone.</p>
+<div id="del-ok" class="ok" hidden role="status">Your account and its data were deleted. You're signed out.</div>
+<div id="del-err" class="ok" hidden role="alert" style="border-color:#e5484d"></div>
+<div class="card" id="del-card">
+<p id="del-signin" hidden>Sign in first, then come back to this page. Can't sign in? Use the <a href="/contact/">contact form</a> and a person will delete it for you.</p>
+<form id="del-form">
+<label for="del-confirm">Type <strong>DELETE</strong> to confirm</label>
+<input id="del-confirm" name="confirm" autocomplete="off" autocapitalize="characters" required>
+<button type="submit" class="btn" style="background:#e5484d;border-color:#e5484d;margin-top:12px">Delete my account</button>
+</form>
+</div>
+</main>
+
+<footer class="site-footer">
+<nav aria-label="Footer">
+<a href="/">Home</a>
+<a href="/contact/">Contact</a>
+<a href="/about/">About</a>
+<a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="/pricing/">Pricing</a><a href="/guide/">Guide</a><a href="/try-on/">Try it on</a><a href="/see-in-space/">See in my space</a>
+<a href="/#view-auth">Open app</a>
+</nav>
+<p>fashionistas.ai — photograph your closet, list it everywhere. <a href="/contact/">Contact</a></p>
+</footer>
+</div>
+<script>
+(function(){
+  var f=document.getElementById('del-form'), ok=document.getElementById('del-ok'), bad=document.getElementById('del-err');
+  var tok=''; try{ tok=localStorage.getItem('fash_token')||''; }catch(e){}
+  var h={'content-type':'application/json'}; if(tok) h.Authorization='Bearer '+tok;
+  fetch('/w/api/auth/me',{credentials:'include',headers:h}).then(function(r){ if(r.status===401){ document.getElementById('del-signin').hidden=false; f.hidden=true; } }).catch(function(){});
+  f.addEventListener('submit',function(e){
+    e.preventDefault(); bad.hidden=true;
+    var v=f.elements.confirm.value.trim().toUpperCase();
+    if(v!=='DELETE'){ bad.textContent='Type DELETE to confirm.'; bad.hidden=false; return; }
+    var btn=f.querySelector('button'); btn.disabled=true; btn.textContent='Deleting…';
+    fetch('/api/account/delete',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({confirm:'DELETE'})})
+      .then(function(r){ return r.json().catch(function(){return {};}).then(function(j){ return {r:r,j:j}; }); })
+      .then(function(x){
+        if(x.r.ok && x.j.ok){ try{ localStorage.removeItem('fash_token'); }catch(e){} document.getElementById('del-card').hidden=true; ok.hidden=false; return; }
+        bad.textContent = x.r.status===401 ? 'Sign in first, then try again.' : ((x.j&&x.j.detail)||"That didn't work. Use the contact form and a person will delete it.");
+        bad.hidden=false; btn.disabled=false; btn.textContent='Delete my account';
+      }).catch(function(){ bad.textContent="That didn't work. Check your connection and try again."; bad.hidden=false; btn.disabled=false; btn.textContent='Delete my account'; });
+  });
+})();
+</script>
+</body>
+</html>

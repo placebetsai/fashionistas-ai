@@ -4389,6 +4389,7 @@ async function renderMore(el){
  <button class="btn btn-soft btn-sm" onclick="extConnectPrompt()" data-tip="Opens the optional desktop extension setup.">Set up the desktop extension</button>
  </details>
  <button class="btn btn-ghost ux-signout" style="width:100%" onclick="logout()">Sign out</button>
+ <a class="btn btn-ghost" style="width:100%;margin-top:8px;display:block;text-align:center" href="/account/delete/">Delete account</a>
  <footer>fashionistas.ai · everything saved to your account<br><a href="/contact/" style="color:inherit">Contact</a> · <a href="/privacy/" style="color:inherit">Privacy</a> · <a href="/about/" style="color:inherit">About</a><br>Powering the independent resale economy.</footer>`;
 }
 async function exportSafe(e, p){

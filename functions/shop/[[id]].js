@@ -13,12 +13,13 @@
  * unreachable we fall back to a plain 200 shell rather than lying either way.
  */
 import { itemHead, injectHead, itemBody, shopBody, injectBody } from "../_lib/item-meta.js";
+import { filterMarketBody, isHidden } from "../_lib/hidden-listings.js";
 import { shopScreen, itemScreen, prerenderInto, thumbPreload, TILE_SIZES, ITEM_SIZES } from "../_lib/prerender.js";
 
 async function marketBody() {
   try {
     const r = await fetch(`${API}/api/market`, { headers: { Accept: "application/json" } });
-    if (r.ok) return (await r.json()) || null;
+    if (r.ok) return filterMarketBody((await r.json()) || null);
   } catch (_) {}
   return null;
 }
@@ -102,6 +103,7 @@ export async function onRequestGet(context) {
     if (r.ok) {
       const b = await r.json().catch(() => null);
       listing = (b && b.listing) || null;
+      if (listing && isHidden(listing)) listing = null;
       if (!listing) missing = true;
     } else if (r.status === 404) {
       missing = true;

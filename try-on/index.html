@@ -1011,12 +1011,29 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
       })
       .then(function(res){
         if (res && res.status === 202) return res.json().then(function(j){ return pollJob(j.job, t0); });
+        if (res && res.status === 429) {
+          return res.clone().json().catch(function(){ return null; }).then(function(j){
+            if (!(j && j.error === "tryon_busy")) return res;
+            /* Queue: the GPU is full. Show the honest place in line, count down, retry. */
+            var wait = Math.max(5, Math.min(120, Number(j.retry_after_s) || 25));
+            return new Promise(function(done){
+              var left = wait;
+              var tq = setInterval(function(){
+                left--;
+                say("Try-on is busy. You're number " + (j.position || 1) + " in line — trying again in " + Math.max(0, left) + "s. Keep this page open.", false);
+                if (left <= 0) { clearInterval(tq); done(runHd(attempt, photoType)); }
+              }, 1000);
+              say("Try-on is busy. You're number " + (j.position || 1) + " in line — about " + wait + "s.", false);
+            });
+          });
+        }
         if (res && !res.ok && attempt < 2 && (res.status === 502 || res.status === 503 || res.status === 504 || res.status >= 520)) {
           throw wake();
         }
         return res;
       })
       .then(function(res){
+        if (!res || !res.headers) return res; /* a queued retry already showed its result */
         var ct = (res.headers.get("content-type") || "").toLowerCase();
         if (!res.ok){
           return res.text().then(function(t){
