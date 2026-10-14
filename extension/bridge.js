@@ -3,6 +3,6 @@ document.documentElement.dataset.faExt = chrome.runtime.getManifest().version;
 window.addEventListener("message", (e) => {
   if (e.source !== window || !e.data || typeof e.data.type !== "string" || !e.data.type.startsWith("FA_")) return;
   if (e.data.type === "FA_TOKEN") { chrome.runtime.sendMessage({ type: "token", token: e.data.token, origin: location.origin }); return; }
-  if (e.data.type === "FA_POST" || e.data.type === "FA_DELIST") chrome.runtime.sendMessage({ type: e.data.type, job: e.data.job, origin: location.origin }, (r) => window.postMessage({ type: "FA_ACK", ok: !!(r && r.ok), error: r && r.error }, "*"));
+  if (e.data.type === "FA_POST" || e.data.type === "FA_DELIST") chrome.runtime.sendMessage({ type: e.data.type, job: e.data.job, origin: location.origin }, (r) => window.postMessage({ type: "FA_ACK", ok: !!(r && r.ok), error: r && r.error }, location.origin));
 });
-chrome.runtime.onMessage.addListener((m) => { if (m && m.type === "FA_PROGRESS") window.postMessage(m, "*"); });
+chrome.runtime.onMessage.addListener((m) => { if (m && m.type === "FA_PROGRESS") window.postMessage(m, location.origin); });
