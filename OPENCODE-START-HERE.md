@@ -1,0 +1,146 @@
+> **UPDATE 2026-10-14 ~7:50 PM ET — the app was rebuilt. Work on branch `rebuild`, not `seller-ux`.**
+> Preview https://rebuild.fashionistas-ai.pages.dev. The UI is now `index.html` + `app/app.css` + `app/app.js` (Shop/Sell/You tabs, one design system). The old app lives at `classic.html` (/classic) — don't add features there.
+> Sprint items about the old wizard/board/dashboard are superseded; see docs/AGENT_HANDOFF.md "LATEST" for routes, APIs, tests and known gaps.
+> Next tasks, in order: (1) edit-listing screen in app.js (reuse Review fields, PUT /api/listings/<id>); (2) multi-photo on item page — worker must return `photos` from /api/market; (3) favorites/likes; (4) rebuild try-on inside the app shell; (5) re-run `node e2e/rebuild.spec.js` and `node e2e/sweep.spec.js` after every change (must stay 100%).
+> Rules unchanged: preview only (`DEPLOY_BRANCH=rebuild ALLOW_BRANCH=rebuild scripts/deploy-local.sh`), prod only after Iz says "ship it", no secrets printed, no invented data, never change CHANNEL_KEY.
+
+# OpenCode START HERE — Fashionistas.ai takeover
+
+**Date:** 2026-10-14 ~5:00 PM ET  
+**Owner:** OpenCode (MiMo) takes the grind. Chief of Staff owns ship-it / Iz blockers.  
+**Read order:** this file → `docs/agile/*` on branch `docs/agile` → `docs/AGENT_HANDOFF.md` on branch `seller-ux` → nexus `OPENCODE-COORDINATION.md`.
+
+---
+
+## Current state (do not invent)
+
+| What | Where |
+|---|---|
+| **Production** | fashionistas.ai = git `89bf396` = Pages deploy `47a70a52-041e-4e46-b7c4-7c620c1ccfb6`. Includes revenue + extension 0.1.0 + easy OAuth board. |
+| **Rollback** | Pages deploy `d8b758aa-0ed8-430d-a4e4-c780c7b90be9` (pre-revenue). |
+| **seller-ux PREVIEW (awaiting Iz "ship it")** | https://seller-ux.fashionistas-ai.pages.dev — branch `seller-ux`, tip `2200a8f` (handoff commit `6fe715d` on top). Four Sprint-1 UX fixes: honest dashboard, Vendoo-style connect (no keys), clean-bg off, honest AI category. **Do not merge to main until Iz says ship it.** |
+| **Agile docs** | Branch `docs/agile` tip `6e60f5b`: `docs/agile/BACKLOG.md`, `SPRINTS.md`, `UX-RESEARCH.md`. **Reference only — do not merge that branch's code into main.** |
+| **MarketPicks side note** | Same CF account. Crawler CPU guard live at deploy `280dc36b` (rollback `0cb3f854`). Not Fashionistas work. |
+| **Test seller** | `iz_test_seller` (user 130). Creds in gitignored `~/fashionistas-ai/.env.test-seller`. Never print. |
+
+Local `main` is production. Ignore every other copy on this laptop: `fa-*`, `fashionistas-wt-*`, worktrees, lane folders. Only work in `~/fashionistas-ai`.
+
+---
+
+## Hard rules
+
+1. **Only** `~/fashionistas-ai`. Never the stale copies.
+2. Deploy only via `scripts/deploy-local.sh` (Wrangler). Never GitHub Actions, never Telegram.
+3. Preview: check out the feature branch, then  
+   `DEPLOY_BRANCH=<name> ALLOW_BRANCH=<name> scripts/deploy-local.sh`  
+   Production = `main` + Iz said **"ship it"** in Chief-of-Staff chat. Never ship UI straight to prod.
+4. UI changes need **412×915** phone screenshots (light + dark) on the preview before asking for ship-it.
+5. **Never print secrets.** Never change `CHANNEL_KEY`. Never invent listings, sales, charts, or counts.
+6. Free for users forever. Money = AdSense + affiliates only. No Stripe / paid tiers unless Iz orders it.
+7. Keep D1 lean (tiny durable rows; caches/logs → KV/R2).
+8. After every milestone: update `docs/AGENT_HANDOFF.md` **and** nexus-ai-suite `HANDOFF-fashionistas-2026-10-14.md`, then push nexus (doc-only commits).
+
+---
+
+## Branches (leave them alone until ship-it)
+
+- `main` — production tip (handoffs may be ahead of origin; local main wins).
+- `seller-ux` — Sprint 1 UX fixes on preview. **Continue Sprint 1 remaining work on this branch** (or rebase your new commits onto it). Do not merge until Iz says ship it.
+- `docs/agile` — backlog / sprints / research only. Cherry-pick or copy the markdown if you need it; do not merge the branch as a code merge.
+
+---
+
+## Ordered task list (from docs/agile)
+
+### Sprint 1 — finish on `seller-ux` (code mostly done; tests + real-account QA left)
+
+Preview already has BUG-1..7 / S-CL1 / S-PH2 / S-AI* / S-DASH1 / S-AN1 fixes. Still open:
+
+1. **Write the agile e2e specs** (they do not exist yet):  
+   `e2e/agile/s1-connect.spec.js`, `s1-photo.spec.js`, `s1-ai.spec.js`, `s1-dash.spec.js`, `s1-post.spec.js`  
+   Acceptance criteria are in `docs/agile/SPRINTS.md` + `BACKLOG.md` (read from branch `docs/agile`).
+2. **Real-account extension test** (Iz or you on his Chrome with his seller logins): eBay, Poshmark, Depop, Mercari — Connected chip + Post everywhere fills title/price/desc/photos. Fix selectors per site that fail. Report which of the 14 sites work.
+3. **Real marketplace logos** on the connect grid (no placeholder letters if logos are available under license / public brand assets already in repo).
+4. **Multi-item Post everywhere:** today each item waits for listing confirmation before the next; can take up to ~15 min per site. Make the queue honest (progress UI) and don't block the whole board on one slow site.
+5. **E2E must not inflate test-seller sales.** Crosslist "sold" writes must not leave fake orders/stats on `iz_test_seller`. Clean up after every run.
+6. Screenshots 412×915 → ask Chief of Staff / Iz for **"ship it"** → only then merge `seller-ux` → `main` + `scripts/deploy-local.sh`.
+
+### Sprint 2 — Inventory sync (Oct 19–21) — highest product priority after S1 ships
+
+- **S-INV1** delist-everywhere when sold on any site + per-site log + red retry on failure (`e2e/agile/s2-delist.spec.js`).
+- S-CL3 missing-fields checklist, S-CL4 session reconnect chip.
+- T-1 fake-data audit, T-2 sold items off `/shop` within 1 min.
+
+### Sprint 3 — Buyer find + item page (Oct 22–24)
+
+- B-FL1 filter drawer, B-SO1 sort, B-SR1 typo-tolerant search, B-IT1 item page, B-BY1 no dead Buy, B-OUT1 Buy-on links.
+
+### Sprint 4 — Messages / offers / onboarding (Oct 27–29)
+
+- S-MSG1 inbox + offers, S-PAY1 honest payout copy, S-ON1/S-ON2 free-forever onboarding.
+
+### Sprint 5 — SEO / AdSense / Chrome Web Store (Oct 30–Nov 3)
+
+- T-3..T-6 schema/sitemap/CLS/disclosure/privacy.
+- Package extension for Chrome Web Store (Iz pays $5). Play/Apple later.
+
+### Later
+
+S-INV2 bulk, B-TO1 try-on polish, B-SV1 saves, Capacitor/TWA apps.
+
+**Definition of done (every story):** test green on preview + 412×915 screenshots + Iz "ship it" + Wrangler deploy + handoff updated.
+
+---
+
+## Iz-only blockers (do not fake these)
+
+| Blocker | Status |
+|---|---|
+| eBay Partner Network | In progress — Iz signing into his eBay account for EPN |
+| Amazon Associates | Needs tax / phone / 3 sales in 180 days |
+| Secrets `EPN_CAMPID`, `AMAZON_TAG` | Not set — affiliate tags stay off until Iz provides |
+| Impact / CJ / Awin / Rakuten | Tax + bank; Impact account already exists |
+| OAuth app registrations | Shopify, BigCommerce, Square, Wix, Squarespace, Google, Pinterest, Meta, eBay, Etsy — see handoff |
+| Chrome Web Store $5 | Needed to publish extension |
+| Play / Apple developer accounts | Apps later |
+
+Affiliate plan (all sites): nexus-ai-suite `AFFILIATES-PLAN-2026-10-14.md` (copied from box `/workspace/affiliates/PLAN.md`).
+
+---
+
+## How to work day-to-day
+
+```bash
+cd ~/fashionistas-ai
+git checkout seller-ux          # Sprint 1 remaining
+# ... code + tests ...
+npm test
+DEPLOY_BRANCH=seller-ux ALLOW_BRANCH=seller-ux scripts/deploy-local.sh
+# screenshots → update docs/AGENT_HANDOFF.md → update nexus handoff → push nexus
+```
+
+When Iz says **ship it** for seller-ux:
+
+```bash
+git checkout main
+git merge seller-ux             # only after explicit ship-it
+scripts/deploy-local.sh         # production
+# verify version.txt == HEAD; update handoffs
+```
+
+For Sprint 2+: new branch from post-ship main, same preview discipline.
+
+---
+
+## Where screenshots / QA live
+
+Box (shared): `/workspace/fash-ship-qa/seller-ux/` (PROGRESS.md, fix1–4, e2e).  
+Extension unzip / load: `~/fashionistas-ai/extension` or `dist/fashionistas-crosslister-0.2.0.zip` (preview) / `0.1.0.zip` (prod).
+
+---
+
+## Coordination
+
+- Chief of Staff = shipping decisions, Iz accounts, cross-site priority, affiliate signups that need tax/SSN.
+- OpenCode = code, tests, previews, selector fixes, delist, buyer UX, SEO grind.
+- After every step: update handoffs and push nexus. Short blunt status.

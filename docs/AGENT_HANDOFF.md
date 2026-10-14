@@ -1,3 +1,16 @@
+# fashionistas.ai — agent handoff
+
+## LATEST — 2026-10-14 ~7:50 PM ET: `rebuild` PREVIEW — whole app rebuilt (not production; needs Iz's "ship it")
+Preview: https://rebuild.fashionistas-ai.pages.dev · branch `rebuild` (from seller-ux 2200a8f) · prod still 89bf396.
+- New single app: `index.html` (shell + SEO head + static boot skeleton) + `app/app.css` (design system) + `app/app.js` (router + all screens). Old app = `classic.html` (served at /classic), untouched.
+- Routes: `/` `/shop` `/shop/c/<dept>[/<sub>]` `/shop/b/<brand>` `/shop/<id>` `/u/<username>` `/sell` `/sell/review` `/sell/done/<id>` `/you` `/you/item/<id>` `/you/messages[/<peer>]` `/you/shops` `/signin`. `_redirects` rewrites /sell*, /you*, /u/*, /signin to `/`.
+- Uses existing APIs only: /w/api/market, /w/api/listings, /w/api/images/upload, /api/ai/analyze, /w/api/dm, /w/api/market/<id>/buy, /api/crosslist/{board,status,links}, /api/seller/prefs. No D1 schema change.
+- Extension 0.2.1 (downloads/ + dist/): content script now matches all fashionistas pages (was /seller/* only). Reinstall needed.
+- Tests: `npm test` 459/459 (old-app tests now read classic.html). E2E: `BASE=<url> node e2e/rebuild.spec.js` (25 checks, seller+buyer, cleans up) and `node e2e/sweep.spec.js` (19 checks: sort/filter combos, slow net, API down, every link/button). Buyer test account `iz_test_buyer` (user 131) creds in .env.test-seller.
+- QA artifacts on the box: /workspace/fash-ship-qa/rebuild/{PROGRESS.md,TEST-MATRIX.md,shots/}.
+- Deploy preview: `DEPLOY_BRANCH=rebuild ALLOW_BRANCH=rebuild scripts/deploy-local.sh`. Never deploy to prod without Iz's "ship it".
+- Known gaps: photos[] is sent on create but the market API only returns photo_url (worker source isn't in this repo) → item gallery shows the cover only; no edit-listing screen yet (classic app has it at /classic); try-on page is reskinned, not rebuilt; crossposting unverified against real marketplace accounts.
+
 # Agent handoff — fashionistas.ai
 
 ## LATEST — 2026-10-14 ~5:00 PM ET: seller-ux PREVIEW (not production; needs Iz's "ship it")
