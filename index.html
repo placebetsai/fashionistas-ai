@@ -1499,7 +1499,7 @@ textarea.input{font-family:inherit}
 
 
 <script src="/assets/categories.js?v=a51adc0" defer></script>
-<script src="/assets/app.d210159ed518.js" defer></script>
+<script src="/assets/app.008e4fe0c624.js" defer></script>
 <script src="/auth-oneclick.js?v=4" defer></script>
 <script src="/listing-wizard.js?v=4" defer></script>
 <script type="module">
@@ -1516,6 +1516,7 @@ window.IdentifyFill = IdentifyFill;
    document's head; it must never be deferred or module-loaded, or nothing
    drains window.adsbygoogle and no impression is ever reported. */
 import { mountAllAdSlots } from "/site-adsense.js?v=2";
+window.fashMountAds = mountAllAdSlots;
 /* Speed: the loader above still arrives in the head untouched; only filling the
    slots waits until the first tap/scroll/key or the page is idle (max ~4 s), so
    ad rendering doesn't compete with the first paint. */

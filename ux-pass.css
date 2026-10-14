@@ -159,3 +159,6 @@ html.h-auth body #guide-fab{display:none!important}
 .mf-row::-webkit-scrollbar{display:none}
 .mf-row .mf-sel{flex:0 0 auto;width:auto;min-width:96px;margin:0;padding:8px 28px 8px 12px;font-size:14px;border-radius:999px;min-height:40px}
 .mf-row .chip{flex:0 0 auto}
+
+.ad-reserve:has(ins[data-ad-status="unfilled"]){min-height:0!important;margin:0!important}
+.ad-reserve ins[data-ad-status="unfilled"]{display:none!important}

@@ -1,3 +1,4 @@
+import { resolveCategory } from "./categories.js";
 /**
  * Server-rendered <head> for a single listing.
  *
@@ -226,6 +227,16 @@ export function itemHead(l, origin) {
   if (brand) product.brand = { "@type": "Brand", name: brand.slice(0, 80) };
   if (gpc) product.google_product_category = gpc;
   tags.push(`<script type="application/ld+json">${jsonForScript(product)}</script>`);
+  {
+    const crumbs = [["Home", origin + "/"], ["Shop", origin + "/shop"]];
+    const r = resolveCategory(l.category, l.title);
+    if (r) {
+      const sl = (x) => String(x).toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      crumbs.push([r.dept, `${origin}/shop/c/${sl(r.dept)}`], [r.sub, `${origin}/shop/c/${sl(r.dept)}/${sl(r.sub)}`]);
+    }
+    crumbs.push([String(l.title || "Item"), url]);
+    tags.push(`<script type="application/ld+json">${jsonForScript({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: crumbs.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c[0], item: c[1] })) })}</script>`);
+  }
   return tags.join("\n");
 }
 

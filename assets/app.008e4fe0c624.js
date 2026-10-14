@@ -1060,6 +1060,16 @@ function marketFiltersHtml(){
     + `</div>`;
 }
 function marketFilter(key, v){ S.mf[key] = v; S.marketPage = 1; const f = document.getElementById("market-filters"); if (f) f.innerHTML = marketFiltersHtml(); marketRefresh(); }
+/* AdSense in the app: only on pages with real content (policy: no ads on thin or empty
+   screens). Space is reserved up front so a fill never shifts the layout. */
+function adBox(kind){ return `<div data-ad-slot="${kind}" class="ad-reserve" aria-label="Advertisement" style="grid-column:1/-1;min-height:280px;margin:12px 0"></div>`; }
+function fillAds(){ try { if (window.fashMountAds) window.fashMountAds(); } catch(e){} }
+function itemAd(m){
+  const body = document.querySelector(".ux-item-body");
+  if (!body || body.querySelector("[data-ad-slot]")) return;
+  if (String(m.description || "").trim().length < 120) return; // thin listing: no ad
+  body.insertAdjacentHTML("beforeend", adBox("inContent")); fillAds();
+}
 function marketMore(){ S.marketPage = (S.marketPage || 1) + 1; marketRefresh(true); }
 function loadPopular(){
   if (S.pop) return;
@@ -1108,6 +1118,7 @@ function marketUrlSync(){
 }
 (function(){
   if (window.__FASH_CAT__) S.marketCat = window.__FASH_CAT__;
+  if (window.__FASH_Q__) S.marketQ = window.__FASH_Q__;
   if (!/^\/shop\/?$/.test(location.pathname)) return;
   const p = new URLSearchParams(location.search);
   if (p.get("q")) S.marketQ = p.get("q");
@@ -1201,7 +1212,10 @@ function marketRefresh(append){
     refreshTips();
     return;
   }
-  grid.innerHTML = rows.slice(0, shown).map((m,i)=>marketCard(m,i)).join("");
+  const cards = rows.slice(0, shown).map((m,i)=>marketCard(m,i));
+  for (let k = 8; k < cards.length; k += 13) cards.splice(k, 0, adBox("inContent")); // 1 ad per ~12 tiles, only with 9+ items
+  grid.innerHTML = cards.join("");
+  if (cards.length > shown) fillAds();
   const mo = document.getElementById("market-more");
   if (mo) mo.innerHTML = shown < all.length
     ? `<button type="button" class="btn btn-soft" style="width:100%;margin:14px 0" onclick="marketMore()">Show more (${all.length - shown} left)</button>`
@@ -1379,6 +1393,7 @@ async function openMarketItem(id, opts){
   const plats = shopNormalizePlatforms(m.platforms);
   CURRENT.market = m;
   fashTrack(m.id, "view");
+  setTimeout(function(){ itemAd(m); }, 0);
   const clean = v => { v = String(v||"").trim(); return (v && !/^(n\/?a|none|not visible|unknown|-)$/i.test(v)) ? v : ""; };
   /* Every field the API returns for this item, shown to the buyer.
      This list used to be Size / Condition / Category and nothing else, while
@@ -1481,7 +1496,7 @@ function resumeAfterAuth(){
   const item = path.match(/^\/shop\/(\d+)$/);
   if (item){ openMarketItem(Number(item[1])); return true; }
   if (path === "/shop"){ go("shop"); return true; }
-  if (/^\/shop\/c\//.test(path)){ if (window.__FASH_CAT__) S.marketCat = window.__FASH_CAT__; go("shop"); return true; }
+  if (/^\/shop\/[cb]\//.test(path)){ if (window.__FASH_CAT__) S.marketCat = window.__FASH_CAT__; go("shop"); return true; }
   go("home");
   return false;
 }
@@ -5353,7 +5368,7 @@ function routePath(){
   const id = itemFromPath();
   if (id){ enterBrowse("shop"); openMarketItem(id, { url: "replace" }); return true; }
   if ((location.pathname || "").replace(/\/$/, "") === "/shop"){ enterBrowse("shop"); return true; }
-  if (/^\/shop\/c\//.test(location.pathname || "")){ if (window.__FASH_CAT__) S.marketCat = window.__FASH_CAT__; enterBrowse("shop"); return true; }
+  if (/^\/shop\/[cb]\//.test(location.pathname || "")){ if (window.__FASH_CAT__) S.marketCat = window.__FASH_CAT__; enterBrowse("shop"); return true; }
   return false;
 }
 function homeOrAuth(){
