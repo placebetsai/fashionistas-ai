@@ -2461,7 +2461,7 @@ async function renderCloset(el){
  await loadMarketplaces();
  if (!S.listings.length) {
  stopRolls();
- el.innerHTML = sellerHero() + `<div class="empty"><svg class='i20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M4.2 8h15.6l-1.1 11.2A2 2 0 0 1 16.7 21H7.3a2 2 0 0 1-2-1.8z'/><path d='M8.5 8V6.5a3.5 3.5 0 0 1 7 0V8'/></svg>You haven't added anything yet.<br><br><button class="btn btn-accent" onclick="go('snap')" data-tip="Opens the camera so you can snap an item right now." title="Opens the camera so you can snap an item right now.">Add your first item</button> <button class="btn btn-soft" onclick="openAdd()" data-tip="Adds an item to your closet by hand." title="Adds an item to your closet by hand.">Add manually</button></div>`;
+ el.innerHTML = sellerHero() + `<div class="empty"><svg class='i20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M4.2 8h15.6l-1.1 11.2A2 2 0 0 1 16.7 21H7.3a2 2 0 0 1-2-1.8z'/><path d='M8.5 8V6.5a3.5 3.5 0 0 1 7 0V8'/></svg><p class="ds-empty-p">Nothing here yet. Tap “Add an item” above to snap your first piece.</p><button class="btn btn-ghost btn-sm" onclick="openAdd()" data-tip="Adds an item to your closet by hand." title="Adds an item to your closet by hand.">Or add one by hand</button></div>`;
  startRolls(el);
  countUp(el);
  return;
@@ -2723,11 +2723,11 @@ function closetRefresh(){
         if (S.closetStatus) bits.push(S.closetStatus === "sold" ? "you've sold" : "still for sale");
         const why = bits.length ? " " + bits.join(" and ") : "";
         return `<div class="empty"><svg class='i20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='6.5'/><path d='m15.8 15.8 4.7 4.7'/></svg>`
-          + `<p>${filtered ? "Nothing in your closet matches" + why + where + "." : "You haven't added anything yet."}</p>`
+          + `<p>${filtered ? "Nothing in your closet matches" + why + where + "." : "Nothing here yet — tap Add an item above to snap your first piece."}</p>`
           + `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">`
           + (filtered
               ? `<button type="button" class="btn btn-soft" onclick="closetClearFilters()" data-tip="Show your whole closet again." title="Show your whole closet again.">Clear filters</button>`
-              : `<button type="button" class="btn btn-accent" onclick="go('snap')" data-tip="Opens the camera so you can snap an item right now." title="Opens the camera so you can snap an item right now.">Add your first item</button> <button type="button" class="btn btn-soft" onclick="openAdd()" data-tip="Adds an item to your closet by hand." title="Adds an item to your closet by hand.">Add manually</button>`)
+              : `<button type="button" class="btn btn-ghost btn-sm" onclick="openAdd()" data-tip="Adds an item to your closet by hand." title="Adds an item to your closet by hand.">Or add one by hand</button>`)
           + `</div></div>`;
       })();
   refreshTips();

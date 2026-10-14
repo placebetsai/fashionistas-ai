@@ -71,3 +71,4 @@ html[data-view="closet"] #screen .card:first-child h3{font-family:var(--display)
 #topbar .btn,#topnav .btn{border-radius:999px}
 #lw-stepname{font-family:var(--display);font-weight:400;font-size:30px;letter-spacing:-.02em;line-height:1.05}
 .lw-next:disabled{opacity:.45;filter:saturate(.6)}
+#screen .empty .ds-empty-p{font-size:15px!important;font-weight:500!important;font-family:var(--font)!important;line-height:1.5;margin:0;max-width:30ch}

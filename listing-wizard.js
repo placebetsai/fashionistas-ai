@@ -216,8 +216,13 @@
     var f = W.f;
     var h = "";
     if (W.restored && W.mode === "new") h += '<div class="lw-note">Draft saved on this phone. <button type="button" class="lw-link" onclick="LW.reset()">Start over</button></div>';
-    h += step1();
+    var st = !PHOTOS.length ? 1 : (readyToList() ? 3 : 2);
+    h += '<ol class="lw-steps" aria-label="Steps">' + ["Photos", "Details", "Post"].map(function (n, i) {
+      var k = i + 1; return '<li class="' + (k < st ? "done" : k === st ? "now" : "") + '"' + (k === st ? ' aria-current="step"' : "") + '><i>' + (k < st ? "✓" : k) + '</i><span>' + n + '</span></li>';
+    }).join("") + '</ol>';
+    h += '<section class="lw-sec"><h4 class="lw-sech">Photos</h4>' + step1() + '</section>';
     if (!PHOTOS.length) return h;
+    h += '<section class="lw-sec"><h4 class="lw-sech">Details <small>AI filled these in — check them</small></h4>';
     h += '<div class="lw-field"><div class="lw-lab"><label for="lw-title">Title</label>' + aiTag("title") + '</div>' +
       '<input class="lw-in" id="lw-title" maxlength="80" autocomplete="off" enterkeyhint="next" placeholder="e.g. Levi\'s denim jacket" value="' + esc(f.title) + '" oninput="LW.set(\'title\',this.value)"></div>';
     h += '<div class="lw-field"><div class="lw-lab"><label for="lw-price">Price</label>' + aiTag("price") + '<span class="lw-opt">you keep all of it here</span></div>' +
@@ -230,7 +235,8 @@
     h += '<details class="lw-more"><summary><b>Size, brand, description</b>' + ICON.chev + '</summary>' +
       '<div class="lw-field"><label for="lw-size">Size</label><input class="lw-in" id="lw-size" placeholder="M, 8, 32" value="' + esc(f.size) + '" oninput="LW.set(\'size\',this.value)"></div>' +
       '<div class="lw-field"><label for="lw-brand">Brand</label><input class="lw-in" id="lw-brand" placeholder="Leave blank if there\'s no label" value="' + esc(f.brand) + '" oninput="LW.set(\'brand\',this.value)"></div>' +
-      '<div class="lw-field"><label for="lw-desc">Description</label><textarea class="lw-in" id="lw-desc" rows="4" oninput="LW.set(\'desc\',this.value)">' + esc(f.desc || autoDesc()) + '</textarea></div></details>';
+      '<div class="lw-field"><label for="lw-desc">Description</label><textarea class="lw-in" id="lw-desc" rows="4" oninput="LW.set(\'desc\',this.value)">' + esc(f.desc || autoDesc()) + '</textarea></div></details></section>';
+    h += '<p class="lw-nextnote">' + (readyToList() ? 'Ready. Tap <b>List on fashionistas</b> — it\'s live instantly, free. Then send it to eBay, Poshmark, Depop and more.' : 'Add a title and price to list it.') + '</p>';
     return h;
   }
   function kind(path) { if (!W) return; W.f.path = path; W.touched.path = 1; save(); renderStep(); }
