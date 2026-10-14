@@ -223,7 +223,7 @@ function filterSheet(F0, cat, go) {
   function body() {
     return grp("dept", "Category", depts) + grp("brand", "Brand", brands) + grp("size", "Size", sizes) +
       grp("color", "Color", colors, function (v) { return '<span class="sw" style="background:' + COLORS[v] + '"></span>' + esc(v.charAt(0).toUpperCase() + v.slice(1)); }) +
-      grp("cond", "Condition", CONDS, function (v) { return esc(CONDLBL[v]); }) +
+      grp("cond", "Condition", CONDS.filter(function (c) { return live.some(function (x) { return x.condition === c; }) || F.cond.indexOf(c) >= 0; }), function (v) { return esc(CONDLBL[v]); }) +
       '<div class="fsec"><h4>Price</h4><div class="prow"><label class="pre" style="flex:1"><b>$</b><input class="in" inputmode="numeric" id="fmin" placeholder="Min" value="' + esc(F.min) + '" aria-label="Minimum price"></label><span style="color:var(--ink3)">–</span><label class="pre" style="flex:1"><b>$</b><input class="in" inputmode="numeric" id="fmax" placeholder="Max" value="' + esc(F.max) + '" aria-label="Maximum price"></label></div></div>';
   }
   var cnt = function () { return apply(list, F, cat).length; };
@@ -243,7 +243,7 @@ function sortSheet(F, go) {
   $$("[data-s]", s).forEach(function (b) { b.onclick = function () { tap(); F.sort = b.dataset.s; closeSheet(true); go(F); }; });
 }
 function footer() {
-  return '<footer class="foot"><nav><a href="/about/">About</a><a href="/blog/">Style guide</a><a href="/price-guide/">Price guide</a><a href="/try-on/">Virtual try-on</a><a href="/apps/">Apps</a><a href="/contact/">Contact</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></nav>© ' + new Date().getFullYear() + " fashionistas.ai · Free to buy and sell. Supported by ads and affiliate links.</footer>";
+  return '<footer class="foot"><nav><a href="/about/">About</a><a href="/blog/">Style guide</a><a href="/price-guide/">Price guide</a><a href="/try-on/">Virtual try-on</a><a href="/seller/get-extension/">Crosslister</a><a href="/contact/">Contact</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></nav>© ' + new Date().getFullYear() + " fashionistas.ai · Free to buy and sell. Supported by ads and affiliate links.</footer>";
 }
 route(/^\/$/, function () { shopView(""); });
 route(/^\/shop$/, function () { shopView(""); });
@@ -277,7 +277,7 @@ function itemView(id) {
       '<div class="ad"><div class="ad-label">Advertisement</div><div data-ad-slot="bottom"></div></div><div id="more"></div><div style="height:72px"></div></div>' +
       '<div class="buybar"><div class="buybar-in">' + (mine ? '<a class="btn sec" href="/you/item/' + x.id + '" data-link>Manage listing</a>' : sold ? '<a class="btn sec" href="/" data-link>Shop similar</a>' : '<button class="btn sec" id="msg">' + I.chat + 'Message</button><button class="btn" id="buy"' + (x.status === "reserved" ? " disabled" : "") + ">" + (x.status === "reserved" ? "Reserved" : "Buy now") + "</button>") + "</div></div></div>";
     var g = $("#gal"); if (g && ph.length > 1) g.addEventListener("scroll", function () { var i = Math.round(g.scrollLeft / g.clientWidth); $$(".gal-dots i").forEach(function (d, j) { d.classList.toggle("on", i === j); }); }, { passive: true });
-    $("#share").onclick = function () { var u = location.origin + "/shop/" + x.id; if (navigator.share) navigator.share({ title: x.title, url: u }).catch(function () {}); else { navigator.clipboard && navigator.clipboard.writeText(u); toast("Link copied"); } };
+    $("#share").onclick = function () { var u = location.origin + "/shop/" + x.id; if (navigator.share) navigator.share({ title: x.title, url: u }).catch(function () {}); else { Promise.resolve(navigator.clipboard && navigator.clipboard.writeText(u)).then(function () { toast("Link copied"); }, function () { toast(u, 4000); }); } };
     if ($("#msg")) $("#msg").onclick = function () { tap(); needAuth("message " + sname, function () { nav("/you/messages/" + s.id + "?item=" + x.id); }); };
     if ($("#buy")) $("#buy").onclick = function () { tap(); buySheet(x); };
     fetch("/api/crosslist/links?id=" + x.id).then(function (r) { return r.json(); }).then(function (d) {
