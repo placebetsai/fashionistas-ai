@@ -370,3 +370,7 @@ textarea.in{height:auto;min-height:96px;padding:var(--s3) var(--s4);resize:verti
 .btn{transition:transform .12s var(--ease),filter .2s}.btn:active{transform:scale(.97)}
 .btn:not(.sec):not(.ghost):not(.glass):not(.hero-btn){background-image:none}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}.rv{opacity:1;transform:none}.k-w{opacity:0}.k-w:first-child{opacity:1}.marq-in{animation:none}}
+.drop .row .btn:not(.ghost){background:var(--grad);color:#fff;box-shadow:0 10px 24px -10px rgba(255,79,139,.8)}
+#tryon{border:0;border-radius:20px;padding:14px;margin-top:12px;background:linear-gradient(var(--bg),var(--bg)) padding-box,var(--grad) border-box;border:2px solid transparent}
+#tryon .lg{background:var(--grad)!important;color:#fff!important}
+.buybar .btn:not(.sec){background:var(--grad);color:#fff}
