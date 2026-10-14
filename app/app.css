@@ -263,7 +263,7 @@ textarea.in{height:auto;min-height:96px;padding:var(--s3) var(--s4);resize:verti
 .hero-scroll i{position:absolute;left:50%;top:6px;width:4px;height:8px;margin-left:-2px;border-radius:2px;background:#fff;animation:sc 1.6s infinite}
 @keyframes sc{from{opacity:1;transform:none}to{opacity:0;transform:translateY(12px)}}
 /* sections */
-.sec{padding:20px 0 4px}
+.hsec{padding:24px 0 4px}
 .sec-h{display:flex;align-items:baseline;justify-content:space-between;padding:0 16px 12px}
 .sec-h h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.035em}
 .rv{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease),transform .7s var(--ease)}.rv.in{opacity:1;transform:none}
