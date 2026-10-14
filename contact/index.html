@@ -39,7 +39,8 @@
 <span class="badge">Contact</span>
 <h1>Contact fashionistas.ai</h1>
 <p class="lede">Questions about listing drafts, fees, or your account? Send a message below — a person reads every one.</p>
-<div id="sent-banner" class="ok" hidden>Thanks — your message is on its way. A person reads every one.</div>
+<div id="sent-banner" class="ok" hidden role="status">Thanks — your message is on its way. A person reads every one.</div>
+<div id="err-banner" class="ok" hidden role="alert" style="border-color:#e5484d">That didn't send. Try again in a minute, or email <a href="mailto:info@fashionistas.ai">info@fashionistas.ai</a>.</div>
 <div class="card">
 <form id="contact-form" action="/api/contact" method="POST">
 <input type="hidden" name="_subject" value="fashionistas.ai Contact Form">
@@ -72,9 +73,31 @@
 </footer>
 </div>
 <script>
-if (new URLSearchParams(location.search).get('sent') === '1') {
-  document.getElementById('sent-banner').hidden = false;
-}
+(function(){
+  var q = new URLSearchParams(location.search);
+  if (q.get('sent') === '1') document.getElementById('sent-banner').hidden = false;
+  if (q.get('err') === '1') document.getElementById('err-banner').hidden = false;
+  /* The relay rate-limits Cloudflare's shared server IPs (429), so the browser
+     sends to it directly; the server route is only the fallback. */
+  var f = document.getElementById('contact-form');
+  f.addEventListener('submit', function(e){
+    e.preventDefault();
+    if (f.elements._honey.value) return;
+    var btn = f.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'Sending…';
+    var data = new FormData(f); data.delete('_next'); data.delete('_honey');
+    var ok = document.getElementById('sent-banner'), bad = document.getElementById('err-banner');
+    ok.hidden = true; bad.hidden = true;
+    function done(good){ btn.disabled = false; btn.textContent = 'Send message'; (good ? ok : bad).hidden = false; if (good) f.reset(); (good ? ok : bad).scrollIntoView({block:'center'}); }
+    fetch('https://formsubmit.co/ajax/info@fashionistas.ai', { method:'POST', headers:{ Accept:'application/json' }, body:data })
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if (j && String(j.success) === 'true') return true; throw 0; })
+      .catch(function(){
+        return fetch('/api/contact', { method:'POST', headers:{ 'content-type':'application/x-www-form-urlencoded' }, body:new URLSearchParams(new FormData(f)).toString() })
+          .then(function(r){ return r.ok; }).catch(function(){ return false; });
+      })
+      .then(done);
+  });
+})();
 </script>
 </body>
 </html>
