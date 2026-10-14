@@ -1,5 +1,10 @@
 # Agent handoff — fashionistas.ai
 
+## LATEST — 2026-10-14 ~08:45 ET (chief of staff took over)
+- PRODUCTION = `452d7e8` (Pages deploy 7865a20b): contact form posts from the browser to FormSubmit AJAX → fashionistas1979@gmail.com (server /api/contact fallback). Live test "TEST from site setup" delivered to the Gmail inbox 12:21Z. Rollback = previous prod `c3070c5`.
+- PREVIEW `p0-preview` (https://p0-preview.fashionistas-ai.pages.dev, `f2d0a57`, = speed branch + main + P0s): try-on queue (D1 `tryon_slots`, max 2 in flight, 429 tryon_busy with place-in-line + auto-retry), /account/delete/ + POST /api/account/delete, junk listing 155 hidden (functions/_lib/hidden-listings.js), PNG + maskable icons, manifest id, docs/twa/. NOT in production until Iz says ship it.
+- Not done: Modal spend cap still $6/mo (needs Iz OK), Workers Paid, Stripe, live assetlinks.json (needs Play signing SHA-256).
+
 ## LATEST — 2026-10-13/14 night ET: KV write cap fixes, try-on test app, speed preview
 
 **KV fixes (production).** Cloudflare's free tier allows 1k KV writes a day across the whole account, and the cap was hit on 2026-10-13 around 8:45 PM ET.
