@@ -1532,3 +1532,50 @@ Honest status for every channel. **Built** means this repo creates the listing v
 - Live: 86d6d70 = deploy d8b758aa-0ed8-430d-a4e4-c780c7b90be9. Rollback: 73a85ca4-39cc-457f-b41d-2eec08a2e3fd (d26cf1c).
 - CHANNEL_KEY set on production (random 32 bytes, never printed). Losing or rotating it makes stored seller keys unreadable, so sellers must reconnect.
 - Verified live: version.txt, pages + board 200 with no JS errors, connect/disconnect of the fake WooCommerce store (removed), SSRF guard, /feeds/50.xml (3 items), ads.txt and sitemap (40 locs), e2e 12/12 (test listing cleaned up).
+
+---
+## RESUME HERE (cold start) — updated 2026-10-14 12:20 ET
+
+**Production:** commit `86d6d70` (channels shipped) = Pages deploy `d8b758aa-0ed8-430d-a4e4-c780c7b90be9`. **Rollback:** `73a85ca4-39cc-457f-b41d-2eec08a2e3fd` (d26cf1c); older `6c0d6cbf…` (8211eb1).
+
+**Repo / deploy**
+- Laptop repo: `~/fashionistas-ai` (Cloudflare Pages project `fashionistas-ai`, D1 `fashionistas-db` shared by preview+prod, R2, worker API proxied at `/w/*`).
+- Prod: from `main` → `bash scripts/deploy-local.sh` (runs npm test, deploys, verifies `/version.txt`).
+- Preview: `ALLOW_BRANCH=<b> DEPLOY_BRANCH=<b> [SKIP_TESTS=1] bash scripts/deploy-local.sh` → `https://<b>.fashionistas-ai.pages.dev`.
+- Local `main` is ~80+ commits ahead of origin/main — DO NOT push main. Laptop handoff = local commit only.
+- nexus-ai-suite handoff: worktree `/tmp/nx-ho` → `git fetch && git reset --hard origin/master`, edit `HANDOFF-fashionistas-2026-10-14.md`, commit, `git push origin HEAD:master`.
+- Hashed bundle `assets/app.<sha12>.js`: after editing, rehash/rename and update `index.html` + `tests/security-gates.test.mjs`.
+- QA box (agent box): `/workspace/fash-ship-qa` — `BASE=<url> SCHEME=light|dark OUT=dir node e2e/stories.spec.js` (12 stories, self-cleans its listing), `ch.js` (B=<url>: channels API + connect fake woo + board screenshots), `prodchk.js`, `ds.js`.
+
+**Rules (Iz)**
+- Deploy with Wrangler only (deploy-local.sh); never GitHub Actions.
+- Preview first + self-reviewed 412x915 light AND dark screenshots; nothing to prod without Iz's "ship it".
+- Never invent data (listings, prices, stats, "listed" states — listed only when a remote API returns an id or the seller confirms).
+- Site stays free for users; keep demo listings.
+- Never print secrets. NEVER change/rotate `CHANNEL_KEY` (Pages secret, set on preview AND production; rotating makes every stored seller credential unreadable).
+- Irreversible/external actions need explicit approval. Clean up test-seller listings/connections.
+
+**Test seller:** `iz_test_seller` (user 130); creds in gitignored `~/fashionistas-ai/.env.test-seller` and box `/workspace/fash-ship-qa/.env.test-seller`. Login via worker `/w/api/auth/login` (username). User 129 = unused leftover.
+
+**Channel matrix:** see the "Channels / programmatic posting" section above (copy of `docs/marketplace/CHANNELS.md`). Code: `functions/_lib/channels.js` (registry), `vault.js` (AES-GCM, table channel_creds), `channel-adapters.js` (woo, bigcommerce, shopify, square, wix, squarespace), `functions/api/channels/{index,connect,post}.js`, `functions/feeds/[[path]].js` (`/feeds/<uid>.xml|.csv`), board `seller/board/index.html`. eBay/Etsy OAuth: `functions/api/{ebay,etsy}/oauth/{start,callback}.js`.
+
+**IN PROGRESS — "easiest seller journey"** (branch `easy`, from main `86124c9`; nothing committed yet; preview will be https://easy.fashionistas-ai.pages.dev)
+1. OAuth Connect replacing pasted keys: Shopify (public app OAuth, needs shop domain), WooCommerce (`/wc-auth/v1/authorize` key-grant → keys POSTed to our callback; no app registration), BigCommerce app OAuth, Square OAuth, Wix OAuth (installer + wixapis /oauth/access, refresh), Squarespace OAuth (partner approval), eBay/Etsy existing. Plan: `functions/_lib/oauth-apps.js` + `functions/api/oauth/[[path]].js` (start/callback), store tokens via vault in the same field shape adapters use; refresh helper.
+2. Feeds auto-push via OAuth: Google Merchant API, Pinterest v5 catalogs/feeds (register our feed URL), Meta catalog product_feeds (schedule URL). Else one-tap copy + deep link + 3-step guide.
+3. Guided "Post everywhere" run-through for guided sites: tap-copy title, tap-copy desc+price, photos via share-sheet/zip, open sell page, "Done, next site"; per-site timer + progress (mark listed only on seller "Done").
+4. Onboarding "Connect your shops" checklist after first listing: time per channel + honest click counts.
+5. Measure a real timed journey with the test seller; report seconds per channel (OAuth flows can't be timed until Iz registers apps — say so).
+Then: preview deploy, screenshots, e2e 12+/12, handoffs, report. No prod without "ship it".
+
+**Keys / app registrations Iz owes (one-time, site owner)** — redirect base `https://fashionistas.ai`:
+- Shopify Partner app (public, write_products) → redirect `/api/oauth/shopify/callback`; env SHOPIFY_CLIENT_ID/SECRET. Public listing needs Shopify review.
+- BigCommerce Dev Portal app → auth callback `/api/oauth/bigcommerce/callback` (+ load/uninstall); env BIGCOMMERCE_CLIENT_ID/SECRET.
+- Square Developer app (prod) → redirect `/api/oauth/square/callback`; SQUARE_APP_ID/SECRET.
+- Wix Dev Center app → redirect `/api/oauth/wix/callback`; WIX_APP_ID/SECRET.
+- Squarespace OAuth (apply via partner form) → `/api/oauth/squarespace/callback`; SQUARESPACE_CLIENT_ID/SECRET.
+- Google Cloud OAuth client (Content API scope; needs verification) → `/api/oauth/google/callback`; GOOGLE_CLIENT_ID/SECRET.
+- Pinterest app (catalogs scopes) → `/api/oauth/pinterest/callback`; PINTEREST_APP_ID/SECRET.
+- Meta app (catalog_management, App Review) → `/api/oauth/meta/callback`; META_APP_ID/SECRET.
+- eBay keyset + RuName; Etsy app (ETSY_API_KEY/SECRET) — existing routes.
+- WooCommerce: none.
+- Partner applications still pending: Amazon SP-API, Walmart, TikTok Shop, Bonanza, Depop; Whatnot/Vinted waitlists.
