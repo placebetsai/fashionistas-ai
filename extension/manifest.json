@@ -1,20 +1,65 @@
 {
   "manifest_version": 3,
   "name": "fashionistas.ai Crosslister",
-  "version": "0.1.0",
-  "description": "Post your fashionistas.ai listings to Poshmark, Mercari, Depop, Facebook Marketplace, Grailed, Vinted, eBay and Etsy from your own logged-in tabs.",
-  "icons": { "128": "icon128.png" },
-  "action": { "default_popup": "popup.html", "default_icon": "icon128.png" },
+  "version": "0.2.0",
+  "description": "Crosslist your fashionistas.ai listings to 14 marketplaces from your own logged-in browser. Detects which shops you're signed in to; never asks for passwords or API keys.",
+  "icons": {
+    "128": "icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon128.png"
+  },
   "options_page": "options.html",
-  "background": { "service_worker": "background.js", "type": "module" },
-  "permissions": ["storage", "tabs", "scripting"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting"
+  ],
   "host_permissions": [
-    "https://fashionistas.ai/*", "https://*.fashionistas-ai.pages.dev/*",
-    "https://poshmark.com/*", "https://www.mercari.com/*", "https://www.depop.com/*", "https://www.facebook.com/*",
-    "https://www.grailed.com/*", "https://www.vinted.com/*", "https://www.ebay.com/*", "https://www.etsy.com/*"
+    "https://fashionistas.ai/*",
+    "https://*.fashionistas-ai.pages.dev/*",
+    "https://poshmark.com/*",
+    "https://www.mercari.com/*",
+    "https://www.depop.com/*",
+    "https://www.facebook.com/*",
+    "https://www.grailed.com/*",
+    "https://www.vinted.com/*",
+    "https://www.ebay.com/*",
+    "https://signin.ebay.com/*",
+    "https://www.etsy.com/*",
+    "https://www.vestiairecollective.com/*",
+    "https://www.kidizen.com/*",
+    "https://www.whatnot.com/*",
+    "https://admin.shopify.com/*",
+    "https://accounts.shopify.com/*",
+    "https://sellercentral.amazon.com/*",
+    "https://seller.walmart.com/*"
   ],
   "content_scripts": [
-    { "matches": ["https://fashionistas.ai/seller/*", "https://*.fashionistas-ai.pages.dev/seller/*"], "js": ["bridge.js"], "run_at": "document_start" }
+    {
+      "matches": [
+        "https://fashionistas.ai/seller/*",
+        "https://*.fashionistas-ai.pages.dev/seller/*"
+      ],
+      "js": [
+        "bridge.js"
+      ],
+      "run_at": "document_start"
+    }
   ],
-  "web_accessible_resources": [{ "resources": ["test/mock-sell.html"], "matches": ["<all_urls>"] }]
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "test/mock-sell.html"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
 }

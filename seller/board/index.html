@@ -39,9 +39,42 @@
 <span class="badge">Seller · free</span>
 <h1>Crosslist board</h1>
 <p class="lede">Every item, every shop, one place. Live on fashionistas.ai the moment you post. Elsewhere: <b>Copy &amp; open</b>, then mark it <b>Listed</b> or <b>Sold</b>. <a href="/seller/stats/">Stats&nbsp;→</a></p>
-<div id="ch-flash" class="ch-flash" hidden role="status"></div><section id="ob" class="ob" hidden></section><details class="ch" id="ch" open><summary><b>Where can it post automatically?</b><span id="ch-sum">Loading…</span></summary><div id="ch-body"></div></details>
-<p id="b-msg" class="b-msg">Loading…</p><div id="b-list"></div><div id="run" class="run" hidden></div>
+<div id="ch-flash" class="ch-flash" hidden role="status"></div><section id="ob" class="ob" hidden></section>
+<section class="sx" id="sx" aria-label="Connect your shops">
+ <div class="sx-step" id="sx-ext"><span class="sx-n">1</span><div class="sx-tx"><b>Install the Fashionistas extension</b><small>Posts from your own browser, where you're already logged in. No passwords, no keys.</small></div><a class="sx-cta" id="sx-ext-cta" href="/seller/get-extension/">Install</a></div>
+ <div class="sx-step sx-col"><div class="sx-hd"><span class="sx-n">2</span><div class="sx-tx"><b>Your marketplaces</b><small id="sx-sum">We check which shops you're logged in to.</small></div><button class="sx-ghost" id="sx-re" type="button">Recheck</button></div>
+  <div class="sx-grid" id="sx-grid"></div></div>
+ <details class="ch" id="ch"><summary><b>Advanced</b><span id="ch-sum">Store connects and free product feeds</span></summary><div id="ch-body"></div></details>
+</section>
+<p id="b-msg" class="b-msg">Loading…</p><div id="b-list"></div><div id="selbar" class="selbar" hidden><b id="selbar-n">0 selected</b><button type="button" id="selbar-go">Post everywhere →</button></div><div id="run" class="run" hidden></div>
 <style>
+.sx{display:grid;gap:12px;margin:0 0 18px}
+.sx-step{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px;box-shadow:var(--sh-1)}
+.sx-col{flex-direction:column;align-items:stretch}.sx-hd{display:flex;align-items:center;gap:12px}
+.sx-n{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--ink);color:var(--bg);font-weight:800;font-size:14px}
+.sx-step.done .sx-n{background:#1f9d55;color:#fff}
+.sx-tx{flex:1;min-width:0}.sx-tx b{display:block;font-size:16px;line-height:1.25}.sx-tx small{display:block;color:var(--mut);font-size:13px;margin-top:2px;line-height:1.35}
+.sx-cta{flex:none;min-height:42px;padding:0 18px;border-radius:999px;background:var(--accent,#e8452c);color:#fff!important;font-weight:800;display:inline-flex;align-items:center;text-decoration:none!important}
+.sx-step.done .sx-cta{display:none}
+.sx-ghost{flex:none;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font:inherit;font-size:13px;font-weight:700}
+.sx-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.mk{display:flex;align-items:center;gap:10px;padding:10px;border-radius:16px;border:1px solid var(--line);background:var(--bg);min-width:0;text-align:left;font:inherit;color:var(--ink)}
+.mk.sel{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.mk-lg{width:36px;height:36px;border-radius:11px;flex:none;display:grid;place-items:center;color:#fff;font-weight:900;font-size:15px;letter-spacing:-.02em}
+.mk-t{flex:1;min-width:0}.mk-t b{display:block;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mk-s{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;color:var(--mut)}
+.mk-s i{width:7px;height:7px;border-radius:50%;background:var(--line-2)}.mk-s.on{color:#11683a}.mk-s.on i{background:#1f9d55}.mk-s.wait i{background:#e0a100;animation:sxp 1s infinite alternate}
+@keyframes sxp{to{opacity:.3}}
+.mk-in{font:inherit;font-size:11.5px;font-weight:800;color:var(--accent,#e8452c);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
+.pk{display:grid;gap:8px;max-height:46vh;overflow:auto;margin:6px 0 12px}
+.pk label{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);font-size:15px}
+.pk label input{width:20px;height:20px;accent-color:var(--accent,#e8452c)}.pk label small{margin-left:auto;color:var(--mut);font-size:12px}
+.pg{display:grid;gap:8px;max-height:52vh;overflow:auto;margin:8px 0 12px}
+.pg-r{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--soft)}
+.pg-r b{flex:1;font-size:14.5px}.pg-r span{font-size:12.5px;font-weight:700;color:var(--mut)}.pg-r.ok span{color:#11683a}.pg-r.go span{color:#7a5600}.pg-r.bad span{color:#b3261e}
+.bl-ck{width:22px;height:22px;flex:none;accent-color:var(--accent,#e8452c)}
+.selbar{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom));z-index:20;display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--bg);border-radius:999px;padding:8px 8px 8px 18px;box-shadow:0 10px 30px rgba(0,0,0,.25);margin:8px 0}
+.selbar[hidden]{display:none}.selbar b{flex:1;font-size:14.5px}.selbar button{min-height:44px;padding:0 18px;border-radius:999px;border:0;background:var(--accent,#e8452c);color:#fff;font:inherit;font-weight:800}
 .b-msg{color:var(--mut);font-size:14px;margin:4px 0 14px}
 .b-empty{text-align:center;padding:40px 22px;border:1px dashed var(--line-2);border-radius:22px;background:var(--card)}
 .b-empty .ic{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;margin:0 auto 12px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);font-size:28px}
@@ -126,7 +159,7 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
   var CLS={listed:'st-listed',active:'st-listed',sold:'st-sold',copied:'st-copied',pending:'st-copied',queued:'st-copied'};
   var data=null, msg=document.getElementById('b-msg'), list=document.getElementById('b-list');
   function copyText(l){return [l.title, l.price!=null?('$'+l.price):'', [l.brand,l.size,l.condition,l.color].filter(Boolean).join(' · '), l.description||''].filter(Boolean).join('\n');}
-  var OPEN={};
+  var OPEN={}, SEL={};
   function render(){
     if(!data.listings.length){ msg.textContent=''; list.innerHTML='<div class="b-empty"><div class="ic">✦</div><h2>Nothing posted yet</h2><p>Snap one item — it\'s live on fashionistas.ai in seconds, free. Then send it everywhere from here.</p><a class="b-btn" href="/">Post your first item</a></div>'; return; }
     msg.textContent=data.listings.length+' item'+(data.listings.length>1?'s':'')+' · statuses are only what you or a connected shop confirmed.';
@@ -144,7 +177,7 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
       }).join('');
       var open=(l.id in OPEN)?OPEN[l.id]:i===0;
       var sum='<span class="chip-s">'+(l.status==='sold'?'Sold'+(soldOn?' on '+esc(soldOn):''):'Live here')+'</span><span class="chip-s">Listed on '+nListed+' other'+(nListed===1?'':'s')+'</span>';
-      return '<article class="bl"><div class="bl-h">'+(l.photo_url?'<img src="'+esc(l.photo_url)+'" alt="" loading="lazy">':'')+'<div class="t"><b>'+esc(l.title||'Untitled')+'</b><span class="pr">'+(l.price!=null?'$'+esc(l.price):'')+'</span><div class="bl-sum">'+sum+'</div></div></div><details class="bl-d" data-id="'+l.id+'"'+(open?' open':'')+'><summary>Shops ('+data.shops.length+')</summary><ul class="bl-s">'+rows+'</ul></details>'+(l.status!=='sold'?'<button class="b-pe" data-pe="'+l.id+'">Post everywhere →</button>':'')+'</article>';
+      return '<article class="bl"><div class="bl-h">'+(l.status!=='sold'?'<input type="checkbox" class="bl-ck" data-ck="'+l.id+'" aria-label="Select '+esc(l.title||'item')+'"'+(SEL[l.id]?' checked':'')+'>':'')+(l.photo_url?'<img src="'+esc(l.photo_url)+'" alt="" loading="lazy">':'')+'<div class="t"><b>'+esc(l.title||'Untitled')+'</b><span class="pr">'+(l.price!=null?'$'+esc(l.price):'')+'</span><div class="bl-sum">'+sum+'</div></div></div><details class="bl-d" data-id="'+l.id+'"'+(open?' open':'')+'><summary>Shops ('+data.shops.length+')</summary><ul class="bl-s">'+rows+'</ul></details>'+(l.status!=='sold'?'<button class="b-pe" data-pe="'+l.id+'">Post everywhere →</button>':'')+'</article>';
     }).join('');
     [].forEach.call(list.querySelectorAll('details.bl-d'),function(d){d.addEventListener('toggle',function(){OPEN[d.getAttribute('data-id')]=d.open;});});
   }
@@ -169,7 +202,7 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
         var one=c.oauth&&c.oauthReady;
         if(one){ right='<button class="chb pri" data-oauth="'+c.id+'"'+(c.needsShop?' data-shop="1"':'')+'>Connect</button>'; body=(c.needsShop?'<input class="ch-shop" data-for="'+c.id+'" placeholder="Your '+esc(c.needsShop)+'" autocomplete="off" inputmode="url">':'')+'<small>'+(c.clicks||2)+' clicks: '+(c.needsShop?'enter your '+esc(c.needsShop)+', ':'')+'tap Connect, then Approve.</small>'; }
         else { right='<button class="chb pri" data-open="'+c.id+'">Paste a key</button>'; body='<small>One-tap Connect is waiting on the site’s '+esc(c.name)+' app registration. Until then, paste a key ('+esc(c.keyHelp||'')+').</small>'; }
-        body+=(one?'<button class="chlink" data-open="'+c.id+'">Use a key instead</button>':'')+'<form data-ch="'+c.id+'" hidden>'+c.sellerFields.map(function(f){return '<input name="'+f+'" placeholder="'+f.replace(/_/g,' ')+'" autocomplete="off" '+(/secret|token|key/.test(f)?'type="password"':'')+'>';}).join('')+'<button class="chb pri" type="submit">Save &amp; connect</button></form>';
+        
       }
     } else if(c.mode==='feed'){
       if(c.connected){ right='<span class="st st-listed">feed registered</span><button class="chb" data-dc="'+c.id+'">Forget</button>'; body='<small>'+esc(c.connected.label||'')+' — it re-reads your listings daily.</small>'; }
@@ -183,18 +216,20 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
     else { right='<span class="st">copy &amp; paste</span>'+(MEASURED[c.id]?'<small class="ms">~'+MEASURED[c.id]+'s</small>':''); }
     return '<div class="chi" id="chi-'+c.id+'"><div class="chi-r"><b>'+esc(c.name)+'</b>'+right+'</div>'+body+'</div>';
   }
+  // Only show integrations a seller can finish in a tap: connected ones, ready one-tap OAuth, and free feeds. No key forms, no 'not built'.
+  function usable(c){ if(c.connected) return true; if(c.mode==='feed') return true; if(c.mode==='api_seller_key') return !!(c.built&&c.oauth&&c.oauthReady&&CH.vault); return false; }
   function chRender(){
     var b=document.getElementById('ch-body'),sum=document.getElementById('ch-sum');
     var live=CH.channels.filter(function(c){return c.connected;}).length, one=CH.channels.filter(function(c){return c.oauth&&c.oauthReady;}).length;
-    sum.textContent=one+' one-tap connects ready · '+live+' connected';
-    b.innerHTML=GROUPS.map(function(g){
-      var list=CH.channels.filter(function(c){return grp(c)===g[0];}); if(!list.length) return '';
+    sum.textContent='Store connects and free product feeds';
+    b.innerHTML=GROUPS.filter(function(g){return g[0]==='store'||g[0]==='feedc';}).map(function(g){
+      var list=CH.channels.filter(function(c){return grp(c)===g[0]&&usable(c);}); if(!list.length) return '';
       return '<div class="chg"><h3>'+g[1]+'</h3><p class="d">'+g[2]+'</p>'+list.map(chRow).join('')+(g[0]==='feedc'?'<div class="feed"><code>'+esc(CH.feed.xml)+'</code><button class="chb" data-copy="'+esc(CH.feed.xml)+'">Copy</button></div>':'')+'</div>';
     }).join('');
     checklist();
   }
   // ---- onboarding: “Connect your shops” (after the first listing) ----
-  function checklist(){
+  function checklist(){ var o=document.getElementById('ob'); if(o) o.hidden=true; return;
     var el=document.getElementById('ob'); if(!el||!CH||!data||!data.listings.length) { if(el) el.hidden=true; return; }
     try{ if(localStorage.getItem('fa_ob_done')==='1'){ el.hidden=true; return; } }catch(e){}
     var stores=CH.channels.filter(function(c){return c.mode==='api_seller_key'&&c.built;}), feeds=CH.channels.filter(function(c){return c.mode==='feed';}), guided=CH.channels.filter(function(c){return c.mode==='guided';});
@@ -236,7 +271,7 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
   var EXT_SITES=['poshmark','mercari','depop','facebook','grailed','vinted','ebay','etsy'];
   function EXT(){ return !!document.documentElement.dataset.faExt; }
   if(tok) setTimeout(function(){ if(EXT()) window.postMessage({type:'FA_TOKEN',token:tok},location.origin); },500);
-  window.addEventListener('message',function(e){ if(e.source!==window||!e.data) return; if(e.data.type==='FA_PROGRESS'&&e.data.step==='listed') load(); if(e.data.type==='FA_ACK'&&!e.data.ok) alert('Extension: '+(e.data.error||'could not start')); });
+  window.addEventListener('message',function(e){ if(e.source!==window||!e.data) return; if(e.data.type==='FA_PROGRESS'&&e.data.step==='listed') load(); if(e.data.type==='FA_ACK'&&!e.data.ok){ if(PG&&PG.todo){ PG.todo.forEach(function(sid){PG.st[sid]=e.data.error||'Couldn\u2019t start';}); pgDraw(true);} else alert('Extension: '+(e.data.error||'could not start')); } });
   function extPost(id,btn){ var l=data.listings.filter(function(x){return x.id===id;})[0];
     var sites=EXT_SITES.filter(function(sid){ var st=(l.shops[sid]||{}).status; return st!=='listed'&&st!=='active'&&st!=='sold'; });
     window.postMessage({type:'FA_POST',job:{item:{id:l.id,title:l.title,description:l.description||'',price:l.price,brand:l.brand||'',size:l.size||'',condition:l.condition||'',category:l.category||'',photos:photosOf(l).map(function(u){return new URL(u,location.href).href;})},sites:sites}},location.origin);
@@ -301,7 +336,7 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
     return fetch('/api/crosslist/status',{method:'POST',credentials:'include',headers:h,body:JSON.stringify(b)}).then(function(r){return r.json();}).then(function(j){ if(!j.ok) alert("Couldn't save — try again."); load(); });
   }
   list.addEventListener('click',function(e){
-    var pe=e.target.closest('button[data-pe]'); if(pe){ var pid=Number(pe.dataset.pe); if(EXT()&&confirm('Use the fashionistas.ai Crosslister extension? It opens each site in your own logged-in tabs and fills the form for you to review. (Cancel = step-by-step copy mode.)')){ extPost(pid,pe); } else runStart(pid); return; }
+    var pe=e.target.closest('button[data-pe]'); if(pe){ var pid=Number(pe.dataset.pe); pickOpen([pid]); return; }
     var b=e.target.closest('button[data-act]'); if(!b) return;
     var id=Number(b.getAttribute('data-id')), p=b.getAttribute('data-p'), act=b.getAttribute('data-act');
     var l=data.listings.filter(function(x){return x.id===id;})[0], s=data.shops.filter(function(x){return x.id===p;})[0];
@@ -321,6 +356,94 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
       setStatus(id,p,'sold',{price:Number(pr)||0}); extDelist(l);
     } else setStatus(id,p,act);
   });
+  // ===== Vendoo-style setup: extension + marketplaces detected from the seller's own logged-in browser =====
+  var MK=[ // id, name, brand colour, kind: ext = posted by the extension; app = phone app only; consign = send-a-bag
+    ['poshmark','Poshmark','#7f0353','ext'],['mercari','Mercari','#4dc9ff','ext'],['depop','Depop','#ff2300','ext'],['ebay','eBay','#0064d2','ext'],
+    ['facebook','Facebook Marketplace','#1877f2','ext'],['grailed','Grailed','#111111','ext'],['vinted','Vinted','#09b1ba','ext'],['etsy','Etsy','#f1641e','ext'],
+    ['vestiaire','Vestiaire','#1d1d1b','ext'],['kidizen','Kidizen','#00b3a4','ext'],['whatnot','Whatnot','#f8d548','ext'],['shopify','Shopify','#5e8e3e','ext'],
+    ['amazon','Amazon','#ff9900','ext'],['walmart','Walmart','#0071ce','ext'],['curtsy','Curtsy','#ff6f91','app'],['thredup','ThredUp','#00a88f','consign'],['therealreal','The RealReal','#222222','consign']];
+  var MKBY={}; MK.forEach(function(m){MKBY[m[0]]=m;});
+  var SESS={}, PREF=null, CHECKING=false;
+  function mkInitials(n){ return n.replace(/^The /,'').split(/\s+/).map(function(w){return w.charAt(0);}).join('').slice(0,2); }
+  function sxRender(){
+    var ext=EXT(), stepE=document.getElementById('sx-ext');
+    stepE.classList.toggle('done',ext);
+    stepE.querySelector('b').textContent=ext?'Extension installed':'Install the Fashionistas extension';
+    stepE.querySelector('small').textContent=ext?'v'+document.documentElement.dataset.faExt+' · posting runs in your own logged-in tabs.':'Posts from your own browser, where you\u2019re already logged in. No passwords, no keys.';
+    var on=0;
+    document.getElementById('sx-grid').innerHTML=MK.map(function(m){
+      var id=m[0], st, sel=PREF?PREF.indexOf(id)>=0:false;
+      if(m[3]==='app') st='<span class="mk-s"><i></i>Phone app only</span>';
+      else if(m[3]==='consign') st='<span class="mk-s"><i></i>Consignment</span>';
+      else if(!ext) st='<span class="mk-s"><i></i>Needs extension</span>';
+      else if(CHECKING&&!SESS[id]) st='<span class="mk-s wait"><i></i>Checking\u2026</span>';
+      else if(SESS[id]&&SESS[id].state==='connected'){ on++; st='<span class="mk-s on"><i></i>Connected</span>'; }
+      else if(SESS[id]&&SESS[id].state==='waiting') st='<span class="mk-s wait"><i></i>Waiting for login\u2026</span>';
+      else st='<button type="button" class="mk-in" data-login="'+id+'">Log in</button>';
+      return '<div class="mk'+(sel?' sel':'')+'" data-mk="'+id+'"><span class="mk-lg" style="background:'+m[2]+(id==='whatnot'?';color:#111':'')+'" aria-hidden="true">'+esc(mkInitials(m[1]))+'</span><span class="mk-t"><b>'+esc(m[1])+'</b>'+st+'</span></div>';
+    }).join('');
+    document.getElementById('sx-sum').textContent=!ext?'Install the extension and we\u2019ll detect which shops you\u2019re logged in to.':(CHECKING?'Checking your logged-in shops\u2026':on+' connected \u00b7 tap \u201cLog in\u201d for the rest');
+  }
+  function sxCheck(ids){ if(!EXT()) { sxRender(); return; } if(!ids) { CHECKING=true; SESS={}; } sxRender(); window.postMessage({type:'FA_CHECK',sites:ids||MK.filter(function(m){return m[3]==='ext';}).map(function(m){return m[0];})},location.origin); }
+  function connectedIds(){ return MK.filter(function(m){return SESS[m[0]]&&SESS[m[0]].state==='connected';}).map(function(m){return m[0];}); }
+  function savePref(list){ PREF=list; fetch('/api/seller/prefs',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({marketplaces:list})}).catch(function(){}); }
+  window.addEventListener('message',function(e){ if(e.source!==window||!e.data) return;
+    if(e.data.type==='FA_SESSIONS'){ CHECKING=false; var s=e.data.sessions||{}; for(var k in s) SESS[k]=s[k];
+      if(PREF===null){ var c=connectedIds(); if(c.length) savePref(c); } // first run: default = every connected shop
+      sxRender(); }
+    if(e.data.type==='FA_PROGRESS') pgUpdate(e.data);
+  });
+  document.getElementById('sx-grid').addEventListener('click',function(e){
+    var lb=e.target.closest('[data-login]'); if(lb){ var id=lb.dataset.login; SESS[id]={state:'waiting'}; sxRender(); window.postMessage({type:'FA_OPEN_LOGIN',site:id},location.origin); return; }
+  });
+  document.getElementById('sx-re').onclick=function(){ sxCheck(); };
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden&&EXT()){ var w=MK.filter(function(m){return SESS[m[0]]&&SESS[m[0]].state==='waiting';}).map(function(m){return m[0];}); if(w.length) sxCheck(w); } });
+  fetch('/api/seller/prefs',{credentials:'include',headers:h}).then(function(r){return r.ok?r.json():null;}).then(function(j){ if(j&&j.ok) PREF=j.marketplaces; sxRender(); }).catch(function(){});
+  sxRender(); setTimeout(function(){ sxCheck(); },700); // bridge.js sets data-fa-ext at document_start
+  // ----- select listings -> pick marketplaces -> Post everywhere with per-site progress -----
+  function selIds(){ return Object.keys(SEL).filter(function(k){return SEL[k];}).map(Number); }
+  function selBar(){ var n=selIds().length, b=document.getElementById('selbar'); b.hidden=!n; document.getElementById('selbar-n').textContent=n+' item'+(n===1?'':'s')+' selected'; }
+  list.addEventListener('change',function(e){ var c=e.target.closest('[data-ck]'); if(c){ SEL[c.dataset.ck]=c.checked; selBar(); } });
+  document.getElementById('selbar-go').onclick=function(){ pickOpen(selIds()); };
+  var PG=null;
+  function pickOpen(ids){
+    if(!ids.length) return;
+    if(!EXT()){ if(ids.length===1) return runStart(ids[0]); rd.hidden=false; document.documentElement.classList.add('run-open'); rd.innerHTML='<div class="run-c"><h2>Install the extension first</h2><p class="run-it">Posting several items at once runs through the Fashionistas extension in your own browser.</p><div class="run-n"><button class="chb" id="run-x">Close</button><a class="chb pri" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none" href="/seller/get-extension/">Install</a></div></div>'; document.getElementById('run-x').onclick=runClose; return; }
+    var conn=connectedIds(), def=(PREF&&PREF.length?PREF:conn).filter(function(x){return MKBY[x]&&MKBY[x][3]==='ext';});
+    var ext=MK.filter(function(m){return m[3]==='ext';});
+    rd.hidden=false; document.documentElement.classList.add('run-open');
+    rd.innerHTML='<div class="run-c" role="dialog" aria-label="Pick marketplaces"><div class="run-top"><span>'+ids.length+' item'+(ids.length===1?'':'s')+'</span><span style="flex:1"></span><button class="chlink" id="run-x" aria-label="Close">\u2715</button></div><h2>Post to\u2026</h2><p class="run-it">Each site opens in your own tab, filled in. You review and press the site\u2019s Post.</p><div class="pk">'+ext.map(function(m){ var c=SESS[m[0]]&&SESS[m[0]].state==='connected'; return '<label><input type="checkbox" value="'+m[0]+'"'+(def.indexOf(m[0])>=0?' checked':'')+'>'+esc(m[1])+'<small>'+(c?'Connected':'Not logged in')+'</small></label>'; }).join('')+'</div><div class="run-n"><button class="chb" id="pk-none">Clear</button><button class="chb pri" id="pk-go">Post everywhere \u2192</button></div></div>';
+    document.getElementById('run-x').onclick=runClose;
+    document.getElementById('pk-none').onclick=function(){ [].forEach.call(rd.querySelectorAll('.pk input'),function(i){i.checked=false;}); };
+    document.getElementById('pk-go').onclick=function(){ var sites=[].map.call(rd.querySelectorAll('.pk input:checked'),function(i){return i.value;}); if(!sites.length) return; savePref(sites); pgStart(ids,sites); };
+  }
+  function pgStart(ids,sites){
+    PG={ids:ids,sites:sites,i:0,st:{}}; pgNext();
+  }
+  function pgNext(){
+    if(!PG) return; if(PG.i>=PG.ids.length){ pgDraw(true); load(); return; }
+    var l=data.listings.filter(function(x){return x.id===PG.ids[PG.i];})[0]; if(!l){ PG.i++; return pgNext(); }
+    var todo=PG.sites.filter(function(sid){ var st=(l.shops[sid]||{}).status; return st!=='listed'&&st!=='active'&&st!=='sold'; });
+    PG.cur=l; PG.todo=todo; PG.st={}; PG.sites.forEach(function(sid){ PG.st[sid]=todo.indexOf(sid)<0?'Already listed':'Waiting'; });
+    pgDraw(false);
+    if(!todo.length){ PG.i++; return setTimeout(pgNext,600); }
+    window.postMessage({type:'FA_POST',job:{item:{id:l.id,title:l.title,description:l.description||'',price:l.price,brand:l.brand||'',size:l.size||'',condition:l.condition||'',category:l.category||'',photos:photosOf(l).map(function(u){return new URL(u,location.href).href;})},sites:todo}},location.origin);
+  }
+  function pgDraw(done){
+    if(!PG) return; var l=PG.cur;
+    var nDone=PG.sites.filter(function(s){return /Listed|Already|Not confirmed/.test(PG.st[s]||'');}).length;
+    rd.hidden=false; document.documentElement.classList.add('run-open');
+    rd.innerHTML='<div class="run-c" role="dialog" aria-label="Posting"><div class="run-top"><span>Item '+Math.min(PG.i+1,PG.ids.length)+' of '+PG.ids.length+'</span><div class="run-bar"><i style="width:'+Math.round(100*(done?1:nDone/Math.max(1,PG.sites.length)))+'%"></i></div><button class="chlink" id="run-x" aria-label="Close">\u2715</button></div><h2>'+(done?'All sent \u2713':'Posting everywhere')+'</h2><p class="run-it">'+esc(l?l.title||'':'')+'</p><div class="pg">'+PG.sites.map(function(s){ var t=PG.st[s]||'Waiting', c=/Listed|Already/.test(t)?'ok':/Fill|Open|review/.test(t)?'go':/rror|Couldn|accept/.test(t)?'bad':''; return '<div class="pg-r '+c+'"><b>'+esc((MKBY[s]||[s,s])[1])+'</b><span>'+esc(t)+'</span></div>'; }).join('')+'</div>'+(done?'<div class="run-n"><button class="chb pri" id="pg-x">Done</button></div>':'<p class="run-it" style="font-size:12.5px">Keep this tab open. Statuses save to your board automatically.</p>')+'</div>';
+    document.getElementById('run-x').onclick=function(){ PG=null; runClose(); };
+    var x=document.getElementById('pg-x'); if(x) x.onclick=function(){ PG=null; runClose(); };
+  }
+  function pgUpdate(m){
+    if(!PG||!PG.st||!(m.site in PG.st)) return;
+    PG.st[m.site]= m.step==='opening'?'Opening\u2026': m.step==='filled'?'Filled \u2014 review & post in its tab': m.step==='listed'?'Listed \u2713': m.step==='no-url'?'Not confirmed':PG.st[m.site];
+    pgDraw(false);
+    var left=PG.todo.filter(function(s){return !/Listed|Not confirmed/.test(PG.st[s]);});
+    if(!left.length){ PG.i++; setTimeout(pgNext,800); }
+  }
   load();
 })();
 </script>
