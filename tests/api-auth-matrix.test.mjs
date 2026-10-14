@@ -100,6 +100,7 @@ const PUBLIC = {
   "ebay/oauth/callback.js": "OAuth redirect target; verified by the `code` + state, not a session",
   "etsy/oauth/start.js": "OAuth consent redirect; there is no session yet at that point",
   "etsy/oauth/callback.js": "OAuth redirect target; verified by `code` + state cookie",
+  "oauth/[[path]].js": "start requires a session (POST); callbacks are OAuth redirect targets verified by the HMAC-signed state (and Shopify HMAC), not a session",
   "channels/callback/[[channel]].js":
     "marketplace OAuth landing pad — eBay/Etsy/Whatnot send the seller's browser here with no " +
     "session cookie of ours attached, so there is nothing to gate on. It authenticates exactly " +
