@@ -406,7 +406,8 @@ body{-webkit-font-smoothing:antialiased}
    <input type="file" id="file-garment" accept="image/jpeg,image/png,image/webp,image/*" aria-label="Choose the garment photo">
   </div>
  </div>
- <form class="to-link" id="link-form" autocomplete="off"><input class="to-link-in" id="link-in" type="url" inputmode="url" placeholder="Paste a Depop, Poshmark, Vinted, eBay… link" aria-label="Listing link"><button class="to-btn" type="submit" id="link-go">Use link</button></form>
+ <div class="to-link-h">Saw something on Poshmark or Depop? Copy the listing link and paste it here. <details class="to-how"><summary>How?</summary>In the Poshmark or Depop app, open the item, tap Share, then Copy link. Come back here, tap the box below and choose Paste.</details></div>
+ <form class="to-link" id="link-form" autocomplete="off"><input class="to-link-in" id="link-in" type="url" inputmode="url" placeholder="Paste the listing link here" aria-label="Listing link"><button class="to-btn" type="submit" id="link-go">Use link</button></form>
  <div class="to-link-res" id="link-res" hidden></div>
  <label class="to-remember"><input type="checkbox" id="remember-me"> Remember my photo on this phone <button type="button" class="to-forget" id="forget-me" hidden>Forget it</button></label>
  <div class="to-closet" id="closet-strip" hidden><span class="to-closet-l">Your listings</span></div>
@@ -662,13 +663,33 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
     } catch (e) {}
   }
 
-  function loadItem(item){
-    // cache:"no-store" — a single transient failure gets cached by Chromium and
-    // then blocks this cross-origin image read on the next visit too.
-    return fetch(item.photo_url, { credentials: "omit", cache: "no-store" })
+  /* Shop photos live on the API host. Read them through the same-origin /w
+     proxy so no CORS, cache or network quirk on the phone can block the read,
+     and fall back to the direct URL only if that fails. */
+  function sameOriginPhoto(u){
+    u = String(u || "");
+    var m = /^https:\/\/fashionistas-api\.fashionistas1979\.workers\.dev(\/api\/images\/.+)$/.exec(u);
+    if (m) return "/w" + m[1];
+    if (/^\/api\/images\//.test(u)) return "/w" + u;
+    return u;
+  }
+  function fetchPhoto(u){
+    return fetch(u, { credentials: "omit", cache: "no-store" })
       .then(function(r){ if (!r.ok) throw new Error("photo " + r.status); return r.blob(); })
+      .then(function(b){ if (!/^image\//.test(b.type || "")) throw new Error("not an image"); return b; });
+  }
+  function showPicked(item){
+    var img = $("prev-garment"), name = $("name-garment"), zone = $("zone-garment");
+    if (img){ if (img.dataset.url) { URL.revokeObjectURL(img.dataset.url); img.dataset.url = ""; } img.src = sameOriginPhoto(item.photo_url); img.style.display = "block"; }
+    if (name) name.textContent = String(item.title || "Your item").slice(0, 60);
+    if (zone) zone.classList.add("has");
+  }
+  function loadItem(item){
+    showPicked(item);
+    var direct = String(item.photo_url || ""), proxied = sameOriginPhoto(direct);
+    var first = fetchPhoto(proxied);
+    return (proxied !== direct ? first.catch(function(){ return fetchPhoto(direct); }) : first)
       .then(function(b){
-        if (!/^image\//.test(b.type || "")) throw new Error("not an image");
         setFile("garment", new File([b], (item.title || "your item") + ".jpg", { type: b.type }));
         garmentPrefilled = true;
         say("Item loaded: " + String(item.title || "your item").slice(0, 70) + " — now add a photo of yourself.", false);
@@ -688,10 +709,10 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
     items.slice(0, 10).forEach(function(item, i){
       var b = document.createElement("button");
       b.type = "button";
-      b.className = "to-closet-item" + (i === 0 ? " on" : "");
+      b.className = "to-closet-item";
       b.setAttribute("aria-label", "Try on " + (item.title || "this listing"));
       var im = document.createElement("img");
-      im.src = item.photo_url;
+      im.src = sameOriginPhoto(item.photo_url);
       im.alt = item.title || "Your listing";
       im.loading = "lazy";
       b.appendChild(im);
@@ -1224,7 +1245,7 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
   if (shared) { document.getElementById("link-in").value = shared; useLink(shared); }
 })();
 </script>
-<style>.to-link{display:flex;gap:8px;margin:12px 0 6px}.to-link-in{flex:1;min-width:0;min-height:46px;border-radius:12px;padding:0 12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:inherit;font-size:15px}.to-link-res{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:14px;margin:4px 0 8px}.to-buy{min-height:44px;display:inline-flex;align-items:center}.to-remember{display:flex;gap:8px;align-items:center;font-size:14px;margin:6px 0;min-height:40px}.to-forget{background:none;border:0;color:inherit;text-decoration:underline;opacity:.8}</style>
+<style>.to-link{display:flex;gap:8px;margin:12px 0 6px}.to-link-in{flex:1;min-width:0;min-height:46px;border-radius:12px;padding:0 12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:inherit;font-size:15px}.to-link-res{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:14px;margin:4px 0 8px}.to-buy{min-height:44px;display:inline-flex;align-items:center}.to-remember{display:flex;gap:8px;align-items:center;font-size:14px;margin:6px 0;min-height:40px}.to-link-h{font-size:14px;line-height:1.4;margin:14px 0 0;opacity:.9}.to-how{display:inline}.to-how summary{display:inline;cursor:pointer;text-decoration:underline;font-weight:600}.to-how[open]{display:block;margin-top:6px;font-size:13px;opacity:.85}.to-forget{background:none;border:0;color:inherit;text-decoration:underline;opacity:.8}</style>
 <script type="module">
 (function(){
   var prim = document.getElementById("tx-primary"); if (!prim) return;
