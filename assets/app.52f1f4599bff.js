@@ -1107,8 +1107,14 @@ document.addEventListener("click", function(e){
   if (/buy/i.test(oc) || /^\s*buy/i.test(b ? b.textContent : "")) fashTrack(id, "click", "fashionistas");
   else if (/share/i.test(oc)) fashTrack(id, "share");
 }, true);
+const FASH_LAND = location.pathname;
 function marketUrlSync(){
-  if (!/^\/shop\/?$/.test(location.pathname)) return;
+  /* A category/brand landing keeps its own indexable address while it is unchanged. */
+  if (/^\/shop\/[cb]\//.test(FASH_LAND) && ((window.__FASH_CAT__ && S.marketCat === window.__FASH_CAT__ && !(S.marketQ||"").trim()) || (window.__FASH_Q__ && S.marketQ === window.__FASH_Q__ && !S.marketCat))) {
+    if (location.pathname !== FASH_LAND) { try { history.replaceState(history.state, "", FASH_LAND); } catch(e){} }
+    return;
+  }
+  if (!/^\/shop\/?$/.test(location.pathname) && !/^\/shop\/[cb]\//.test(location.pathname)) return;
   const p = new URLSearchParams();
   if ((S.marketQ||"").trim()) p.set("q", S.marketQ.trim());
   if (S.marketSort && S.marketSort !== "new") p.set("sort", S.marketSort);
