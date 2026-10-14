@@ -25,10 +25,11 @@ async function runPost(job, origin, sender) {
       await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["fill.js"] });
       const [{ result: rep } = {}] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: (spec, it, o) => window.__faFill(spec, it, o), args: [{ ...s, listed: undefined }, item, { autoSubmit: !!autoSubmit }] }).catch(() => [{}]);
       chrome.tabs.sendMessage(sender.tab.id, { type: "FA_PROGRESS", site: id, step: "filled", rep }).catch(() => {});
-      // seller reviews and submits (or auto-submit did); capture the listing URL when the tab lands on it
-      const url = await watchListed(tab.id, s.listed, autoSubmit ? 120000 : 15 * 60000);
-      if (url) await report(origin, token, job.item.id, id, "listed", url);
-      chrome.tabs.sendMessage(sender.tab.id, { type: "FA_PROGRESS", site: id, step: url ? "listed" : "no-url", url }).catch(() => {});
+      // Don't block the next shop on this one: watch for the listing URL in the background while we fill the rest.
+      watchListed(tab.id, s.listed, autoSubmit ? 120000 : 15 * 60000).then(async (url) => {
+        if (url) await report(origin, token, job.item.id, id, "listed", url);
+        chrome.tabs.sendMessage(sender.tab.id, { type: "FA_PROGRESS", site: id, step: url ? "listed" : "no-url", url }).catch(() => {});
+      });
       await sleep(1500 + Math.random() * 2500);
     }
   })();
