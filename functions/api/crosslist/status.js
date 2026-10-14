@@ -4,13 +4,14 @@
  * (feeds seller stats) and marks the listing sold on fashionistas.ai.
  */
 import { requireAuth, getDB, json } from "../_lib/auth.js";
+import { CHANNELS } from "../../_lib/channels.js";
 import { SHOPS, STATUSES } from "../../_lib/shops.js";
 export async function onRequestPost({ request, env }) {
   const auth = await requireAuth(request, env); if (!auth.ok) return auth.response;
   const db = getDB(env); if (!db) return json({ ok: false, error: "db_unavailable" }, 503);
   const b = await request.json().catch(() => ({}));
   const id = Number(b.listing_id), platform = String(b.platform || ""), status = String(b.status || "");
-  if (!Number.isInteger(id) || !SHOPS.some((s) => s.id === platform) || platform === "fashionistas" && status !== "sold" || !STATUSES.includes(status)) return json({ ok: false, error: "bad_request" }, 400);
+  if (!Number.isInteger(id) || !(SHOPS.some((s) => s.id === platform) || CHANNELS.some((c) => c.id === platform)) || platform === "fashionistas" && status !== "sold" || !STATUSES.includes(status)) return json({ ok: false, error: "bad_request" }, 400);
   const own = await db.prepare("SELECT id, price FROM listings WHERE id=? AND user_id=?").bind(id, Number(auth.user.id)).first();
   if (!own) return json({ ok: false, error: "not_found" }, 404);
   let url = String(b.url || "").trim().slice(0, 500);
