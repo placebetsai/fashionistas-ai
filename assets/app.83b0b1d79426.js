@@ -2306,7 +2306,8 @@ async function xlExport(ev, name){
    relevant to what that card says (SELL/TAG for stock, SOLD for sales,
    $/% for money, real shop names for sources). Built once, CSS animates it. */
 function fxBg(words){
- return `<div class="fx-bg" aria-hidden="true">${words.map((w,i)=>{
+ return ""; // removed: drifting words behind stats read as noise on phones (Iz, 2026-10-14)
+ `<div class="fx-bg" aria-hidden="true">${words.map((w,i)=>{
    const t = 5 + ((i*29) % 72), l = 3 + ((i*37) % 76);
    const dly = (i*1.35).toFixed(2), dur = (11 + (i%4)*2.5).toFixed(1);
    const fs = i % 2 ? 15 : 20;
@@ -2330,6 +2331,12 @@ function ktSplit(root){
  });
 }
 
+function helloName(){
+ const raw = String((USER && (USER.display_name || USER.name || USER.username)) || "").trim();
+ // Never greet a seller with our own brand (accounts named after the site) or an email.
+ if (!raw || /fashionistas/i.test(raw)) return "Hey there";
+ return "Hey " + escapeHtml(raw.split("@")[0].split(/\s+/)[0]);
+}
 async function renderHome(el){
  if (!TOKEN || !USER) {
    el.innerHTML = roleSwitchHtml() + renderAuthPrompt("Log in to see your home screen", "Sign in to see your sales, active listings and daily profit.");
@@ -2343,7 +2350,7 @@ async function renderHome(el){
   const st = a.stats || {};
   el.innerHTML = roleSwitchHtml() + `
   <div class="hero">
- <h2 style="font-size:26px;margin:0 0 4px">Hey ${USER.username}</h2>
+ <h2 style="font-size:26px;margin:0 0 4px">${helloName()}</h2>
  <p>${st.activeListings||0} for sale · ${st.sales||0} sold · ${money(st.profit)} profit</p>
  <div class="hero-tick"><span class="ht-dot"></span><span class="ht-clip"><span id="hero-word">Snap it.</span></span></div>
  </div>
@@ -2432,13 +2439,13 @@ function startHeroTick(){
  }, 2400);
 }
 async function revenueChart(days){
- if (!days.length) return `<div class="chart-empty"><svg viewBox="0 0 320 92" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="ceFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff4e3a" stop-opacity=".42"/><stop offset="1" stop-color="#ff4e3a" stop-opacity="0"/></linearGradient></defs><g stroke="rgba(0,0,0,.07)" stroke-width="1"><path d="M0 23H320M0 46H320M0 69H320"/></g><path d="M0 70 40 62 80 66 120 50 160 56 200 40 240 46 280 30 320 36V92H0Z" fill="url(#ceFill)"/><path d="M0 70 40 62 80 66 120 50 160 56 200 40 240 46 280 30 320 36" fill="none" stroke="#ff4e3a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" opacity=".8" class="chip-draw"/></svg><p class="mut">No sales yet — take a photo of your first item and get it listed.</p></div>`;
+ if (!days.length || !days.some(d=>Number(d.rev)>0)) return `<div class="chart-empty"><p class="mut">No sales in the last 30 days yet. When you sell, your real numbers show up here.</p></div>`;
  const max = Math.max(...days.map(d=>d.rev||0), 1);
  const bars = days.slice(-14).map((d,bi)=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><bar style="width:100%;margin:0"><i class="bar-grow" style="height:${Math.max(4,((d.rev||0)/max)*100)}%;min-height:4px;animation-delay:${(bi*0.05).toFixed(2)}s"></i></bar><span class="mut" style="font-size:9.5px">${fmt(d.d)}</span></div>`).join("");
  return `<div style="display:flex;gap:6px;align-items:flex-end;height:110px">${bars}</div>`;
 }
 function renderPlatforms(rows){
- if (!rows.length) return `<div class="chart-empty"><svg viewBox="0 0 320 92" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="ceBars" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff4e3a" stop-opacity=".92"/><stop offset="1" stop-color="#c05cff" stop-opacity=".45"/></linearGradient></defs><g stroke="rgba(0,0,0,.07)" stroke-width="1"><path d="M0 23H320M0 46H320M0 69H320"/></g><g fill="url(#ceBars)"><rect class="bar-grow" style="animation-delay:.05s" x="26" y="50" width="42" height="34" rx="7"/><rect class="bar-grow" style="animation-delay:.13s" x="92" y="34" width="42" height="50" rx="7"/><rect class="bar-grow" style="animation-delay:.21s" x="158" y="58" width="42" height="26" rx="7"/><rect class="bar-grow" style="animation-delay:.29s" x="224" y="26" width="42" height="58" rx="7"/><rect class="bar-grow" style="animation-delay:.37s" x="278" y="46" width="34" height="38" rx="7"/></g></svg><p class="mut">Sales you write down show up here, shop by shop.</p></div>`;
+ if (!rows.length) return `<div class="chart-empty"><p class="mut">Sales you record show up here, shop by shop.</p></div>`;
  const maxRev = Math.max(...rows.map(r=>Number(r.rev)||0), 1);
  return rows.map((r,ri)=>{
   const share = Math.round(((Number(r.rev)||0)/maxRev)*100);
