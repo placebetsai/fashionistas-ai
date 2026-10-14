@@ -32,6 +32,32 @@
    - E2E listings it creates are deleted at the end of each run. No invented public listings.
    - (User 129 is an unused account from the Pages register path. Ignore it.)
 
+### Update ~11:15 ET: design pass on preview `1496c2a` (https://free-v2.fashionistas-ai.pages.dev)
+- **New `ds2.css`**, loaded last in the app:
+  - Editorial serif screen titles (Instrument Serif).
+  - Pill controls and compact shop sort/filter pills.
+  - Rounder photo tiles with a staggered entry.
+  - Framed 4:5 item photo with a serif title; Try-on is a dark pill so Buy is the only primary button; frosted buy bar.
+  - Compact "You" menu cards, calm centred empty states, and the listing wizard in the same pill language.
+- **The app sets `html[data-view]` on every screen**, so CSS can target individual screens.
+- **Static pages** (site.css):
+  - Follow the phone's light/dark setting.
+  - One-row scrollable sticky header on mobile; serif h1.
+- **Crosslist board redesigned:**
+  - Item cards with a photo and summary chips ("Live here", "Listed on N others").
+  - A collapsible "Shops (18)" list.
+  - Each shop row: initial badge, name and status pill; at most 3 equal pill buttons on their own row. No more cramped wrapping.
+  - Designed empty state.
+- **Try-on:** polished CTA, zones and quick-look card (skin.css v3).
+- **Checks:**
+  - E2E 12/12 in light and dark, 0 page errors (the board check now counts `.bl-shop`).
+  - npm test green.
+  - Screenshots on the box: `/workspace/fash-ship-qa/ds-final/` (9 screens × light/dark), `shots3-light/` and `shots3-dark/` (E2E flow); "before" shots are in `ds-before/`.
+- **Still open:**
+  - Listing-wizard internals beyond CSS.
+  - The closet hero still shows two "add" CTAs.
+  - Production stays at `4001c02` until Iz says "ship it".
+
 ### Update ~10:35 ET: preview `16fbea8` (https://free-v2.fashionistas-ai.pages.dev)
 - **E2E: 12/12 stories pass in light AND dark.** Spec: `e2e/stories.spec.js`; doc: `docs/USER-STORIES.md`. 0 page errors. Each run deletes its own test listing (ids 156–161 are all gone).
 - **Fixed a real bug:** "List on fashionistas" did nothing when tapped while the keyboard was open. The tap blurred the input first and the click was lost. Fixed with pointerdown preventDefault in `listing-wizard.js`, bumped to v=5.
