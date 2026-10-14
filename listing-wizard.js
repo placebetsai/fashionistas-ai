@@ -172,7 +172,7 @@
       '<div class="lw-prog"><div class="lw-stepline"><b id="lw-stepn"></b><span id="lw-stepname"></span></div><div class="lw-bar" role="progressbar" aria-valuemin="1" aria-valuemax="4" id="lw-bar"><i id="lw-bar-i"></i></div></div>' +
       '<button type="button" class="lw-help" onclick="LW.help()" aria-label="Help">?</button></div>' +
       '<div class="lw-body" id="lw-body"></div>' +
-      '<div class="lw-foot" id="lw-foot"><button type="button" class="lw-next" id="lw-next" onclick="LW.next()"></button></div>' +
+      '<div class="lw-foot" id="lw-foot"><button type="button" class="lw-next" id="lw-next" onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" onclick="LW.next()"></button></div>' +
       '<input type="file" id="lw-cam" accept="image/*" capture="environment" hidden onchange="LW.files(this)">' +
       '<input type="file" id="lw-gal" accept="image/*" multiple hidden onchange="LW.files(this)">' +
       '<div id="snap-pre" hidden></div></div>';
