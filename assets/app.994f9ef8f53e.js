@@ -1148,7 +1148,7 @@ function marketCard(m, i){
 }
 /* Wearable tiles get their own "Try it on" (same rule as the server-rendered grid). */
 function tileTryHtml(m){
-  if (!m || !m.photo_url || !/^(women|men|kids)/i.test(String(m.category || ""))) return "";
+  if (!m || !m.photo_url || !/^(women|men|kids)/i.test(String(m.category || "")) || /bag|purse|jewel|shoe|sneaker|boot|accessor|watch/i.test(String(m.category || "") + " " + String(m.title || ""))) return "";
   return `<a class="ux-tile-try" href="/try-on/?item=${encodeURIComponent(m.photo_url)}&title=${encodeURIComponent(String(m.title || "").slice(0, 80))}" aria-label="Try it on: ${escapeAttr(m.title || "this item")}">Try it on</a>`;
 }
 

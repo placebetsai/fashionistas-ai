@@ -42,7 +42,7 @@ function tile(m, i) {
   return `<div class="ux-tile" style="--gi:${i}"><a class="ux-tile-open" href="/shop/${Number(m.id)}"><span class="ux-tile-img">${img}</span>` +
     `<span class="ux-tile-p">${money(m.price)}</span><span class="ux-tile-t">${e(m.title || "Untitled")}</span>` +
     (sub ? `<span class="ux-tile-s">${e(sub)}</span>` : "") + `</a>` +
-    (m.photo_url && /^(women|men|kids)/i.test(String(m.category || "")) ? `<a class="ux-tile-try" href="/try-on/?item=${encodeURIComponent(m.photo_url)}&title=${encodeURIComponent(String(m.title || "").slice(0, 80))}" aria-label="Try it on: ${e(m.title || "this item")}">Try it on</a>` : "") + `</div>`;
+    (m.photo_url && /^(women|men|kids)/i.test(String(m.category || "")) && !/bag|purse|jewel|shoe|sneaker|boot|accessor|watch/i.test(String(m.category || "") + " " + String(m.title || "")) ? `<a class="ux-tile-try" href="/try-on/?item=${encodeURIComponent(m.photo_url)}&title=${encodeURIComponent(String(m.title || "").slice(0, 80))}" aria-label="Try it on: ${e(m.title || "this item")}">Try it on</a>` : "") + `</div>`;
 }
 export function shopScreen(market) {
   const rows = (market || []).filter((m) => !isJunk(m)).sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
