@@ -199,6 +199,9 @@ function syncSessionChrome(){
   document.querySelectorAll("#signin-btn, #drawer-signin").forEach(function(b){
     b.style.display = on ? "none" : "";
   });
+  document.querySelectorAll('a[href="/account/delete/"]').forEach(function(a){
+    a.style.display = on ? (a.classList.contains("drawer-delete") ? "block" : "") : "none";
+  });
 }
 function enterBrowse(v){
   var auth = document.getElementById("view-auth");
