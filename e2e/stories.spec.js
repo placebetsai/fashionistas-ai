@@ -25,6 +25,8 @@ try{
  await p.screenshot({path:OUT+'/s2-ai-filled.png'});
  ok('S2 AI fills title/price/description from a photo',!!(ai.t&&ai.pr&&ai.d),JSON.stringify({title:ai.t,price:ai.pr}));
  await p.fill('#lw-title','E2E TEST — delete me '+Date.now());
+ // when the AI is unsure it leaves the category to the seller (by design) — pick one like a seller would
+ await p.evaluate(()=>{const st=LW._state().W;if(!st.f.path) LW.catSet('Men/Coats & Jackets');});await p.waitForTimeout(300);
  // S3 post to our shop instantly (title input still focused, like a real phone with the keyboard open)
  await p.focus('#lw-title');
  const t0=Date.now();await p.tap('#lw-next');

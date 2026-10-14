@@ -453,9 +453,9 @@
     var conf = W.ai.conf, mism = path && kind && !kindFitsPath(kind, path);
     if ((conf && conf < 85) || mism || !kind) {
       W.ai.unsure = true;
-      W.ai.why = mism ? "It said “" + kind + "” but picked " + pathLabel(path) + " — those don't match. Please type what it is and choose a category." : "Please check the title and choose a category.";
-      if (!t.title && !f.title && kind && !mism) f.title = titleCase0(kind).slice(0, 80);
-      return;
+      W.ai.why = mism ? "It said “" + kind + "” but picked " + pathLabel(path) + " — those don't match. Please type what it is and choose a category." : "We drafted the details — please check them and choose a category.";
+      if (mism || !kind) return; // contradictory answer: fill nothing, ask
+      path = ""; // low confidence: keep the draft (title, price, details) but the seller picks the category
     }
     var col = String(d.color || n.color || "").trim();
     var title = [brand, (col && kind.toLowerCase().indexOf(col.toLowerCase()) < 0) ? titleCase0(col) : "", titleCase0(kind || (rowFor(path) || {}).sub || "Item")].filter(Boolean).join(" ").replace(/\s+/g, " ").slice(0, 80);
