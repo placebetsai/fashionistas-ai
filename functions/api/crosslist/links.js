@@ -6,6 +6,7 @@
 import { getDB, json } from "../_lib/auth.js";
 import { CHANNELS } from "../../_lib/channels.js";
 import { SHOPS } from "../../_lib/shops.js";
+import { affiliateUrl } from "../../_lib/affiliate.js";
 export async function onRequestGet({ request, env }) {
   const id = Number(new URL(request.url).searchParams.get("id"));
   const db = getDB(env);
@@ -16,8 +17,8 @@ export async function onRequestGet({ request, env }) {
     for (const x of r.results || []) {
       const s = SHOPS.find((s) => s.id === x.platform) || CHANNELS.find((c) => c.id === x.platform);
       if (!s || seen.has(s.id)) continue; seen.add(s.id);
-      links.push({ platform: s.id, name: s.name, url: String(x.url).slice(0, 500) });
+      const a = affiliateUrl(String(x.url).slice(0, 500), env); links.push({ platform: s.id, name: s.name, url: a.url, affiliate: a.affiliate });
     }
-    return json({ ok: true, links }, 200, { "Cache-Control": "public, max-age=60" });
+    return json({ ok: true, links, affiliate: links.some((l) => l.affiliate) }, 200, { "Cache-Control": "public, max-age=60" });
   } catch (_) { return json({ ok: true, links: [] }); }
 }

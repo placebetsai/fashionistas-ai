@@ -1,7 +1,8 @@
 /** POST /api/channels/post {listing_id, channel} — create the listing on a connected store via its real API. Marks "listed" only when the API returned an id. */
 import { requireAuth, getDB, json } from "../_lib/auth.js";
 import { byId } from "../../_lib/channels.js";
-import { open, ensureCreds } from "../../_lib/vault.js";
+import { open, seal, ensureCreds } from "../../_lib/vault.js";
+import { OAUTH } from "../../_lib/oauth-apps.js";
 import { ADAPTERS, productOf } from "../../_lib/channel-adapters.js";
 export async function onRequestPost({ request, env }) {
   const auth = await requireAuth(request, env); if (!auth.ok) return auth.response;
@@ -13,8 +14,13 @@ export async function onRequestPost({ request, env }) {
   if (!l) return json({ ok: false, error: "not_found" }, 404);
   await ensureCreds(db);
   const row = await db.prepare("SELECT enc FROM channel_creds WHERE user_id=? AND channel=?").bind(uid, c.id).first();
-  const creds = row && await open(env, row.enc);
+  let creds = row && await open(env, row.enc);
   if (!creds) return json({ ok: false, error: "not_connected" }, 409);
+  const P = OAUTH[c.id];
+  if (P && P.refresh && creds.refresh_token && creds.expires_at && creds.expires_at < Date.now() + 60000) {
+    try { creds = await P.refresh(env, creds); await db.prepare("UPDATE channel_creds SET enc=? WHERE user_id=? AND channel=?").bind(await seal(env, creds), uid, c.id).run(); }
+    catch (e) { return json({ ok: false, error: "reconnect_needed", detail: c.name + " sign-in expired — tap Connect again" }, 409); }
+  }
   const r = await ADAPTERS[c.id](creds, productOf(l));
   if (!r.ok) return json({ ok: false, error: "remote_failed", detail: r.error }, 502);
   try { await db.prepare("CREATE TABLE IF NOT EXISTS listing_platforms (id INTEGER PRIMARY KEY AUTOINCREMENT, listing_id INTEGER, platform TEXT, status TEXT, listing_copy TEXT, url TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)").run(); } catch {}

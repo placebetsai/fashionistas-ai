@@ -1448,7 +1448,7 @@ async function openMarketItem(id, opts){
   if (!isMine) fetch("/api/crosslist/links?id=" + Number(m.id)).then(r => r.json()).then(b => {
     const L = (b && b.links) || []; const bar = el.querySelector(".ux-buybar"); if (!L.length || !bar) return;
     const d = document.createElement("div"); d.className = "ux-also";
-    d.innerHTML = `<p class="ux-item-note">Also listed by this seller on:</p>` + L.map(x => `<a class="btn btn-ghost btn-sm" href="${escapeAttr(x.url)}" target="_blank" rel="noopener sponsored" onclick="fashTrack(${Number(m.id)},'click','${escapeAttr(x.platform)}')">Buy on ${escapeHtml(x.name)} ↗</a>`).join(" ");
+    d.innerHTML = `<p class="ux-item-note">Also listed by this seller on:${b.affiliate ? " <small>(fashionistas.ai may earn a commission — it’s free for you)</small>" : ""}</p>` + L.map(x => `<a class="btn btn-ghost btn-sm" href="${escapeAttr(x.url)}" target="_blank" rel="noopener sponsored" onclick="fashTrack(${Number(m.id)},'click','${escapeAttr(x.platform)}')">Buy on ${escapeHtml(x.name)} ↗</a>`).join(" ");
     bar.parentNode.insertBefore(d, bar);
   }).catch(() => {});
 }

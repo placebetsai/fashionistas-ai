@@ -39,8 +39,8 @@
 <span class="badge">Seller · free</span>
 <h1>Crosslist board</h1>
 <p class="lede">Every item, every shop, one place. Live on fashionistas.ai the moment you post. Elsewhere: <b>Copy &amp; open</b>, then mark it <b>Listed</b> or <b>Sold</b>. <a href="/seller/stats/">Stats&nbsp;→</a></p>
-<details class="ch" id="ch" open><summary><b>Where can it post automatically?</b><span id="ch-sum">Loading…</span></summary><div id="ch-body"></div></details>
-<p id="b-msg" class="b-msg">Loading…</p><div id="b-list"></div>
+<div id="ch-flash" class="ch-flash" hidden role="status"></div><section id="ob" class="ob" hidden></section><details class="ch" id="ch" open><summary><b>Where can it post automatically?</b><span id="ch-sum">Loading…</span></summary><div id="ch-body"></div></details>
+<p id="b-msg" class="b-msg">Loading…</p><div id="b-list"></div><div id="run" class="run" hidden></div>
 <style>
 .b-msg{color:var(--mut);font-size:14px;margin:4px 0 14px}
 .b-empty{text-align:center;padding:40px 22px;border:1px dashed var(--line-2);border-radius:22px;background:var(--card)}
@@ -89,6 +89,20 @@
 .chb{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 .chb.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .feed{display:flex;gap:8px;align-items:center;margin:6px 0}.feed code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;background:var(--soft);padding:9px 10px;border-radius:10px}
+.chlink{background:none;border:0;color:var(--mut);font:inherit;font-size:12.5px;text-decoration:underline;cursor:pointer;padding:6px 0}
+.ch-shop{width:100%;margin-top:8px}.chi .ch-shop{min-height:42px;border-radius:12px;border:1px solid var(--line-2);background:var(--input-bg);color:var(--ink);padding:0 12px;font:inherit;box-sizing:border-box}
+.fg{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.fg ol{flex-basis:100%;margin:4px 0 0;padding-left:20px;font-size:13px;color:var(--mut);line-height:1.6}.fg a.chb{display:inline-flex;align-items:center;text-decoration:none}
+.ch-flash{padding:10px 14px;border-radius:12px;font-size:14px;font-weight:600;margin:0 0 12px}.ch-flash.ok{background:color-mix(in srgb,#1f9d55 18%,transparent)}.ch-flash.err{background:color-mix(in srgb,#d33 16%,transparent)}
+.ob{border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin:0 0 14px;background:var(--card,var(--soft))}.ob-h1{display:flex;justify-content:space-between;align-items:center}.ob-s{font-size:13px;color:var(--mut);margin:6px 0 8px;line-height:1.45}
+.ob-l{list-style:none;margin:0;padding:0}.ob-l li{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);font-size:14px}.ob-l li span:first-child{flex:1}.ob-h{color:var(--mut);font-size:12.5px}.ob-l a.chb{display:inline-flex;align-items:center;text-decoration:none;min-height:32px}
+.b-pe{display:block;width:calc(100% - 24px);margin:4px 12px 12px;min-height:44px;border-radius:999px;border:0;background:var(--accent,#e8452c);color:#fff;font:inherit;font-weight:800;font-size:14.5px;cursor:pointer}
+.chi form[hidden],.fg[hidden]{display:none!important}
+html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,html.run-open body{overflow:hidden;overflow-x:hidden}
+.run{position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}.run[hidden]{display:none}
+.run-c{background:var(--bg);color:var(--ink);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:16px 18px calc(18px + env(safe-area-inset-bottom))}
+.run-top{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--mut)}.run-bar{flex:1;height:6px;border-radius:9px;background:var(--soft);overflow:hidden}.run-bar i{display:block;height:100%;background:var(--accent,#e8452c)}
+.run-c h2{margin:12px 0 2px;font-size:22px}.run-it{color:var(--mut);margin:0 0 12px;font-size:14px}.run-s{display:grid;gap:8px}.run-s .chb{min-height:48px;font-size:15px;text-align:left;padding:0 16px}.run-s .chb.ok{background:color-mix(in srgb,#1f9d55 22%,var(--bg));color:var(--ink);border-color:transparent}
+.run-n{display:flex;gap:8px;margin-top:12px}.run-n .chb{flex:1;min-height:48px;font-size:15px}
 </style>
 </main>
 
@@ -130,52 +144,156 @@
       }).join('');
       var open=(l.id in OPEN)?OPEN[l.id]:i===0;
       var sum='<span class="chip-s">'+(l.status==='sold'?'Sold'+(soldOn?' on '+esc(soldOn):''):'Live here')+'</span><span class="chip-s">Listed on '+nListed+' other'+(nListed===1?'':'s')+'</span>';
-      return '<article class="bl"><div class="bl-h">'+(l.photo_url?'<img src="'+esc(l.photo_url)+'" alt="" loading="lazy">':'')+'<div class="t"><b>'+esc(l.title||'Untitled')+'</b><span class="pr">'+(l.price!=null?'$'+esc(l.price):'')+'</span><div class="bl-sum">'+sum+'</div></div></div><details class="bl-d" data-id="'+l.id+'"'+(open?' open':'')+'><summary>Shops ('+data.shops.length+')</summary><ul class="bl-s">'+rows+'</ul></details></article>';
+      return '<article class="bl"><div class="bl-h">'+(l.photo_url?'<img src="'+esc(l.photo_url)+'" alt="" loading="lazy">':'')+'<div class="t"><b>'+esc(l.title||'Untitled')+'</b><span class="pr">'+(l.price!=null?'$'+esc(l.price):'')+'</span><div class="bl-sum">'+sum+'</div></div></div><details class="bl-d" data-id="'+l.id+'"'+(open?' open':'')+'><summary>Shops ('+data.shops.length+')</summary><ul class="bl-s">'+rows+'</ul></details>'+(l.status!=='sold'?'<button class="b-pe" data-pe="'+l.id+'">Post everywhere →</button>':'')+'</article>';
     }).join('');
     [].forEach.call(list.querySelectorAll('details.bl-d'),function(d){d.addEventListener('toggle',function(){OPEN[d.getAttribute('data-id')]=d.open;});});
   }
   var CH=null;
-  var GROUPS=[['api_seller_key','Your own store — paste a key, posts for real','Works today with the key from your own store. No approval needed.'],['feed','Free product feed — paste once','Paste your feed URL into the service once; it pulls your listings on its own schedule.'],['api_oauth','Connected by sign-in','Real API; needs the site’s app keys.'],['partner','Real API, approval needed','We build these once the marketplace approves access.'],['guided','Copy & open only','No listing API for outside apps — automating them would break their rules.']];
+  // Measured on preview with the test seller (scripts: box fash-ship-qa/timing.js). Our side only; the marketplace's own form adds its time.
+  var MEASURED={poshmark:7,mercari:7,grailed:6,facebook:7,kidizen:7,curtsy:7};
+  var FEEDGUIDE={
+    google:['https://merchants.google.com/mc/products/sources','Products → Add product source → “Add products from a file”','Choose “Enter a link to your file”, paste your feed link','Set it to fetch daily → Continue'],
+    meta:['https://business.facebook.com/commerce/','Catalog → Data sources → Add items → Data feed','Choose “Scheduled feed”, paste your feed link','Pick daily → Upload'],
+    pinterest:['https://www.pinterest.com/business/catalogs/','Ads → Catalogs → Add data source','Paste your feed link, format XML, currency USD','Create pins → Done'],
+    tiktok_catalog:['https://ads.tiktok.com/i18n/catalog','Catalog → Add products → Data feed','Choose “Scheduled”, paste your feed link','Daily → Upload']
+  };
+  var GROUPS=[['store','Your own store — tap Connect, approve, done','Connect once; then “Post via API” puts each item in your store.'],['feedc','Google, Facebook & Instagram, Pinterest, TikTok — free reach','Connect once and we register your feed, or copy your link and follow 3 steps.'],['api_oauth','Marketplaces with sign-in','Real API; needs the site’s app keys.'],['partner','Real API, approval needed','We build these once the marketplace approves access.'],['guided','Copy & paste sites — use “Post everywhere”','No listing API for outside apps (automating them breaks their rules). “Post everywhere” walks you through each in a few taps.']];
+  function grp(c){ return c.mode==='api_seller_key'?'store':(c.mode==='feed'?'feedc':c.mode); }
+  function chRow(c){
+    var right='',body='';
+    if(c.mode==='api_seller_key'){
+      if(!c.built){ right='<span class="st">not built</span>'; body='<small>'+esc(c.why||'')+'</small>'; }
+      else if(c.connected){ right='<span class="st st-listed">connected</span><button class="chb" data-dc="'+c.id+'">Disconnect</button>'; body='<small>'+esc(c.connected.label||'')+'</small>'; }
+      else if(!CH.vault){ right='<span class="st">off — site key not set</span>'; }
+      else {
+        var one=c.oauth&&c.oauthReady;
+        if(one){ right='<button class="chb pri" data-oauth="'+c.id+'"'+(c.needsShop?' data-shop="1"':'')+'>Connect</button>'; body=(c.needsShop?'<input class="ch-shop" data-for="'+c.id+'" placeholder="Your '+esc(c.needsShop)+'" autocomplete="off" inputmode="url">':'')+'<small>'+(c.clicks||2)+' clicks: '+(c.needsShop?'enter your '+esc(c.needsShop)+', ':'')+'tap Connect, then Approve.</small>'; }
+        else { right='<button class="chb pri" data-open="'+c.id+'">Paste a key</button>'; body='<small>One-tap Connect is waiting on the site’s '+esc(c.name)+' app registration. Until then, paste a key ('+esc(c.keyHelp||'')+').</small>'; }
+        body+=(one?'<button class="chlink" data-open="'+c.id+'">Use a key instead</button>':'')+'<form data-ch="'+c.id+'" hidden>'+c.sellerFields.map(function(f){return '<input name="'+f+'" placeholder="'+f.replace(/_/g,' ')+'" autocomplete="off" '+(/secret|token|key/.test(f)?'type="password"':'')+'>';}).join('')+'<button class="chb pri" type="submit">Save &amp; connect</button></form>';
+      }
+    } else if(c.mode==='feed'){
+      if(c.connected){ right='<span class="st st-listed">feed registered</span><button class="chb" data-dc="'+c.id+'">Forget</button>'; body='<small>'+esc(c.connected.label||'')+' — it re-reads your listings daily.</small>'; }
+      else {
+        var g=FEEDGUIDE[c.id]; right=(c.oauth&&c.oauthReady&&CH.vault)?'<button class="chb pri" data-oauth="'+c.id+'">Connect</button>':'<button class="chb" data-guide="'+c.id+'">3 steps</button>';
+        body='<small>'+((c.oauth&&c.oauthReady)?'Tap Connect and Approve — we add your feed for you.':(c.oauth?'One-tap Connect is waiting on the site’s app registration. Meanwhile: copy your link, open, 3 steps.':'Copy your link, open, 3 steps.'))+'</small>';
+        if(g) body+='<div class="fg" data-g="'+c.id+'" hidden><button class="chb pri" data-copy="'+esc(CH.feed.xml)+'">1 · Copy feed link</button><a class="chb" href="'+g[0]+'" target="_blank" rel="noopener">2 · Open '+esc(c.name.split(' ')[0])+'</a><ol>'+g.slice(1).map(function(s){return '<li>'+esc(s)+'</li>';}).join('')+'</ol></div>';
+      }
+    } else if(c.mode==='api_oauth'){ right=c.platformReady?'<span class="st st-listed">ready</span>':'<span class="st">needs site keys</span>'; body='<small>'+esc(c.approval)+'</small>'; }
+    else if(c.mode==='partner'){ right='<span class="st">approval needed</span>'; body='<small>'+esc(c.approval)+'</small>'; }
+    else { right='<span class="st">copy &amp; paste</span>'+(MEASURED[c.id]?'<small class="ms">~'+MEASURED[c.id]+'s</small>':''); }
+    return '<div class="chi" id="chi-'+c.id+'"><div class="chi-r"><b>'+esc(c.name)+'</b>'+right+'</div>'+body+'</div>';
+  }
   function chRender(){
     var b=document.getElementById('ch-body'),sum=document.getElementById('ch-sum');
-    var live=CH.channels.filter(function(c){return c.connected;}).length, auto=CH.channels.filter(function(c){return c.built;}).length;
-    sum.textContent=auto+' channels can post or sync automatically · '+live+' connected';
+    var live=CH.channels.filter(function(c){return c.connected;}).length, one=CH.channels.filter(function(c){return c.oauth&&c.oauthReady;}).length;
+    sum.textContent=one+' one-tap connects ready · '+live+' connected';
     b.innerHTML=GROUPS.map(function(g){
-      var list=CH.channels.filter(function(c){return c.mode===g[0];}); if(!list.length) return '';
-      return '<div class="chg"><h3>'+g[1]+'</h3><p class="d">'+g[2]+'</p>'+list.map(function(c){
-        var right='',body='';
-        if(c.mode==='api_seller_key'){
-          if(!c.built) right='<span class="st">not built</span>', body='<small>'+esc(c.why||'')+'</small>';
-          else if(c.connected) right='<span class="st st-listed">connected</span><button class="chb" data-dc="'+c.id+'">Disconnect</button>', body='<small>'+esc(c.connected.label||'')+'</small>';
-          else if(!CH.vault) right='<span class="st">off — site key not set</span>';
-          else { right='<button class="chb pri" data-open="'+c.id+'">Connect</button>'; body='<form data-ch="'+c.id+'" hidden><small>'+esc(c.keyHelp||'')+'</small>'+c.sellerFields.map(function(f){return '<input name="'+f+'" placeholder="'+f.replace(/_/g,' ')+'" autocomplete="off" '+(/secret|token|key/.test(f)?'type="password"':'')+'>';}).join('')+'<button class="chb pri" type="submit">Save &amp; connect</button></form>'; }
-        } else if(c.mode==='feed'){
-          right='<span class="st st-listed">works now</span>'; body='<small>'+esc(c.api)+'</small>';
-        } else if(c.mode==='api_oauth'){
-          right=c.platformReady?'<span class="st st-listed">ready</span>':'<span class="st">needs site keys</span>'; body='<small>'+esc(c.approval)+'</small>';
-        } else if(c.mode==='partner'){ right='<span class="st">approval needed</span>'; body='<small>'+esc(c.approval)+'</small>'; }
-        else { right='<span class="st">copy &amp; open</span>'; }
-        return '<div class="chi"><div class="chi-r"><b>'+esc(c.name)+'</b>'+right+'</div>'+body+'</div>';
-      }).join('')+(g[0]==='feed'?'<div class="feed"><code>'+esc(CH.feed.xml)+'</code><button class="chb" data-copy="'+esc(CH.feed.xml)+'">Copy</button></div><div class="feed"><code>'+esc(CH.feed.csv)+'</code><button class="chb" data-copy="'+esc(CH.feed.csv)+'">Copy</button></div>':'')+'</div>';
+      var list=CH.channels.filter(function(c){return grp(c)===g[0];}); if(!list.length) return '';
+      return '<div class="chg"><h3>'+g[1]+'</h3><p class="d">'+g[2]+'</p>'+list.map(chRow).join('')+(g[0]==='feedc'?'<div class="feed"><code>'+esc(CH.feed.xml)+'</code><button class="chb" data-copy="'+esc(CH.feed.xml)+'">Copy</button></div>':'')+'</div>';
     }).join('');
+    checklist();
+  }
+  // ---- onboarding: “Connect your shops” (after the first listing) ----
+  function checklist(){
+    var el=document.getElementById('ob'); if(!el||!CH||!data||!data.listings.length) { if(el) el.hidden=true; return; }
+    try{ if(localStorage.getItem('fa_ob_done')==='1'){ el.hidden=true; return; } }catch(e){}
+    var stores=CH.channels.filter(function(c){return c.mode==='api_seller_key'&&c.built;}), feeds=CH.channels.filter(function(c){return c.mode==='feed';}), guided=CH.channels.filter(function(c){return c.mode==='guided';});
+    var ready=stores.concat(feeds).filter(function(c){return c.oauth&&c.oauthReady;}), waiting=stores.concat(feeds).filter(function(c){return c.oauth&&!c.oauthReady;});
+    var rows=stores.concat(feeds).map(function(c){
+      var how=c.connected?'<span class="st st-listed">done</span>':(c.oauth&&c.oauthReady?(c.clicks||2)+' clicks':(c.mode==='feed'?'copy + 3 steps':'paste a key'));
+      return '<li><span>'+esc(c.name)+'</span><span class="ob-h">'+how+'</span>'+(c.connected?'':'<a href="#chi-'+c.id+'" class="chb">Set up</a>')+'</li>';
+    }).join('');
+    var avg=0,n=0; for(var k in MEASURED){avg+=MEASURED[k];n++;}
+    el.hidden=false;
+    el.innerHTML='<div class="ob-h1"><b>Connect your shops</b><button class="chlink" id="ob-x">Hide</button></div><p class="ob-s">'+ready.length+' one-click connect'+(ready.length===1?'':'s')+' ready now · '+waiting.length+' waiting on the site’s app registration (paste a key or copy a link meanwhile) · '+guided.length+' copy-&amp;-paste sites via “Post everywhere”'+(n?' (~'+Math.round(avg/n)+'s each in our test, plus the site’s own form)':'')+'.</p><ul class="ob-l">'+rows+'</ul>';
+    document.getElementById('ob-x').onclick=function(){ try{localStorage.setItem('fa_ob_done','1');}catch(e){} el.hidden=true; };
   }
   function chLoad(){ fetch('/api/channels',{credentials:'include',headers:h}).then(function(r){return r.ok?r.json():null;}).then(function(j){ if(j&&j.ok){CH=j;chRender();} else { document.getElementById('ch').hidden=true; } }).catch(function(){}); }
+  function startOAuth(id,btn){
+    var inp=document.querySelector('.ch-shop[data-for="'+id+'"]'), shop=inp?inp.value.trim():'';
+    if(inp&&!shop){ inp.focus(); inp.placeholder='Enter it here first'; return; }
+    btn.disabled=true; btn.textContent='Opening…';
+    fetch('/api/oauth/'+id+'/start',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({shop:shop})}).then(function(r){return r.json();}).then(function(j){ if(j.ok&&j.url){ window.location.href=j.url; } else { alert('Could not start: '+(j.detail||j.error)); btn.disabled=false; btn.textContent='Connect'; } });
+  }
   document.getElementById('ch-body').addEventListener('click',function(e){
-    var t=e.target;
+    var t=e.target.closest('button'); if(!t) return;
     if(t.dataset.open){ var f=document.querySelector('form[data-ch="'+t.dataset.open+'"]'); if(f) f.hidden=!f.hidden; }
-    if(t.dataset.copy){ (navigator.clipboard?navigator.clipboard.writeText(t.dataset.copy):Promise.reject()).then(function(){t.textContent='Copied';}).catch(function(){prompt('Copy:',t.dataset.copy);}); }
+    if(t.dataset.guide){ var g=document.querySelector('.fg[data-g="'+t.dataset.guide+'"]'); if(g) g.hidden=!g.hidden; }
+    if(t.dataset.oauth){ startOAuth(t.dataset.oauth,t); }
+    if(t.dataset.copy){ (navigator.clipboard?navigator.clipboard.writeText(t.dataset.copy):Promise.reject()).then(function(){t.textContent='Copied ✓';}).catch(function(){prompt('Copy:',t.dataset.copy);}); }
     if(t.dataset.dc){ fetch('/api/channels/connect?channel='+encodeURIComponent(t.dataset.dc),{method:'DELETE',credentials:'include',headers:h}).then(function(){chLoad();load();}); }
   });
   document.getElementById('ch-body').addEventListener('submit',function(e){
     e.preventDefault(); var f=e.target, fields={}; [].forEach.call(f.elements,function(x){ if(x.name) fields[x.name]=x.value; });
     fetch('/api/channels/connect',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({channel:f.dataset.ch,fields:fields})}).then(function(r){return r.json();}).then(function(j){ if(!j.ok) alert('Could not connect: '+(j.detail||j.error)); chLoad(); load(); });
   });
+  (function(){ var q=new URLSearchParams(location.search); var m=document.getElementById('ch-flash'); if(!m) return;
+    if(q.get('connected')){ m.hidden=false; m.className='ch-flash ok'; m.textContent='Connected ✓ '+q.get('connected'); }
+    else if(q.get('connect_error')){ m.hidden=false; m.className='ch-flash err'; m.textContent='Didn’t connect — '+q.get('connect_error'); } })();
   chLoad();
+
+  // ---- “Post everywhere”: guided run-through for copy-&-paste sites ----
+  var EXT_SITES=['poshmark','mercari','depop','facebook','grailed','vinted','ebay','etsy'];
+  function EXT(){ return !!document.documentElement.dataset.faExt; }
+  if(tok) setTimeout(function(){ if(EXT()) window.postMessage({type:'FA_TOKEN',token:tok},location.origin); },500);
+  window.addEventListener('message',function(e){ if(e.source!==window||!e.data) return; if(e.data.type==='FA_PROGRESS'&&e.data.step==='listed') load(); if(e.data.type==='FA_ACK'&&!e.data.ok) alert('Extension: '+(e.data.error||'could not start')); });
+  function extPost(id,btn){ var l=data.listings.filter(function(x){return x.id===id;})[0];
+    var sites=EXT_SITES.filter(function(sid){ var st=(l.shops[sid]||{}).status; return st!=='listed'&&st!=='active'&&st!=='sold'; });
+    window.postMessage({type:'FA_POST',job:{item:{id:l.id,title:l.title,description:l.description||'',price:l.price,brand:l.brand||'',size:l.size||'',condition:l.condition||'',category:l.category||'',photos:photosOf(l).map(function(u){return new URL(u,location.href).href;})},sites:sites}},location.origin);
+    btn.textContent='Opening '+sites.length+' sites in your tabs…'; }
+  function extDelist(l){ if(!EXT()) return; var urls={}; EXT_SITES.forEach(function(sid){ var x=l.shops[sid]; if(x&&(x.status==='listed'||x.status==='active')&&x.url) urls[sid]=x.url; }); if(Object.keys(urls).length&&confirm('Also take it down on '+Object.keys(urls).length+' other site(s) via the extension?')) window.postMessage({type:'FA_DELIST',job:{urls:urls}},location.origin); }
+  var RUN=null, rd=document.getElementById('run'); document.body.appendChild(rd); // main has a transform (entrance anim) that would trap position:fixed
+  function crc32(u){ var c,t=crc32.t; if(!t){t=crc32.t=[];for(var n=0;n<256;n++){c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}} var x=-1; for(var i=0;i<u.length;i++) x=(x>>>8)^t[(x^u[i])&255]; return (x^-1)>>>0; }
+  function zip(files){ // store-only zip, no library
+    var parts=[],cd=[],off=0; function le(n,b){var a=[];for(var i=0;i<b;i++)a.push((n>>>(8*i))&255);return a;}
+    files.forEach(function(f){ var nm=new TextEncoder().encode(f.name), c=crc32(f.data), hd=[].concat([80,75,3,4],le(20,2),le(0,2),le(0,2),le(33<<16,4),le(c,4),le(f.data.length,4),le(f.data.length,4),le(nm.length,2),le(0,2));
+      parts.push(new Uint8Array(hd),nm,f.data); cd.push(new Uint8Array([].concat([80,75,1,2],le(20,2),le(20,2),le(0,2),le(0,2),le(33<<16,4),le(c,4),le(f.data.length,4),le(f.data.length,4),le(nm.length,2),le(0,2),le(0,2),le(0,2),le(0,2),le(0,4),le(off,4))),nm); off+=hd.length+nm.length+f.data.length; });
+    var cdl=cd.reduce(function(s,a){return s+a.length;},0); return new Blob(parts.concat(cd,[new Uint8Array([].concat([80,75,5,6],le(0,2),le(0,2),le(files.length,2),le(files.length,2),le(cdl,4),le(off,4),le(0,2)))]),{type:'application/zip'});
+  }
+  function photosOf(l){ var a=[]; if(Array.isArray(l.photos)) a=l.photos.slice(); if(l.photo_url&&a.indexOf(l.photo_url)<0) a.unshift(l.photo_url); return a.filter(Boolean).slice(0,10); }
+  function runStart(id){
+    var l=data.listings.filter(function(x){return x.id===id;})[0];
+    var sites=data.shops.filter(function(s){ var st=(l.shops[s.id]||{}).status; return ['thredup','therealreal','amazon','walmart','whatnot'].indexOf(s.id)<0&&s.id!=='fashionistas'&&s.mode!=='api_channel'&&!s.api_ready&&st!=='listed'&&st!=='active'&&st!=='sold'; });
+    RUN={l:l,sites:sites,i:0,t0:Date.now(),times:{},done:0}; runShow();
+  }
+  function runShow(){
+    if(!RUN) return; var l=RUN.l; if(window.scrollX) window.scrollTo(0,window.scrollY);
+    if(RUN.i>=RUN.sites.length){ var tot=Math.round((Date.now()-RUN.t0)/1000); rd.innerHTML='<div class="run-c"><h2>All done ✓</h2><p>'+RUN.done+' site'+(RUN.done===1?'':'s')+' marked listed in '+tot+'s.'+(RUN.fail?' '+RUN.fail+' didn’t save — check the board.':'')+'</p><button class="chb pri" id="run-x">Close</button></div>'; rd.hidden=false; document.getElementById('run-x').onclick=runClose; return; }
+    var s=RUN.sites[RUN.i]; RUN.ts=Date.now(); RUN.steps={};
+    rd.hidden=false; document.documentElement.classList.add('run-open');
+    rd.innerHTML='<div class="run-c" role="dialog" aria-label="Post everywhere"><div class="run-top"><span>'+(RUN.i+1)+' of '+RUN.sites.length+'</span><div class="run-bar"><i style="width:'+Math.round(100*RUN.i/RUN.sites.length)+'%"></i></div><span id="run-t">0s</span><button class="chlink" id="run-x" aria-label="Close">✕</button></div>'
+      +'<h2>'+esc(s.name)+'</h2><p class="run-it">'+esc(l.title||'')+(l.price!=null?' · $'+esc(l.price):'')+'</p>'
+      +'<div class="run-s"><button class="chb pri" data-rs="title">1 · Copy title</button><button class="chb pri" data-rs="desc">2 · Copy description + price</button><button class="chb pri" data-rs="photos">3 · Photos</button>'+(s.sell?'<button class="chb pri" data-rs="open">4 · Open '+esc(s.name)+' sell page</button>':'')+'</div>'
+      +'<div class="run-n"><button class="chb" data-rs="skip">Skip</button><button class="chb pri" data-rs="done">Done, next site →</button></div></div>';
+    clearInterval(RUN.tk); RUN.tk=setInterval(function(){ var e=document.getElementById('run-t'); if(e&&RUN) e.textContent=Math.round((Date.now()-RUN.ts)/1000)+'s'; },500);
+  }
+  function runClose(){ document.documentElement.classList.remove('run-open'); if(RUN) clearInterval(RUN.tk); RUN=null; rd.hidden=true; rd.innerHTML=''; load(); }
+  function cp(t,b){ return (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){ b.textContent='✓ '+b.textContent.replace(/^✓ /,''); b.classList.add('ok'); }).catch(function(){ prompt('Copy:',t); }); }
+  rd.addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b||!RUN) return; if(b.id==='run-x') return runClose();
+    var k=b.dataset.rs, l=RUN.l, s=RUN.sites[RUN.i]; if(!k) return;
+    if(k==='title') cp(String(l.title||''),b);
+    else if(k==='desc') cp([l.description||'', [l.brand,l.size,l.condition,l.color].filter(Boolean).join(' · '), l.price!=null?'Price: $'+l.price:''].filter(Boolean).join('\n\n'),b);
+    else if(k==='photos'){
+      var urls=photosOf(l); if(!urls.length){ b.textContent='No photos'; return; } b.textContent='Getting photos…';
+      Promise.all(urls.map(function(u,i){ return fetch(u).then(function(r){ if(!r.ok) throw 0; return r.blob(); }).then(function(bl){ return new File([bl],'photo-'+(i+1)+'.'+((bl.type.split('/')[1]||'jpg').replace('jpeg','jpg')),{type:bl.type||'image/jpeg'}); }); })).then(function(files){
+        if(navigator.canShare&&navigator.canShare({files:files})) return navigator.share({files:files}).then(function(){ b.textContent='✓ Photos shared'; b.classList.add('ok'); });
+        return Promise.all(files.map(function(f){return f.arrayBuffer().then(function(a){return {name:f.name,data:new Uint8Array(a)};});})).then(function(fs){ var a=document.createElement('a'); a.href=URL.createObjectURL(zip(fs)); a.download='item-'+l.id+'-photos.zip'; document.body.appendChild(a); a.click(); a.remove(); b.textContent='✓ Photos saved (zip)'; b.classList.add('ok'); });
+      }).catch(function(){ window.open(urls[0],'_blank','noopener'); b.textContent='Opened photo — save it'; });
+    }
+    else if(k==='open'){ window.open(s.sell,'_blank','noopener'); b.textContent='✓ Opened'; b.classList.add('ok'); fetch('/api/crosslist/status',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({listing_id:l.id,platform:s.id,status:'copied'})}); }
+    else if(k==='done'||k==='skip'){
+      var sec=Math.round((Date.now()-RUN.ts)/1000); RUN.times[s.id]=sec;
+      try{ var lg=JSON.parse(localStorage.getItem('fa_run_times')||'{}'); (lg[s.id]=lg[s.id]||[]).push(sec); localStorage.setItem('fa_run_times',JSON.stringify(lg)); }catch(_){}
+      var go=function(){ RUN.i++; runShow(); };
+      if(k==='done'){ RUN.done++; fetch('/api/crosslist/status',{method:'POST',credentials:'include',headers:h,body:JSON.stringify({listing_id:l.id,platform:s.id,status:'listed'})}).then(function(r){return r.json();}).then(function(j){ if(!j.ok) RUN&&(RUN.fail=(RUN.fail||0)+1); }).catch(function(){ if(RUN) RUN.fail=(RUN.fail||0)+1; }); } go();
+    }
+  });
   function load(){
     fetch('/api/crosslist/board',{credentials:'include',headers:h}).then(function(r){return r.json().then(function(j){return {r:r,j:j};});}).then(function(x){
       if(x.r.status===401){ msg.innerHTML='Sign in to see your board. <a href="/#view-auth">Sign in</a>'; return; }
       if(!x.j.ok){ msg.textContent="Couldn't load your board. Try again in a minute."; return; }
-      data=x.j; render();
+      data=x.j; render(); checklist();
     }).catch(function(){ msg.textContent="Couldn't load your board. Check your connection."; });
   }
   function setStatus(id,p,status,extra){
@@ -183,6 +301,7 @@
     return fetch('/api/crosslist/status',{method:'POST',credentials:'include',headers:h,body:JSON.stringify(b)}).then(function(r){return r.json();}).then(function(j){ if(!j.ok) alert("Couldn't save — try again."); load(); });
   }
   list.addEventListener('click',function(e){
+    var pe=e.target.closest('button[data-pe]'); if(pe){ var pid=Number(pe.dataset.pe); if(EXT()&&confirm('Use the fashionistas.ai Crosslister extension? It opens each site in your own logged-in tabs and fills the form for you to review. (Cancel = step-by-step copy mode.)')){ extPost(pid,pe); } else runStart(pid); return; }
     var b=e.target.closest('button[data-act]'); if(!b) return;
     var id=Number(b.getAttribute('data-id')), p=b.getAttribute('data-p'), act=b.getAttribute('data-act');
     var l=data.listings.filter(function(x){return x.id===id;})[0], s=data.shops.filter(function(x){return x.id===p;})[0];
@@ -199,7 +318,7 @@
       setStatus(id,p,'listed',{url:u});
     } else if(act==='sold'){
       var pr=prompt('Sold on '+s.name+' — sale price ($):',l.price!=null?String(l.price):''); if(pr===null) return;
-      setStatus(id,p,'sold',{price:Number(pr)||0});
+      setStatus(id,p,'sold',{price:Number(pr)||0}); extDelist(l);
     } else setStatus(id,p,act);
   });
   load();
