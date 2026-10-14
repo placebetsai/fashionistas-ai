@@ -43,6 +43,16 @@ function logo(id, size) {
   return '<span class="lg"' + s + ' style="background:' + m[2] + '" aria-hidden="true">' + (L[id] ? '<svg viewBox="0 0 24 24"><path d="' + L[id] + '"/></svg>' : esc(m[1].charAt(0))) + "</span>";
 }
 
+/* ---------- brand ---------- */
+var LOGO = '<svg class="fmark" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="fg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff4f8b"/><stop offset=".55" stop-color="#c2410c"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#fg)"/><g fill="#fff"><rect x="20" y="15" width="9" height="34" rx="2.5"/><rect x="20" y="15" width="25" height="9" rx="2.5"/><rect x="20" y="27.5" width="18" height="9" rx="2.5"/></g></svg>';
+var BRAND = '<a href="/" class="wordmark brand" data-link aria-label="fashionistas.ai home">' + LOGO + '<span>fashionistas<i>.ai</i></span></a>';
+var RMOTION = function () { return !!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches); };
+function countUp(root) { $$("[data-count]", root).forEach(function (el) { var to = Number(el.dataset.count) || 0, pre = el.dataset.pre || "", t0 = 0, D = 900; if (RMOTION() || !to) { el.textContent = pre + to; return; } function f(t) { if (!t0) t0 = t; var k = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - k, 3); el.textContent = pre + Math.round(to * e); if (k < 1) requestAnimationFrame(f); } requestAnimationFrame(f); }); }
+var IO = "IntersectionObserver" in window ? new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); IO.unobserve(e.target); } }); }, { rootMargin: "0px 0px -8% 0px" }) : null;
+function reveal(root) { $$(".rv:not(.in)", root).forEach(function (el) { if (IO) IO.observe(el); else el.classList.add("in"); }); }
+var LIKES = (function () { try { return JSON.parse(localStorage.getItem("fa_likes") || "{}"); } catch (e) { return {}; } })();
+var HEART = '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.2-8.6C1.3 8.4 3 5 6.4 5c2 0 3.3 1.1 4.1 2.3h3C14.3 6.1 15.6 5 17.6 5 21 5 22.7 8.4 21.2 11.4 19 15.6 12 20 12 20z"/></svg>';
+
 /* ---------- api ---------- */
 function api(path, opts) {
   opts = opts || {};
@@ -83,7 +93,7 @@ function sheet(title, body, foot, onClose) {
 function closeSheet(silent) { var s = $("#sheet"); if (!s.classList.contains("on")) return; s.classList.remove("on"); $("#scrim").classList.remove("on"); s.setAttribute("aria-hidden", "true"); if (!silent && s._onClose) s._onClose(); }
 function topbar(opts) {
   return '<header class="top"><div class="top-row">' + (opts.back ? '<button class="iconbtn" data-back aria-label="Back">' + I.back + "</button>" : "") +
-    (opts.wordmark ? '<a href="/" class="wordmark" data-link>fashionistas<i>.</i></a>' : '<h1>' + esc(opts.title || "") + "</h1>") + (opts.right || "") + "</div>" + (opts.below || "") + "</header>";
+    (opts.wordmark ? BRAND : '<h1>' + esc(opts.title || "") + "</h1>") + (opts.right || "") + "</div>" + (opts.below || "") + "</header>";
 }
 function emptyState(icon, h, p, cta) { return '<div class="empty">' + icon + "<h2>" + esc(h) + "</h2><p>" + esc(p) + "</p>" + (cta || "") + "</div>"; }
 function skelGrid(n) { var h = ""; for (var i = 0; i < (n || 6); i++) h += '<div><div class="sk" style="aspect-ratio:4/5"></div><div class="sk sk-line"></div><div class="sk sk-line" style="width:40%"></div></div>'; return '<div class="grid">' + h + "</div>"; }
@@ -106,12 +116,15 @@ function render() {
 }
 function tabs() {
   var p = location.pathname, cur = /^\/(sell)/.test(p) ? "sell" : /^\/(you|signin|u\/)/.test(p) && !/^\/u\//.test(p) ? "you" : /^\/you/.test(p) ? "you" : "shop";
-  $("#tabs").innerHTML = '<div class="tabs-in">' +
+  var T = $("#tabs"), idx = cur === "shop" ? 0 : cur === "sell" ? 1 : 2; T.style.setProperty("--ti", idx);
+  if (T.firstChild && !T.querySelector(".ind")) T.innerHTML = "";
+  T.innerHTML = '<span class="ind" aria-hidden="true"></span><div class="tabs-in">' +
     '<a href="/" data-link class="tab' + (cur === "shop" ? " on" : "") + '"' + (cur === "shop" ? ' aria-current="page"' : "") + ">" + I.shop + "Shop</a>" +
     '<a href="/sell" data-link class="tab' + (cur === "sell" ? " on" : "") + '"><span class="sellic">' + I.sell + "</span>Sell</a>" +
     '<a href="/you" data-link class="tab' + (cur === "you" ? " on" : "") + '">' + I.you + "You" + (UNREAD ? '<span class="dot" style="top:4px;right:calc(50% - 22px)">' + UNREAD + "</span>" : "") + "</a></div>";
 }
 document.addEventListener("click", function (e) {
+  var lk = e.target.closest(".like"); if (lk) { e.preventDefault(); e.stopPropagation(); tap(); var k = lk.dataset.like; if (LIKES[k]) delete LIKES[k]; else LIKES[k] = 1; lk.classList.toggle("on", !!LIKES[k]); lk.setAttribute("aria-pressed", !!LIKES[k]); lk.classList.remove("pulse"); void lk.offsetWidth; if (LIKES[k]) lk.classList.add("pulse"); try { localStorage.setItem("fa_likes", JSON.stringify(LIKES)); } catch (x) {} return; }
   var a = e.target.closest("a[data-link]");
   if (a && !e.metaKey && !e.ctrlKey && a.origin === location.origin) { e.preventDefault(); tap(); nav(a.getAttribute("href")); return; }
   if (e.target.closest("[data-back]")) { e.preventDefault(); if (history.length > 1 && document.referrer.indexOf(location.host) >= 0 || window.__navd) history.back(); else nav("/"); }
@@ -128,6 +141,11 @@ function loadMarket(force) {
   if (window.__FASH_MARKET__ && !force) { var b = window.__FASH_MARKET__; window.__FASH_MARKET__ = null; MARKET = (b.market || []); MARKET_AT = Date.now(); return Promise.resolve(MARKET); }
   return api("/api/market?limit=500").then(function (d) { MARKET = (d.market || []).filter(function (x) { return x.status !== "deleted"; }); MARKET_AT = Date.now(); return MARKET; });
 }
+/* Feed quality: the public feed only shows real fashion listings. Nothing is deleted —
+   test items, non-clothing and junk stay in the DB and on direct links, just not in the feed. */
+var JUNK = /(\be2e\b|\btest listing\b|delete me|\bcoffee\b|\bkeurig\b|\bmug\b|\bcup lid\b|\blid\b|\bappliance|\bmaker\b|\btoaster\b|\bblender\b|\bcharger\b)/i;
+function feedOK(x) { if (!x || x.status === "deleted" || x.status === "draft") return false; if (JUNK.test(String(x.title || "") + " " + String(x.description || ""))) return false; var d = String(x.category || "").split("/")[0]; if (!d) return false; var deps = (window.FASH_CAT && FASH_CAT.departments) || []; if (deps.length && deps.indexOf(d) < 0) return false; if (d === "Home" || d === "Art") return false; return !!x.photo_url; }
+function feed(list) { return (list || []).filter(feedOK); }
 var CONDS = ["New with tags", "Excellent", "Good", "Fair"];
 var CONDLBL = { "New with tags": "New with tags", "Excellent": "Like new", "Good": "Good", "Fair": "Fair" };
 var SORTS = [["newest", "Newest"], ["price_asc", "Price: low to high"], ["price_desc", "Price: high to low"], ["az", "A–Z"], ["popular", "Most popular"]];
@@ -167,7 +185,7 @@ function apply(list, F, cat) {
 function nActive(F) { return F.brand.length + F.size.length + F.color.length + F.cond.length + F.dept.length + (F.min || F.max ? 1 : 0); }
 function cardHTML(x, i) {
   var b = brandOf(x);
-  return '<a class="card" href="/shop/' + x.id + '" data-link style="animation-delay:' + Math.min(i, 12) * 30 + 'ms"><div class="ph">' + (x.photo_url ? '<img data-fade src="' + esc(x.photo_url) + '" alt="' + esc(x.title) + '" loading="' + (i < 4 ? "eager" : "lazy") + '" decoding="async">' : "") + (x.status === "reserved" ? '<span class="badge">Reserved</span>' : "") + '</div><div class="meta"><div class="pr">' + money(x.price) + "</div>" + (b ? '<div class="br">' + esc(b) + "</div>" : "") + '<div class="tl">' + esc(x.title) + "</div>" + (x.size ? '<div class="sz">' + esc(x.size) + (x.condition ? " · " + esc(CONDLBL[x.condition] || x.condition) : "") + "</div>" : "") + "</div></a>";
+  return '<a class="card" href="/shop/' + x.id + '" data-link style="animation-delay:' + Math.min(i || 0, 12) * 45 + 'ms"><div class="ph">' + '<button type="button" class="like' + (LIKES[x.id] ? ' on' : '') + '" data-like="' + x.id + '" aria-label="Save ' + esc(x.title) + '" aria-pressed="' + !!LIKES[x.id] + '">' + HEART + '</button>' + (x.photo_url ? '<img data-fade src="' + esc(x.photo_url) + '" alt="' + esc(x.title) + '" loading="' + (i < 4 ? "eager" : "lazy") + '" decoding="async">' : "") + (x.status === "reserved" ? '<span class="badge">Reserved</span>' : "") + '</div><div class="meta"><div class="pr">' + money(x.price) + "</div>" + (b ? '<div class="br">' + esc(b) + "</div>" : "") + '<div class="tl">' + esc(x.title) + "</div>" + (x.size ? '<div class="sz">' + esc(x.size) + (x.condition ? " · " + esc(CONDLBL[x.condition] || x.condition) : "") + "</div>" : "") + "</div></a>";
 }
 function shopView(catSlug) {
   var F = readF(), base = location.pathname, cat = "";
@@ -175,12 +193,13 @@ function shopView(catSlug) {
   if (cm && window.FASH_CAT) { var dep = (FASH_CAT.departments || []).find(function (d) { return slug(d) === cm[1]; }); if (dep) { cat = dep; if (cm[2]) { var hit = (FASH_CAT.categories || []).find(function (c) { return c.dept === dep && slug(c.sub) === cm[2]; }); if (hit) cat = hit.path; } } }
   if (bm && !F.q) F.q = window.__FASH_Q__ || decodeURIComponent(bm[1]).replace(/-/g, " ");
   setMeta(cat ? catLabel(cat) + (cat.indexOf("/") > 0 ? " — " + cat.split("/")[0] : "") : (F.q ? F.q : ""), "Shop secondhand fashion from real sellers on fashionistas.ai.");
-  var n = nActive(F);
-  app.innerHTML = '<div class="view">' + topbar({ wordmark: !F.q && !cat, title: cat ? catLabel(cat) : "", back: !!cat, right: "",
+  var n = nActive(F), isHome = !F.q && !cat && !n && F.sort === "newest" && /^\/(shop)?$/.test(location.pathname);
+  app.innerHTML = '<div class="view' + (isHome ? " home" : "") + '">' + topbar({ wordmark: !F.q && !cat, title: cat ? catLabel(cat) : "", back: !!cat, right: "",
     below: '<form class="top-row" id="sf" role="search" style="margin-top:4px"><label class="search"><span class="sr">Search</span>' + I.search + '<input id="q" type="search" enterkeyhint="search" placeholder="Search brands, items, styles" value="' + esc(F.q) + '" autocomplete="off">' + (F.q ? '<button type="button" class="clr" id="qx" aria-label="Clear search">×</button>' : "") + "</label></form>" }) +
-    '<div class="chips" id="fchips"><button class="chip' + (n ? " on" : "") + '" id="fopen">' + I.filter + "Filter" + (n ? " · " + n : "") + '</button><button class="chip" id="sopen">' + I.sort + esc((SORTS.find(function (s) { return s[0] === F.sort; }) || SORTS[0])[1]) + "</button>" + quickChips(F) + "</div>" +
+    (isHome ? homeTop() + '<div class="sec-h" id="drops" style="padding-top:8px"><h2>Fresh drops</h2></div>' : "") + '<div class="chips" id="fchips"><button class="chip' + (n ? " on" : "") + '" id="fopen">' + I.filter + "Filter" + (n ? " · " + n : "") + '</button><button class="chip" id="sopen">' + I.sort + esc((SORTS.find(function (s) { return s[0] === F.sort; }) || SORTS[0])[1]) + "</button>" + quickChips(F) + "</div>" +
     '<div class="bar"><span id="count">&nbsp;</span>' + (n || F.q ? '<button class="linkbtn" id="clearall">Clear all</button>' : "") + "</div>" +
-    '<div id="feed">' + skelGrid(6) + "</div>" + footer() + "</div>";
+    '<div id="feed">' + skelGrid(6) + "</div>" + (isHome ? '<div id="homeb"></div>' : "") + footer() + "</div>";
+  if (isHome) { reveal(app); var sn = $("#shopnow"); if (sn) sn.onclick = function (e) { e.preventDefault(); var d = $("#drops"); if (d) d.scrollIntoView({ behavior: RMOTION() ? "auto" : "smooth" }); }; }
   var go = function (F2) { nav(writeF(F2, base), true); };
   $("#sf").onsubmit = function (e) { e.preventDefault(); var v = $("#q").value.trim(); $("#q").blur(); F.q = v; go(F); };
   if ($("#qx")) $("#qx").onclick = function () { F.q = ""; go(F); };
@@ -188,22 +207,43 @@ function shopView(catSlug) {
   $("#sopen").onclick = function () { sortSheet(F, go); };
   if ($("#clearall")) $("#clearall").onclick = function () { go({ q: "", sort: F.sort, brand: [], size: [], color: [], cond: [], dept: [], min: "", max: "" }); };
   $$("[data-qc]").forEach(function (b) { b.onclick = function () { tap(); var k = b.dataset.qc, v = b.dataset.v, a = F[k], i = a.indexOf(v); if (i >= 0) a.splice(i, 1); else a.push(v); go(F); }; });
-  loadMarket().then(function (list) {
-    var r = apply(list, F, cat), feed = $("#feed"); if (!feed) return;
+  loadMarket().then(function (all) {
+    var list = feed(all), r = apply(list, F, cat), feed_ = $("#feed"), feedEl = feed_; if (!feedEl) return; var feed2 = feedEl;
     $("#count").textContent = r.length + (r.length === 1 ? " item" : " items");
     if (!r.length) {
-      feed.innerHTML = list.length ? emptyState(I.search, "No matches", F.q ? "Nothing for “" + F.q + "” with these filters. Try fewer filters or another word." : "Nothing matches these filters yet.", '<button class="btn sec" id="reset">Clear filters</button>') : emptyState(I.hanger, "Nothing for sale yet", "Be the first — list something in under a minute.", '<a class="btn" href="/sell" data-link>Sell an item</a>');
+      feed2.innerHTML = list.length ? emptyState(I.search, "No matches", F.q ? "Nothing for “" + F.q + "” with these filters. Try fewer filters or another word." : "Nothing matches these filters yet.", '<button class="btn sec" id="reset">Clear filters</button>') : emptyState(I.hanger, "Nothing for sale yet", "Be the first — list something in under a minute.", '<a class="btn" href="/sell" data-link>Sell an item</a>');
       if ($("#reset")) $("#reset").onclick = function () { nav(base, true); };
+      if (isHome && $("#homeb")) { $("#homeb").innerHTML = homeBottom(all); reveal($("#homeb")); }
       return;
     }
     var h = "";
     r.forEach(function (x, i) { h += cardHTML(x, i); });
-    feed.innerHTML = '<div class="grid">' + h + "</div>" + (r.length >= 6 ? '<div class="ad"><div class="ad-label">Advertisement</div><div data-ad-slot="inContent"></div></div>' : "");
-    imgLoaded(feed); mountAds();
+    feed2.innerHTML = '<div class="grid">' + h + "</div>" + (r.length >= 6 ? '<div class="ad"><div class="ad-label">Advertisement</div><div data-ad-slot="inContent"></div></div>' : "");
+    imgLoaded(feed2); reveal(feed2); mountAds();
+    if (isHome && $("#homeb")) { $("#homeb").innerHTML = homeBottom(all); reveal($("#homeb")); }
   }).catch(function () {
-    var feed = $("#feed"); if (feed) feed.innerHTML = emptyState(I.alert, "Couldn't load the shop", "Check your connection and try again.", '<button class="btn" id="retry">Try again</button>');
+    var fe = $("#feed"); if (fe) fe.innerHTML = emptyState(I.alert, "Couldn't load the shop", "Check your connection and try again.", '<button class="btn" id="retry">Try again</button>');
     if ($("#retry")) $("#retry").onclick = function () { MARKET = null; render(); };
   });
+}
+
+/* ================= HOME (editorial layer) ================= */
+var CATS = [["Women", "/shop/c/women", "women"], ["Men", "/shop/c/men", "men"], ["Shoes", "/?q=shoes", "shoes"], ["Bags", "/shop/c/women/bags-and-handbags", "bags"], ["Vintage", "/?q=vintage", "vintage"], ["Streetwear", "/?q=streetwear", "streetwear"], ["Designer", "/?q=designer", "designer"]];
+var BRANDS = ["Levi's", "Nike", "Zara", "Versace", "Adidas", "Coach", "Ralph Lauren", "Carhartt", "Free People", "Gucci"];
+function pic(name, alt, cls, eager, sizes) { return '<picture class="' + (cls || "") + '"><source type="image/avif" srcset="/assets/ed/' + name + '.avif"><img src="/assets/ed/' + name + '.webp" alt="' + esc(alt || "") + '" ' + (eager ? 'fetchpriority="high"' : 'loading="lazy"') + ' decoding="async"></picture>'; }
+function homeTop() {
+  return '<section class="hero" aria-label="fashionistas.ai">' + pic("hero", "Model in an olive utility jacket", "hero-img", true) + '<div class="hero-shade"></div>' +
+    '<div class="hero-copy"><p class="kick"><span class="pulse-dot"></span>Secondhand fashion · free to buy & sell</p><h1 class="kinetic"><span class="k-line">Thrift it.</span><span class="k-line">Style it.</span><span class="k-line k-rot"><span class="k-w">Sell it.</span><span class="k-w">Try it on.</span><span class="k-w">Love it.</span></span></h1>' +
+    '<div class="hero-cta"><a class="btn hero-btn" href="#drops" id="shopnow">Shop drops</a><a class="btn glass" href="/sell" data-link>Sell in 30s</a></div></div><div class="hero-scroll" aria-hidden="true"><i></i></div></section>' +
+    '<section class="sec rv"><div class="sec-h"><h2>Shop by category</h2></div><div class="cats">' + CATS.map(function (c, i) { return '<a class="cat" href="' + c[1] + '" data-link style="--d:' + i * 60 + 'ms">' + pic(c[2], c[0]) + '<span class="cat-shade"></span><b>' + c[0] + '</b><span class="cat-go" aria-hidden="true">' + I.chev + "</span></a>"; }).join("") + "</div></section>";
+}
+function homeBottom(list) {
+  var real = uniq(feed(list).map(brandOf)), br = uniq(real.concat(BRANDS)).slice(0, 12);
+  var mks = MK.filter(function (m) { return EXT_SITES.indexOf(m[0]) >= 0; });
+  return '<section class="sec rv"><a class="feat feat-try" href="/try-on/">' + pic("tryon", "Woman posing in a black outfit") + '<span class="feat-shade"></span><span class="scan" aria-hidden="true"></span><span class="spark s1" aria-hidden="true"></span><span class="spark s2" aria-hidden="true"></span><span class="feat-copy"><small>Virtual try-on · free</small><b>See it on you<br>before you buy.</b><span class="pillbtn">Try it on ' + I.chev + "</span></span></a></section>" +
+    '<section class="sec rv"><div class="sec-h"><h2>Shop by brand</h2></div><div class="brands">' + br.map(function (b, i) { return '<a class="brandchip" href="/shop/b/' + slug(b) + '" data-link style="--d:' + i * 40 + 'ms"><span>' + esc(b.charAt(0)) + "</span>" + esc(b) + "</a>"; }).join("") + "</div></section>" +
+    '<section class="sec rv"><a class="feat feat-sell" href="/sell" data-link>' + pic("sell", "Clothes on a rack") + '<span class="feat-shade"></span><span class="feat-copy"><small>For sellers</small><b>Sell in 30 seconds.</b><span class="steps3"><i><em>1</em>Snap</i><i><em>2</em>AI drafts</i><i><em>3</em>Post everywhere</i></span><span class="pillbtn">Start selling ' + I.chev + "</span></span></a></section>" +
+    '<section class="sec rv"><div class="sec-h"><h2>One listing. Every marketplace.</h2></div><div class="marq" aria-label="Marketplaces you can crosspost to"><div class="marq-in">' + mks.concat(mks).map(function (m, i) { return '<span class="mq"' + (i >= mks.length ? ' aria-hidden="true"' : "") + ">" + logo(m[0]) + esc(m[1]) + "</span>"; }).join("") + '</div></div><p class="sub" style="padding:0 16px;margin:8px 0 0;font-size:13px">With our free Chrome extension, using the accounts you\'re already signed into.</p></section>';
 }
 function quickChips(F) {
   var h = "";
@@ -213,7 +253,7 @@ function quickChips(F) {
 }
 function uniq(a) { var o = {}, r = []; a.forEach(function (v) { if (v && !o[v]) { o[v] = 1; r.push(v); } }); return r; }
 function filterSheet(F0, cat, go) {
-  var F = JSON.parse(JSON.stringify(F0)), list = MARKET || [];
+  var F = JSON.parse(JSON.stringify(F0)), list = feed(MARKET || []);
   var live = list.filter(function (x) { return !cat || String(x.category || "").indexOf(cat) === 0; });
   var brands = uniq(live.map(brandOf)).sort(), sizes = uniq(live.map(function (x) { return String(x.size || ""); })).sort(), colors = uniq(live.map(function (x) { return colorKey(x.color); })), depts = uniq(live.map(function (x) { return String(x.category || "").split("/")[0]; }));
   function grp(k, title, vals, lab) {
@@ -243,7 +283,7 @@ function sortSheet(F, go) {
   $$("[data-s]", s).forEach(function (b) { b.onclick = function () { tap(); F.sort = b.dataset.s; closeSheet(true); go(F); }; });
 }
 function footer() {
-  return '<footer class="foot"><nav><a href="/about/">About</a><a href="/blog/">Style guide</a><a href="/price-guide/">Price guide</a><a href="/try-on/">Virtual try-on</a><a href="/seller/get-extension/">Crosslister</a><a href="/contact/">Contact</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></nav>© ' + new Date().getFullYear() + " fashionistas.ai · Free to buy and sell. Supported by ads and affiliate links.</footer>";
+  return '<footer class="foot"><nav><a href="/about/">About</a><a href="/blog/">Style guide</a><a href="/price-guide/">Price guide</a><a href="/try-on/">Virtual try-on</a><a href="/seller/get-extension/">Crosslister</a><a href="/contact/">Contact</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="/credits/">Image credits</a></nav>© ' + new Date().getFullYear() + " fashionistas.ai · Free to buy and sell. Supported by ads and affiliate links.</footer>";
 }
 route(/^\/$/, function () { shopView(""); });
 route(/^\/shop$/, function () { shopView(""); });
@@ -265,7 +305,7 @@ function itemView(id) {
     setMeta(x.title + " — " + money(x.price), (b ? b + " " : "") + x.title + ", size " + (x.size || "n/a") + ". " + money(x.price) + " on fashionistas.ai.");
     var sold = x.status === "sold";
     app.innerHTML = '<div class="view"><div class="gal-wrap"><div class="gal" id="gal">' + (ph.length ? ph.map(function (u, i) { return '<img src="' + esc(u) + '" alt="' + esc(x.title) + (i ? " photo " + (i + 1) : "") + '"' + (i ? ' loading="lazy"' : "") + ">"; }).join("") : '<div style="aspect-ratio:4/5;width:100%"></div>') + "</div>" +
-      (ph.length > 1 ? '<div class="gal-dots">' + ph.map(function (_, i) { return "<i" + (i ? "" : ' class="on"') + "></i>"; }).join("") + "</div>" : "") +
+      (ph.length > 1 ? '<div class="gal-dots">' + ph.map(function (_, i) { return "<i" + (i ? "" : ' class="on"') + "></i>"; }).join("") + '</div><span class="gal-n">1/' + ph.length + "</span>" : "") +
       '<div class="floatbar"><button class="iconbtn" data-back aria-label="Back">' + I.back + '</button><button class="iconbtn" id="share" aria-label="Share">' + I.share + "</button></div></div>" +
       '<div class="item">' + (b ? '<div class="br">' + esc(b) + "</div>" : "") + "<h1>" + esc(x.title) + '</h1><div class="price">' + money(x.price) + "</div>" +
       (x.status === "reserved" ? '<p class="pill" style="margin-top:8px">Reserved</p>' : sold ? '<p class="pill sold" style="margin-top:8px">Sold</p>' : "") +
@@ -276,7 +316,14 @@ function itemView(id) {
       (!mine && !sold ? '<a class="outlink" id="tryon" href="/try-on/?id=' + x.id + "&item=" + encodeURIComponent(x.photo_url || "") + "&title=" + encodeURIComponent(x.title || "") + '">' + '<span class="lg" style="background:var(--bg2);color:var(--ink)">' + I.wand.replace("<svg", '<svg style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8"') + "</span><span>Try it on<small>See it on your own photo · free</small></span><span class=\"chev\">" + I.chev + "</span></a>" : "") +
       '<div class="ad"><div class="ad-label">Advertisement</div><div data-ad-slot="bottom"></div></div><div id="more"></div><div style="height:72px"></div></div>' +
       '<div class="buybar"><div class="buybar-in">' + (mine ? '<a class="btn sec" href="/you/item/' + x.id + '" data-link>Manage listing</a>' : sold ? '<a class="btn sec" href="/" data-link>Shop similar</a>' : '<button class="btn sec" id="msg">' + I.chat + 'Message</button><button class="btn" id="buy"' + (x.status === "reserved" ? " disabled" : "") + ">" + (x.status === "reserved" ? "Reserved" : "Buy now") + "</button>") + "</div></div></div>";
-    var g = $("#gal"); if (g && ph.length > 1) g.addEventListener("scroll", function () { var i = Math.round(g.scrollLeft / g.clientWidth); $$(".gal-dots i").forEach(function (d, j) { d.classList.toggle("on", i === j); }); }, { passive: true });
+    if (ph.length < 2) fetch("/api/listing-photos/" + x.id).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      var more = ((d && d.photos) || []).filter(function (u) { return ph.indexOf(u) < 0; }); if (!more.length || !$("#gal")) return; ph = ph.concat(more).slice(0, 10);
+      $("#gal").innerHTML = ph.map(function (u, i) { return '<img src="' + esc(u) + '" alt="' + esc(x.title) + (i ? " photo " + (i + 1) : "") + '"' + (i ? ' loading="lazy"' : "") + ">"; }).join("");
+      $(".gal-wrap").insertAdjacentHTML("beforeend", '<div class="gal-dots">' + ph.map(function (_, i) { return "<i" + (i ? "" : ' class="on"') + "></i>"; }).join("") + '</div><span class="gal-n">1/' + ph.length + "</span>"); wireGal();
+    }).catch(function () {});
+    function wireGal() { var g = $("#gal"); if (!g || ph.length < 2) return; g.addEventListener("scroll", function () { var i = Math.round(g.scrollLeft / g.clientWidth); $$(".gal-dots i").forEach(function (d, j) { d.classList.toggle("on", i === j); }); var n = $(".gal-n"); if (n) n.textContent = (i + 1) + "/" + ph.length; }, { passive: true }); }
+    var g = $("#gal"); if (false && g && ph.length > 1) g.addEventListener("scroll", function () { var i = Math.round(g.scrollLeft / g.clientWidth); $$(".gal-dots i").forEach(function (d, j) { d.classList.toggle("on", i === j); }); }, { passive: true });
+    wireGal();
     $("#share").onclick = function () { var u = location.origin + "/shop/" + x.id; if (navigator.share) navigator.share({ title: x.title, url: u }).catch(function () {}); else { Promise.resolve(navigator.clipboard && navigator.clipboard.writeText(u)).then(function () { toast("Link copied"); }, function () { toast(u, 4000); }); } };
     if ($("#msg")) $("#msg").onclick = function () { tap(); needAuth("message " + sname, function () { nav("/you/messages/" + s.id + "?item=" + x.id); }); };
     if ($("#buy")) $("#buy").onclick = function () { tap(); buySheet(x); };
@@ -284,7 +331,7 @@ function itemView(id) {
       var L = (d && d.links) || [], o = $("#out"); if (!o || !L.length || mine) return;
       o.innerHTML = L.map(function (l) { var m = MKBY[l.platform] || [l.platform, l.platform]; return '<a class="outlink" href="' + esc(l.url) + '" target="_blank" rel="noopener sponsored nofollow">' + logo(l.platform) + "<span>Also on " + esc(m[1]) + "<small>Buy it there instead</small></span><span class=\"chev\">" + I.out + "</span></a>"; }).join("");
     }).catch(function () {});
-    var more = (MARKET || []).filter(function (y) { return y.id !== x.id && (y.status === "active") && ((y.seller || {}).id === s.id || String(y.category).split("/")[0] === String(x.category).split("/")[0]); }).slice(0, 4);
+    var more = feed(MARKET || []).filter(function (y) { return y.id !== x.id && (y.status === "active") && ((y.seller || {}).id === s.id || String(y.category).split("/")[0] === String(x.category).split("/")[0]); }).slice(0, 4);
     if (more.length) $("#more").innerHTML = '<h3 style="font-size:16px;margin:24px 0 12px">You might also like</h3><div class="grid" style="padding:0;margin:0 -8px;padding:0 8px">' + more.map(cardHTML).join("") + "</div>";
     imgLoaded(app); mountAds();
   });
@@ -310,7 +357,7 @@ route(/^\/u\/([^/]+)$/, function (name) {
   name = decodeURIComponent(name);
   app.innerHTML = topbar({ back: true, title: name }) + skelGrid(4);
   loadMarket().then(function (list) {
-    var mine = list.filter(function (x) { var s = x.seller || {}; return s.username === name || String(s.id) === name; });
+    var mine = feed(list).filter(function (x) { var s = x.seller || {}; return s.username === name || String(s.id) === name; });
     var s = (mine[0] && mine[0].seller) || { username: name }, sname = s.display_name || s.username;
     setMeta(sname + "'s shop", "Shop " + sname + " on fashionistas.ai.");
     app.innerHTML = '<div class="view">' + topbar({ back: true, title: sname }) + '<div class="prof"><span class="av">' + esc(String(sname).charAt(0)) + "</span><div><h2>" + esc(sname) + "</h2><small>" + mine.length + " item" + (mine.length === 1 ? "" : "s") + " for sale</small></div></div>" +
@@ -397,7 +444,7 @@ function stepsBar(n) { return '<div class="steps" aria-label="Step ' + n + ' of 
 function sellPhotos() {
   var S = loadSell(), n = S.photos.length;
   setMeta("Sell", "List an item in seconds.");
-  var drop = '<div class="drop"><div class="big">' + I.cam + '</div><h2>Add photos</h2><p>Snap the front first — it becomes your cover. Add the label, back and any flaws.</p><div class="row"><button class="btn" data-pick="cam">' + I.cam + 'Camera</button><button class="btn ghost" data-pick="gal">' + I.img + "Gallery</button></div></div>";
+  var drop = '<div class="drop sell-intro"><div class="cam-art" aria-hidden="true"><span class="ring r1"></span><span class="ring r2"></span><div class="big">' + I.cam + '</div><span class="flash"></span></div><h2>Sell it in 30 seconds</h2><p>Snap the front first — it becomes your cover. Add the label, back and any flaws.</p><ol class="isteps"><li style="--d:0ms"><em>1</em><span><b>Snap</b>Up to 10 photos</span></li><li style="--d:140ms"><em>2</em><span><b>AI drafts it</b>Title, category, price</span></li><li style="--d:280ms"><em>3</em><span><b>Post everywhere</b>Live here instantly</span></li></ol><div class="row"><button class="btn" data-pick="cam">' + I.cam + 'Camera</button><button class="btn ghost" data-pick="gal">' + I.img + "Gallery</button></div></div>";
   var grid = '<div class="shots" id="shots">' + S.photos.map(function (p, i) { return '<div class="shot" draggable="true" data-i="' + i + '"><img src="' + p.src + '" alt="Photo ' + (i + 1) + '">' + (i ? "" : '<span class="cov">COVER</span>') + '<button class="rm" data-rm="' + i + '" aria-label="Remove photo ' + (i + 1) + '">×</button><span class="mv">' + (i ? '<button data-mv="' + i + '" data-d="-1" aria-label="Move earlier">‹</button>' : "") + (i < n - 1 ? '<button data-mv="' + i + '" data-d="1" aria-label="Move later">›</button>' : "") + "</span></div>"; }).join("") +
     (n < 10 ? '<button class="addtile" data-pick="cam">' + I.cam + 'Camera</button><button class="addtile" data-pick="gal">' + I.img + "Gallery</button>" : "") + "</div>";
   app.innerHTML = '<div class="view">' + topbar({ title: "Sell an item", right: n ? '<button class="linkbtn" id="startover" style="padding:0 8px">Start over</button>' : "" }) + stepsBar(1) + '<div class="pad">' + (n ? '<p class="sub" style="margin-bottom:16px">' + n + " of 10 photos · drag or use ‹ › to reorder</p>" + grid + aiLine(S) : drop) + "</div>" +
@@ -569,7 +616,7 @@ function loadMine(force) {
 function postedView(id) {
   if (!TOKEN) return nav("/signin?next=/you", true);
   setMeta("Posted");
-  app.innerHTML = '<div class="view">' + topbar({ title: "" }) + stepsBar(3) + '<div class="success"><div class="chk">' + I.check + '</div><h2 class="lead" style="margin:0 0 4px">You\'re live</h2><p class="sub" style="margin:0">Buyers on fashionistas.ai can see it now.</p></div><div id="pc"></div><div class="sect"><h3>Post to your other shops</h3><div id="shops"><div class="sk" style="height:200px"></div></div></div><div class="sect" style="margin-top:24px"><div class="prow"><a class="btn sec" style="flex:1" href="/sell" data-link>Sell another</a><a class="btn ghost" style="flex:1" href="/you" data-link>Done</a></div></div></div>';
+  app.innerHTML = '<div class="view">' + topbar({ title: "" }) + stepsBar(3) + '<div class="success"><div class="confetti" aria-hidden="true">' + new Array(18).join("<i></i>") + '<i></i></div><div class="chk"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M15 27l7 7 15-16"/></svg></div><h2 class="lead" style="margin:0 0 4px">You\'re live</h2><p class="sub" style="margin:0">Buyers on fashionistas.ai can see it now.</p></div><div id="pc"></div><div class="sect"><h3>Post to your other shops</h3><div id="shops"><div class="sk" style="height:200px"></div></div></div><div class="sect" style="margin-top:24px"><div class="prow"><a class="btn sec" style="flex:1" href="/sell" data-link>Sell another</a><a class="btn ghost" style="flex:1" href="/you" data-link>Done</a></div></div></div>';
   Promise.all([loadMine(true), loadPref()]).then(function (r) {
     var l = r[0].find(function (x) { return Number(x.id) === Number(id); }); CUR = l || null;
     if (l) $("#pc").innerHTML = '<a class="card-row" href="/shop/' + l.id + '" data-link><img src="' + esc(l.photo_url) + '" alt=""><div style="flex:1;min-width:0"><b>' + esc(l.title) + "</b><small>" + money(l.price) + " · View listing</small></div>" + I.chev + "</a>";
@@ -598,7 +645,7 @@ function youView() {
   loadMine(true).then(function (L) {
     var act = L.filter(function (l) { return l.status === "active" || l.status === "reserved"; }), sold = L.filter(function (l) { return l.status === "sold"; });
     var earned = sold.reduce(function (a, l) { return a + (Number(l.price) || 0); }, 0);
-    $("#stats").innerHTML = '<div class="stat"><b>' + act.length + '</b><small>For sale</small></div><div class="stat"><b>' + sold.length + '</b><small>Sold</small></div><div class="stat"><b>' + money(earned) + "</b><small>Sold value</small></div>";
+    $("#stats").innerHTML = '<div class="stat g1"><b data-count="' + act.length + '">' + act.length + '</b><small>For sale</small></div><div class="stat g2"><b data-count="' + sold.length + '">' + sold.length + '</b><small>Sold</small></div><div class="stat g3"><b' + (earned % 1 ? "" : ' data-pre="$" data-count="' + earned + '"') + ">" + money(earned) + "</b><small>Sold value</small></div>"; countUp($("#stats"));
     var rows = tab === "sold" ? sold : tab === "all" ? L : act;
     $("#ml").innerHTML = rows.length ? rows.map(function (l) { return '<a class="lrow" href="/you/item/' + l.id + '" data-link>' + (l.photo_url ? '<img src="' + esc(l.photo_url) + '" alt="" loading="lazy">' : '<span class="noimg"></span>') + '<div class="nm"><b>' + esc(l.title) + '</b><span class="p">' + money(l.price) + '</span><div class="pills">' + statusPills(l) + "</div></div>" + I.chev + "</a>"; }).join("")
       : emptyState(I.hanger, tab === "sold" ? "No sales yet" : "Nothing listed yet", tab === "sold" ? "When something sells, mark it sold and it shows up here." : "Snap a photo — it takes under a minute.", tab === "sold" ? "" : '<a class="btn" href="/sell" data-link>Sell an item</a>');
@@ -614,7 +661,7 @@ function manageView(id) {
     setMeta(l.title);
     var sold = l.status === "sold";
     app.innerHTML = '<div class="view">' + topbar({ back: true, title: "Listing" }) + '<a class="card-row" style="margin-top:8px" href="/shop/' + l.id + '" data-link><img src="' + esc(l.photo_url) + '" alt=""><div style="flex:1;min-width:0"><b>' + esc(l.title) + "</b><small>" + money(l.price) + " · " + (sold ? "Sold" : "View in shop") + "</small></div>" + I.chev + "</a>" +
-      '<div class="sect"><div class="prow">' + (sold ? '<button class="btn sec" style="flex:1" id="relist">Mark available</button>' : '<button class="btn" style="flex:1" id="msold">Mark sold</button>') + '<button class="btn ghost" style="flex:1" id="del">Delete</button></div></div>' +
+      '<div class="sect"><div class="prow">' + (sold ? '<button class="btn sec" style="flex:1" id="relist">Mark available</button>' : '<button class="btn" style="flex:1" id="msold">Mark sold</button>') + '<button class="btn ghost" style="flex:1" id="del">Delete</button></div><a class="btn sec full" style="margin-top:8px" id="edit" href="/you/item/' + l.id + '/edit" data-link>Edit listing</a></div>' +
       '<div class="sect"><h3>Where it\'s listed</h3><div class="mk">' + logo("fashionistas") + '<div class="nm"><b>fashionistas.ai</b><small class="' + (sold ? "" : "st-ok") + '">' + (sold ? "Sold" : "Live") + "</small></div></div>" + (sold ? "" : '<div id="shops"></div>') + "</div></div>";
     if (!sold) { drawShops(); extCheck(); }
     if ($("#msold")) $("#msold").onclick = function () { soldSheet(l); };
@@ -639,6 +686,37 @@ function soldSheet(l) {
   };
 }
 route(/^\/you\/item\/(\d+)$/, manageView);
+function editView(id) {
+  if (!TOKEN) return nav("/signin?next=" + encodeURIComponent(location.pathname), true);
+  app.innerHTML = topbar({ back: true, title: "Edit listing" }) + '<div class="sk" style="height:320px;margin:16px"></div>';
+  loadMine(true).then(function (L) {
+    var l = L.find(function (x) { return Number(x.id) === Number(id); });
+    if (!l) { app.innerHTML = topbar({ back: true, title: "Edit listing" }) + emptyState(I.hanger, "Listing not found", "It may have been deleted.", '<a class="btn" href="/you" data-link>Your listings</a>'); return; }
+    setMeta("Edit " + l.title); var cond = l.condition;
+    app.innerHTML = '<div class="view">' + topbar({ back: true, title: "Edit listing" }) + '<div class="pad">' + (l.photo_url ? '<div class="revhead"><img src="' + esc(l.photo_url) + '" alt=""></div>' : "") +
+      '<label class="field"><span>Title</span><input class="in" id="e-title" maxlength="80" value="' + esc(l.title) + '"></label>' +
+      '<label class="field"><span>Price</span><span class="pre" style="display:block"><b>$</b><input class="in" id="e-price" inputmode="decimal" value="' + esc(l.price) + '"></span></label>' +
+      '<label class="field"><span>Category</span><select class="in select" id="e-cat">' + catOptions(l.category) + "</select></label>" +
+      '<div class="field"><span>Condition</span><div class="wrap" id="e-cond">' + CONDS.map(function (c) { return '<button type="button" class="chip' + (cond === c ? " on" : "") + '" data-ec="' + esc(c) + '">' + esc(CONDLBL[c]) + "</button>"; }).join("") + "</div></div>" +
+      '<label class="field"><span>Size</span><input class="in" id="e-size" value="' + esc(l.size || "") + '"></label>' +
+      '<label class="field"><span>Brand <em>optional</em></span><input class="in" id="e-brand" value="' + esc(l.brand || "") + '"></label>' +
+      '<label class="field"><span>Color <em>optional</em></span><input class="in" id="e-color" value="' + esc(l.color || "") + '"></label>' +
+      '<label class="field"><span>Description</span><textarea class="in" id="e-desc" maxlength="2000">' + esc(l.description || "") + "</textarea></label>" +
+      '<div style="height:80px"></div></div><div class="footcta"><div class="footcta-in"><button class="btn" id="esave">Save changes</button></div></div></div>';
+    $$("[data-ec]").forEach(function (b) { b.onclick = function () { tap(); cond = b.dataset.ec; $$("[data-ec]").forEach(function (o) { o.classList.toggle("on", o === b); }); }; });
+    $("#e-price").oninput = function (e) { e.target.value = e.target.value.replace(/[^0-9.]/g, ""); };
+    $("#esave").onclick = function () {
+      var b = this, t = $("#e-title").value.trim(), pr = Number($("#e-price").value);
+      if (t.length < 3) return toast("Add a title (3+ characters)"); if (!(pr > 0)) return toast("Add a price");
+      b.disabled = true; b.innerHTML = '<span class="spin"></span> Saving…';
+      var body = { title: t, price: pr, category: $("#e-cat").value || l.category, condition: cond, size: $("#e-size").value.trim(), brand: $("#e-brand").value.trim(), color: $("#e-color").value.trim(), description: $("#e-desc").value.trim() };
+      api("/api/listings/" + l.id, { method: "PUT", body: JSON.stringify(body) }).then(function () { MARKET = null; MINE = null; toast("Saved ✓"); nav("/you/item/" + l.id, true); })
+        .catch(function (e) { b.disabled = false; b.textContent = "Save changes"; toast(e.message || "Couldn't save"); });
+    };
+  }).catch(function () { app.innerHTML = topbar({ back: true, title: "Edit listing" }) + emptyState(I.alert, "Couldn't load", "Check your connection and try again.", '<button class="btn" onclick="location.reload()">Try again</button>'); });
+}
+route(/^\/you\/item\/(\d+)\/edit$/, editView);
+
 route(/^\/you\/shops$/, function () {
   if (!TOKEN) return nav("/signin?next=/you/shops", true);
   CUR = null; setMeta("Connected shops");
