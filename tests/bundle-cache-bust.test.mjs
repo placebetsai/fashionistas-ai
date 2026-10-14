@@ -23,7 +23,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const html = readFileSync(join(ROOT, "index.html"), "utf8");
+const html = readFileSync(join(ROOT, "classic.html"), "utf8");
 const headers = readFileSync(join(ROOT, "_headers"), "utf8");
 
 const refs = [...html.matchAll(/<script src="\/(assets\/app\.[0-9a-f]+\.js)" defer><\/script>/g)].map((m) => m[1]);

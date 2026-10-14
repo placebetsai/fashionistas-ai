@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 export function indexSource(root) {
-  const html = readFileSync(join(root, "index.html"), "utf8");
+  const html = readFileSync(join(root, "classic.html"), "utf8");
   return html.replace(/<script src="\/(assets\/app\.[0-9a-f]+\.js)" defer><\/script>/g,
     (_, p) => "<script>" + readFileSync(join(root, p), "utf8") + "</script>");
 }

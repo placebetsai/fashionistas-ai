@@ -62,7 +62,9 @@ const rel = (abs) => abs.slice(ROOT.length + 1);
 /** A page counts as instrumented if it references the library or a mount. */
 const isInstrumented = (html) => /adsbygoogle|data-ad-slot/.test(html);
 
-const PAGES = ALL_HTML.filter((f) => isInstrumented(readAbs(f))).map((f) => ({ name: rel(f), html: readAbs(f) }));
+// v2 shell: index.html mounts its ad placements from app/app.js at render time.
+const withApp = (f) => rel(f) === "index.html" ? readAbs(f) + readFileSync(join(ROOT, "app/app.js"), "utf8").replace(/<div data-ad-slot="([A-Za-z0-9_-]+)"><\/div>/g, '<div data-ad-slot="$1"></div>') : readAbs(f);
+const PAGES = ALL_HTML.filter((f) => isInstrumented(readAbs(f))).map((f) => ({ name: rel(f), html: withApp(f) }));
 
 /** Real mount points only — not the prose mentions of the attribute in comments. */
 const MOUNT_RE = /<div data-ad-slot="([A-Za-z0-9_-]+)"\s*><\/div>/g;

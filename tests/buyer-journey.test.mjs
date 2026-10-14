@@ -34,7 +34,7 @@ import { indexSource } from "./helpers/index-source.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = indexSource(ROOT);
-const html = readFileSync(join(ROOT, "index.html"), "utf8");
+const html = readFileSync(join(ROOT, "classic.html"), "utf8");
 const wizard = readFileSync(join(ROOT, "listing-wizard.js"), "utf8");
 const coach = readFileSync(join(ROOT, "seller-coach.js"), "utf8");
 const coachLib = readFileSync(join(ROOT, "libs", "seller-coach.js"), "utf8");

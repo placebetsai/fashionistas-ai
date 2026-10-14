@@ -21,7 +21,7 @@ import { dirname, join } from "node:path";
 import { inferPlacementMode, placementCtas, PLACEMENT_MODES } from "../see-in-space/placement-mode.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const html = readFileSync(join(ROOT, "index.html"), "utf8");
+const html = readFileSync(join(ROOT, "classic.html"), "utf8");
 const bundlePath = html.match(/<script src="\/(assets\/app\.[0-9a-f]+\.js)" defer><\/script>/)[1];
 const bundle = readFileSync(join(ROOT, bundlePath), "utf8");
 const room = readFileSync(join(ROOT, "see-in-space/index.html"), "utf8");

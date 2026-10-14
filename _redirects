@@ -1,3 +1,11 @@
+# ── v2 app (rebuild): client-side routes served by the one app shell ─────────
+/sell            /  200
+/sell/*          /  200
+/you             /  200
+/you/*           /  200
+/u/*             /  200
+/signin          /  200
+
 # ── Existing product redirects (static rules — these DO work) ────────────────
 # Static rules are listed first, as Cloudflare requires (see "Per file" in the
 # redirects docs: static before dynamic).

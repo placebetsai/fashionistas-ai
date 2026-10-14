@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const root = new URL("..", import.meta.url);
-const index = readFileSync(new URL("index.html", root), "utf8");
+const index = readFileSync(new URL("classic.html", root), "utf8");
 const srcMatch = index.match(/src="\/assets\/(app\.[a-f0-9]+\.js)"/);
 assert.ok(srcMatch, "index.html must point at a hashed app bundle");
 const app = readFileSync(new URL("assets/" + srcMatch[1], root), "utf8");

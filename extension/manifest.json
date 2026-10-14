@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "fashionistas.ai Crosslister",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Crosslist your fashionistas.ai listings to 14 marketplaces from your own logged-in browser. Detects which shops you're signed in to; never asks for passwords or API keys.",
   "icons": {
     "128": "icon128.png"
@@ -43,8 +43,8 @@
   "content_scripts": [
     {
       "matches": [
-        "https://fashionistas.ai/seller/*",
-        "https://*.fashionistas-ai.pages.dev/seller/*"
+        "https://fashionistas.ai/*",
+        "https://*.fashionistas-ai.pages.dev/*"
       ],
       "js": [
         "bridge.js"

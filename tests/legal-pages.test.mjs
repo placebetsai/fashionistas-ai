@@ -65,7 +65,7 @@ test("terms and privacy link each other, and the footer links both", async () =>
   const privacy = await page("privacy/index.html");
   assert.match(terms, /href="\/privacy\/"/, "terms must link the privacy policy");
   assert.match(privacy, /href="\/terms\/"/, "privacy must link the terms");
-  const home = await page("index.html");
+  const home = await page("classic.html");
   assert.match(home, /href="\/terms\/"/, "the home footer must link the terms");
 });
 

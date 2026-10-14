@@ -150,7 +150,7 @@ test("description falls back to facts when the listing has no blurb", () => {
 });
 
 test("a guest who arrived from a link can sign in from inside the app", () => {
-  const html = readFileSync(join(ROOT, "index.html"), "utf8");
+  const html = readFileSync(join(ROOT, "classic.html"), "utf8");
   assert.match(html, /id="signin-btn" onclick="showAuth\('login'\)"/, "topbar door");
   assert.match(html, /id="drawer-signin" onclick="navDrawer\(false\);showAuth\('login'\)"/, "drawer door");
   // chrome flips both ways: hidden when signed in, visible for guests
@@ -175,7 +175,7 @@ test("every item tile is a real link — crawlable href, SPA intercept", () => {
     "photo-search hits link too"
   );
   assert.doesNotMatch(src, /<button[^>]*onclick="openMarketItem\(/, "an onclick button gives crawlers no href to follow");
-  const html = readFileSync(join(ROOT, "index.html"), "utf8");
+  const html = readFileSync(join(ROOT, "classic.html"), "utf8");
   assert.match(html, /\.ps-hit\{[^}]*text-decoration:none/, "anchors must not render underlined");
 });
 
@@ -193,7 +193,7 @@ test("the sitemap lists live items as /shop/<id>", () => {
  * it must be the thing for sale.
  */
 test("an item page has exactly one <h1>, and it is the item", () => {
-  const shell = readFileSync(join(ROOT, "index.html"), "utf8");
+  const shell = readFileSync(join(ROOT, "classic.html"), "utf8");
   const hero = (shell.match(/<h1 class="rd-h1">[\s\S]*?<\/h1>/) || [])[0];
   assert.ok(hero, "the shell ships the hero heading this fix is about");
 
