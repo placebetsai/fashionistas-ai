@@ -33,7 +33,7 @@
 .ux-item-title{font-family:var(--display);font-weight:400;font-size:24px!important;line-height:1.15!important;letter-spacing:-.01em!important}
 .ux-facts div{background:var(--soft);border-color:transparent;border-radius:14px}
 .ux-try .btn-accent{background:var(--ink)!important;color:var(--bg)!important;box-shadow:none}
-.ux-buybar{background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);margin:0;padding:12px 0}
+ .ux-buybar{position:sticky!important;left:auto!important;right:auto!important;width:auto!important;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);margin:0;padding:12px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
 .ux-also{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
 .ux-also .ux-item-note{width:100%;margin:0}
 .ux-also .btn{border-radius:var(--r-pill)}
