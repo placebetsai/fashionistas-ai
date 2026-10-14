@@ -14,6 +14,7 @@
  */
 import { itemHead, injectHead, itemBody, shopBody, injectBody } from "../_lib/item-meta.js";
 import { filterMarketBody, isHidden } from "../_lib/hidden-listings.js";
+import { fromSlug, inCategory, liveCategories, catUrl } from "../_lib/category-pages.js";
 import { shopScreen, itemScreen, prerenderInto, thumbPreload, TILE_SIZES, ITEM_SIZES } from "../_lib/prerender.js";
 
 async function marketBody() {
@@ -86,6 +87,38 @@ export async function onRequestGet(context) {
       ),
       { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" } }
     );
+  }
+
+  if (/^c\//.test(idStr)) {
+    const c = fromSlug(idStr.slice(2));
+    const mb = c ? await marketBody() : null;
+    const all = (mb && mb.market) || [];
+    const items = c ? all.filter((m) => inCategory(m, c)) : [];
+    if (c && items.length) {
+      const label = c.sub ? `${c.dept}'s ${c.sub}` : `${c.dept}'s fashion`;
+      const nice = c.dept === "Home" || c.dept === "Art" ? (c.sub ? `${c.sub}` : c.dept) : label;
+      const canon = origin + catUrl(c.dept, c.sub);
+      const subs = liveCategories(all).filter((x) => x.dept === c.dept && x.sub && x.sub !== c.sub);
+      const esc = (v) => String(v).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
+      const seo = `<style>html.h-app body .ssr-seo{display:none}</style><section class="ssr-seo" style="max-width:1080px;margin:24px auto;padding:0 18px;color:var(--ink,#111)"><h1>Secondhand ${esc(nice)} for sale</h1><p>${items.length} ${items.length === 1 ? "item" : "items"} listed by real sellers on fashionistas.ai. Try clothing on with your own photo before you buy.</p><ul>${items.map((m) => `<li><a href="/shop/${Number(m.id)}">${esc(m.title || "Item")}${m.price ? " · $" + Number(m.price) : ""}</a></li>`).join("")}</ul>${subs.length ? `<p>More: ${subs.map((x) => `<a href="${x.url}">${esc(x.sub)}</a>`).join(" · ")}</p>` : ""}</section>`;
+      const ld = { "@context": "https://schema.org", "@type": "CollectionPage", name: `Secondhand ${nice}`, url: canon,
+        mainEntity: { "@type": "ItemList", numberOfItems: items.length, itemListElement: items.slice(0, 24).map((m, i) => ({ "@type": "ListItem", position: i + 1, url: `${origin}/shop/${Number(m.id)}` })) } };
+      const catPath = c.sub ? `${c.dept}/${c.sub}` : c.dept;
+      return new Response(
+        injectHead(
+          injectBody(prerenderInto(demoteShellH1(body), nice, shopScreen(items)), seo),
+          `<title>Secondhand ${esc(nice)} — fashionistas.ai</title>` +
+            `<meta name="description" content="Shop ${items.length} secondhand ${esc(nice.toLowerCase())} listed by real sellers. Try it on with your photo first.">` +
+            `<link rel="canonical" href="${canon}">` +
+            `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>` +
+            `<script>window.__FASH_CAT__=${JSON.stringify(catPath)}</script>` + embedMarket(mb)
+        ),
+        { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=300" } }
+      );
+    }
+    return new Response(injectHead(body, `<title>Nothing here yet — fashionistas.ai</title>`, { noindex: true }), {
+      status: 404, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" },
+    });
   }
 
   if (!/^\d+$/.test(idStr)) {

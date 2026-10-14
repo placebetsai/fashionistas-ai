@@ -42,16 +42,17 @@ function tile(m, i) {
   return `<div class="ux-tile" style="--gi:${i}"><a class="ux-tile-open" href="/shop/${Number(m.id)}"><span class="ux-tile-img">${img}</span>` +
     `<span class="ux-tile-p">${money(m.price)}</span><span class="ux-tile-t">${e(m.title || "Untitled")}</span>` +
     (sub ? `<span class="ux-tile-s">${e(sub)}</span>` : "") + `</a>` +
-    (m.photo_url && /^(women|men|kids)/i.test(String(m.category || "")) && !/bag|purse|jewel|shoe|sneaker|boot|accessor|watch/i.test(String(m.category || "") + " " + String(m.title || "")) ? `<a class="ux-tile-try" href="/try-on/?item=${encodeURIComponent(m.photo_url)}&title=${encodeURIComponent(String(m.title || "").slice(0, 80))}" aria-label="Try it on: ${e(m.title || "this item")}">Try it on</a>` : "") + `</div>`;
+    (m.photo_url && /^(women|men|kids)/i.test(String(m.category || "")) && !/bag|purse|jewel|shoe|sneaker|boot|accessor|watch/i.test(String(m.category || "") + " " + String(m.title || "")) ? `<a class="ux-tile-try" href="/try-on/?id=${Number(m.id)}&item=${encodeURIComponent(m.photo_url)}&title=${encodeURIComponent(String(m.title || "").slice(0, 80))}" aria-label="Try it on: ${e(m.title || "this item")}">Try it on</a>` : "") + `</div>`;
 }
 export function shopScreen(market) {
-  const rows = (market || []).filter((m) => !isJunk(m)).sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
+  const all = (market || []).filter((m) => !isJunk(m)).sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
+  const rows = all.slice(0, 24); // first page; the app adds "Show more"
   const chip = (l, on) => `<button type="button" class="chip${on ? " on" : ""}" aria-pressed="${on}">${e(l)}</button>`;
   const other = rows.some((m) => !DEPTS.includes(String(m.category || "").split("/")[0]));
   return `<div class="closet-tools ux-search"><input class="input" id="ssr-q" placeholder="Search brand, size, or item" aria-label="Search brand, size, or item" style="margin:0">` +
     `<select class="input" aria-label="Sort" style="margin:0"><option>Newest</option></select></div>` +
     `<div id="market-nav"><div class="chips" id="market-subs" aria-label="Find">${chip("All", true)}${DEPTS.map((d) => chip(d, false)).join("")}${other ? chip("Other", false) : ""}</div></div>` +
-    `<p class="mut" id="market-count" style="margin:2px 0 8px">${rows.length ? rows.length + (rows.length === 1 ? " item" : " items") : ""}</p>` +
+    `<p class="mut" id="market-count" style="margin:2px 0 8px">${all.length ? all.length + (all.length === 1 ? " item" : " items") : ""}</p>` +
     `<div class="grid" id="market-grid" data-ssr="${rows.map((m) => Number(m.id)).join(",")}">${rows.map(tile).join("")}</div>`;
 }
 export function itemScreen(m) {

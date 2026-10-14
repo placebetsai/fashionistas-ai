@@ -954,13 +954,13 @@ async function renderShop(el){
   el.innerHTML = `<div class="closet-tools ux-search">`
   + `<input class="input" id="market-search" placeholder="Search brand, size, or item" value="${escapeAttr(S.marketQ||"")}" oninput="marketQ(this.value)" aria-label="Search brand, size, or item" style="margin:0">`
   + `<select class="input" id="market-sort" onchange="marketSort(this.value)" data-tip="Change the order of the items you see." style="margin:0">`
-  + `<option value="new"${S.marketSort==="new"?" selected":""}>Newest</option>`
-  + `<option value="price-lo"${S.marketSort==="price-lo"?" selected":""}>Price low to high</option>`
-  + `<option value="price-hi"${S.marketSort==="price-hi"?" selected":""}>Price high to low</option>`
+  + marketSortOptions()
   + `</select></div>`
   + `<div id="market-nav">${marketNavHtml()}</div>`
+  + `<div id="market-filters">${marketFiltersHtml()}</div>`
   + `<p class="mut" id="market-count" style="margin:2px 0 8px"></p>`
   + `<div class="grid" id="market-grid"></div>`
+  + `<div id="market-more"></div>`
   + photoSearchCard()
   + affCard();
   refreshTips();
@@ -972,9 +972,7 @@ function shopToolsHtml(){
   return `<div class="closet-tools ux-search">`
   + `<input class="input" id="market-search" placeholder="Search brand, size, or item" value="${escapeAttr(S.marketQ||"")}" oninput="marketQ(this.value)" aria-label="Search brand, size, or item" style="margin:0">`
   + `<select class="input" id="market-sort" onchange="marketSort(this.value)" data-tip="Change the order of the items you see." style="margin:0">`
-  + `<option value="new"${S.marketSort==="new"?" selected":""}>Newest</option>`
-  + `<option value="price-lo"${S.marketSort==="price-lo"?" selected":""}>Price low to high</option>`
-  + `<option value="price-hi"${S.marketSort==="price-hi"?" selected":""}>Price high to low</option>`
+  + marketSortOptions()
   + `</select></div>`;
 }
 function hydrateShop(el, grid){
@@ -986,7 +984,9 @@ function hydrateShop(el, grid){
   if (focused){ const q = document.getElementById("market-search"); if (q){ q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }
   const nav = document.getElementById("market-nav");
   if (nav) nav.innerHTML = marketNavHtml();
-  const ids = marketRows().map(m => Number(m.id)).join(",");
+  if (nav && !document.getElementById("market-filters")) nav.insertAdjacentHTML("afterend", `<div id="market-filters">${marketFiltersHtml()}</div>`);
+  if (!document.getElementById("market-more")) grid.insertAdjacentHTML("afterend", `<div id="market-more"></div>`);
+  const ids = marketRows().slice(0, MARKET_PAGE).map(m => Number(m.id)).join(",");
   if (ids === grid.getAttribute("data-ssr")){
     grid.querySelectorAll("a.ux-tile-open").forEach(a => {
       const id = Number((a.getAttribute("href")||"").split("/").pop());
@@ -1026,8 +1026,95 @@ function marketNavHtml(){
   }
   return h;
 }
-function marketQ(v){ S.marketQ = v || ""; marketRefresh(); }
-function marketSort(v){ S.marketSort = v || "new"; marketRefresh(); }
+function marketQ(v){ S.marketQ = v || ""; S.marketPage = 1; marketRefresh(); }
+function marketSort(v){ S.marketSort = v || "new"; S.marketPage = 1; if (v === "popular") loadPopular(); marketRefresh(); }
+/* ---- Search, filters, sorts, pagination (2026-10-14) ---- */
+const MARKET_PAGE = 24;
+S.mf = S.mf || { size:"", color:"", cond:"", price:"", saved:false }; S.marketPage = S.marketPage || 1;
+function marketSortOptions(){
+  return [["new","Newest"],["popular","Popular"],["az","A–Z"],["za","Z–A"],["price-lo","Price low to high"],["price-hi","Price high to low"]]
+    .map(o => `<option value="${o[0]}"${S.marketSort===o[0]?" selected":""}>${o[1]}</option>`).join("");
+}
+function mfClean(v){ v = String(v||"").trim(); return (v && !/^(n\/?a|none|not visible|unknown|-)$/i.test(v)) ? v : ""; }
+function mfValues(key){
+  const seen = new Map();
+  for (const m of shopPublicRows(S.market || [])){ const v = mfClean(m[key]); if (v && !seen.has(v.toLowerCase())) seen.set(v.toLowerCase(), v); }
+  return [...seen.values()].sort((a,b)=>a.localeCompare(b));
+}
+function mfSelect(id, label, key, vals){
+  if (!vals.length) return "";
+  return `<select class="input mf-sel" aria-label="${label}" onchange="marketFilter('${key}', this.value)">`
+    + `<option value="">${label}</option>`
+    + vals.map(v => `<option value="${escapeAttr(v)}"${String(S.mf[key]).toLowerCase()===v.toLowerCase()?" selected":""}>${escapeHtml(v)}</option>`).join("")
+    + `</select>`;
+}
+function marketFiltersHtml(){
+  const prices = [["25","Under $25"],["50","Under $50"],["100","Under $100"],["250","Under $250"]];
+  const nSaved = savedIds().length;
+  return `<div class="mf-row">`
+    + mfSelect("mf-size","Size","size",mfValues("size"))
+    + mfSelect("mf-color","Colour","color",mfValues("color"))
+    + mfSelect("mf-cond","Condition","cond",mfValues("condition"))
+    + `<select class="input mf-sel" aria-label="Price" onchange="marketFilter('price', this.value)"><option value="">Price</option>${prices.map(p=>`<option value="${p[0]}"${S.mf.price===p[0]?" selected":""}>${p[1]}</option>`).join("")}</select>`
+    + (nSaved ? `<button type="button" class="chip${S.mf.saved?" on":""}" aria-pressed="${S.mf.saved?"true":"false"}" onclick="marketFilter('saved', !S.mf.saved)">Saved (${nSaved})</button>` : "")
+    + `</div>`;
+}
+function marketFilter(key, v){ S.mf[key] = v; S.marketPage = 1; const f = document.getElementById("market-filters"); if (f) f.innerHTML = marketFiltersHtml(); marketRefresh(); }
+function marketMore(){ S.marketPage = (S.marketPage || 1) + 1; marketRefresh(true); }
+function loadPopular(){
+  if (S.pop) return;
+  S.pop = {};
+  fetch("/api/stats/popular").then(r => r.json()).then(j => { S.pop = (j && j.popular) || {}; if (S.marketSort === "popular") marketRefresh(); }).catch(()=>{});
+}
+function savedIds(){ try { return JSON.parse(localStorage.getItem("fash_saved") || "[]").map(Number); } catch(e){ return []; } }
+function toggleSave(id, btn){
+  id = Number(id); let ids = savedIds(); const on = !ids.includes(id);
+  ids = on ? [id].concat(ids).slice(0, 200) : ids.filter(x => x !== id);
+  try { localStorage.setItem("fash_saved", JSON.stringify(ids)); } catch(e){}
+  if (on) fashTrack(id, "save");
+  if (btn){ btn.setAttribute("aria-pressed", on ? "true" : "false"); btn.textContent = on ? "♥ Saved" : "♡ Save"; }
+}
+function fashTrack(id, kind, mkt){
+  try {
+    if (kind === "view"){ const k = "fv" + id; if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, "1"); }
+    const body = JSON.stringify({ listing_id: Number(id), kind, mkt: mkt || "" });
+    if (navigator.sendBeacon) navigator.sendBeacon("/api/events", new Blob([body], { type: "text/plain" }));
+    else fetch("/api/events", { method:"POST", body, keepalive:true }).catch(()=>{});
+  } catch(e){}
+}
+function mktFromHost(h){
+  h = String(h||"").toLowerCase();
+  for (const m of ["ebay","etsy","depop","poshmark","mercari","vinted","grailed","facebook","whatnot","shopify"]) if (h.indexOf(m) !== -1) return m;
+  return "other";
+}
+/* Outbound clicks and buy taps on an item page are counted (real taps only). */
+document.addEventListener("click", function(e){
+  const item = e.target.closest && e.target.closest(".ux-item"); if (!item || !CURRENT.market) return;
+  const id = CURRENT.market.id;
+  const a = e.target.closest("a[href]");
+  if (a && /^https?:/i.test(a.href) && a.host !== location.host) return fashTrack(id, "click", mktFromHost(a.host));
+  const b = e.target.closest("button"); const oc = b ? (b.getAttribute("onclick") || "") : "";
+  if (/buy/i.test(oc) || /^\s*buy/i.test(b ? b.textContent : "")) fashTrack(id, "click", "fashionistas");
+  else if (/share/i.test(oc)) fashTrack(id, "share");
+}, true);
+function marketUrlSync(){
+  if (!/^\/shop\/?$/.test(location.pathname)) return;
+  const p = new URLSearchParams();
+  if ((S.marketQ||"").trim()) p.set("q", S.marketQ.trim());
+  if (S.marketSort && S.marketSort !== "new") p.set("sort", S.marketSort);
+  if (S.marketCat) p.set("cat", S.marketCat);
+  const qs = p.toString();
+  try { history.replaceState(history.state, "", "/shop/" + (qs ? "?" + qs : "")); } catch(e){}
+}
+(function(){
+  if (window.__FASH_CAT__) S.marketCat = window.__FASH_CAT__;
+  if (!/^\/shop\/?$/.test(location.pathname)) return;
+  const p = new URLSearchParams(location.search);
+  if (p.get("q")) S.marketQ = p.get("q");
+  if (p.get("sort")) S.marketSort = p.get("sort");
+  if (p.get("cat")) S.marketCat = p.get("cat");
+  if (S.marketSort === "popular") loadPopular();
+})();
 function marketPick(path){
   /* Normalise through taxPath so "Women's Clothing/Tops & Shirts" (and any
      stray legacy spelling) land on one canonical value. Tapping the step you
@@ -1064,18 +1151,31 @@ function marketRows(){
     ].filter(Boolean).join(" ").toLowerCase().includes(q));
   if (S.marketCat === "__other__") rows = rows.filter(m => !taxPath(m.category));
   else if (S.marketCat) rows = rows.filter(m => taxMatches(m.category, S.marketCat));
+  const eq = (a, b) => mfClean(a).toLowerCase() === String(b).toLowerCase();
+  if (S.mf.size) rows = rows.filter(m => eq(m.size, S.mf.size));
+  if (S.mf.color) rows = rows.filter(m => eq(m.color, S.mf.color));
+  if (S.mf.cond) rows = rows.filter(m => eq(m.condition, S.mf.cond));
+  if (S.mf.price) rows = rows.filter(m => Number(m.price) > 0 && Number(m.price) < Number(S.mf.price));
+  if (S.mf.saved){ const sv = savedIds(); rows = rows.filter(m => sv.includes(Number(m.id))); }
   const n2 = v => Number(v) || 0;
+  const t = m => String(m.title || "").toLowerCase();
   rows.sort((a,b)=>{
     if (S.marketSort === "price-lo") return n2(a.price) - n2(b.price);
     if (S.marketSort === "price-hi") return n2(b.price) - n2(a.price);
+    if (S.marketSort === "az") return t(a).localeCompare(t(b));
+    if (S.marketSort === "za") return t(b).localeCompare(t(a));
+    if (S.marketSort === "popular") return (n2((S.pop||{})[b.id]) - n2((S.pop||{})[a.id])) || (n2(b.id) - n2(a.id));
     return n2(b.id) - n2(a.id);
   });
   return rows;
 }
-function marketRefresh(){
+function marketRefresh(append){
   const grid = document.getElementById("market-grid");
   if (!grid) return;
-  const rows = marketRows();
+  marketUrlSync();
+  const all = marketRows();
+  const shown = Math.min(all.length, MARKET_PAGE * (S.marketPage || 1));
+  const rows = all;
   /* Name where the shopper is, not just a bare number: a count with no
      context reads like a bug when a filter is on. */
   const where = marketWhere();
@@ -1090,7 +1190,8 @@ function marketRefresh(){
     cc.textContent = note;
   }
   if (!rows.length){
-    const filtered = !!(S.marketCat || (S.marketQ||"").trim());
+    const mo = document.getElementById("market-more"); if (mo) mo.innerHTML = "";
+    const filtered = !!(S.marketCat || (S.marketQ||"").trim() || S.mf.size || S.mf.color || S.mf.cond || S.mf.price || S.mf.saved);
     grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><svg class='i20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 8.5v4.5M12 16.5v.01'/><circle cx='12' cy='12' r='9'/></svg>`
     + `<p>${filtered ? "Nothing here matches" + (qbit||"") + where + "." : "Nothing is for sale right now. Check back soon, or list your own item to get started."}</p>`
     + `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">`
@@ -1100,7 +1201,11 @@ function marketRefresh(){
     refreshTips();
     return;
   }
-  grid.innerHTML = rows.map((m,i)=>marketCard(m,i)).join("");
+  grid.innerHTML = rows.slice(0, shown).map((m,i)=>marketCard(m,i)).join("");
+  const mo = document.getElementById("market-more");
+  if (mo) mo.innerHTML = shown < all.length
+    ? `<button type="button" class="btn btn-soft" style="width:100%;margin:14px 0" onclick="marketMore()">Show more (${all.length - shown} left)</button>`
+    : "";
   refreshTips();
 }
 /* " in Women's Clothing › Tops & Shirts", or "" at the top of the catalogue. */
@@ -1113,6 +1218,8 @@ function marketWhere(){
 function marketClearFilters(){
   S.marketQ = "";
   S.marketCat = "";
+  S.mf = { size:"", color:"", cond:"", price:"", saved:false }; S.marketPage = 1;
+  const mf = document.getElementById("market-filters"); if (mf) mf.innerHTML = marketFiltersHtml();
   const si = document.getElementById("market-search"); if (si) si.value = "";
   const nav = document.getElementById("market-nav"); if (nav) nav.innerHTML = marketNavHtml();
   marketRefresh();
@@ -1152,7 +1259,7 @@ function marketCard(m, i){
 /* Wearable tiles get their own "Try it on" (same rule as the server-rendered grid). */
 function tileTryHtml(m){
   if (!m || !m.photo_url || !/^(women|men|kids)/i.test(String(m.category || "")) || /bag|purse|jewel|shoe|sneaker|boot|accessor|watch/i.test(String(m.category || "") + " " + String(m.title || ""))) return "";
-  return `<a class="ux-tile-try" href="/try-on/?item=${encodeURIComponent(m.photo_url)}&title=${encodeURIComponent(String(m.title || "").slice(0, 80))}" aria-label="Try it on: ${escapeAttr(m.title || "this item")}">Try it on</a>`;
+  return `<a class="ux-tile-try" href="/try-on/?id=${Number(m.id)}&item=${encodeURIComponent(m.photo_url)}&title=${encodeURIComponent(String(m.title || "").slice(0, 80))}" aria-label="Try it on: ${escapeAttr(m.title || "this item")}">Try it on</a>`;
 }
 
 /* ================= PLACEMENT MODE (P0-B/C — free Instant space placer) ================
@@ -1187,6 +1294,7 @@ function placementCtaHtml(item){
   const qs = (m) => {
     const p = [];
     if (m) p.push("mode=" + encodeURIComponent(m));
+    if (item && item.id) p.push("id=" + Number(item.id));
     if (photo) p.push("item=" + photo);
     if (title) p.push("title=" + title);
     return p.length ? ("?" + p.join("&")) : "";
@@ -1270,6 +1378,7 @@ async function openMarketItem(id, opts){
   const isMine = !!(USER && m.seller && Number(m.seller.id) === Number(USER.id));
   const plats = shopNormalizePlatforms(m.platforms);
   CURRENT.market = m;
+  fashTrack(m.id, "view");
   const clean = v => { v = String(v||"").trim(); return (v && !/^(n\/?a|none|not visible|unknown|-)$/i.test(v)) ? v : ""; };
   /* Every field the API returns for this item, shown to the buyer.
      This list used to be Size / Condition / Category and nothing else, while
@@ -1297,7 +1406,7 @@ async function openMarketItem(id, opts){
   + `<button type="button" class="ux-back" onclick="go('shop')" aria-label="Back to Shop"><svg class='i20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M15 5l-7 7 7 7'/></svg></button>`
   + (m.photo_url ? `<div class="ux-item-img"><img ${thumbAttrs(m.photo_url, "(max-width:640px) 100vw, 560px")} alt="${escapeAttr(m.title||"")}" onerror="this.parentNode.remove()"></div>` : "")
   + `<div class="ux-item-body">`
-  + `<div class="ux-item-price">${money(m.price)}</div>`
+  + `<div class="ux-item-price">${money(m.price)} <button type="button" class="btn btn-ghost btn-sm ux-save" style="float:right" aria-pressed="${savedIds().includes(Number(m.id))?"true":"false"}" onclick="toggleSave(${Number(m.id)}, this)">${savedIds().includes(Number(m.id))?"♥ Saved":"♡ Save"}</button></div>`
   + `<h1 class="ux-item-title">${escapeHtml(m.title||"Untitled")}</h1>`
   + (facts.length ? `<dl class="ux-facts">` + facts.map(r => `<div><dt>${r[0]}</dt><dd>${escapeHtml(r[1])}</dd></div>`).join("") + `</dl>` : "")
   + (from ? `<p class="ux-item-note">Ships from ${escapeHtml(from)}${m.local_pickup ? " &middot; local pickup available" : ""}</p>` : (m.local_pickup ? `<p class="ux-item-note">Local pickup available.</p>` : ""))
@@ -1372,6 +1481,7 @@ function resumeAfterAuth(){
   const item = path.match(/^\/shop\/(\d+)$/);
   if (item){ openMarketItem(Number(item[1])); return true; }
   if (path === "/shop"){ go("shop"); return true; }
+  if (/^\/shop\/c\//.test(path)){ if (window.__FASH_CAT__) S.marketCat = window.__FASH_CAT__; go("shop"); return true; }
   go("home");
   return false;
 }
@@ -5243,6 +5353,7 @@ function routePath(){
   const id = itemFromPath();
   if (id){ enterBrowse("shop"); openMarketItem(id, { url: "replace" }); return true; }
   if ((location.pathname || "").replace(/\/$/, "") === "/shop"){ enterBrowse("shop"); return true; }
+  if (/^\/shop\/c\//.test(location.pathname || "")){ if (window.__FASH_CAT__) S.marketCat = window.__FASH_CAT__; enterBrowse("shop"); return true; }
   return false;
 }
 function homeOrAuth(){

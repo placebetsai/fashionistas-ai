@@ -828,6 +828,8 @@ import { cutoutBackground, garmentKind } from "/see-in-space/cutout.js";
   }
 
   function showResult(blob, srcUrl, note){
+    /* Count a finished render for the shop listing it came from (real renders only). */
+    try { var _lid = Number(new URLSearchParams(location.search).get("id")); if (_lid > 0 && !showResult._sent) { showResult._sent = 1; navigator.sendBeacon("/api/events", new Blob([JSON.stringify({ listing_id: _lid, kind: "tryon" })], { type: "text/plain" })); } } catch (e) {}
     if (last.blobUrl) URL.revokeObjectURL(last.blobUrl);
     last.blobUrl = null;
     last.dataUrl = null;

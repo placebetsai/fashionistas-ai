@@ -10,6 +10,8 @@
  * If the market API is down the static list still ships — a partial sitemap is
  * useful, a 500 is not.
  */
+import { isHidden } from "./_lib/hidden-listings.js";
+import { liveCategories } from "./_lib/category-pages.js";
 const API = "https://fashionistas-api.fashionistas1979.workers.dev";
 const iso = (v) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : new Date().toISOString().slice(0, 10));
 
@@ -34,14 +36,16 @@ export async function onRequestGet({ request, env }) {
   } catch (_) {}
 
   const urls = items
-    .filter((it) => it && it.id && !isDemo(it))
+    .filter((it) => it && it.id && !isDemo(it) && !isHidden(it))
     .map(
       (it) =>
         `  <url><loc>${origin}/shop/${Number(it.id)}</loc><lastmod>${iso(it.listed_at)}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`
     )
     .join("\n");
 
-  const out = xml.replace(/<\/urlset>/i, `${urls ? urls + "\n" : ""}</urlset>`);
+  const cats = liveCategories(items.filter((it) => it && !isDemo(it) && !isHidden(it)))
+    .map((c) => `  <url><loc>${origin}${c.url}</loc><changefreq>daily</changefreq><priority>0.7</priority></url>`).join("\n");
+  const out = xml.replace(/<\/urlset>/i, `${cats ? cats + "\n" : ""}${urls ? urls + "\n" : ""}</urlset>`);
   return new Response(out, {
     headers: { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=3600" },
   });
