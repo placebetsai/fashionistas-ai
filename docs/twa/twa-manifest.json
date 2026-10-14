@@ -1,0 +1,19 @@
+{
+  "packageId": "ai.fashionistas.app",
+  "host": "fashionistas.ai",
+  "name": "Fashionistas",
+  "launcherName": "Fashionistas",
+  "display": "standalone",
+  "themeColor": "#b3471f",
+  "navigationColor": "#0f1117",
+  "backgroundColor": "#0f1117",
+  "startUrl": "/",
+  "iconUrl": "https://fashionistas.ai/icons/icon-512.png",
+  "maskableIconUrl": "https://fashionistas.ai/icons/icon-maskable-512.png",
+  "webManifestUrl": "https://fashionistas.ai/manifest.webmanifest",
+  "enableNotifications": false,
+  "fallbackType": "customtabs",
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "minSdkVersion": 21
+}

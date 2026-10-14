@@ -26,15 +26,33 @@
 <meta name="twitter:image:alt" content="fashionistas.ai — snap it, list it, try it on">
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 64x64">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="apple-touch-icon" href="/icon.svg">
 <link rel="manifest" href="/manifest.webmanifest">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "fashionistas.ai", "alternateName": "fashionistas.ai — AI Closet & Resale Studio", "applicationCategory": "BusinessApplication", "operatingSystem": "Web", "description": "fashionistas.ai is an AI closet and resale studio. Snap a photo for an item ID, price and your real take-home after fees — then one button prepares the listing for the shops you sell on. Where a shop has no posting API, you press Post in your own browser tab.", "url": "https://fashionistas.ai", "image": "https://fashionistas.ai/og.png", "offers": {"@type": "Offer", "price": "0.00", "priceCurrency": "USD"}, "publisher": {"@type": "Organization", "name": "fashionistas.ai", "url": "https://fashionistas.ai"}}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Organization", "name": "fashionistas.ai", "url": "https://fashionistas.ai", "logo": {"@type": "ImageObject", "url": "https://fashionistas.ai/icon.svg"}}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What does fashionistas.ai do?","acceptedAnswer":{"@type":"Answer","text":"You photograph an item. fashionistas.ai suggests what it is and a price, and the listing goes on fashionistas.ai. Other shops are not posted for you. eBay, Etsy and Whatnot are not connected. On the rest, you can copy the listing and press Post yourself."}},{"@type":"Question","name":"Which marketplaces does it post to?","acceptedAnswer":{"@type":"Answer","text":"It posts on fashionistas.ai. It does not post to eBay, Etsy, Whatnot, Poshmark, Mercari, Depop, Vinted, Grailed, Facebook or Vestiaire. Those connections are not set up. You still sell there by copying the listing and pressing Post on that shop."}},{"@type":"Question","name":"Does it cost money to sell with fashionistas.ai?","acceptedAnswer":{"@type":"Answer","text":"No, not while we're in launch. There is no plan, no card and nothing to cancel, and checkout is not open. Browsing, the shop and try-on are free."}},{"@type":"Question","name":"Does fashionistas.ai offer AR or virtual try-on?","acceptedAnswer":{"@type":"Answer","text":"Yes. Open Try it on, add a photo of the person and a photo of the garment, and fashionistas.ai renders the piece on that photo. Download, save or share the render in one click."}},{"@type":"Question","name":"What happens when something sells?","acceptedAnswer":{"@type":"Answer","text":"You take the listing down yourself on each shop. Nothing is removed from eBay, Etsy or any other shop automatically."}}]}</script><!--SEO-END-->
+<script>/* Speed: page-state classes on <html> replace document-wide :has() selectors
+   (html:has / body:has re-match the whole page on every DOM change). */
+(function(){var d=document,h=d.documentElement,q=function(s){return d.querySelector(s)};
+function vis(id){var e=d.getElementById(id);return !!(e&&!e.classList.contains("hidden"))}
+function sync(){var c=q("#seller-coach-panel");var f={"h-app":vis("view-app"),"h-auth":vis("view-auth"),"h-item":!!q(".ux-item"),"h-buybar":!!q(".ux-buybar"),"h-sheet":!!q(".sheet"),"h-lw":!!q(".lw"),"h-coach":!!(c&&!c.classList.contains("collapsed")&&!c.classList.contains("hidden"))};
+for(var k in f)if(h.classList.contains(k)!==f[k])h.classList.toggle(k,f[k])}
+new MutationObserver(sync).observe(h,{childList:true,subtree:true,attributes:true,attributeFilter:["class"]});
+d.addEventListener("DOMContentLoaded",sync);})();</script>
+<script>/* Speed: serve the server-embedded market list (shop/item pages) to the app's
+   first anonymous /w/api/market request instead of fetching it again. */
+(function(){var of=window.fetch;if(!of)return;window.fetch=function(u,o){var M=window.__FASH_MARKET__;
+if(M&&u==="/w/api/market"&&!(o&&o.headers&&o.headers.Authorization)){window.__FASH_MARKET__=null;
+return Promise.resolve(new Response(JSON.stringify(M),{status:200,headers:{"Content-Type":"application/json"}}))}
+return of.apply(this,arguments)}})();</script>
+<link rel="preconnect" href="https://fashionistas-api.fashionistas1979.workers.dev">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=optional"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=optional" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=optional"></noscript>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap"></noscript>
+<link rel="preload" as="font" type="font/woff2" href="/assets/fonts/inter-latin-normal.c940764593.woff2" crossorigin>
+<style>/* Speed: self-hosted latin subsets (OFL) instead of 2 Google Fonts stylesheets with ~30 faces. Inter only; Instrument Serif stays on Google Fonts as before (its swap timing is part of the current look). */
+@font-face{font-family:'Inter';font-style:normal;font-weight:400 900;font-display:optional;src:url(/assets/fonts/inter-latin-normal.c940764593.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}</style>
 <style>
 /* ===================================================================
    DESIGN TOKENS — one coherent palette, radius scale, type scale,
@@ -1143,9 +1161,11 @@ textarea.input{font-family:inherit}
 <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7215975042937417" crossorigin="anonymous" data-ad-client="ca-pub-7215975042937417"></script>
 <link rel="preload" as="image" href="/assets/rd/flatlay.webp" fetchpriority="high" media="(max-width:767px)"><link rel="preload" as="image" href="/assets/rd/thrift-hands.webp" fetchpriority="high" media="(min-width:768px)">
-<link rel="stylesheet" href="/redesign.css?v=21">
+<style>/* Speed: below-the-fold landing sections skip layout/paint (and their animations and blurs) until scrolled near. No visual change. */
+#land-showcase{content-visibility:auto;contain-intrinsic-size:auto 1100px}</style>
+<link rel="stylesheet" href="/redesign.css?v=22">
 <link rel="stylesheet" href="/listing-wizard.css?v=1">
-<link rel="stylesheet" href="/ux-pass.css?v=7">
+<link rel="stylesheet" href="/ux-pass.css?v=9">
 <meta name="color-scheme" content="light dark">
 <script>if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).catch(function(){});if(window.caches)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})}).catch(function(){})}</script>
 </head>
@@ -1291,7 +1311,7 @@ textarea.input{font-family:inherit}
  <div class="land-card">
  <div class="card window">
  <div class="auth-head">
- <span class="brand"><span class="mark" aria-hidden="true"><svg class="mark-fb" width="17" height="17" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"><path d="M32 28v-4.5a6 6 0 1 1 6-6"/><path d="M10 46 32 28l22 18z"/></svg><img class="mark-img" src="assets/fashionistas-app-icon-512.svg" alt="" width="32" height="32" onerror="this.remove()" loading="lazy" decoding="async"></span>fashionistas.ai</span>
+ <span class="brand"><span class="mark" aria-hidden="true"><svg class="mark-fb" width="17" height="17" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"><path d="M32 28v-4.5a6 6 0 1 1 6-6"/><path d="M10 46 32 28l22 18z"/></svg><img class="mark-img" src="/assets/fashionistas-app-icon-512.svg" alt="" width="32" height="32" onerror="this.remove()" loading="lazy" decoding="async"></span>fashionistas.ai</span>
  <span class="pill">Free</span>
  </div>
  <div id="oneclick"></div>
@@ -1355,7 +1375,7 @@ textarea.input{font-family:inherit}
  <div id="topbar">
  <button id="nav-burger" class="btn btn-soft btn-sm" onclick="navDrawer(true)" data-tip="Opens the menu so you can jump to any part of the app." title="Open the menu" aria-label="Open the menu" aria-controls="drawer" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
  <a class="fash-brand" href="javascript:go('shop')" title="fashionistas.ai" aria-label="fashionistas.ai shop">
- <span class="app-mark" aria-hidden="true"><svg class="mark-fb" width="21" height="21" viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"><path d="M32 30v-5a6.5 6.5 0 1 1 6.5-6.5"/><path d="M9 46.5 32 30l23 16.5"/></svg><img class="mark-img" src="assets/fashionistas-app-icon-512.svg" alt="" width="38" height="38" onerror="this.remove()" loading="lazy" decoding="async"></span>
+ <span class="app-mark" aria-hidden="true"><svg class="mark-fb" width="21" height="21" viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"><path d="M32 30v-5a6.5 6.5 0 1 1 6.5-6.5"/><path d="M9 46.5 32 30l23 16.5"/></svg><img class="mark-img" src="/assets/fashionistas-app-icon-512.svg" alt="" width="38" height="38" onerror="this.remove()" loading="lazy" decoding="async"></span>
  <span class="fash-name"><span class="fash-word">fashionistas</span><span class="wai" aria-hidden="true">.ai</span></span>
  </a>
  <span class="topbar-actions">
@@ -1443,6 +1463,8 @@ textarea.input{font-family:inherit}
     <button class="btn btn-ghost btn-sm" id="drawer-signin" onclick="navDrawer(false);showAuth('login')" data-tip="Create an account or sign in." title="Sign in">Sign in</button>
     <button class="btn btn-ghost btn-sm" onclick="navDrawer(false);logout()" data-tip="Sign out and close your session on this device." title="Sign out">Sign out</button>
   </div>
+  <a class="drawer-delete" href="/seller/stats/" onclick="navDrawer(false)" style="display:none;margin-top:10px;font-size:14px;text-align:center;color:inherit;font-weight:700">Your listing stats</a>
+  <a class="drawer-delete" href="/account/delete/" onclick="navDrawer(false)" style="display:none;margin-top:10px;font-size:13px;text-align:center;opacity:.75;color:inherit">Delete account</a>
 </aside>
 
 <!-- bottom tabs -->
@@ -1478,7 +1500,7 @@ textarea.input{font-family:inherit}
 
 
 <script src="/assets/categories.js?v=a51adc0" defer></script>
-<script src="/assets/app.2ba96a44ec63.js" defer></script>
+<script src="/assets/app.7e9606e5d000.js" defer></script>
 <script src="/auth-oneclick.js?v=4" defer></script>
 <script src="/listing-wizard.js?v=4" defer></script>
 <script type="module">
@@ -1487,7 +1509,7 @@ window.IdentifyFill = IdentifyFill;
 </script>
 <script src="/seller-coach.js?v=6" defer></script>
 <script src="/redesign.js?v=9" defer></script>
-<script src="/mobile-nav.js?v=4" defer></script>
+<script src="/mobile-nav.js?v=5" defer></script>
 <script type="module">
 /* AdSense slots are declared in this page's markup as [data-ad-slot] and filled
    from /site-adsense.js — the single source of truth for the publisher id and
@@ -1495,7 +1517,16 @@ window.IdentifyFill = IdentifyFill;
    document's head; it must never be deferred or module-loaded, or nothing
    drains window.adsbygoogle and no impression is ever reported. */
 import { mountAllAdSlots } from "/site-adsense.js?v=2";
-mountAllAdSlots();
+window.fashMountAds = mountAllAdSlots;
+/* Speed: the loader above still arrives in the head untouched; only filling the
+   slots waits until the first tap/scroll/key or the page is idle (max ~4 s), so
+   ad rendering doesn't compete with the first paint. */
+(function () {
+  var done = false, go = function () { if (done) return; done = true; ["pointerdown", "scroll", "keydown", "touchstart"].forEach(function (e) { removeEventListener(e, go, true); }); mountAllAdSlots(); };
+  ["pointerdown", "scroll", "keydown", "touchstart"].forEach(function (e) { addEventListener(e, go, { capture: true, passive: true, once: true }); });
+  var idle = function () { (window.requestIdleCallback || function (f) { setTimeout(f, 1); })(go, { timeout: 2000 }); };
+  if (document.readyState === "complete") setTimeout(idle, 2000); else addEventListener("load", function () { setTimeout(idle, 2000); }, { once: true });
+})();
 </script>
 </body>
 </html>

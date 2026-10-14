@@ -65,7 +65,8 @@ import modal
 # Contract constants - do not change without changing the JS caller too.
 # ---------------------------------------------------------------------------
 
-APP_NAME = "fashn-vton"
+APP_NAME = os.environ.get("FASHN_APP_NAME", "fashn-vton")
+FAST = os.environ.get("FASHN_FAST", "") == "1"  # memory+GPU snapshot boot (test app fashn-vton-fast)
 MODEL_ID = "fashn-vton-1.5"
 
 STEPS_DEFAULT = 20  # the product default
@@ -648,42 +649,64 @@ def _make_web_app() -> Any:
 # Modal wiring
 # ---------------------------------------------------------------------------
 
-@app.function(
-    image=image,
-    # L4: 24 GB VRAM - the 972M-param checkpoint is ~1.94 GB in bf16 and the
-    # pipeline runs bfloat16 on Ampere+ (L4 is Ada), so 24 GB leaves ample room
-    # for CFG batches at 864x576. It is the cheapest Modal GPU that supports
-    # bf16 (A10G has the same 24 GB but costs ~40% more; T4 has no bf16 and
-    # would fall back to fp32).
-    gpu=GPU,  # "L4" by default; FASHN_GPU=none at deploy time -> CPU only
-    cpu=4,  # DWPose + human parsing run on CPU
-    memory=12288,  # MiB - peak RSS during checkpoint load
-    timeout=300,  # hard per-input kill; the soft JSON 504 fires at 120s
-    startup_timeout=600,  # first boot pulls the ~2.5 GB weights layer
-    # SCALE TO ZERO: no container stays up. `min_containers=0` is the floor,
-    # `scaledown_window=60` is how long an idle container may linger before it
-    # is torn down (Modal's default, and the minimum sensible value) - so GPU
-    # billing stops ~60s after the last request.
-    min_containers=0,
-    scaledown_window=60,
-    # Cap GPU spend and keep cold-start burst bounded (Starter allows 10 GPU
-    # concurrency; two is plenty for a single-product try-on service).
-    max_containers=2,
-)
-@modal.asgi_app(requires_proxy_auth=True)
-def api() -> Any:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
-    web = _make_web_app()
+if FAST:
+    # Speed test app: boot from a memory + GPU snapshot taken after the model is
+    # loaded, so a cold start restores instead of re-loading ~2 GB of weights.
+    @app.cls(
+        image=image, gpu=GPU, cpu=4, memory=12288, timeout=300, startup_timeout=600,
+        min_containers=0, scaledown_window=60, max_containers=2,
+        enable_memory_snapshot=True,
+        experimental_options={"enable_gpu_snapshot": True},
+    )
+    class Fast:
+        @modal.enter(snap=True)
+        def load(self) -> None:
+            logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
+            pipeline, err = _get_pipeline()
+            if pipeline is None:
+                log.error("snapshot boot WITHOUT pipeline: %s", err)
 
-    # Warm the model while the container starts so the first request does not
-    # pay model-load latency. Failures are recorded rather than raised: raising
-    # here would make the container fail to boot and hide the real error behind
-    # a generic startup failure. /tryon answers 503 with the recorded error.
-    pipeline, load_error = _get_pipeline()
-    if pipeline is None:
-        log.error("container started WITHOUT a usable pipeline: %s", load_error)
-    else:
-        log.info("container warm; pipeline loaded in %ss", _LOAD_SECONDS)
+        @modal.asgi_app(requires_proxy_auth=True)
+        def api(self) -> Any:
+            return _make_web_app()
+else:
+    @app.function(
+        image=image,
+        # L4: 24 GB VRAM - the 972M-param checkpoint is ~1.94 GB in bf16 and the
+        # pipeline runs bfloat16 on Ampere+ (L4 is Ada), so 24 GB leaves ample room
+        # for CFG batches at 864x576. It is the cheapest Modal GPU that supports
+        # bf16 (A10G has the same 24 GB but costs ~40% more; T4 has no bf16 and
+        # would fall back to fp32).
+        gpu=GPU,  # "L4" by default; FASHN_GPU=none at deploy time -> CPU only
+        cpu=4,  # DWPose + human parsing run on CPU
+        memory=12288,  # MiB - peak RSS during checkpoint load
+        timeout=300,  # hard per-input kill; the soft JSON 504 fires at 120s
+        startup_timeout=600,  # first boot pulls the ~2.5 GB weights layer
+        # SCALE TO ZERO: no container stays up. `min_containers=0` is the floor,
+        # `scaledown_window=60` is how long an idle container may linger before it
+        # is torn down (Modal's default, and the minimum sensible value) - so GPU
+        # billing stops ~60s after the last request.
+        min_containers=0,
+        scaledown_window=60,
+        # Cap GPU spend and keep cold-start burst bounded (Starter allows 10 GPU
+        # concurrency; two is plenty for a single-product try-on service).
+        max_containers=2,
+    )
+    @modal.asgi_app(requires_proxy_auth=True)
+    def api() -> Any:
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
-    return web
+        web = _make_web_app()
+
+        # Warm the model while the container starts so the first request does not
+        # pay model-load latency. Failures are recorded rather than raised: raising
+        # here would make the container fail to boot and hide the real error behind
+        # a generic startup failure. /tryon answers 503 with the recorded error.
+        pipeline, load_error = _get_pipeline()
+        if pipeline is None:
+            log.error("container started WITHOUT a usable pipeline: %s", load_error)
+        else:
+            log.info("container warm; pipeline loaded in %ss", _LOAD_SECONDS)
+
+        return web

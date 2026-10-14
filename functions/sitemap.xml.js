@@ -10,6 +10,9 @@
  * If the market API is down the static list still ships — a partial sitemap is
  * useful, a 500 is not.
  */
+import { isHidden } from "./_lib/hidden-listings.js";
+import { liveCategories, slug } from "./_lib/category-pages.js";
+import { guides } from "./price-guide/[[path]].js";
 const API = "https://fashionistas-api.fashionistas1979.workers.dev";
 const iso = (v) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : new Date().toISOString().slice(0, 10));
 
@@ -20,7 +23,7 @@ export async function onRequestGet({ request, env }) {
   const origin = url.origin;
   let xml = "";
   try {
-    const res = await env.ASSETS.fetch(new Request(new URL("/sitemap.xml", origin).toString()));
+    const res = await env.ASSETS.fetch(new Request(new URL("/sitemap-static.xml", origin).toString()));
     if (res.ok) xml = await res.text();
   } catch (_) {}
   if (!xml.includes("</urlset>")) {
@@ -34,14 +37,19 @@ export async function onRequestGet({ request, env }) {
   } catch (_) {}
 
   const urls = items
-    .filter((it) => it && it.id && !isDemo(it))
+    .filter((it) => it && it.id && !isDemo(it) && !isHidden(it))
     .map(
       (it) =>
         `  <url><loc>${origin}/shop/${Number(it.id)}</loc><lastmod>${iso(it.listed_at)}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`
     )
     .join("\n");
 
-  const out = xml.replace(/<\/urlset>/i, `${urls ? urls + "\n" : ""}</urlset>`);
+  const cats = liveCategories(items.filter((it) => it && !isDemo(it) && !isHidden(it)))
+    .map((c) => `  <url><loc>${origin}${c.url}</loc><changefreq>daily</changefreq><priority>0.7</priority></url>`).join("\n");
+  const brands = [...new Set(items.filter((it) => it && it.brand && !isDemo(it) && !isHidden(it)).map((it) => slug(String(it.brand).trim())).filter(Boolean))]
+    .map((b) => `  <url><loc>${origin}/shop/b/${b}</loc><changefreq>daily</changefreq><priority>0.6</priority></url>`).join("\n");
+  const pg = guides(items.filter((it) => it && !isDemo(it) && !isHidden(it))).map((g) => `  <url><loc>${origin}${g.url}</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>`).join("\n");
+  const out = xml.replace(/<\/urlset>/i, `${cats ? cats + "\n" : ""}${brands ? brands + "\n" : ""}${pg ? pg + "\n" : ""}${urls ? urls + "\n" : ""}</urlset>`);
   return new Response(out, {
     headers: { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=3600" },
   });

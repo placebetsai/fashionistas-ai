@@ -63,6 +63,13 @@ const ROUTE_FILES = walk(API);
  * `expect` is the anonymous status asserted for a body-less GET.
  */
 const PUBLIC = {
+  "events.js":
+    "buyers are mostly signed out, and a view/save/try-on/click counter that needs a session would only " +
+    "ever count sellers. It writes one aggregate counter row per listing/day/kind, accepts only known " +
+    "kinds and integer listing ids, ignores bots, rate-limits per IP and returns no data at all (204).",
+  "stats/popular.js":
+    "the Popular sort is for signed-out shoppers too. It returns only an aggregate score per public " +
+    "listing id (no user, seller or per-event data), cached for five minutes.",
   "auth/login.js": "signing in is how a session is created; it must be reachable logged out",
   "auth/demo.js":
     "one-click demo sign-in — the sign-in screen renders a real button that POSTs here, and it has " +

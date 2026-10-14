@@ -1,3 +1,4 @@
+import { visible } from "./hidden-listings.js";
 /**
  * Shared access to the live catalogue for the export feeds.
  *
@@ -27,7 +28,7 @@ export async function fetchMarket(limit = 500) {
     if (!r.ok) return [];
     const b = await r.json().catch(() => null);
     const rows = (b && b.market) || [];
-    return Array.isArray(rows) ? rows : [];
+    return Array.isArray(rows) ? visible(rows) : [];
   } catch {
     return [];
   }

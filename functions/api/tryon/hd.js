@@ -497,6 +497,49 @@ export async function onRequestOptions() {
 // undefined, and requireAuth threw a TypeError before it could ever answer 401.
 // That single mismatch was the live "error code: 1101" on POST /api/tryon/hd.
 // All 20 other handlers in functions/ already take (context); this now matches.
+// ---- try-on queue (D1, no KV writes) -------------------------------------
+// MAX_INFLIGHT mirrors Modal max_containers=2. A slot expires after SLOT_TTL_MS
+// so a crashed request can never wedge the queue. Waiting users get their place
+// in line from waiters seen in the last WAIT_WINDOW_MS.
+const MAX_INFLIGHT = 2;
+const SLOT_TTL_MS = 180000;
+const WAIT_WINDOW_MS = 30000;
+const AVG_RENDER_S = 25;
+async function slotDb(env) {
+  const db = await tallyDb(env);
+  if (!db) return null;
+  try {
+    await db.prepare("CREATE TABLE IF NOT EXISTS tryon_slots (k TEXT PRIMARY KEY, user TEXT, kind TEXT NOT NULL, exp INTEGER NOT NULL)").run();
+    return db;
+  } catch { return null; }
+}
+async function acquireSlot(env, userId) {
+  const db = await slotDb(env);
+  if (!db) return { ok: true, key: null }; // no D1: fail open, the GPU cap still applies
+  const now = Date.now();
+  try {
+    await db.prepare("DELETE FROM tryon_slots WHERE exp < ?").bind(now).run();
+    const r = await db.prepare("SELECT COUNT(*) AS n FROM tryon_slots WHERE kind='run'").first();
+    if (((r && r.n) || 0) < MAX_INFLIGHT) {
+      const key = `run:${userId}:${now}:${Math.random().toString(36).slice(2, 8)}`;
+      await db.prepare("INSERT INTO tryon_slots (k,user,kind,exp) VALUES (?,?, 'run', ?)").bind(key, String(userId), now + SLOT_TTL_MS).run();
+      await db.prepare("DELETE FROM tryon_slots WHERE kind='wait' AND user=?").bind(String(userId)).run();
+      return { ok: true, key };
+    }
+    await db.prepare("INSERT INTO tryon_slots (k,user,kind,exp) VALUES (?,?,'wait',?) ON CONFLICT(k) DO UPDATE SET exp=excluded.exp")
+      .bind(`wait:${userId}`, String(userId), now + WAIT_WINDOW_MS).run();
+    const w = await db.prepare("SELECT COUNT(*) AS n FROM tryon_slots WHERE kind='wait'").first();
+    const position = Math.max(1, (w && w.n) || 1);
+    return { ok: false, position, waitS: Math.ceil(position / MAX_INFLIGHT) * AVG_RENDER_S };
+  } catch {
+    return { ok: true, key: null };
+  }
+}
+async function releaseSlot(env, key) {
+  if (!key) return;
+  try { const db = await slotDb(env); if (db) await db.prepare("DELETE FROM tryon_slots WHERE k=?").bind(key).run(); } catch {}
+}
+
 export async function onRequestPost(context) {
   const request = context.request;
   const env = context.env;
@@ -525,6 +568,29 @@ export async function onRequestPost(context) {
     );
   }
 
+  // --- 2b. queue: at most MAX_INFLIGHT renders at once (GPU max_containers) --
+  const slot = await acquireSlot(env, userId);
+  if (!slot.ok) {
+    return json(
+      {
+        ok: false,
+        error: "tryon_busy",
+        detail: `Try-on is busy. You're number ${slot.position} in line — about ${slot.waitS} seconds.`,
+        position: slot.position,
+        retry_after_s: slot.waitS,
+      },
+      429,
+      { "retry-after": String(slot.waitS), "cache-control": "no-store" }
+    );
+  }
+  try {
+    return await renderAfterGate(request, env, userId, via, credits);
+  } finally {
+    await releaseSlot(env, slot.key);
+  }
+}
+
+async function renderAfterGate(request, env, userId, via, credits) {
   // --- 3. inputs ------------------------------------------------------
   let form;
   try {

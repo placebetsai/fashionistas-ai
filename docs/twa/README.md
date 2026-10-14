@@ -1,0 +1,5 @@
+# Android app (TWA) — fashionistas.ai
+Ready in repo: PNG icons (/icons/*), maskable icons, manifest with `id`, Bubblewrap config (twa-manifest.json), assetlinks template, in-app account deletion (/account/delete/).
+Not live on purpose: `/.well-known/assetlinks.json` — it needs the real signing fingerprint; a placeholder would fail Digital Asset Links.
+Steps (Iz): 1) Play Console account ($25). 2) `npx @bubblewrap/cli init --manifest https://fashionistas.ai/manifest.webmanifest` (or use twa-manifest.json), `bubblewrap build`. 3) Upload the .aab; enable Play App Signing; copy the **App signing key SHA-256** from Play Console → Setup → App integrity. 4) Put it into assetlinks.template.json, save as `.well-known/assetlinks.json`, deploy. 5) Data safety form, privacy URL https://fashionistas.ai/privacy/, deletion URL https://fashionistas.ai/account/delete/.
+Note: AdSense must not run inside the app WebView per Google policy; TWA is Chrome (not a WebView), which AdSense allows, but confirm in the AdSense console.

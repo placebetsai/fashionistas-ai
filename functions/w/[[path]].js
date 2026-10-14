@@ -8,6 +8,8 @@
  * as source.
  */
 
+import { filterMarketBody, isHidden } from "../_lib/hidden-listings.js";
+
 const UPSTREAM = "https://fashionistas-api.fashionistas1979.workers.dev";
 
 export async function onRequest(context) {
@@ -36,6 +38,18 @@ export async function onRequest(context) {
       status: 502,
       headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
     });
+  }
+
+  // Keep junk rows off the public shop: filter the market list, 404 a hidden item.
+  if (request.method === "GET" && /^\/api\/market(\/|$)/.test(path) && res.ok &&
+      (res.headers.get("content-type") || "").includes("json")) {
+    const body = await res.json().catch(() => null);
+    const h = new Headers(res.headers); h.delete("content-length"); h.delete("content-encoding");
+    const one = path.match(/^\/api\/market\/([^/]+)/);
+    if (one && body && isHidden(body.item || body.listing || body)) {
+      return new Response(JSON.stringify({ ok: false, error: "Not found" }), { status: 404, headers: h });
+    }
+    return new Response(JSON.stringify(one ? body : filterMarketBody(body)), { status: res.status, headers: h });
   }
 
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers: res.headers });

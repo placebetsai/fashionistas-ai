@@ -1,3 +1,4 @@
+import { resolveCategory } from "./categories.js";
 /**
  * Server-rendered <head> for a single listing.
  *
@@ -226,6 +227,16 @@ export function itemHead(l, origin) {
   if (brand) product.brand = { "@type": "Brand", name: brand.slice(0, 80) };
   if (gpc) product.google_product_category = gpc;
   tags.push(`<script type="application/ld+json">${jsonForScript(product)}</script>`);
+  {
+    const crumbs = [["Home", origin + "/"], ["Shop", origin + "/shop"]];
+    const r = resolveCategory(l.category, l.title);
+    if (r) {
+      const sl = (x) => String(x).toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      crumbs.push([r.dept, `${origin}/shop/c/${sl(r.dept)}`], [r.sub, `${origin}/shop/c/${sl(r.dept)}/${sl(r.sub)}`]);
+    }
+    crumbs.push([String(l.title || "Item"), url]);
+    tags.push(`<script type="application/ld+json">${jsonForScript({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: crumbs.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c[0], item: c[1] })) })}</script>`);
+  }
   return tags.join("\n");
 }
 
@@ -275,7 +286,7 @@ export function injectHead(html, head, opts = {}) {
  * is hidden then (still in the DOM, links still crawlable) to avoid showing it twice.
  */
 const e2 = (v) => String(v == null ? "" : v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-const wrap = (inner) => `<style>body:has(#view-app:not(.hidden)) .ssr-seo{display:none}</style><section class="ssr-seo" style="max-width:1080px;margin:24px auto;padding:0 18px;color:var(--ink,#111)">${inner}</section>`;
+const wrap = (inner) => `<style>html.h-app body .ssr-seo{display:none}</style><section class="ssr-seo" style="max-width:1080px;margin:24px auto;padding:0 18px;color:var(--ink,#111)">${inner}</section>`;
 export function itemBody(l, more = []) {
   const facts = [l.brand, l.size && `Size ${l.size}`, l.condition && `Condition: ${l.condition}`, l.category, l.color].filter(Boolean).map(e2).join(" · ");
   const img = l.photo_url ? `<img src="${e2(l.photo_url)}" alt="${e2(l.title || "Item for sale")}" width="480" height="480" loading="lazy" style="max-width:100%;height:auto;border-radius:12px">` : "";
