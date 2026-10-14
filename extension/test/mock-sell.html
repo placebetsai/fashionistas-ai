@@ -1,0 +1,20 @@
+<!doctype html><meta charset="utf-8"><title>Mock sell page</title>
+<div id="root"></div>
+<script>
+// A React-like controlled form: value only "sticks" when an input event fires (like real sell pages).
+const state={};const root=document.getElementById('root');
+root.innerHTML=`<form>
+<label>Photos <input type="file" id="ph" multiple accept="image/*"></label>
+<label for="t">Title</label><input id="t" placeholder="What are you selling?">
+<label>Description <textarea data-testid="Description"></textarea></label>
+<div><span>Listing Price</span><input inputmode="decimal"></div>
+<label>Brand <input role="combobox" aria-label="Brand"></label><ul id="opts"></ul>
+<label>Size <select><option></option><option>XS</option><option>S</option><option>M</option><option>L</option></select></label>
+<label>Condition <select><option></option><option>New with tags</option><option>Good</option><option>Fair</option></select></label>
+<label>Category <input aria-label="Category"></label>
+<button type="button" id="sub">List</button></form>`;
+root.addEventListener('input',e=>{state[e.target.id||e.target.getAttribute('aria-label')||e.target.tagName+e.target.inputMode]=e.target.value;if(e.target.getAttribute('aria-label')==='Brand'){document.getElementById('opts').innerHTML='<li role="option">'+e.target.value+'</li>';}});
+document.getElementById('ph').addEventListener('change',e=>state.photos=e.target.files.length);
+document.getElementById('sub').onclick=()=>{state.submitted=true;history.pushState({},'', '/listing/mock-123');};
+window.__state=state;
+</script>

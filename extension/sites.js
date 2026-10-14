@@ -1,0 +1,28 @@
+// Per-site sell pages, field hints (selectors first, then label/placeholder keywords), submit button and listing-URL pattern.
+// Selectors are best-effort from public markup and fall back to label matching; sites change their forms often.
+export const SITES = {
+  poshmark: { name: "Poshmark", sell: "https://poshmark.com/create-listing", listed: /poshmark\.com\/listing\/[^/?#]+/,
+    f: { title: ['input[data-vv-name="title"]', "title"], description: ['textarea[data-vv-name="description"]', "description"], price: ['input[data-vv-name="listingPrice"]', "listing price"], brand: ['input[placeholder*="Brand" i]', "brand"], size: [null, "size"], condition: [null, "condition"], category: [null, "category"] },
+    photo: 'input[type="file"]', submit: ['button[data-et-name="next"]', "next", "list"], delist: ["edit", "delete listing", "yes"] },
+  mercari: { name: "Mercari", sell: "https://www.mercari.com/sell/", listed: /mercari\.com\/(us\/)?item\/m\d+/,
+    f: { title: ['input[data-testid="Title"]', "title"], description: ['textarea[data-testid="Description"]', "description"], price: ['input[data-testid="Price"]', "price"], brand: ['input[data-testid="Brand"]', "brand"], size: [null, "size"], condition: [null, "condition"], category: [null, "category"] },
+    photo: 'input[type="file"]', submit: ['button[data-testid="ListButton"]', "list"], delist: ["edit", "delete", "delete"] },
+  depop: { name: "Depop", sell: "https://www.depop.com/products/create/", listed: /depop\.com\/products\/[^/?#]+/,
+    f: { title: [null, "title"], description: ['textarea[name="description"]', "description"], price: ['input[name="price"]', "price"], brand: [null, "brand"], size: [null, "size"], condition: [null, "condition"], category: [null, "category"] },
+    photo: 'input[type="file"]', submit: [null, "post"], delist: ["delete", "delete"] },
+  facebook: { name: "Facebook Marketplace", sell: "https://www.facebook.com/marketplace/create/item", listed: /facebook\.com\/marketplace\/item\/\d+/,
+    f: { title: ['label[aria-label="Title"] input', "title"], description: ['label[aria-label="Description"] textarea', "description"], price: ['label[aria-label="Price"] input', "price"], brand: [null, "brand"], size: [null, "size"], condition: [null, "condition"], category: [null, "category"] },
+    photo: 'input[type="file"][accept*="image"]', submit: ['div[aria-label="Next"]', "next", "publish"], delist: ["delete listing", "delete"] },
+  grailed: { name: "Grailed", sell: "https://www.grailed.com/sell/new", listed: /grailed\.com\/listings\/\d+/,
+    f: { title: ['input[name="title"]', "item name"], description: ['textarea[name="description"]', "description"], price: ['input[name="price"]', "price"], brand: ['input[name="designer"]', "designer"], size: [null, "size"], condition: [null, "condition"], category: [null, "category"] },
+    photo: 'input[type="file"]', submit: [null, "publish"], delist: ["delete", "delete"] },
+  vinted: { name: "Vinted", sell: "https://www.vinted.com/items/new", listed: /vinted\.[a-z.]+\/items\/\d+/,
+    f: { title: ['input[data-testid="title--input"]', "title"], description: ['textarea[data-testid="description--input"]', "describe"], price: ['input[data-testid="price-input--input"]', "price"], brand: ['input[data-testid="brand-select-dropdown-input"]', "brand"], size: [null, "size"], condition: [null, "condition"], category: [null, "category"] },
+    photo: 'input[type="file"]', submit: ['button[data-testid="upload-form-save-button"]', "upload"], delist: ["delete", "confirm"] },
+  ebay: { name: "eBay", sell: "https://www.ebay.com/sl/prelist/suggest", listed: /ebay\.com\/itm\/\d+/,
+    f: { title: ['input[name="title"]', "title"], description: [null, "description"], price: ['input[name="price"]', "price"], brand: [null, "brand"], size: [null, "size"], condition: [null, "condition"], category: [null, "category"] },
+    photo: 'input[type="file"]', submit: [null, "list it"], delist: ["end listing", "end"] },
+  etsy: { name: "Etsy", sell: "https://www.etsy.com/your/shops/me/listing-editor/create", listed: /etsy\.com\/listing\/\d+/,
+    f: { title: ['#listing-title-input', "title"], description: ['#listing-description-textarea', "description"], price: ['#listing-price-input', "price"], brand: [null, "brand"], size: [null, "size"], condition: [null, "condition"], category: [null, "category"] },
+    photo: 'input[type="file"]', submit: [null, "publish"], delist: ["deactivate", "delete"] },
+};

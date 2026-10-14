@@ -233,6 +233,15 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
   chLoad();
 
   // ---- “Post everywhere”: guided run-through for copy-&-paste sites ----
+  var EXT_SITES=['poshmark','mercari','depop','facebook','grailed','vinted','ebay','etsy'];
+  function EXT(){ return !!document.documentElement.dataset.faExt; }
+  if(tok) setTimeout(function(){ if(EXT()) window.postMessage({type:'FA_TOKEN',token:tok},location.origin); },500);
+  window.addEventListener('message',function(e){ if(e.source!==window||!e.data) return; if(e.data.type==='FA_PROGRESS'&&e.data.step==='listed') load(); if(e.data.type==='FA_ACK'&&!e.data.ok) alert('Extension: '+(e.data.error||'could not start')); });
+  function extPost(id,btn){ var l=data.listings.filter(function(x){return x.id===id;})[0];
+    var sites=EXT_SITES.filter(function(sid){ var st=(l.shops[sid]||{}).status; return st!=='listed'&&st!=='active'&&st!=='sold'; });
+    window.postMessage({type:'FA_POST',job:{item:{id:l.id,title:l.title,description:l.description||'',price:l.price,brand:l.brand||'',size:l.size||'',condition:l.condition||'',category:l.category||'',photos:photosOf(l).map(function(u){return new URL(u,location.href).href;})},sites:sites}},location.origin);
+    btn.textContent='Opening '+sites.length+' sites in your tabs…'; }
+  function extDelist(l){ if(!EXT()) return; var urls={}; EXT_SITES.forEach(function(sid){ var x=l.shops[sid]; if(x&&(x.status==='listed'||x.status==='active')&&x.url) urls[sid]=x.url; }); if(Object.keys(urls).length&&confirm('Also take it down on '+Object.keys(urls).length+' other site(s) via the extension?')) window.postMessage({type:'FA_DELIST',job:{urls:urls}},location.origin); }
   var RUN=null, rd=document.getElementById('run'); document.body.appendChild(rd); // main has a transform (entrance anim) that would trap position:fixed
   function crc32(u){ var c,t=crc32.t; if(!t){t=crc32.t=[];for(var n=0;n<256;n++){c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}} var x=-1; for(var i=0;i<u.length;i++) x=(x>>>8)^t[(x^u[i])&255]; return (x^-1)>>>0; }
   function zip(files){ // store-only zip, no library
@@ -244,7 +253,7 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
   function photosOf(l){ var a=[]; if(Array.isArray(l.photos)) a=l.photos.slice(); if(l.photo_url&&a.indexOf(l.photo_url)<0) a.unshift(l.photo_url); return a.filter(Boolean).slice(0,10); }
   function runStart(id){
     var l=data.listings.filter(function(x){return x.id===id;})[0];
-    var sites=data.shops.filter(function(s){ var st=(l.shops[s.id]||{}).status; return s.id!=='fashionistas'&&s.mode!=='api_channel'&&!s.api_ready&&st!=='listed'&&st!=='active'&&st!=='sold'; });
+    var sites=data.shops.filter(function(s){ var st=(l.shops[s.id]||{}).status; return ['thredup','therealreal','amazon','walmart','whatnot'].indexOf(s.id)<0&&s.id!=='fashionistas'&&s.mode!=='api_channel'&&!s.api_ready&&st!=='listed'&&st!=='active'&&st!=='sold'; });
     RUN={l:l,sites:sites,i:0,t0:Date.now(),times:{},done:0}; runShow();
   }
   function runShow(){
@@ -292,7 +301,7 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
     return fetch('/api/crosslist/status',{method:'POST',credentials:'include',headers:h,body:JSON.stringify(b)}).then(function(r){return r.json();}).then(function(j){ if(!j.ok) alert("Couldn't save — try again."); load(); });
   }
   list.addEventListener('click',function(e){
-    var pe=e.target.closest('button[data-pe]'); if(pe){ runStart(Number(pe.dataset.pe)); return; }
+    var pe=e.target.closest('button[data-pe]'); if(pe){ var pid=Number(pe.dataset.pe); if(EXT()&&confirm('Use the fashionistas.ai Crosslister extension? It opens each site in your own logged-in tabs and fills the form for you to review. (Cancel = step-by-step copy mode.)')){ extPost(pid,pe); } else runStart(pid); return; }
     var b=e.target.closest('button[data-act]'); if(!b) return;
     var id=Number(b.getAttribute('data-id')), p=b.getAttribute('data-p'), act=b.getAttribute('data-act');
     var l=data.listings.filter(function(x){return x.id===id;})[0], s=data.shops.filter(function(x){return x.id===p;})[0];
@@ -309,7 +318,7 @@ html.run-open header,html.run-open .site-header{visibility:hidden}html.run-open,
       setStatus(id,p,'listed',{url:u});
     } else if(act==='sold'){
       var pr=prompt('Sold on '+s.name+' — sale price ($):',l.price!=null?String(l.price):''); if(pr===null) return;
-      setStatus(id,p,'sold',{price:Number(pr)||0});
+      setStatus(id,p,'sold',{price:Number(pr)||0}); extDelist(l);
     } else setStatus(id,p,act);
   });
   load();
