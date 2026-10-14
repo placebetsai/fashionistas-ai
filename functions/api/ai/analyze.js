@@ -43,16 +43,33 @@ function cors(extra = {}) {
 // never gets parsed, so nothing is spent) and the 21st answered 429, which
 // proves KV is bound today and that flipping the failure branch cannot break
 // the working path.
-// In-isolate limiter: no KV writes (KV free tier = 1k writes/day), never blocks on storage.
-const RL = new Map();
+// Limiter storage: D1 (kv_counters, atomic upsert) when bound — no KV writes
+// (KV free tier = 1k writes/day account-wide). Without D1 it uses KV as before.
+// Either way it fails CLOSED: no working limiter means no spend.
 async function rateLimit(env, request) {
   const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "anon";
   const key = `ai-analyze:${ip}:${Math.floor(Date.now() / 60000)}`;
-  if (RL.size > 5000) RL.clear();
-  const n = RL.get(key) || 0;
-  if (n >= RATE_PER_MIN) return { ok: false, reason: "rate_limited" };
-  RL.set(key, n + 1);
-  return { ok: true };
+  const db = env && (env.DB || env.FASHIONISTAS_DB);
+  if (db && typeof db.prepare === "function") {
+    try {
+      await db.prepare("CREATE TABLE IF NOT EXISTS kv_counters (k TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0, exp INTEGER NOT NULL)").run();
+      const row = await db.prepare("INSERT INTO kv_counters (k,n,exp) VALUES (?1,1,?2) ON CONFLICT(k) DO UPDATE SET n = n + 1 RETURNING n").bind(key, Date.now() + 120000).first();
+      if (Math.random() < 0.02) await db.prepare("DELETE FROM kv_counters WHERE exp < ?").bind(Date.now()).run();
+      return Number(row && row.n) > RATE_PER_MIN ? { ok: false, reason: "rate_limited" } : { ok: true };
+    } catch {
+      return { ok: false, reason: "limiter_unavailable" };
+    }
+  }
+  const cache = env && (env.CACHE || env.FASHIONISTAS_KV);
+  if (!cache || typeof cache.get !== "function") return { ok: false, reason: "limiter_unavailable" };
+  try {
+    const n = Number((await cache.get(key)) || 0);
+    if (n >= RATE_PER_MIN) return { ok: false, reason: "rate_limited" };
+    await cache.put(key, String(n + 1), { expirationTtl: 120 });
+    return { ok: true };
+  } catch {
+    return { ok: false, reason: "limiter_unavailable" };
+  }
 }
 
 export async function onRequest(context) {
