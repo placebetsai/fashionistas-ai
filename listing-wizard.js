@@ -264,7 +264,7 @@
       (s > 0 ? '<button type="button" class="lw-chipbtn" onclick="LW.cover()">Make cover</button>' : "") +
       (last > 0 ? '<button type="button" class="lw-chipbtn lw-sq" onclick="LW.move(-1)"' + (s === 0 ? " disabled" : "") + ' aria-label="Move left">◀</button>' +
       '<button type="button" class="lw-chipbtn lw-sq" onclick="LW.move(1)"' + (s === last ? " disabled" : "") + ' aria-label="Move right">▶</button>' : "") +
-      (PHOTOS[s] && PHOTOS[s].src ? '<button type="button" class="lw-chipbtn" id="lw-clean" onclick="LW.clean()">' + ICON.spark + ' Clean background</button>' : "") +
+      (CLEAN_BG_ON && PHOTOS[s] && PHOTOS[s].src ? '<button type="button" class="lw-chipbtn" id="lw-clean" onclick="LW.clean()">' + ICON.spark + ' Clean background</button>' : "") +
       '<button type="button" class="lw-chipbtn lw-danger" onclick="LW.remove()">Remove</button></div>' +
       '';
     h += '<div id="lw-ai">' + aiCard() + '</div>';
@@ -392,7 +392,10 @@
   }
   /* Free, on-device background cleanup: plain-backdrop flood fill first, then the
      in-browser ISNet model (lazy, ~44 MB once) for real scenes. Nothing is uploaded. */
+  // Off: the on-device cutout shredded real photos into white blobs (Iz, 2026-10-14). Re-enable only with preview + undo.
+  var CLEAN_BG_ON = false;
   function clean() {
+    if (!CLEAN_BG_ON) return;
     var p = PHOTOS[W.sel]; if (!p || !p.src) return;
     var btn = $id("lw-clean"); if (btn) { btn.disabled = true; btn.textContent = "Cleaning…"; }
     import("/see-in-space/cutout.js").then(function (m) {
