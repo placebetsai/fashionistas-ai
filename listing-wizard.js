@@ -475,8 +475,8 @@
   var FAM = { bag: /bag|handbag|purse|tote|clutch|backpack|wallet|crossbody|satchel/i, shoe: /shoe|sneaker|boot|heel|sandal|loafer|flat|pump|slipper|mule|trainer/i, jewel: /ring|necklace|bracelet|earring|jewel|watch|pendant|chain/i,
     top: /shirt|top|tee|t-shirt|blouse|sweater|hoodie|cardigan|tank|polo|sweatshirt|jumper|camisole/i, bottom: /pant|jean|trouser|short|skirt|legging|jogger|chino/i, outer: /jacket|coat|blazer|vest|parka|puffer|windbreaker/i, dress: /dress|gown|romper|jumpsuit/i, acc: /hat|cap|scarf|belt|glove|sunglass|beanie|tie|hair/i };
   function kindFitsPath(kind, path) {
-    if (NON_FASHION.test(kind)) return false;
     var lab = String(pathLabel(path) || path || "");
+    if (NON_FASHION.test(kind) && /\b(women|men|kids|girls|boys|baby|bags?|shoes|clothing|jewel|accessor)/i.test(lab)) return false;
     var fk = null, fp = null;
     for (var k in FAM) { if (fk === null && FAM[k].test(kind)) fk = k; if (fp === null && FAM[k].test(lab)) fp = k; }
     return !(fk && fp && fk !== fp);
