@@ -274,6 +274,11 @@
     if (W.mode === "edit" && W.aiState === "idle") return "";
     if (W.aiState === "busy") return '<div class="lw-ai busy"><span class="lw-spin" aria-hidden="true"></span><div><b>AI is reading your photo…</b><span>Title, price and details fill in by themselves.</span></div></div>';
     if (W.aiState === "error") return '<div class="lw-ai err"><div><b>We couldn\'t read that photo</b><span>' + esc(W.aiErr || "Fill in the details yourself — it only takes a minute.") + '</span></div><button type="button" class="lw-chipbtn" onclick="LW.identify(true)">Try again</button></div>';
+    if (W.aiState === "done" && W.ai && W.ai.unsure) {
+      var u = W.ai;
+      return '<div class="lw-ai err"><div><b>Not sure what this is' + (u.type ? ' — ' + esc(titleCase0(u.type)) + '?' : '') + '</b><span>' +
+        esc(u.why || "Check the title and pick a category yourself.") + (u.conf ? " (" + u.conf + "% sure)" : "") + '</span></div><button type="button" class="lw-chipbtn" onclick="LW.identify(true)">Try again</button></div>';
+    }
     if (W.aiState === "done" && W.ai) {
       var a = W.ai;
       return '<div class="lw-ai ok"><span class="lw-ok">' + ICON.check + '</span><div><b>' + esc(W.f.title || a.type || "Item identified") + '</b><span>' +
@@ -444,6 +449,14 @@
     var brand = n.brand || "", t = W.touched, f = W.f;
     function put(k, v) { if (v && (force || !t[k] || !f[k])) f[k] = v; }
     var kind = String(n.type || "").trim();
+    // Never claim "Filled in for you" when the model is unsure or its category contradicts the item it named.
+    var conf = W.ai.conf, mism = path && kind && !kindFitsPath(kind, path);
+    if ((conf && conf < 85) || mism || !kind) {
+      W.ai.unsure = true;
+      W.ai.why = mism ? "It said “" + kind + "” but picked " + pathLabel(path) + " — those don't match. Please type what it is and choose a category." : "Please check the title and choose a category.";
+      if (!t.title && !f.title && kind && !mism) f.title = titleCase0(kind).slice(0, 80);
+      return;
+    }
     var col = String(d.color || n.color || "").trim();
     var title = [brand, (col && kind.toLowerCase().indexOf(col.toLowerCase()) < 0) ? titleCase0(col) : "", titleCase0(kind || (rowFor(path) || {}).sub || "Item")].filter(Boolean).join(" ").replace(/\s+/g, " ").slice(0, 80);
     put("title", title);
@@ -457,6 +470,16 @@
     put("material", n.material || "");
     if (lo && hi) put("price", String(Math.round((lo + hi) / 2)));
     if (!t.desc) f.desc = autoDesc();
+  }
+  var NON_FASHION = /\b(cup|lid|mug|bottle|phone|laptop|plate|bowl|spoon|fork|knife|remote|cable|charger|toy|book|food|can|box|pen|keyboard|mouse|chair|table|lamp)\b/i;
+  var FAM = { bag: /bag|handbag|purse|tote|clutch|backpack|wallet|crossbody|satchel/i, shoe: /shoe|sneaker|boot|heel|sandal|loafer|flat|pump|slipper|mule|trainer/i, jewel: /ring|necklace|bracelet|earring|jewel|watch|pendant|chain/i,
+    top: /shirt|top|tee|t-shirt|blouse|sweater|hoodie|cardigan|tank|polo|sweatshirt|jumper|camisole/i, bottom: /pant|jean|trouser|short|skirt|legging|jogger|chino/i, outer: /jacket|coat|blazer|vest|parka|puffer|windbreaker/i, dress: /dress|gown|romper|jumpsuit/i, acc: /hat|cap|scarf|belt|glove|sunglass|beanie|tie|hair/i };
+  function kindFitsPath(kind, path) {
+    if (NON_FASHION.test(kind)) return false;
+    var lab = String(pathLabel(path) || path || "");
+    var fk = null, fp = null;
+    for (var k in FAM) { if (fk === null && FAM[k].test(kind)) fk = k; if (fp === null && FAM[k].test(lab)) fp = k; }
+    return !(fk && fp && fk !== fp);
   }
   function titleCase0(s) { return String(s || "").replace(/\b\w/g, function (c) { return c.toUpperCase(); }); }
   function autoDesc() {
