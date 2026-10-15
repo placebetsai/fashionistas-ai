@@ -4,6 +4,7 @@
  * anything that slips through. /.well-known/ is allowed (ACME, app links).
  */
 import { block } from "./_lib/blocked.js";
+import { withGA } from "./_lib/ga4.js";
 
 export async function onRequest(context) {
   let path = "/";
@@ -22,5 +23,6 @@ export async function onRequest(context) {
   if (u.hostname === "fashionistas-ai.pages.dev" && (m === "GET" || m === "HEAD") && !/^\/(w|api)\//.test(u.pathname)) {
     return Response.redirect("https://fashionistas.ai" + u.pathname + u.search, 301);
   }
-  return context.next();
+  // GA4: no-op unless the GA_MEASUREMENT_ID Pages env var is set (functions/_lib/ga4.js).
+  return withGA(await context.next(), context.env);
 }
