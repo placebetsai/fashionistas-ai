@@ -71,10 +71,10 @@ export const ADSENSE_ADS_TXT_LINE =
  */
 export const AD_SLOTS = Object.freeze({
   default: "6600722153",
-  hero: "5079047997",
-  inContent: "2843751862",
-  sidebar: "9124683051",
-  bottom: "3357291048",
+  hero: "6600722153",
+  inContent: "6600722153",
+  sidebar: "6600722153",
+  bottom: "6600722153",
 });
 
 /**
