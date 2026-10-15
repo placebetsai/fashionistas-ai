@@ -6,9 +6,11 @@
   "scripts": {
     "start": "npx serve .",
     "test": "node --test \"tests/**/*.test.mjs\" \"apps/**/*.test.mjs\" \"functions/**/*.test.mjs\"",
-    "deploy": "bash scripts/deploy-local.sh",
+    "deploy": "bash scripts/deploy-safe.sh",
     "deploy:dry": "bash scripts/deploy-local.sh --dry-run",
-    "zip-extension": "bash scripts/zip-extension.sh"
+    "zip-extension": "bash scripts/zip-extension.sh",
+    "smoke": "node scripts/smoke.mjs",
+    "deploy:safe": "bash scripts/deploy-safe.sh"
   },
   "author": "Israel Joffe",
   "license": "MIT"

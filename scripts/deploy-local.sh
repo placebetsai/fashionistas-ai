@@ -149,6 +149,11 @@ fi
 
 # --- upload ----------------------------------------------------------------
 BRANCH="${DEPLOY_BRANCH:-main}"
+# 2026-10-15 hard rule: production only through scripts/deploy-safe.sh (preview → smoke → prod → smoke).
+if [ "$BRANCH" = "main" ] && [ "${DEPLOY_SAFE_INNER:-0}" != "1" ]; then
+  echo "deploy-local: production deploys must go through the smoke gate: bash scripts/deploy-safe.sh" >&2
+  exit 1
+fi
 case "$BRANCH" in *[!a-z0-9-]*) echo "deploy-local: DEPLOY_BRANCH must be lowercase letters, digits, dashes" >&2; exit 1;; esac
 if [ "$BRANCH" = "main" ]; then BASE="https://fashionistas.ai"; else BASE="https://${BRANCH}.fashionistas-ai.pages.dev"; fi
 echo "deploy-local: branch=$BRANCH -> $BASE"

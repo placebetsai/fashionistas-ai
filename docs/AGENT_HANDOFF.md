@@ -1,5 +1,20 @@
 # fashionistas.ai — agent handoff
 
+## 🚨 HARD RULE — deploy only via the smoke gate (added 2026-10-15, approved by Iz)
+**All bots and OpenCode must ship production ONLY with `bash scripts/deploy-safe.sh`.**
+Raw `wrangler deploy` / `wrangler pages deploy … --branch=main` (or any other script that uploads straight to production) is **forbidden**.
+
+What the gate does (deterministic, free, zero AI/LLM calls in the checks):
+1. builds, deploys a **preview** (`gate-candidate`),
+2. runs `scripts/smoke.mjs` against the preview — key pages 200 with expected markers and no `undefined`/`NaN`/error text, key APIs valid JSON with sane counts + freshness, bot answers grounded against the site's own live data, response-time budgets,
+3. only if green, deploys **production**,
+4. smokes production again and prints the exact rollback command if anything is red (`AUTO_ROLLBACK=1` runs it).
+
+Manual check of any URL: `npm run smoke -- <url>` (or `node scripts/smoke.mjs <url>`). `PREVIEW_ONLY=1` stops after a green preview.
+`ALLOW_KNOWN_FAILS=1` lets a deploy through only when every failing check also fails on current production (a pre-existing bug, not a regression) — never to skip something this deploy broke.
+If a check is wrong, fix the check in `scripts/smoke.mjs` in its own commit with the reason; do not bypass the gate.
+
+
 ## LATEST — 2026-10-15 (~6:50 AM ET): STATUS (Chief of Staff docs update)
 - **Production:** still git `89bf396` = Pages deploy `47a70a52`. Rollback `d8b758aa`. Untouched.
 - **rebuild PREVIEW (awaiting Iz "ship it"):** https://rebuild.fashionistas-ai.pages.dev · branch `rebuild` · last tip `0ec533a`.
