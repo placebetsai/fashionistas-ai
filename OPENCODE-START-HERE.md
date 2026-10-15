@@ -1,3 +1,5 @@
+> **DAILY ALERTS (Iz, 2026-10-15): OpenCode owns the daily alerts for every site, not Chief of Staff.** Read nexus-ai-suite [`OPENCODE-DAILY-ALERTS.md`](https://github.com/placebetsai/nexus-ai-suite/blob/master/OPENCODE-DAILY-ALERTS.md) (commands, Cloudflare alert meanings, triage, known issues, secrets paths). Fashionistas daily check: `node scripts/smoke.mjs https://fashionistas.ai`.
+
 > **UPDATE 2026-10-15 (~6:50 AM ET) — STATUS. Work on branch `rebuild`. Awaiting Iz "ship it".**
 > **Prod:** still `89bf396` / Pages `47a70a52` (rollback `d8b758aa`). **Preview:** https://rebuild.fashionistas-ai.pages.dev · tip `0ec533a`.
 > Rich 2026 visual layer live on preview: hero, kinetic text, category cards, try-on card, confetti, edit listing, client-side junk feed filter, gallery endpoint.
