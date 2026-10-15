@@ -1,5 +1,13 @@
 # fashionistas.ai — agent handoff
 
+## LATEST — 2026-10-15 (~6:50 AM ET): STATUS (Chief of Staff docs update)
+- **Production:** still git `89bf396` = Pages deploy `47a70a52`. Rollback `d8b758aa`. Untouched.
+- **rebuild PREVIEW (awaiting Iz "ship it"):** https://rebuild.fashionistas-ai.pages.dev · branch `rebuild` · last tip `0ec533a`.
+  - Rich 2026 visual layer: hero, kinetic text, category cards, try-on card, confetti, edit listing, client-side junk feed filter, gallery endpoint.
+  - Pinned try-on demos (shared prod D1): `/shop/209` denim trucker jacket · `/shop/148` blue Versace polo.
+- **Open:** SSR SEO lists still include junk titles; photo column unverified; final polish; real-account extension test; EPN blocked on Iz's eBay login; affiliates `AFFILIATES-PLAN-2026-10-14.md` (nexus).
+- **Side notes:** nexus `7a62e0d` accidentally included others' uncommitted `NEEDS_ISRAEL.txt`, `scripts/site-blogs.sh`, `apps/createstuff-marketing/index.html`. Morning health/traffic audit in progress → box `/workspace/audits/health-2026-10-15.md`. MarketPicks crawler guard `280dc36b` (rollback `0cb3f854`) + D1 skip-unchanged — not Fashionistas work.
+
 ## LATEST — 2026-10-14 ~7:50 PM ET: `rebuild` PREVIEW — whole app rebuilt (not production; needs Iz's "ship it")
 Preview: https://rebuild.fashionistas-ai.pages.dev · branch `rebuild` (from seller-ux 2200a8f) · prod still 89bf396.
 - New single app: `index.html` (shell + SEO head + static boot skeleton) + `app/app.css` (design system) + `app/app.js` (router + all screens). Old app = `classic.html` (served at /classic), untouched.

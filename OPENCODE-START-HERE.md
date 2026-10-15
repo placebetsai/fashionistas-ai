@@ -1,8 +1,10 @@
-> **UPDATE 2026-10-14 ~7:50 PM ET — the app was rebuilt. Work on branch `rebuild`, not `seller-ux`.**
-> Preview https://rebuild.fashionistas-ai.pages.dev. The UI is now `index.html` + `app/app.css` + `app/app.js` (Shop/Sell/You tabs, one design system). The old app lives at `classic.html` (/classic) — don't add features there.
-> Sprint items about the old wizard/board/dashboard are superseded; see docs/AGENT_HANDOFF.md "LATEST" for routes, APIs, tests and known gaps.
-> Next tasks, in order: (1) edit-listing screen in app.js (reuse Review fields, PUT /api/listings/<id>); (2) multi-photo on item page — worker must return `photos` from /api/market; (3) favorites/likes; (4) rebuild try-on inside the app shell; (5) re-run `node e2e/rebuild.spec.js` and `node e2e/sweep.spec.js` after every change (must stay 100%).
-> Rules unchanged: preview only (`DEPLOY_BRANCH=rebuild ALLOW_BRANCH=rebuild scripts/deploy-local.sh`), prod only after Iz says "ship it", no secrets printed, no invented data, never change CHANNEL_KEY.
+> **UPDATE 2026-10-15 (~6:50 AM ET) — STATUS. Work on branch `rebuild`. Awaiting Iz "ship it".**
+> **Prod:** still `89bf396` / Pages `47a70a52` (rollback `d8b758aa`). **Preview:** https://rebuild.fashionistas-ai.pages.dev · tip `0ec533a`.
+> Rich 2026 visual layer live on preview: hero, kinetic text, category cards, try-on card, confetti, edit listing, client-side junk feed filter, gallery endpoint.
+> Pinned try-on demos (shared prod D1 — do not delete): `/shop/209` denim trucker jacket · `/shop/148` blue Versace polo.
+> **Open:** SSR SEO junk titles; photo column unverified; final polish; real-account extension test; EPN blocked on Iz eBay login; affiliates plan in nexus `AFFILIATES-PLAN-2026-10-14.md`.
+> Rules unchanged: preview only (`DEPLOY_BRANCH=rebuild ALLOW_BRANCH=rebuild scripts/deploy-local.sh`), prod only after Iz says "ship it", no secrets, no invented data, never change CHANNEL_KEY.
+> Next: (1) final polish / self-critique; (2) SSR junk filter in functions/shop; (3) confirm D1 photos column; (4) real-account extension QA; (5) keep e2e 32/32 light+dark + sweep 19/19.
 
 # OpenCode START HERE — Fashionistas.ai takeover
 
