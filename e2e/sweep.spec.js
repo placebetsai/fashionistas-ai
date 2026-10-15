@@ -1,6 +1,6 @@
 // Exhaustive sweep: sort/filter combos, slow network, API errors, every link + button on every screen. BASE=<url> node sweep.js
 const pw=require('playwright');const fs=require('fs');const path=require('path');
-const env=Object.fromEntries(fs.readFileSync(path.join(__dirname,'..','.env.test-seller'),'utf8').trim().split('\n').map(l=>[l.slice(0,l.indexOf('=')),l.slice(l.indexOf('=')+1)]));
+const env=Object.fromEntries(fs.readFileSync(path.join(__dirname,'.env.test-seller'),'utf8').trim().split('\n').map(l=>[l.slice(0,l.indexOf('=')),l.slice(l.indexOf('=')+1)]));
 const B=process.env.BASE||'https://rebuild.fashionistas-ai.pages.dev';const OUT=process.env.OUT||'sweep';fs.mkdirSync(OUT,{recursive:true});
 const R=[];const ok=(id,pass,note='')=>{R.push({id,pass:!!pass,note});console.log(pass?'PASS':'FAIL',id,note)};
 (async()=>{
@@ -10,6 +10,9 @@ const errs=[];const watch=(p,t)=>{p.on('pageerror',e=>errs.push(t+': '+e.message
 const c=await mk();const p=await c.newPage();watch(p,'guest');
 await p.goto(B+'/',{waitUntil:'networkidle'});await p.waitForSelector('.card');
 const market=await p.evaluate(async()=>(await (await fetch('/w/api/market?limit=500')).json()).market.filter(x=>x.status==='active'||x.status==='reserved'));
+// mirror the app's public feed-quality filter (test/junk/non-fashion never shown)
+const JUNK=/(\be2e\b|\btest listing\b|delete me|\bcoffee\b|\bkeurig\b|\bmug\b|\bcup lid\b|\blid\b|\bappliance|\bmaker\b|\btoaster\b|\bblender\b|\bcharger\b)/i;
+for(let i=market.length-1;i>=0;i--){const x=market[i],d=String(x.category||'').split('/')[0];if(JUNK.test((x.title||'')+' '+(x.description||''))||!d||d==='Home'||d==='Art'||!x.photo_url)market.splice(i,1);}
 // sorts
 const chk={newest:(a,b)=>String(b.listed_at).localeCompare(String(a.listed_at))>=0||true,price_asc:(a,b)=>a.price<=b.price,price_desc:(a,b)=>a.price>=b.price,az:(a,b)=>String(a.title).localeCompare(String(b.title))<=0,popular:()=>true};
 for(const s of Object.keys(chk)){await p.goto(B+'/?sort='+s,{waitUntil:'networkidle'});await p.waitForSelector('.card');

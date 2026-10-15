@@ -1660,3 +1660,17 @@ Then: preview deploy, screenshots, e2e 12+/12, handoffs, report. No prod without
 - Fix (backend only): SEO-tool bot guard in marketpicks scripts/edge-cache-wrapper.mjs (cached copy or 503 Retry-After; Googlebot/Bing/humans unchanged). Prod 280dc36b (preview b059dbaf verified). Rollback 0cb3f854.
 - Other >10ms scripts on the account (smaller): federation-watch cron p50 14ms (96/day), placebets-scheduler p50 10ms (110/day), marketpicks-ai-api p90 34ms + 76 exceptions.
 - Post everywhere 13/17: likely by design — run-through drops ThredUp/RealReal/Amazon/Walmart/Whatnot (see Board notes above); not re-verified.
+
+## 2026-10-14 · rebuild v2.1 editorial layer (preview only — NOT on prod)
+Preview: https://rebuild.fashionistas-ai.pages.dev (branch `rebuild`). Prod untouched; ships only on Iz's "ship it".
+- Brand header: gradient F-mark SVG + "fashionistas.ai" wordmark (app.js `LOGO`/`BRAND`, boot skeleton in index.html).
+- Home (`/` with no search/filter): full-bleed hero (CC0 StockSnap image, self-hosted AVIF/WebP in `assets/ed/`, credited at `/credits/`), kinetic headline (mask reveal + rotating gradient word), category image cards (Women, Men, Shoes, Bags, Vintage, Streetwear, Designer), Fresh drops grid, Try-on feature card (scan + sparkle), Shop-by-brand rail (real feed brands link `/shop/b/…`, others `/?q=`), Sell-in-30s card, marketplace logo marquee.
+- Cards: rounded image-first, like heart (localStorage `fa_likes`, pulse animation), shimmer skeletons, staggered rise, scroll reveal (`.rv` → `.shown`; NOTE `.in` is the input class — don't reuse it).
+- Feed-quality filter `feedOK()` in app.js: hides e2e/test, junk/non-clothing (coffee, Keurig, cup lid…), Home/Art, no-photo, no-category. Nothing deleted; direct item links still work. Sweep mirrors the same regex.
+- Gallery: new Pages function `GET /api/listing-photos/:id` (public, allowlisted in tests/api-auth-matrix with reason) returns stored photo URLs; item page adds them + counter. Public `/api/market` only has `photo_url`.
+- Edit listing: `/you/item/:id/edit` (PUT /api/listings/:id) + "Edit listing" button on manage screen.
+- Sell intro (animated camera + steps), Posted celebration (confetti + drawn checkmark, staggered marketplace tiles), You dashboard gradient stat cards with count-up (real numbers only), bottom-nav gradient indicator, glass header, page transitions. All CSS; `prefers-reduced-motion` disables motion.
+- Pinned demo items for Iz's try-on testing — never delete: **209** "Light Wash Denim Trucker Jacket" (iz_test_seller, no brand claimed — no label visible) and **148** "Blue Versace Polo Shirt" (demo). e2e `PINNED` guards cleanup + asserts both survive.
+- Tests (412x915): e2e/rebuild.spec.js 32/32 light + 32/32 dark (adds S12 edit, B14 junk hidden, B15 like, P1–P3 pinned/try-on); e2e/sweep.spec.js 19/19. LCP 2.1s (1.6 Mbps, 150ms RTT, 4x CPU).
+- QA artifacts on the box: /workspace/fash-ship-qa/rebuild-v2/ (screens, run-light/, run-dark/, sweep/, home-animation.mp4).
+- Open: SSR SEO lists in functions/shop still include junk titles (feed filter is client-side); listings table extra-photo column unknown (D1 token lacks D1 read) — gallery endpoint tolerates any of photos/images/image_urls/…; Home/Art departments hidden from the public feed.

@@ -1,9 +1,10 @@
 // v2 rebuild journeys at 412x915. BASE=<url> OUT=<dir> node rebuild.spec.js  (needs .env.test-seller; buyer creds optional)
 const pw=require('playwright');const fs=require('fs');const path=require('path');
-const envf=process.env.ENVF||path.join(__dirname,'..','.env.test-seller');
+const envf=process.env.ENVF||path.join(__dirname,'.env.test-seller');
 const env=Object.fromEntries(fs.readFileSync(envf,'utf8').trim().split('\n').filter(l=>l.includes('=')).map(l=>[l.slice(0,l.indexOf('=')),l.slice(l.indexOf('=')+1)]));
 const B=process.env.BASE||'https://rebuild.fashionistas-ai.pages.dev';const OUT=process.env.OUT||'shots';fs.mkdirSync(OUT,{recursive:true});
-const FIX=process.env.FIX||path.join(__dirname,'fixtures','jacket.jpg');
+const FIX=process.env.FIX||path.join(__dirname,'jacket.jpg');
+const PINNED=[209,148];// pinned demo items for Iz's try-on testing — never deleted by cleanup
 const R=[];const ok=(id,pass,note='')=>{R.push({id,pass:!!pass,note});console.log(pass?'PASS':'FAIL',id,note)};
 const login=async(p,u,pw_)=>p.evaluate(async([u,pw])=>{const r=await fetch('/w/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:pw})});const d=await r.json();if(d.token){localStorage.setItem('fash_token',d.token);localStorage.setItem('fash_user',JSON.stringify(d.user))}return d.token||''},[u,pw_]);
 (async()=>{
@@ -43,25 +44,38 @@ try{
  ok('S10 dashboard lists the new item with status',await p.locator(`a.lrow[href="/you/item/${id}"]`).count()===1);
  await p.goto(B+'/you/item/'+id,{waitUntil:'networkidle'});await p.waitForSelector('#msold');await p.screenshot({path:OUT+'/s6-manage.png'});
  ok('S11 manage: Mark sold + Delete present',await p.locator('#msold').count()===1&&await p.locator('#del').count()===1);
+ await p.goto(B+'/you/item/'+id+'/edit',{waitUntil:'networkidle'});await p.waitForSelector('#esave');await p.screenshot({path:OUT+'/s7-edit.png'});
+ await p.fill('#e-price','27');await p.tap('#esave');await p.waitForURL(new RegExp('/you/item/'+id+'$'),{timeout:20000,waitUntil:'commit'});await p.waitForTimeout(800);
+ const ep=await p.evaluate(async([t,id])=>{const r=await fetch('/api/crosslist/board',{headers:{Authorization:'Bearer '+t}});const d=await r.json();const l=(d.listings||[]).find(x=>x.id===id);return l&&l.price},[token,id]);
+ ok('S12 edit listing saves (price 25→27)',Number(ep)===27,String(ep));
  // BUYER
  const bctx=await mk(process.env.SCHEME||'light');const b=await bctx.newPage();watch(b,'buyer');
  await b.goto(B+'/',{waitUntil:'networkidle'});await b.waitForSelector('.card,.empty');await b.waitForTimeout(800);await b.screenshot({path:OUT+'/b1-feed.png'});
  ok('B1 feed shows real listings grid signed out',await b.locator('.card').count()>0, (await b.locator('.card').count())+' cards');
+ const feedTxt=await b.evaluate(()=>[...document.querySelectorAll('.card')].map(c=>c.textContent).join(' | '));
+ ok('B14 public feed hides test/junk listings (E2E, cup lid, Keurig)',!/E2E|Coffee|Keurig|Cup Lid/i.test(feedTxt)&&await b.locator(`.card[href="/shop/${id}"]`).count()===0);
+ ok('P1 pinned try-on items in feed (209 jacket, 148 polo)',await b.locator('.card[href="/shop/209"]').count()>0&&await b.locator('.card[href="/shop/148"]').count()>0);
+ await b.locator('.like').first().tap();ok('B15 like heart toggles',await b.locator('.like.on').count()===1);
  await b.fill('#q','E2E TEST');await b.press('#q','Enter');await b.waitForTimeout(1200);
- ok('B2 search finds the new item',await b.locator(`.card[href="/shop/${id}"]`).count()===1);
+ ok('B2a search never surfaces e2e test listings',await b.locator(`.card[href="/shop/${id}"]`).count()===0);
+ await b.fill('#q','denim');await b.press('#q','Enter');await b.waitForTimeout(1200);
+ ok('B2 search finds a real item (denim → 209)',await b.locator('.card[href="/shop/209"]').count()===1);
+ await b.goto(B+'/',{waitUntil:'networkidle'});await b.waitForSelector('.card');
  await b.tap('#fopen');await b.waitForSelector('.sheet.on');await b.waitForTimeout(400);
- const before=await b.textContent('#fgo');await b.locator('.sheet [data-k=brand]',{hasText:"Levi's"}).first().tap();await b.waitForTimeout(200);
+ const before=await b.textContent('#fgo');await b.locator('.sheet [data-k=brand]',{hasText:"Versace"}).first().tap();await b.waitForTimeout(200);
  const after=await b.textContent('#fgo');await b.screenshot({path:OUT+'/b2-filter.png'});
  ok('B3 filter drawer live count ("Show N results")',/Show \d+ result/.test(after),before+' → '+after);
  await b.tap('#fgo');await b.waitForTimeout(800);
- ok('B4 filter applied → item still found, chip shown',await b.locator(`.card[href="/shop/${id}"]`).count()===1&&await b.locator('[data-qc=brand]').count()===1);
+ ok('B4 filter applied → item still found, chip shown',await b.locator('.card[href="/shop/148"]').count()===1&&await b.locator('[data-qc=brand]').count()===1);
  await b.tap('#sopen');await b.waitForSelector('.sheet.on');await b.screenshot({path:OUT+'/b3-sort.png'});await b.tap('[data-s=price_asc]');await b.waitForTimeout(600);
  ok('B5 sort applies via URL',/sort=price_asc/.test(b.url()));
  await b.screenshot({path:OUT+'/b4-results.png'});
- await b.tap(`.card[href="/shop/${id}"]`);await b.waitForSelector('.item h1');await b.waitForTimeout(800);await b.screenshot({path:OUT+'/b5-item.png'});
+ await b.goto(B+'/',{waitUntil:'networkidle'});await b.waitForSelector('.card[href="/shop/209"]');await b.tap('.card[href="/shop/209"]');await b.waitForSelector('.item h1');await b.waitForTimeout(800);await b.screenshot({path:OUT+'/b5-item.png'});
  const it=await b.evaluate(()=>({h1:document.querySelectorAll('h1').length,msg:!!document.querySelector('#msg'),buy:!!document.querySelector('#buy'),tryon:(document.querySelector('#tryon')||{}).getAttribute?.call(document.querySelector('#tryon'),'href')||'',seller:!!document.querySelector('.seller')}));
  ok('B6 item page: photos, Message, Buy now, Try it on, seller link',it.msg&&it.buy&&/\/try-on\/\?id=/.test(it.tryon)&&it.seller,JSON.stringify(it));
  const tr=await b.request.get(B+it.tryon);ok('B7 try-on link resolves (200)',tr.status()===200,String(tr.status()));
+ await b.goto(B+'/shop/148',{waitUntil:'networkidle'});await b.waitForSelector('.item h1');const t2=await b.getAttribute('#tryon','href');const tr2=await b.request.get(B+t2);ok('P2 polo 148 try-on button resolves (200)',/\/try-on\/\?id=148/.test(t2)&&tr2.status()===200,t2);
+ await b.goto(B+'/shop/209',{waitUntil:'networkidle'});await b.waitForSelector('.item h1');
  await b.goto(B+it.tryon,{waitUntil:'domcontentloaded'});await b.waitForTimeout(2500);await b.screenshot({path:OUT+'/b6-tryon.png'});await b.goBack();await b.waitForSelector('.item h1');
  await b.tap('#msg');await b.waitForSelector('.sheet.on');await b.screenshot({path:OUT+'/b7-signin-sheet.png'});
  ok('B8 Message while signed out → sign-in sheet (not dead end)',await b.locator('#af').count()===1);
@@ -81,7 +95,8 @@ try{
  await b.goto(B+'/nope-xyz',{waitUntil:'networkidle'});ok('B13 unknown route has a way home',true);
 }catch(e){ok('EXCEPTION',false,e.message.slice(0,200));await p.screenshot({path:OUT+'/err.png'}).catch(()=>{});}
 finally{
- if(id&&token){const s=await p.evaluate(async([t,id])=>(await fetch('/w/api/listings/'+id,{method:'DELETE',headers:{Authorization:'Bearer '+t}})).status,[token,id]).catch(()=>0);console.log('cleanup delete',id,s);}
+ if(id&&token&&!PINNED.includes(id)){const s=await p.evaluate(async([t,id])=>(await fetch('/w/api/listings/'+id,{method:'DELETE',headers:{Authorization:'Bearer '+t}})).status,[token,id]).catch(()=>0);console.log('cleanup delete',id,s);}
+ try{const pr=await (await fetch(B+'/w/api/market?limit=500')).json();const ids=(pr.market||[]).map(x=>x.id);ok('P3 pinned items survive cleanup',PINNED.every(i=>ids.includes(i)),PINNED.join(','));}catch(e){ok('P3 pinned items survive cleanup',false,e.message)}
  ok('Z no console/page errors',!errs.length,errs.slice(0,6).join(' | '));
  fs.writeFileSync(OUT+'/results.json',JSON.stringify(R,null,1));
  console.log(R.filter(r=>r.pass).length+'/'+R.length+' pass');await br.close();

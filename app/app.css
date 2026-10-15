@@ -267,7 +267,7 @@ textarea.in{height:auto;min-height:96px;padding:var(--s3) var(--s4);resize:verti
 .sec-h{display:flex;align-items:baseline;justify-content:space-between;padding:0 16px 12px}
 .sec-h h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.035em}
 .rv{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease),transform .7s var(--ease)}.rv.shown{opacity:1;transform:none}
-.cats{display:grid;grid-auto-flow:column;grid-auto-columns:42%;gap:10px;overflow-x:auto;padding:0 16px 8px;scroll-snap-type:x mandatory;scrollbar-width:none}
+.cats{scroll-padding:0 16px;display:grid;grid-auto-flow:column;grid-auto-columns:42%;gap:10px;overflow-x:auto;padding:0 16px 8px;scroll-snap-type:x mandatory;scrollbar-width:none}
 .cats::-webkit-scrollbar{display:none}
 .cat{position:relative;aspect-ratio:3/4;border-radius:22px;overflow:hidden;scroll-snap-align:start;box-shadow:var(--shadow);transition:transform .35s var(--ease);isolation:isolate}
 .cat:active{transform:scale(.96)}
