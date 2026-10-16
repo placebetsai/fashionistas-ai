@@ -39,8 +39,9 @@ a.ux-try-link{position:absolute;left:10px;top:calc(125cqw - 44px);z-index:2;marg
 /* Ships-from / one-of-a-kind line. Kept quiet but legible: it answers the two
    questions a buyer asks right before making an offer. */
 .ux-item-note{font-size:13px;color:var(--mut);margin:-4px 0 14px;line-height:1.45}
-.ux-try{display:flex;gap:8px;margin:0 0 14px}
-.ux-try .btn{flex:1}
+.ux-try{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px}
+.ux-try .btn{flex:0 0 auto;white-space:nowrap}
+.ux-try .ux-item-note{flex:1 1 160px;min-width:0;margin:0}
 .ux-item-desc{white-space:pre-line;line-height:1.55;margin:0 0 16px;color:var(--ink)}
 .ux-seller{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
 .ux-seller b{display:block}
@@ -49,6 +50,10 @@ a.ux-try-link{position:absolute;left:10px;top:calc(125cqw - 44px);z-index:2;marg
 .ux-buybar{display:flex;gap:10px;position:sticky;bottom:0;padding:12px 0;background:var(--bg);z-index:5}
 .ux-buybar .btn{flex:1;min-height:52px;font-size:16px!important}
 .ux-buybar .btn-accent{flex:2}
+/* The seller-coach panel (z-index 75) otherwise floats on top of the buy bar
+   and covers the Message button on item pages. The mobile block already hides
+   the guide FABs in this situation — the panel goes with them, at every width. */
+html:has(.ux-buybar) #seller-coach-panel{display:none!important}
 .ux-buy{display:flex;gap:12px;align-items:center}
 .ux-buy img{width:64px;height:64px;border-radius:12px;object-fit:cover}
 .ux-buy b{display:block}

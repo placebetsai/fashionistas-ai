@@ -1,6 +1,10 @@
 # ── Existing product redirects (static rules — these DO work) ────────────────
 # Static rules are listed first, as Cloudflare requires (see "Per file" in the
 # redirects docs: static before dynamic).
+# The Sell wizard is a real address now (SPA route, handled in routePath());
+# serve the app shell there so a direct visit or middle-click is not a 404.
+/sell                   /              200
+/sell/                  /              200
 /ar-tryon                 /try-on/    301
 /ar-tryon/                /try-on/    301
 

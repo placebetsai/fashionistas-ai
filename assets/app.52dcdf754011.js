@@ -224,6 +224,10 @@ async function go(v){
      item never strands /shop/<id> in the bar. replaceState keeps the back
      button about views, not about every tab click. */
   try{ if (v === "shop" && (location.pathname || "").replace(/\/$/, "") !== "/shop") history.replaceState(history.state, "", "/shop"); }catch(e){}
+  /* The Sell wizard is addressable too. Without this the path stayed on
+     whatever page the seller came from, so resumeAfterAuth() after a
+     sign-up dropped them back on a stale item page instead of the wizard. */
+  try{ if (v === "sell" && (location.pathname || "").replace(/\/$/, "") !== "/sell") history.replaceState(history.state, "", "/sell"); }catch(e){}
   const [t, sub] = TITLES[v] || ["",""]; if (t) document.title = t + " — fashionistas.ai";
   kineticTitle(t); $("#view-sub").textContent = sub;
   const el = $("#screen");
@@ -1316,6 +1320,9 @@ function resumeAfterAuth(){
   const item = path.match(/^\/shop\/(\d+)$/);
   if (item){ openMarketItem(Number(item[1])); return true; }
   if (path === "/shop"){ go("shop"); return true; }
+  /* Sign-in started from the Sell wizard ("Sign in first — your draft is
+     saved") must return to the wizard, not to Home or a stale page. */
+  if (path === "/sell"){ enterBrowse("sell"); return true; }
   go("home");
   return false;
 }
@@ -5181,6 +5188,7 @@ function routePath(){
   const id = itemFromPath();
   if (id){ enterBrowse("shop"); openMarketItem(id, { url: "replace" }); return true; }
   if ((location.pathname || "").replace(/\/$/, "") === "/shop"){ enterBrowse("shop"); return true; }
+  if ((location.pathname || "").replace(/\/$/, "") === "/sell"){ enterBrowse("sell"); return true; }
   return false;
 }
 function homeOrAuth(){
