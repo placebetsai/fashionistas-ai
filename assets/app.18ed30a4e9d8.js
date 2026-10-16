@@ -5189,7 +5189,20 @@ function routePath(){
   const id = itemFromPath();
   if (id){ enterBrowse("shop"); openMarketItem(id, { url: "replace" }); return true; }
   if ((location.pathname || "").replace(/\/$/, "") === "/shop"){ enterBrowse("shop"); return true; }
-  if ((location.pathname || "").replace(/\/$/, "") === "/sell"){ enterBrowse("snap"); return true; }
+  if ((location.pathname || "").replace(/\/$/, "") === "/sell"){
+    /* Both files are defer and this bundle runs first, so at boot window.LW
+       (listing-wizard.js) may not exist yet and renderSnap would show the
+       pre-LW chooser. Enter immediately so the URL is live, then re-render on
+       DOMContentLoaded — by then LW has executed and the seller gets exactly
+       what the nav tab opens: the full wizard. */
+    if (!window.LW && document.readyState === "loading"){
+      document.addEventListener("DOMContentLoaded", function(){
+        if ((location.pathname || "").replace(/\/$/, "") === "/sell") enterBrowse("snap");
+      }, { once: true });
+    }
+    enterBrowse("snap");
+    return true;
+  }
   return false;
 }
 function homeOrAuth(){
