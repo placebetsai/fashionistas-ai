@@ -228,7 +228,7 @@ async function go(v){
      Without this the path stayed on whatever page the seller came from, so
      resumeAfterAuth() after a sign-up dropped them on a stale item page.
      The fee-calculator view ("sell") stays unaddressed, as before. */
-  try{ if (v === "snap" && (location.pathname || "").replace(/\/$/, "") !== "/sell") history.replaceState(history.state, "", "/sell"); }catch(e){}
+  try{ if ((v === "snap" || v === "sell") && (location.pathname || "").replace(/\/$/, "") !== "/sell") history.replaceState(history.state, "", "/sell"); }catch(e){}
   const [t, sub] = TITLES[v] || ["",""]; if (t) document.title = t + " — fashionistas.ai";
   kineticTitle(t); $("#view-sub").textContent = sub;
   const el = $("#screen");
