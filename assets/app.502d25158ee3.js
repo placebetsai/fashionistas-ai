@@ -5195,7 +5195,9 @@ function routePath(){
        pre-LW chooser. Enter immediately so the URL is live, then re-render on
        DOMContentLoaded — by then LW has executed and the seller gets exactly
        what the nav tab opens: the full wizard. */
-    if (!window.LW && document.readyState === "loading"){
+    if (!window.LW){
+      /* readyState is already "interactive" while defer scripts run, so gate
+         on LW itself — DOMContentLoaded still fires after listing-wizard.js. */
       document.addEventListener("DOMContentLoaded", function(){
         if ((location.pathname || "").replace(/\/$/, "") === "/sell") enterBrowse("snap");
       }, { once: true });
