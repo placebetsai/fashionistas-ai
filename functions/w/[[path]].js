@@ -27,12 +27,44 @@ export async function onRequest(context) {
 
   let res;
   try {
-    res = await fetch(dest, init);
+    // /api/tryon/hd was never implemented on the API worker (it 404s there);
+    // the real implementation is this project's Pages Function, which accepts
+    // the same Bearer token / fash_session cookie. Route it here so every
+    // client — page, extension, curl — gets one behaviour, not a stale 404.
+    if (path === "/api/tryon/hd") {
+      res = await fetch(new URL(path + incoming.search, incoming.origin), init);
+    } else {
+      res = await fetch(dest, init);
+    }
   } catch {
     return new Response(JSON.stringify({ ok: false, error: "The service is unreachable." }), {
       status: 502,
       headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
     });
+  }
+
+  // /w/api/auth/me echoes the caller's bearer token back in its JSON body.
+  // Any log, proxy or analytics capture of that response widens token
+  // exposure, so strip the field before it leaves the edge.
+  if (path === "/api/auth/me") {
+    const ct = res.headers.get("content-type") || "";
+    if (ct.includes("application/json")) {
+      try {
+        const body = await res.clone().json();
+        if (body && typeof body === "object" && "token" in body) {
+          delete body.token;
+          const h = new Headers(res.headers);
+          h.delete("content-length");
+          return new Response(JSON.stringify(body), {
+            status: res.status,
+            statusText: res.statusText,
+            headers: h,
+          });
+        }
+      } catch {
+        /* not JSON after all — fall through to the untouched body */
+      }
+    }
   }
 
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers: res.headers });
