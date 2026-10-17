@@ -2049,6 +2049,7 @@ const XL_FEED = {
   devices: [],       // recent unpaired installs from /api/sessions/list
   sessions: null,    // extension heartbeat booleans, null = never answered
   install_id: "",    // this browser's install id (from the extension)
+  pairing: false,    // a connect-this-browser request is in flight
   queued: null,      // last queued count the server reported
   results: [],       // extension-reported job rows (real, not local guesses)
   walls: []          // captcha_required / needs_review awaiting one tap
@@ -2249,7 +2250,7 @@ async function xlFeedItem(id) {
 /** (3) Backfill everything already in the closet. */
 async function xlFeedAll() {
   if (!XL_FEED.paired) {
-    toast("Pair this browser first — that's what lets the extension do the posting.");
+    toast("Connect this browser first — one button on the Shops screen — that's what lets the extension do the posting.");
     return;
   }
   const btn = document.getElementById("xl-feed-btn");
@@ -2273,9 +2274,24 @@ async function xlFeedAll() {
 /** Pair an install the Worker listed as unpaired. */
 async function xlPair(installId) {
   const r = xlNote(await xlFeedApi("/api/devices/pair", { method: "POST", body: { install_id: installId } }));
-  if (r.ok) { toast("Paired. Auto-post is live for this browser."); XL_FEED.paired = true; XL_FEED.known = true; }
-  else toast("Pairing failed: " + ((r.data && r.data.error) || ("HTTP " + r.status)));
+  if (r.ok) { toast("Connected. Every save now posts to your shops by itself."); XL_FEED.paired = true; XL_FEED.known = true; }
+  else toast("Connect failed: " + ((r.data && r.data.error) || ("HTTP " + r.status)));
   await xlFeedProbe();
+}
+
+/** The one button: link the Crosslister on THIS browser to this account.
+ *  No code, no copying — the extension already told us its install id over
+ *  the existing bridge (onMessageExternal "status"), and the Worker pairs by
+ *  that id under the seller's own sign-in session. */
+async function xlPairThisBrowser() {
+  if (XL_FEED.pairing) return;
+  if (!XL_FEED.install_id) {
+    toast("The Crosslister isn't reachable in this browser yet — install it, then reload this page.");
+    return;
+  }
+  XL_FEED.pairing = true; xlFeedPaint();
+  try { await xlPair(XL_FEED.install_id); }
+  finally { XL_FEED.pairing = false; xlFeedPaint(); }
 }
 
 /* ------------------------------------------------------- probe + rendering */
@@ -2427,10 +2443,10 @@ function xlFeedPaint() {
   const btnAll = document.getElementById("xl-feed-btn");
   if (btnAll) {
     btnAll.disabled = !XL_FEED.paired;
-    btnAll.textContent = btnAll.disabled ? "Pair this browser to post everything" : "Post all existing items";
+    btnAll.textContent = btnAll.disabled ? "Connect this browser to post everything" : "Post all existing items";
     const t = XL_FEED.paired
       ? ("Queues every item in your closet (" + (S.listings || []).length + ") to your shops.")
-      : "Pair this browser above first — that is what lets the extension post for you.";
+      : "Connect this browser above first — that is what lets the extension post for you.";
     btnAll.setAttribute("data-tip", t); btnAll.setAttribute("title", t);
   }
   const pairBox = document.getElementById("xl-pair-box");
@@ -2446,6 +2462,12 @@ function xlFeedPaint() {
 }
 
 function xlPairBoxHtml() {
+  if (XL_FEED.pairing) return `<div class="mut">Connecting this browser…</div>`;
+  const hasExt = !!XL_FEED.install_id;
+  const primary = hasExt
+    ? `<button type="button" class="btn btn-accent" onclick="xlPairThisBrowser()" data-tip="Links the Crosslister on this browser to your account — one click, no code." title="Links the Crosslister on this browser to your account — one click, no code.">Connect this browser</button>
+       <p class="mut" style="margin:10px 0 0">One click. After this, every save posts to your shops by itself — nothing to copy, nothing to paste.</p>`
+    : `<p class="mut" style="margin:0">Install the Crosslister extension on this browser and reload this page — the button appears here, still one click.</p>`;
   const code = XL_FEED.code;
   const dev = XL_FEED.devices || [];
   const codeHtml = code
@@ -2466,7 +2488,13 @@ function xlPairBoxHtml() {
         </div>`;
       }).join("")}</div>`
     : "";
-  return codeHtml + listHtml;
+  const fallback = (code || dev.length)
+    ? `<details style="margin-top:14px">
+         <summary class="mut" style="cursor:pointer">Having trouble, or connecting from a different browser?</summary>
+         <div style="margin-top:10px">${codeHtml}${listHtml}</div>
+       </details>`
+    : "";
+  return primary + fallback;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -2550,8 +2578,8 @@ async function renderXL(el){
     </div>
 
     <div class="card" id="xl-pair">
-      <h3 style="margin-top:0">Pair this browser</h3>
-      <p class="mut" style="margin-top:0">The extension does the posting inside your own logged-in browser, so it has to know this account. This takes about twenty seconds, once.</p>
+      <h3 style="margin-top:0">Connect this browser</h3>
+      <p class="mut" style="margin-top:0">One button. The Crosslister posts inside your own signed-in browser, so all this does is link it to your account — then every save posts on its own.</p>
       <div id="xl-pair-box"></div>
     </div>
 
