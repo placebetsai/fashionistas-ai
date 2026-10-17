@@ -16,6 +16,8 @@ const queue = readFileSync(join(ROOT, "apps/extension/queue.js"), "utf8");
 const selectors = readFileSync(join(ROOT, "apps/extension/config/selectors.js"), "utf8");
 const manifest = JSON.parse(readFileSync(join(ROOT, "apps/extension/manifest.json"), "utf8"));
 const doc = readFileSync(join(ROOT, "docs/MULTILIST-ONE-CLICK.md"), "utf8");
+const background = readFileSync(join(ROOT, "apps/extension/background.js"), "utf8");
+const announceSrc = readFileSync(join(ROOT, "apps/extension/content/announce.js"), "utf8");
 
 function grab(name) {
   let i = html.indexOf("function " + name + "(");
@@ -89,6 +91,24 @@ test("manifest announces on fashionistas.ai and is externally_connectable", () =
   );
   assert.ok(announce, "announce.js content script");
   assert.ok(announce.matches.includes("https://fashionistas.ai/*"));
+});
+
+test("install-id relay: announce pushes it, background serves it, page consumes it", () => {
+  // The "Connect this browser" button keys off XL_FEED.install_id. The page's
+  // own chrome.runtime path (externally_connectable) is documented but not
+  // guaranteed on every browser, so the content script pushes the id via
+  // postMessage too — button presence must never hinge on a browser quirk.
+  assert.match(announceSrc, /fash:install-id/);
+  assert.match(announceSrc, /install_id/);
+  assert.match(background, /msg\.type === "fash:install-id"/);
+  assert.match(background, /installId\(\)/);
+  assert.match(html, /d\.install_id/);
+  assert.match(html, /XL_FEED\.install_id = iid/);
+  // Nothing sensitive rides the relay — id and install id only. Checked on
+  // comment-stripped source against real exfil APIs, not on wording.
+  const codeOnly = announceSrc.replace(/\/\/.*$/gm, "");
+  assert.doesNotMatch(codeOnly, /document\.cookie|chrome\.cookies|\.value\b|fetch\(/);
+  assert.doesNotMatch(codeOnly, /password|token/i);
 });
 
 test("MULTILIST-ONE-CLICK doc covers zero → one click and gaps", () => {

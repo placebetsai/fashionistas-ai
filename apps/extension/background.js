@@ -208,6 +208,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       .catch((e) => sendResponse({ ok: false, error: String(e && e.message) }));
     return true;
   }
+  // Lets content/announce.js push THIS install's id to the fashionistas.ai
+  // page over postMessage. The page's own chrome.runtime.sendMessage path
+  // (externally_connectable) is documented, but this relay does not depend on
+  // the page having any extension API at all — the "Connect this browser"
+  // button must not hinge on a browser quirk.
+  if (msg.type === "fash:install-id") {
+    installId()
+      .then((install_id) => sendResponse({ ok: true, install_id }))
+      .catch((e) => sendResponse({ ok: false, error: String(e && e.message) }));
+    return true;
+  }
   if (msg.type === "fash:heartbeat") {
     heartbeat()
       .then((sessions) => sendResponse({ ok: true, sessions }))

@@ -3949,6 +3949,13 @@ window.addEventListener("message", (ev) => {
   if (ev.source !== window) return;
   const d = ev.data;
   if (!d || d.source !== "fashionistas-ext" || d.type !== "fash-ext-ready") return;
+  // The relayed install id is what keys the "Connect this browser" button —
+  // set it even if the extension-API half below never gets a chance to run.
+  const iid = String(d.install_id || "").trim();
+  if (iid && iid !== XL_FEED.install_id) {
+    XL_FEED.install_id = iid;
+    try { xlFeedPaint(); } catch (e) { /* Shops screen not open yet */ }
+  }
   const id = String(d.id || "").trim();
   if (!id) return;
   EXT_DETECTED = id;
