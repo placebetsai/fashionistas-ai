@@ -1,5 +1,88 @@
 // queue.js — the job queue runner for the Fashionistas crosslister extension.
 //
+// ═══════════════════════════════════════════════════════════════════════════
+// WIRE CONTRACT — diff this block against the Worker build before shipping.
+// Owner of the other half: the Worker repo (jobs/sessions/devices routes).
+// Every request below carries header  X-Install-Id: <uuid>  — the id minted
+// once by config/api.js installId() into chrome.storage.local under
+// "fash-install-id". It is the pairing key: it identifies THIS browser profile
+// and is never rotated.
+//
+// ── SEND: pull jobs ────────────────────────────────────────────────────────
+// GET /api/jobs?status=queued
+//   headers: X-Install-Id
+//   expects: 200 { ok: true, paired: true,  jobs: Job[] }
+//            200 { ok: true, paired: false, jobs: [] }      <- NOT PAIRED
+//            401 / 404                                    <- not deployed yet
+//   A paired:false answer is NOT an error: it means this install has no device
+//   pairing yet, so it walks the same API_GATE_LADDER_MS backoff as a dead
+//   route instead of asking once a minute forever (see pullJobs/tick).
+//
+// ── RECEIVE: Job ───────────────────────────────────────────────────────────
+//   { id: string|number,            <- REQUIRED; a job without it is dropped
+//     type: "publish"|"delist"|"signup",   default "publish"
+//     shop: "depop"|"poshmark"|"mercari"|"vinted"|"grailed"|"facebook"
+//          |"kidizen"|"vestiaire"|"whatnot"|"ebay"|"etsy",
+//     account: string,              default "default"  (rate-cap bucket)
+//     payload: PublishPayload }
+//   Unknown keys are ignored; extra keys are never forwarded to a shop.
+//   Parsed by parseJobList() in config/api.js, which also accepts a bare
+//   array and {data:{jobs:[]}} from older/newer builds.
+//
+// ── RECEIVE: PublishPayload (job.payload) ──────────────────────────────────
+//   { listing_id?,                      <- set by the queue from the enqueue
+//                                        body's top-level listing_id; echoed
+//                                        back on the status report so the site
+//                                        can key a chip to an item. If the
+//                                        queue does not set it, no per-item
+//                                        chip is shown — that is the intent.
+//     title, description, price, brand?, size?, category?, condition?,
+//     photos?: string[] (http(s) or data:), tags?/tagsText?, material?,
+//     color?, weight_oz?, local_pickup?, ship_city?, ship_postcode?,
+//     ship_country?, listingUrl?  <- delist only }
+//   photos are normalised to data: URLs by normalizePhotos() before the
+//   adapter sees them. Listing URL extraction for delist also accepts
+//   payload.listing_url (the field name we send below).
+//
+// ── READ: what the SITE sends (assets/app.*.js, same-origin /w proxy) ─────
+//   POST /api/jobs/enqueue { source, listing_id, shops:[shopId], auto:true,
+//                            listing:{...the PublishPayload above...} }
+//   POST /api/jobs/feed    { listing_ids?: number[] }   // omitted = all
+//   GET  /api/devices/code  -> { code:"6-char", expires_in }
+//   GET  /api/sessions/list -> { ok, devices:[{install_id, source, probed_at}] }
+//   POST /api/devices/pair  <- { install_id } -> { ok, paired:true }
+//   POST /api/sessions      <- { source:"web", probed_at, install_id, auto_post }
+//        (the master switch, persisted server-side only while paired)
+//
+// ── SEND: report result ────────────────────────────────────────────────────
+// POST /api/jobs/{id}/status
+//   headers: X-Install-Id
+//   body:    { job_id, status, listing_url, error, shop, attempts,
+//              reported_at, needs_review?, hint?, listing_id? }
+//   status: "posted" (listing_url captured from the real listing page) |
+//           "failed" | "delisted" | "capped" | "signup_prefilled"
+//   needs_review: true + hint  <- ONLY for captcha_required / needs_review.
+//           These are the two moments the product allows a human, so they are
+//           marked explicitly and are NEVER retried (see failOrRetry).
+//   listing_id: echoed from payload.listing_id, and only when the queue sent
+//           one. Its absence is meaningful: the site then shows NO per-item
+//           chip rather than guessing which item a result belongs to.
+//   The same body is persisted locally first (result:<id>) and retried as
+//   pendingReport:<id>; _attempts is local bookkeeping, never on the wire.
+//
+// ── SEND: session heartbeat (background.js) ────────────────────────────────
+// POST /api/sessions
+//   headers: X-Install-Id
+//   body:    { sessions: { [shop]: boolean }, source: "extension",
+//              probed_at: ISO8601, install_id: uuid }
+//   Booleans only. No cookie, no token, no password, ever.
+//
+// ── PAIRING (the site drives it; this side only supplies the identity) ─────
+// GET  /api/devices/code   -> { code: 6-char string, expires_in: number }
+// POST /api/devices/pair   <- { install_id: uuid }        (the site calls it)
+// GET  /api/sessions/list  -> recent unpaired install_ids  (the site lists them)
+// ═══════════════════════════════════════════════════════════════════════════
+//
 // What it does, end to end, with NO manual step for the user:
 //   1. pulls publish / delist / signup jobs from GET {API_BASE}/api/jobs?status=queued
 //   2. opens ONE background tab (chrome.tabs.create {active:false}) per marketplace
@@ -24,7 +107,10 @@ import {
   RETRY_BASE_MS,
   gateOpen,
   gateAfterFailure,
-  gateAfterSuccess
+  gateAfterSuccess,
+  gateAfterUnpaired,
+  isUnpaired,
+  parseJobList
 } from "./config/api.js";
 import * as poshmark from "./adapters/poshmark.js";
 import * as mercari from "./adapters/mercari.js";
@@ -228,7 +314,20 @@ async function waitForGap(cfg, shop) {
 
 /* ------------------------------------------------------------- reporting */
 
+/**
+ * The two moments this product allows a human: a CAPTCHA wall, or a category we
+ * refuse to guess under. Anything else is ours to fix, not the seller's — so
+ * they are marked explicitly on the wire (needs_review + hint) and are never
+ * retried. Honest > automatic: a retry at a CAPTCHA is three wasted attempts
+ * against the shop's anti-bot, not progress.
+ */
+export function isHumanWall(error) {
+  const e = String(error || "");
+  return e === "captcha_required" || e.startsWith("needs_review") || e.startsWith("captcha");
+}
+
 export async function report(job, result) {
+  const wall = isHumanWall(result.error);
   const body = {
     job_id: job.id,
     status: result.status,
@@ -238,6 +337,17 @@ export async function report(job, result) {
     attempts: result.attempts || 1,
     reported_at: new Date().toISOString()
   };
+  if (wall) {
+    body.needs_review = true;
+    body.hint = result.hint || (String(result.error || "").indexOf("captcha") === 0
+      ? `${job.shop} showed a CAPTCHA — it needs one press from you.`
+      : `${job.shop} needs you to pick the category, then it posts itself.`);
+  }
+  /* Echoed back only when the queue told us which listing this was. It is what
+     lets fashionistas.ai key a per-item status chip to an item without guessing
+     — a job with no listing_id simply produces no chip. */
+  const pl = job && job.payload && job.payload.listing_id;
+  if (pl != null && pl !== "") body.listing_id = pl;
   // Persist locally FIRST: fashionistas.ai queued this job and must be able to
   // read the outcome back (posted + listing_url) even if the API post fails.
   try {
@@ -371,6 +481,17 @@ function backoffMs(attempt) {
 }
 
 async function failOrRetry(job, attempt, result) {
+  // A CAPTCHA or a category wall is the seller's one allowed tap. Retrying it
+  // three times is not resilience, it is hammering the shop's anti-bot — so it
+  // is reported once and left alone until a human moves.
+  if (isHumanWall(result && result.error)) {
+    return report(job, {
+      status: "failed",
+      error: result.error,
+      hint: result.hint,
+      attempts: attempt + 1
+    });
+  }
   const next = attempt + 1;
   if (next >= MAX_ATTEMPTS) {
     return report(job, {
@@ -428,8 +549,17 @@ export async function tick() {
       }
 
       try {
-        jobs = await pullJobs();
-        healthy = true;
+        const pulled = await pullJobs();
+        jobs = pulled.jobs;
+        if (pulled.unpaired) {
+          // 200 {paired:false, jobs:[]} — the route is alive but this install
+          // has no device pairing. Step the ladder (never a success, never a
+          // retry storm) and run nothing this tick.
+          await noteFailure(new Error("unpaired"));
+          console.warn("[fash] not paired yet — backoff until this browser is paired");
+        } else {
+          healthy = true;
+        }
       } catch (e) {
         await noteFailure(e);
         console.warn("[fash] pullJobs:", e && e.message ? e.message : e);
@@ -457,10 +587,19 @@ export async function tick() {
   }
 }
 
+/**
+ * Pull the queue. Tolerant by construction: {jobs:[]}, a bare array and
+ * {data:{jobs}} all read as "nothing to do", and anything unreadable throws so
+ * the ladder above engages. An unpaired install is reported as such (not as an
+ * empty success) so the gate cannot be reset by it.
+ */
 async function pullJobs() {
   const data = await apiGet(JOB_POLL_PATH);
-  const jobs = Array.isArray(data) ? data : data && Array.isArray(data.jobs) ? data.jobs : [];
-  return jobs.filter((j) => j && j.id);
+  if (isUnpaired(data)) {
+    await writeGate(gateAfterUnpaired(await readGate(), Date.now()));
+    return { jobs: [], unpaired: true };
+  }
+  return { jobs: parseJobList(data), unpaired: false };
 }
 
 /** Jobs created locally (site "one button" via externally_connectable). */

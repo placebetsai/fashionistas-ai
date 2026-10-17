@@ -186,10 +186,19 @@ test("document.title tracks the screen the user is on", () => {
 test("a seller is offered Manage/Edit on their own listing, never Buy/Message", () => {
   assert.match(src, /const isMine = !!\(USER && m\.seller && Number\(m\.seller\.id\) === Number\(USER\.id\)\);/,
     "the listing's owner is recognised");
-  assert.ok(src.includes('`<div class="ux-buybar"><button class="btn btn-soft" onclick="go(\'closet\')">Manage listing</button><button class="btn btn-accent" onclick="editFromItem('),
+  // Each bar is one template line. The contextual "Try it on" link (item-only
+  // context, added 2026-10-17) leads both bars, so the pins start at the
+  // first action button — and the rule is now asserted BOTH ways: an owner
+  // never sees Buy/Message, a visitor never sees Manage/Edit.
+  const ownerBar = src.split("\n").find((l) => l.includes("Manage listing")) || "";
+  const buyerBar = src.split("\n").find((l) => l.includes("Buy now")) || "";
+  assert.ok(ownerBar.includes("onclick=\"go('closet')\">Manage listing</button>")
+    && ownerBar.includes("onclick=") && /editFromItem\(/.test(ownerBar),
     "own listing gets Manage + Edit");
-  assert.ok(src.includes("`<div class=\"ux-buybar\"><button class=\"btn btn-soft\" onclick=\"dmOrSignIn("),
+  assert.ok(!/buySheet|dmOrSignIn/.test(ownerBar), "own listing NEVER gets Buy/Message");
+  assert.ok(/dmOrSignIn\(/.test(buyerBar) && /buySheet\(/.test(buyerBar),
     "everyone else still gets Message + Buy now");
+  assert.ok(!/go\('closet'\)|editFromItem/.test(buyerBar), "visitors NEVER get Manage/Edit");
   assert.match(src, /function editFromItem\(id\)\{/, "an editor entry point exists");
   assert.match(src, /const d = await api\("\/api\/listings"\); S\.listings = \(d && d\.listings\) \|\| \[\];/,
     "it loads the owner's list, which LW.edit() reads from");

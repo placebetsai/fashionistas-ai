@@ -71,8 +71,18 @@ async function api(path, opts={}) {
   else toast("You are signed in — that step is not available on your account yet.", 4000);
   throw new Error("unauthorized");
  }
- if (!r.ok) throw new Error(d?.error || "Request failed (" + r.status + ")");
- return d;
+if (!r.ok) throw new Error(d?.error || "Request failed (" + r.status + ")");
+  /* THE ONE AUTO-POST TRIGGER. Both save paths — the photo wizard
+     (listing-wizard.js submit(), which calls this same helper) and the manual
+     "Add manually" sheet — create a listing with POST /api/listings, so hooking
+     here covers every new item without a second edit point.
+     Fire-and-forget on purpose: the listing is already committed, so a queue
+     that is offline, unpaired or not deployed yet must never fail a save. It
+     updates one chip and stops. */
+  try {
+    if ((opts.method || "GET").toUpperCase() === "POST" && path === "/api/listings") xlAutoEnqueue(d);
+  } catch (e) { /* never let the feed break a save */ }
+  return d;
 }
 
 /* ================= AUTH ================= */
@@ -1256,8 +1266,8 @@ async function openMarketItem(id, opts){
   + `<div class="ux-seller"><span class="ux-av">${escapeHtml(String(seller).slice(0,1).toUpperCase())}</span><span><b>${escapeHtml(seller)}</b>${sellerU?`<small>@${escapeHtml(sellerU)}</small>`:""}</span></div>`
   + `</div>`
   + (isMine
-      ? `<div class="ux-buybar"><button class="btn btn-soft" onclick="go('closet')">Manage listing</button><button class="btn btn-accent" onclick="editFromItem(${Number(m.id)})">Edit listing</button></div>`
-      : `<div class="ux-buybar"><button class="btn btn-soft" onclick="dmOrSignIn(${dmPeerRef(m, sellerU||seller)}, '${escapeAttr(seller)}')">Message</button><button class="btn btn-accent" onclick="buySheet(${Number(m.id)})">Buy now</button></div>`)
+      ? `<div class="ux-buybar"><a class="btn btn-ghost btn-sm" href="/try-on/" data-tip="See this item on a photo of a person.">Try it on</a><button class="btn btn-soft" onclick="go('closet')">Manage listing</button><button class="btn btn-accent" onclick="editFromItem(${Number(m.id)})">Edit listing</button></div>`
+      : `<div class="ux-buybar"><a class="btn btn-ghost btn-sm" href="/try-on/" data-tip="See this item on a photo of a person.">Try it on</a><button class="btn btn-soft" onclick="dmOrSignIn(${dmPeerRef(m, sellerU||seller)}, '${escapeAttr(seller)}')">Message</button><button class="btn btn-accent" onclick="buySheet(${Number(m.id)})">Buy now</button></div>`)
   + `</div>`;
   setItemUrl(id, m, opts.url);
   refreshTips();
@@ -1986,6 +1996,501 @@ function marketsForSixDisplay(apiMarkets){
   });
 }
 
+/* ══════════════════ CROSS-POSTING FEED — connect once, then feed ══════════
+ *
+ * The seller used to confirm and copy-post EVERY item to EVERY shop by hand.
+ * This is the whole loop now, and the Worker owns all of it:
+ *   1. one master switch, "Auto-post new items";
+ *   2. a new listing is handed to /api/jobs/enqueue the moment it is saved
+ *      (hooked in api() above — the only trigger, and it never blocks a save);
+ *   3. one button, "Post all existing items" -> POST /api/jobs/feed;
+ *   4. the ONLY human steps left are CAPTCHA / needs_review, and they arrive
+ *      as one tappable alert instead of a checkbox.
+ *
+ * ─── SHARED CONTRACT (Worker repo owns the other half; diff against it) ────
+ * Every call goes to the Worker THROUGH the site's existing same-origin proxy:
+ * API is "/w" and functions/w/[[path]].js forwards /w/* to
+ * https://fashionistas-api.fashionistas1979.workers.dev verbatim, headers and
+ * all. That is the same host, reached the same way every other call in this
+ * bundle is — the Bearer token the app already attaches rides along, and the
+ * bundle never has to hardcode the account-name host.
+ *
+ *   POST /api/jobs/enqueue
+ *     { source:"web-save", listing_id, shops:[shopId], auto:true,
+ *       listing:{ title, description, price, brand, size, category, condition,
+ *                 photos:[url], color, material, weight_oz, local_pickup } }
+ *     -> { ok:true, queued:N, job_ids?:[] }
+ *   POST /api/jobs/feed
+ *     { listing_ids?: number[] }          // omitted = everything
+ *     -> { ok:true, queued:N }
+ *   GET  /api/jobs?status=queued
+ *     -> { ok, paired:boolean, jobs:Job[] }   // unpaired => jobs:[]
+ *   GET  /api/devices/code  -> { code:"6-char", expires_in:number }
+ *   GET  /api/sessions/list -> { ok, devices:[{ install_id, source, probed_at }] }
+ *   POST /api/devices/pair  <- { install_id }  -> { ok, paired:true }
+ *   POST /api/sessions      <- { source:"web", probed_at, install_id, auto_post }
+ *        (the master switch, persisted server-side ONLY while paired)
+ *
+ * HONESTY RULE, applied to every state below: a chip is only drawn from a real
+ * answer. A 404/401/0 from these routes — endpoints not deployed yet — shows
+ * "auto-post: offline". We never invent a queued count, never mark a shop
+ * Connected without a heartbeat saying true, and never draw a per-item status
+ * row the server has no data for.
+ */
+
+const XL_AUTO_KEY = "fash_auto_post_v1";
+const XL_FEED = {
+  auto: null,        // master switch; null = not read from storage yet
+  paired: false,     // the Worker told us this install has a device pairing
+  known: false,      // have we actually asked? (paired:false vs never asked)
+  status: "unknown", // "online" | "offline" | "unknown"
+  lastError: "",
+  code: null,        // { code, expires_in } from /api/devices/code
+  devices: [],       // recent unpaired installs from /api/sessions/list
+  sessions: null,    // extension heartbeat booleans, null = never answered
+  install_id: "",    // this browser's install id (from the extension)
+  queued: null,      // last queued count the server reported
+  results: [],       // extension-reported job rows (real, not local guesses)
+  walls: []          // captcha_required / needs_review awaiting one tap
+};
+
+/** Statuses that mean "the job endpoints are not there (yet)". */
+function xlIsOffline(r) {
+  return !r || r.status === 0 || r.status === 401 || r.status === 403 ||
+         r.status === 404 || r.status === 502 || r.status === 503 || r.status === 504;
+}
+
+/** Raw call: never throws, never toasts, never signs anyone out.
+ *  A feed call that 401s must NOT tear down a working session — that check
+ *  belongs to api(), not to a screen that may simply be ahead of the Worker. */
+async function xlFeedApi(path, opts) {
+  opts = opts || {};
+  const headers = { Accept: "application/json" };
+  if (opts.body !== undefined) headers["Content-Type"] = "application/json";
+  if (TOKEN) headers["Authorization"] = "Bearer " + TOKEN;
+  try {
+    const r = await fetch(API + path, {
+      method: opts.method || "GET",
+      headers,
+      body: opts.body === undefined ? undefined : JSON.stringify(opts.body)
+    });
+    let d = null;
+    try { d = await r.json(); } catch (e) {}
+    return { ok: r.ok, status: r.status, data: d };
+  } catch (e) {
+    return { ok: false, status: 0, data: null, error: String((e && e.message) || "offline") };
+  }
+}
+
+function xlNote(r) {
+  if (xlIsOffline(r)) {
+    XL_FEED.status = "offline";
+    XL_FEED.lastError = r && r.status ? ("HTTP " + r.status) : "no answer";
+  } else if (r && r.ok) {
+    XL_FEED.status = "online";
+    XL_FEED.lastError = "";
+  }
+  return r;
+}
+
+/* ------------------------------------------------------------ master switch */
+
+function xlAutoOn() {
+  if (XL_FEED.auto === null) {
+    let v = null;
+    try { v = localStorage.getItem(XL_AUTO_KEY); } catch (e) {}
+    /* Default ON: this is the product. It can only act on the shops the seller
+       already ticked in the photo wizard, so "on" cannot post anywhere they did
+       not already choose. */
+    XL_FEED.auto = v === null ? true : v === "1";
+  }
+  return XL_FEED.auto;
+}
+function xlAutoSet(on) {
+  XL_FEED.auto = !!on;
+  try { localStorage.setItem(XL_AUTO_KEY, on ? "1" : "0"); } catch (e) {}
+}
+
+async function xlAutoToggle() {
+  const next = !xlAutoOn();
+  xlAutoSet(next);
+  xlFeedPaint();
+  if (!next) { toast("Auto-post is off — new items stay on fashionistas.ai only."); return; }
+  toast("Auto-post is on — every new item queues to your shops.");
+  // Server-side persistence ONLY while this browser is paired: without an
+  // install_id there is no device to attribute the switch to, and claiming
+  // otherwise would be a lie the label below has to walk back.
+  if (!XL_FEED.install_id) { xlFeedPaint(); return; }
+  const r = await xlFeedApi("/api/sessions", {
+    method: "POST",
+    body: { source: "web", probed_at: new Date().toISOString(), install_id: XL_FEED.install_id, auto_post: true }
+  });
+  xlNote(r);
+  xlFeedPaint();
+  if (!r.ok) toast("Saved in this browser only — the account copy needs a paired extension.");
+}
+
+/* ------------------------------------------------------------------- shops */
+
+/** The shops this item feeds. Two honest sources, in order: the shops the
+ *  seller ticked in the photo wizard, else the shops the extension says this
+ *  browser has a live session in. Never inferred from anything else. */
+function xlFeedShops() {
+  const known = (S.markets || []).map(m => m.id);
+  const pool = known.length ? known : ["depop", "poshmark", "mercari", "vinted", "grailed", "ebay"];
+  let picks = null;
+  try { picks = JSON.parse(localStorage.getItem("fash_lw_shops_v1") || "null"); } catch (e) {}
+  if (picks && typeof picks === "object") {
+    const on = pool.filter(id => picks[id]);
+    if (on.length) return on;
+  }
+  if (XL_FEED.sessions) {
+    const live = pool.filter(id => XL_FEED.sessions[id] === true);
+    if (live.length) return live;
+  }
+  return [];
+}
+
+/**
+ * Connected / Not connected / Unverified, from one real signal: the extension's
+ * own session heartbeat ({shop: boolean} per marketplace). We never guess.
+ *   true      -> Connected   (the extension says this browser is signed in)
+ *   false     -> Not connected (it checked; the shop says no session)
+ *   no answer -> Unverified    (we have no heartbeat to judge on)
+ */
+function xlShopState(shopId) {
+  if (!XL_FEED.sessions) return { label: "Unverified", cls: "handoff-chip",
+    tip: "The Crosslister extension has not reported in, so we can't tell. Install it and open any fashionistas.ai page — it checks in on its own — then reopen this screen." };
+  const v = XL_FEED.sessions[shopId];
+  if (v === true) return { label: "Connected", cls: "handoff-chip-ok", tip: "Your extension reports a live session in this browser." };
+  if (v === false) return { label: "Not connected", cls: "handoff-chip-bad", tip: "The extension checked this shop and found no signed-in session. Log in here and it posts by itself." };
+  return { label: "Unverified", cls: "handoff-chip", tip: "This shop was never probed." };
+}
+
+/* ---------------------------------------------------------------- payloads */
+
+/** The exact listing shape queue.js/runPublish expects (see its CONTRACT). */
+function xlJobBody(listing, shops, source) {
+  const l = listing || {};
+  const photos = [];
+  if (l.photo_url) photos.push(l.photo_url);
+  if (Array.isArray(l.photos)) l.photos.forEach(p => { if (p && photos.indexOf(p) === -1) photos.push(p); });
+  return {
+    source: source || "web-save",
+    listing_id: l.id,
+    shops: shops,
+    auto: true,
+    listing: {
+      title: String(l.title || "").slice(0, 80),
+      description: l.description || "",
+      price: (l.price != null && isFinite(Number(l.price))) ? Number(l.price) : null,
+      brand: l.brand || "",
+      size: l.size || l.sizeHint || "",
+      category: l.category || "",
+      condition: l.condition || "",
+      photos: photos,
+      color: l.color || "",
+      material: l.material || "",
+      weight_oz: l.weight_oz != null ? Number(l.weight_oz) : null,
+      local_pickup: !!l.local_pickup
+    }
+  };
+}
+
+/** Pull the saved listing out of a create response, whatever shape it used. */
+function xlSavedListing(d) {
+  if (!d) return null;
+  const l = (d.listing && typeof d.listing === "object") ? d.listing
+          : (d.item && typeof d.item === "object") ? d.item
+          : (d.id != null ? d : null);
+  if (!l || l.id == null) return null;
+  try {
+    const known = (S.listings || []).find(x => Number(x.id) === Number(l.id));
+    return Object.assign({}, known || {}, l);
+  } catch (e) { return l; }
+}
+
+/* ------------------------------------------------------------- the 3 actions */
+
+/** (2) A new listing is saved -> hand it to the queue. Never blocks the save. */
+async function xlAutoEnqueue(d) {
+  try {
+    if (!xlAutoOn()) return null;
+    const listing = xlSavedListing(d);
+    if (!listing) return null;
+    const shops = xlFeedShops();
+    if (!shops.length) return null;          // nothing chosen: nothing to queue
+    const r = xlNote(await xlFeedApi("/api/jobs/enqueue", { method: "POST", body: xlJobBody(listing, shops, "web-save") }));
+    if (r.ok) {
+      const n = (r.data && r.data.queued != null) ? r.data.queued : shops.length;
+      XL_FEED.queued = n;
+      XL_FEED.known = true;
+      toast("Queued for " + n + " shop" + (n === 1 ? "" : "s") + " — it posts itself in your own session.");
+    }
+    xlFeedPaint();
+    return r;
+  } catch (e) {
+    return null;
+  }
+}
+
+/** One item, on demand (from the item screen). No copy, no confirm sheet. */
+async function xlFeedItem(id) {
+  const l = (S.listings || []).find(x => Number(x.id) === Number(id)) || CURRENT.listing || null;
+  if (!l) { toast("That item isn't loaded yet."); return; }
+  const shops = xlFeedShops();
+  if (!shops.length) { toast("Choose your shops once in the Sell wizard, then they feed automatically."); return; }
+  const r = xlNote(await xlFeedApi("/api/jobs/enqueue", { method: "POST", body: xlJobBody(l, shops, "web-item") }));
+  if (r.ok) toast("Queued for " + shops.length + " shops.");
+  else if (xlIsOffline(r)) toast("Cross-posting is offline right now — the item is saved here and will queue when it's back.");
+  xlFeedPaint();
+}
+
+/** (3) Backfill everything already in the closet. */
+async function xlFeedAll() {
+  if (!XL_FEED.paired) {
+    toast("Pair this browser first — that's what lets the extension do the posting.");
+    return;
+  }
+  const btn = document.getElementById("xl-feed-btn");
+  if (btn) { btn.disabled = true; btn.textContent = "Queueing…"; }
+  const ids = (S.listings || []).map(x => x.id);
+  const r = xlNote(await xlFeedApi("/api/jobs/feed", { method: "POST", body: ids.length ? { listing_ids: ids } : {} }));
+  if (r.ok) {
+    const n = (r.data && r.data.queued != null) ? Number(r.data.queued) : null;
+    XL_FEED.queued = n;
+    toast(n != null
+      ? (n ? n + " item" + (n === 1 ? "" : "s") + " queued for your shops." : "Everything is already queued or posted — nothing to add.")
+      : "Queued. Watch the chips below.");
+  } else if (xlIsOffline(r)) {
+    toast("Cross-posting is offline right now — nothing was sent, and nothing was faked.");
+  } else {
+    toast("Couldn't queue: " + ((r.data && r.data.error) || ("HTTP " + r.status)));
+  }
+  xlFeedPaint();
+}
+
+/** Pair an install the Worker listed as unpaired. */
+async function xlPair(installId) {
+  const r = xlNote(await xlFeedApi("/api/devices/pair", { method: "POST", body: { install_id: installId } }));
+  if (r.ok) { toast("Paired. Auto-post is live for this browser."); XL_FEED.paired = true; XL_FEED.known = true; }
+  else toast("Pairing failed: " + ((r.data && r.data.error) || ("HTTP " + r.status)));
+  await xlFeedProbe();
+}
+
+/* ------------------------------------------------------- probe + rendering */
+
+/** Ask the Worker and the extension what is actually true, then paint. */
+async function xlFeedProbe() {
+  // The extension heartbeat: the only honest source for "is this shop signed in".
+  try {
+    const st = await extSend({ type: "status" });
+    if (st && st.ok) {
+      XL_FEED.sessions = st.sessions || {};
+      if (st.install_id) XL_FEED.install_id = st.install_id;
+    } else if (st === null) {
+      XL_FEED.sessions = null;      // no extension reachable: everything unverified
+    }
+  } catch (e) { /* keep the last known value; it is only a display */ }
+
+  const q = await xlFeedApi("/api/jobs?status=queued");
+  xlNote(q);
+  if (q.ok && q.data) {
+    XL_FEED.paired = q.data.paired === true;
+    XL_FEED.known = true;
+    XL_FEED.jobs = Array.isArray(q.data.jobs) ? q.data.jobs : [];
+  }
+
+  if (!XL_FEED.paired) {
+    const c = await xlFeedApi("/api/devices/code");
+    if (c.ok && c.data && c.data.code) XL_FEED.code = { code: String(c.data.code), expires_in: c.data.expires_in };
+    const l = await xlFeedApi("/api/sessions/list");
+    if (l.ok && l.data) XL_FEED.devices = Array.isArray(l.data.devices) ? l.data.devices : [];
+  } else {
+    XL_FEED.code = null;
+    XL_FEED.devices = [];
+  }
+  xlFeedPaint();
+}
+
+/** Pull job results the extension actually reported (never a local guess). */
+async function xlWatchResults() {
+  let rows = [];
+  try { rows = (await extResults()) || []; } catch (e) { return; }
+  XL_FEED.results = rows;
+  XL_FEED.walls = rows.filter(r => r && (r.needs_review === true ||
+      /^(captcha_required|needs_review)/.test(String(r.error || ""))));
+  xlPaintAlerts();
+  xlPaintItemChips();
+}
+
+/** Per-item status chips — ONLY where the server/extension reported a row.
+ *  No data means no row at all: an honest blank beats a placeholder. */
+function xlItemChips(listingId) {
+  const id = Number(listingId);
+  const rows = (XL_FEED.results || []).filter(r => Number(r.listing_id) === id);
+  if (!rows.length) return "";
+  return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">`
+    + rows.map(r => {
+        const ok = r.status === "posted" || r.status === "delisted";
+        const wall = /^(captcha_required|needs_review)/.test(String(r.error || ""));
+        const cls = ok ? "handoff-chip-ok" : (wall ? "handoff-chip" : "handoff-chip-bad");
+        const label = ok ? (r.status === "delisted" ? "delisted" : "posted")
+                  : wall ? "needs you"
+                  : (r.status || r.error || "queued");
+        const shop = String(r.shop || "shop");
+        const url = (ok && r.listing_url) ? ` <a href="${escapeHtml(r.listing_url)}" target="_blank" rel="noopener noreferrer">View</a>` : "";
+        return `<span class="handoff-chip ${cls}" title="${escapeAttr(String(r.error || label))}">${escapeHtml(shop)}: ${escapeHtml(String(label))}${url}</span>`;
+      }).join("")
+    + `</div>`;
+}
+function xlPaintItemChips() {
+  const l = CURRENT.listing || null;
+  if (!l || !l.id) return;
+  const host = document.getElementById("xl-item-chips");
+  if (host) host.innerHTML = xlItemChips(l.id);
+}
+
+/** The only human step left, as one tappable alert. */
+function xlPaintAlerts() {
+  const host = document.getElementById("xl-alerts");
+  if (!host) return;
+  const walls = XL_FEED.walls || [];
+  if (!walls.length) { host.innerHTML = ""; return; }
+  host.innerHTML = walls.map(w => {
+    const shop = String(w.shop || "the shop");
+    const name = ((xlConnectShopById(w.shop) || {}).name) || platformName(w.shop) || shop;
+    const isCaptcha = /captcha/.test(String(w.error || ""));
+    const msg = isCaptcha
+      ? escapeHtml(name) + " showed a CAPTCHA — one press from you and it posts the rest."
+      : escapeHtml(name) + " needs you to pick the category, then it posts itself.";
+    return `<div class="card" style="border-left:4px solid var(--accent)" data-tip="${escapeAttr(w.hint || msg)}">
+      <b>${escapeHtml(name)} needs one press from you</b>
+      <p class="mut" style="margin:4px 0 8px">${msg}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn btn-accent btn-sm" onclick="xlOpenWall('${escapeAttr(w.shop||"")}')" data-tip="Opens that shop in the tab the extension left open for you.">Open ${escapeHtml(name)}</button>
+        <button type="button" class="btn btn-soft btn-sm" onclick="xlFeedProbe()" data-tip="Ask the extension for the latest status.">Refresh</button>
+      </div></div>`;
+  }).join("");
+}
+
+/** Open the shop the extension paused on. Never a guess about success. */
+function xlOpenWall(shopId) {
+  const m = (xlConnectShopById(shopId) || {}) || {};
+  const url = m.sell || m.signup || ((S.markets || []).find(x => x.id === shopId) || {}).sell;
+  if (!url) { toast("Open " + (platformName(shopId) || shopId) + " from your bookmarks — the extension left the form ready there."); return; }
+  try { window.open(url, "_blank", "noopener"); } catch (e) { toast("Pop-up blocked — allow pop-ups for this site to open the shop tab."); }
+}
+
+/** The one line that says whether the feed is real, and if not, why. */
+function xlFeedChipHtml() {
+  if (!TOKEN) return "";
+  const s = XL_FEED.status;
+  if (s === "offline") {
+    return `<span class="handoff-chip handoff-chip-bad" data-tip="The cross-posting service did not answer (${escapeAttr(XL_FEED.lastError || "no answer")}). Your items are saved here; nothing was sent and nothing is marked posted." title="The cross-posting service did not answer (${escapeAttr(XL_FEED.lastError || "no answer")}). Your items are saved here; nothing was sent and nothing is marked posted.">auto-post: offline</span>`;
+  }
+  if (s === "online") {
+    const q = XL_FEED.queued;
+    return `<span class="handoff-chip handoff-chip-ok" data-tip="The queue answered. New items go straight to your shops." title="The queue answered. New items go straight to your shops.">auto-post: on${q != null ? " · " + q + " queued" : ""}</span>`;
+  }
+  return `<span class="handoff-chip" data-tip="Checking the queue…" title="Checking the queue…">auto-post: checking…</span>`;
+}
+
+function xlFeedPaint() {
+  const chip = document.getElementById("xl-feed-chip");
+  if (chip) chip.innerHTML = xlFeedChipHtml();
+  const note = document.getElementById("xl-auto-note");
+  if (note) {
+    const scope = XL_FEED.install_id ? "saved to your account" : "this browser only";
+    note.textContent = xlAutoOn()
+      ? ("Every new item you save queues to your shops — " + scope + ".")
+      : ("Off. New items stay on fashionistas.ai — " + scope + ".");
+  }
+  const btn = document.getElementById("xl-auto-btn");
+  if (btn) {
+    const on = xlAutoOn();
+    btn.textContent = on ? "On" : "Off";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.className = "btn " + (on ? "btn-accent" : "btn-soft");
+  }
+  const rows = document.getElementById("xl-shop-rows");
+  if (rows) {
+    const markets = S.markets || [];
+    rows.innerHTML = markets.length ? markets.map(m => {
+      const st = xlShopState(m.id);
+      return `<div class="xl-mkt">
+        <div class="xl-mkt-name"><b>${escapeHtml(m.name)}</b><span class="mut">${escapeHtml(st.tip)}</span></div>
+        <span class="handoff-chip ${st.cls}" data-tip="${escapeAttr(st.tip)}" title="${escapeAttr(st.tip)}">${st.label}</span>
+      </div>`;
+    }).join("") : `<div class="empty">Couldn't load your shops — pull to refresh.</div>`;
+  }
+  const btnAll = document.getElementById("xl-feed-btn");
+  if (btnAll) {
+    btnAll.disabled = !XL_FEED.paired;
+    btnAll.textContent = btnAll.disabled ? "Pair this browser to post everything" : "Post all existing items";
+    const t = XL_FEED.paired
+      ? ("Queues every item in your closet (" + (S.listings || []).length + ") to your shops.")
+      : "Pair this browser above first — that is what lets the extension post for you.";
+    btnAll.setAttribute("data-tip", t); btnAll.setAttribute("title", t);
+  }
+  const pairBox = document.getElementById("xl-pair-box");
+  if (pairBox) {
+    pairBox.innerHTML = XL_FEED.paired
+      ? `<p class="mut" style="margin:0"><span class="handoff-chip handoff-chip-ok" data-tip="The Worker recognises this browser." title="The Worker recognises this browser.">Paired</span> This browser is connected — nothing else to set up.</p>`
+      : xlPairBoxHtml();
+  }
+  const alerts = document.getElementById("xl-alerts");
+  if (alerts && XL_FEED.walls.length) xlPaintAlerts();
+  const itemChips = document.getElementById("xl-item-chips");
+  if (itemChips) xlPaintItemChips();
+}
+
+function xlPairBoxHtml() {
+  const code = XL_FEED.code;
+  const dev = XL_FEED.devices || [];
+  const codeHtml = code
+    ? `<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+         <div style="font-size:30px;letter-spacing:6px;font-weight:800;padding:6px 14px;border:1.5px dashed var(--line);border-radius:12px">${escapeHtml(code.code)}</div>
+         <div class="mut" style="flex:1;min-width:180px">Install the Fashionistas extension and it checks in on its own — your browser shows up under Devices below${code.expires_in ? " for " + Math.round(Number(code.expires_in) / 60) + " min" : ""}. Then press Pair.</div>
+       </div>`
+    : `<div class="mut">${XL_FEED.status === "offline"
+        ? "Cross-posting is offline, so we can't show a pairing code right now."
+        : "Asking the service for a pairing code…"}</div>`;
+  const listHtml = dev.length
+    ? `<div style="margin-top:12px">${dev.map(d => {
+        const when = d.probed_at ? fmt(d.probed_at) : "";
+        const mine = d.install_id && d.install_id === XL_FEED.install_id;
+        return `<div class="xl-mkt" style="align-items:center">
+          <div class="xl-mkt-name"><b>${escapeHtml((d.install_id || "device").slice(0, 8))}${mine ? " · this browser" : ""}</b><span class="mut">${escapeHtml(d.source || "extension")}${when ? " · " + escapeHtml(when) : ""}</span></div>
+          <button type="button" class="btn btn-soft btn-sm" onclick="xlPair('${escapeAttr(d.install_id || "")}')" data-tip="Connects that browser to your account." title="Connects that browser to your account.">Pair</button>
+        </div>`;
+      }).join("")}</div>`
+    : "";
+  return codeHtml + listHtml;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * One left-over piece of the old manual flow. The photo wizard (which I do not
+ * own) opens its own per-shop copy/checklist screen straight after a save.
+ * When auto-post is on there is nothing for a seller to do in it, so this
+ * supersedes it at the DOM level and shows the feed instead — the wizard file
+ * itself is untouched.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+let xlWatcher = null;
+function xlSupersedeManualPost() {
+  if (xlWatcher || !document.body || !window.MutationObserver) return;
+  const screen = document.getElementById("screen");
+  if (!screen) return;
+  xlWatcher = new MutationObserver(() => {
+    if (!xlAutoOn()) return;
+    const lw = document.querySelector("#lw.lw-post") || document.querySelector(".lw-post");
+    if (!lw) return;
+    try { document.querySelector('html') && document.documentElement.classList.remove("lw-on"); } catch (e) {}
+    try { renderXL(document.getElementById("screen")); } catch (e) {}
+  });
+  xlWatcher.observe(screen, { childList: true, subtree: true });
+}
+
 /* ================= MULTILIST HUB (marketplace lister + admin) ================= */
 async function renderXL(el){
   if (!TOKEN || !USER) {
@@ -2009,15 +2514,13 @@ async function renderXL(el){
       p.forEach(pid => { prepared[pid] = (prepared[pid] || 0) + 1; });
     });
     const EXAMPLE = 50;
+    const autoOn = xlAutoOn();
+    const shops = xlFeedShops();
     el.innerHTML = `
     <div class="xl-hero">
-      <div class="xl-hero-tag">Marketplace lister &amp; admin</div>
-      <h2>Write it once. Sell everywhere.</h2>
-      <p>Pick an item and we walk you through every shop: the title, description and price are written for each one and copied for you, the photos go straight into the shop's app, and you tap Post. It's on fashionistas.ai the moment you list it. Nothing to install.</p>
-      <div class="xl-hero-actions">
-        <button class="btn btn-accent" onclick="xlPickItem()" data-tip="Pick an item below, choose the shops, and we'll hand you the copy for each.">Start multilisting →</button>
-        <button class="btn btn-soft" onclick="go('closet')" data-tip="Open everything you're selling.">See my items</button>
-      </div>
+      <div class="xl-hero-tag">Connect once, then feed</div>
+      <h2>Every new item posts itself.</h2>
+      <p>Turn on auto-post and every item you save goes to your shops on its own — no copy, no paste, no per-item confirmation. One button puts everything already in your closet into the queue. The only thing we ever ask of you is a CAPTCHA or a category to confirm.</p>
       <div class="xl-hero-stats">
         <span><b>${six.length}</b> shops</span>
         <span><b>${items.length}</b> items</span>
@@ -2025,20 +2528,41 @@ async function renderXL(el){
       </div>
     </div>
 
-    <div class="card" id="xl-connect">
-      <h3 style="margin-top:0">How posting works</h3>
-      <p class="mut" style="margin-top:0">Works on your phone, nothing to install. Here's exactly what happens for each shop:</p>
-      <div class="xl-how">
-        <div class="xl-mkt"><div class="xl-mkt-name"><b>fashionistas.ai</b><span class="mut">Automatic — live the moment you tap List it.</span></div></div>
-        <div class="xl-mkt"><div class="xl-mkt-name"><b>Depop · Poshmark · Mercari · Vinted · Grailed</b><span class="mut">Guided — about a minute each. Photos go to their app through your share sheet, every field is one tap to copy, you press Post there and tick it off here.</span></div></div>
-        <div class="xl-mkt"><div class="xl-mkt-name"><b>eBay</b><span class="mut">Guided today. Direct posting from here is coming once eBay sign-in is switched on.</span></div></div>
-        <div class="xl-mkt"><div class="xl-mkt-name"><b>Etsy</b><span class="mut">Guided today. Connect is coming soon.</span></div></div>
+    <div id="xl-alerts"></div>
+
+    <div class="card" id="xl-auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <b style="font-size:16px">Auto-post new items</b>
+          <div class="mut" id="xl-auto-note" style="font-size:13px"></div>
+        </div>
+        <button type="button" id="xl-auto-btn" class="btn ${autoOn ? "btn-accent" : "btn-soft"}" onclick="xlAutoToggle()" aria-pressed="${autoOn ? "true" : "false"}" data-tip="One switch. Everything you save after this queues by itself." title="One switch. Everything you save after this queues by itself.">${autoOn ? "On" : "Off"}</button>
       </div>
-      <p class="mut" style="font-size:12.5px;margin:10px 0 0">A shop only shows as Posted after you confirm it — we never mark anything Posted on our own.</p>
+      <div id="xl-feed-chip" style="margin-top:10px"></div>
+      ${shops.length ? `<p class="mut" style="font-size:12.5px;margin:8px 0 0">Feeds ${shops.length} shop${shops.length === 1 ? "" : "s"}: ${shops.map(s => escapeHtml(platformName(s))).join(", ")}. Change them in the Sell wizard.</p>`
+                     : `<p class="mut" style="font-size:12.5px;margin:8px 0 0">Pick your shops once in the Sell wizard and they feed from then on.</p>`}
+    </div>
+
+    <div class="card" id="xl-feed-all">
+      <h3 style="margin-top:0">Put everything in the queue</h3>
+      <p class="mut" style="margin-top:0">One button for the items you already have — no picking them one by one.</p>
+      <button type="button" id="xl-feed-btn" class="btn btn-accent" style="width:100%" onclick="xlFeedAll()" data-tip="Queue everything at once." title="Queue everything at once.">Post all existing items</button>
+    </div>
+
+    <div class="card" id="xl-pair">
+      <h3 style="margin-top:0">Pair this browser</h3>
+      <p class="mut" style="margin-top:0">The extension does the posting inside your own logged-in browser, so it has to know this account. This takes about twenty seconds, once.</p>
+      <div id="xl-pair-box"></div>
+    </div>
+
+    <div class="card" id="xl-shops">
+      <h3 style="margin-top:0">Your shops</h3>
+      <p class="mut" style="margin-top:0">Straight from your extension: what it can see right now, in this browser.</p>
+      <div id="xl-shop-rows"></div>
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0">Every shop we prepare for</h3>
+      <h3 style="margin-top:0">What each shop takes</h3>
       <p class="mut" style="margin-top:0">Their cut, the title length they allow, and how many of your items are already written up for them. The <b>kept</b> figure is what lands in your pocket from a ${money(EXAMPLE)} sale.</p>
       <p class="mut" style="font-size:12px;margin:0 0 10px">Fee % is an estimate from this page's own fee table (Vinted 0% seller fee). Kept = $${EXAMPLE} sale minus estimated fee.</p>
       ${six.length ? six.map(m => {
@@ -2053,16 +2577,6 @@ async function renderXL(el){
         </div>`; }).join("") : `<div class="empty">Could not load the shops — pull to refresh.</div>`}
     </div>
 
-    <div class="card" id="xl-hub-items">
-      <h3 style="margin-top:0">Pick an item to send out</h3>
-      <p class="mut" style="margin-top:0">Opens the step-by-step for that item: photos, copy-paste fields and a checklist per shop.</p>
-      ${items.length ? items.slice(0,14).map(x => `
-        <button class="xl-item" onclick="xlOpen(${x.id})" data-tip="Opens the step-by-step posting screen for this item.">
-          <span class="xl-item-t">${escapeHtml(x.title || "Untitled")}</span>
-          <span class="xl-item-p">${money(x.price)}</span>
-        </button>`).join("") : `<div class="empty">Nothing to send yet — add an item first, then it can go to every shop at once.</div>`}
-    </div>
-
     <div class="card">
       <h3 style="margin-top:0">Administration</h3>
       <p class="mut" style="margin-top:0">Everything about running the shops in one place.</p>
@@ -2074,6 +2588,10 @@ async function renderXL(el){
         <a class="btn btn-soft" href="${API}/api/export/orders.csv" onclick="return xlExport(event,'orders.csv')" data-tip="Downloads every sale as a spreadsheet file.">Export orders</a>
       </div>
     </div>`;
+    xlFeedPaint();
+    xlFeedProbe();
+    xlWatchResults();
+    xlSupersedeManualPost();
     refreshTips();
   } catch(e){
     if (e.message === "unauthorized") {
@@ -2084,15 +2602,17 @@ async function renderXL(el){
     el.innerHTML = `<div class="empty">${escapeHtml(e.message)}</div>`;
   }
 }
+/* The per-item step-by-step (copy every field, tick each shop off) is gone.
+   Opening an item now shows the item plus whatever the server/extension has
+   actually reported about it — and one button to queue it again if wanted. */
 function xlPickItem(){
-  const t = document.getElementById("xl-hub-items");
+  const t = document.getElementById("xl-feed-all");
   if (t) t.scrollIntoView({ behavior:"smooth", block:"start" });
 }
 function xlOpen(id){
-  if (window.LW) return LW.post(id);
   openListing(id).then(() => {
     setTimeout(() => {
-      const p = document.getElementById("xl-pick");
+      const p = document.getElementById("xl-item-feed");
       if (p) p.scrollIntoView({ behavior:"smooth", block:"center" });
     }, 350);
   }).catch(() => {});
@@ -2380,9 +2900,32 @@ function renderBulk(){
  <button class="btn btn-soft btn-sm" onclick="closetSelAll()" data-tip="Ticks every item in your closet." title="Ticks every item in your closet.">All</button>
  <button class="btn btn-soft btn-sm" onclick="closetSelClear()" data-tip="Unticks everything you selected." title="Unticks everything you selected.">None</button>
  <span style="flex:1"></span>
-  <button class="btn btn-soft btn-sm" onclick="bulkKit()" data-tip="Runs the same fix across every item you ticked." title="Runs the same fix across every item you ticked.">Copy the words</button>
+  <button class="btn btn-soft btn-sm" onclick="bulkQueue()" data-tip="Queues the items you ticked to your shops — no copying." title="Queues the items you ticked to your shops — no copying.">Queue to shops</button>
   <button class="btn btn-soft btn-sm" onclick="bulkDuplicate()" data-tip="Makes a copy of every item you ticked." title="Makes a copy of every item you ticked.">Make copies</button>
   <button class="btn btn-danger btn-sm" onclick="bulkDelete()" data-tip="Removes these items for good.">Delete ${n}</button>`;
+}
+/** Ticked items → connected shops, one job per item. No copies, no confirms.
+ *  The closet multi-select's queue action: same enqueue path as the item
+ *  screen (xlJobBody/xlFeedApi → Worker /api/jobs/enqueue), one summary
+ *  toast instead of one per item. Defined 2026-10-17 — the button shipped
+ *  with no handler and threw a ReferenceError (caught by connect-wiring). */
+async function bulkQueue(){
+ const ids = [...(S.sel || [])];
+ if (!ids.length){ toast("Tick a few items first."); return; }
+ const shops = xlFeedShops();
+ if (!shops.length){ toast("Choose your shops once in the Sell wizard, then they feed automatically."); return; }
+ let queued = 0, failed = 0, offline = false;
+ for (const id of ids){
+   const l = (S.listings || []).find(x => Number(x.id) === Number(id));
+   if (!l){ failed++; continue; }
+   const r = await xlFeedApi("/api/jobs/enqueue", { method: "POST", body: xlJobBody(l, shops, "web-item") });
+   if (r && r.ok) queued++;
+   else { failed++; if (xlIsOffline(r)) offline = true; }
+ }
+ toast(offline && !queued
+   ? "Cross-posting is offline right now — items are saved here and queue when it's back."
+   : `Queued ${queued} item${queued===1?"":"s"} for ${shops.length} shop${shops.length===1?"":"s"}${failed?` · ${failed} skipped`:""}.`);
+ xlFeedPaint();
 }
 function bulkDelete(){
  const n = S.sel.size; if(!n) return;
@@ -2395,21 +2938,25 @@ function bulkDelete(){
    renderBulk(); closetRefresh();
  }).catch(e=>toast(e.message));
 }
-function bulkKit(){
+/** The old version built one paste kit per shop for every ticked item and put
+    it on the clipboard. Ticking items now means one thing: queue them. */
+async function bulkKit(){
  const items = (S.listings||[]).filter(l=>S.sel.has(l.id));
- if(!items.length) return;
- const kit = items.map(l=>SHOP_SIX.map(s=>xlKit(l,s)).join('\n\n')).join("\n\n" + "\u2500".repeat(42) + "\n\n");
- let copied=false;
- if (navigator.clipboard) navigator.clipboard.writeText(kit).then(()=>{copied=true;}).catch(()=>{});
- openSheet(`
- <h3 style="margin:0 0 4px">Copy all at once \u2014 ${items.length} item${items.length===1?"":"s"}</h3>
- <p class="mut" style="margin-top:0">One block of text with every item you ticked. The extension then opens each shop and posts it for you.</p>
- <div class="xl-note"><b>What actually happens:</b> this writes the copy for you. Nothing is sent to any shop — there is no link to any shop account behind this app.</div>
- <div class="xl-row" style="border-bottom:none;padding-bottom:0"><div class="mut" style="font-size:12px">${items.length} listings</div>
- <button class="btn btn-soft btn-sm" onclick="xlCopy(this)" data-kit="${escapeHtml(kit).replace(/"/g,"&quot;")}" data-tip="Copies the finished words for this shop so you can paste them straight in." title="Copies the finished words for this shop so you can paste them straight in.">Copy the words</button></div>
- <pre class="xl-kit">${escapeHtml(kit)}</pre>
- <button class="btn btn-primary" style="width:100%" onclick="closeSheet()" data-tip="Closes this panel." title="Closes this panel.">Done</button>`);
+ if (!items.length) return;
+ await xlFeedItems(items);
 }
+async function xlFeedItems(items){
+ const list = (items || []).filter(Boolean);
+ if (!list.length) return;
+ const r = xlNote(await xlFeedApi("/api/jobs/feed", { method:"POST", body:{ listing_ids: list.map(x=>x.id) } }));
+ if (r.ok) {
+   const n = (r.data && r.data.queued != null) ? Number(r.data.queued) : list.length;
+   toast(n ? n + " item" + (n === 1 ? "" : "s") + " queued for your shops." : "Already queued — nothing to add.");
+ } else if (xlIsOffline(r)) toast("Cross-posting is offline right now — nothing was sent, and nothing is marked posted.");
+ else toast("Couldn't queue: " + ((r.data && r.data.error) || ("HTTP " + r.status)));
+ xlFeedPaint();
+}
+
 async function bulkDuplicate(){
   const items = (S.listings||[]).filter(l=>S.sel.has(l.id)).map(l=>({ title:l.title, description:l.description, price:l.price, size:l.size, condition:l.condition, category:l.category, photo_url:l.photo_url }));
   if(!items.length) return toast("Select at least one listing first");
@@ -2977,12 +3524,16 @@ async function openListing(id){
   <button id="onsale-btn" class="btn ${onsaleState(l)?"btn-soft":"btn-accent"}" style="width:100%" onclick="toggleOnsale(${id},this)" data-tip="Show this item to buyers in Shop, or hide it again.">${onsaleState(l)?"Stop selling here":"Sell it here too"}</button>
   <p class="mut" style="margin:6px 0 0">When this is on, buyers can see it in Shop.</p>
   </div>
- <div class="card lw-postcard">
- <h3 style="margin-top:0">Post it to my other shops</h3>
- <p class="mut" style="margin-top:0">Depop, Poshmark, Mercari, Vinted, Grailed, eBay and Etsy — about a minute each. We copy the words and send the photos straight into each shop's app; you tap Post there. Nothing to install.</p>
- <button class="btn btn-accent" style="width:100%" onclick="LW.post(${id})" data-tip="Step by step for each shop: photos, copy-paste fields, then you confirm it's live.">Post to my shops \u2192</button>
+ <div class="card lw-postcard" id="xl-item-feed">
+ <h3 style="margin-top:0">Posting this item</h3>
+ <p class="mut" style="margin-top:0">${xlAutoOn() ? "Auto-post queued it the moment you saved it." : "Turn auto-post on in Shops and every item queues itself."} There is nothing to copy and nothing to confirm per shop.</p>
+ <div id="xl-item-chips"></div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+ <button type="button" class="btn btn-accent btn-sm" onclick="xlFeedItem(${id})" data-tip="Queue this one item to your shops." title="Queue this one item to your shops.">Queue this item</button>
+ <button type="button" class="btn btn-soft btn-sm" onclick="go('xl')" data-tip="Your shops, pairing and the post-everything button." title="Your shops, pairing and the post-everything button.">Shops</button>
  </div>
- ${(typeof EXT_LIVE !== "undefined" && EXT_LIVE) ? `<details class="card"><summary style="cursor:pointer;font-weight:700">Desktop: Chrome extension (optional)</summary><p class="mut">Your Crosslister extension is connected. Tick shops, then <b>Get ready to post</b>.</p><div id="xl-pick"></div><button class="btn btn-primary" onclick="crosspost(${id})" data-tip="Queues the shops for your extension — it never marks anything Posted by itself.">Get ready to post \u2192</button></details>` : ""}
+ <div style="margin-top:10px">${xlFeedChipHtml()}</div>
+ </div>
  <div class="card">
  <h3 style="margin-top:0">How good is this listing?</h3>
  ${qualityBars(l)}
@@ -2992,13 +3543,10 @@ async function openListing(id){
  ${platforms.length ? [...new Map(platforms.map(p=>[p.platform,p])).values()].map(p=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)"><b>${platformName(p.platform)}</b><span class="tag active">${p.status||"draft"}</span></div>`).join("") : `<p class="mut">Nothing prepared for a shop yet.</p>`}
  </div>
  <button class="btn btn-danger btn-sm" style="width:100%" onclick="delListing(${id})" data-tip="Removes it for good.">Delete listing</button>`;
- const pick = $("#xl-pick");
- if (pick) pick.innerHTML = `<div class="xl-bar">
- <button type="button" class="btn btn-soft btn-sm" onclick="xlAll(true)" data-tip="Tick every shop at once.">Select all</button>
- <button type="button" class="btn btn-soft btn-sm" onclick="xlAll(false)" data-tip="Untick everything.">Clear</button>
- <span class="mut" id="xl-count">0 shops picked</span></div>`
- + (S.markets||[]).map(m=>`<label style="display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:13px;padding:11px 13px;margin:7px 0;cursor:pointer"><input type="checkbox" value="${m.id}" style="transform:scale(1.2)" onchange="xlCount()"><b style="flex:1">${m.name}</b><span class="mut">they take ${m.feePct}%</span></label>`).join("");
-  CURRENT.xl = []; xlCount();
+ /* No per-item shop tickers, no copy kits, no "Published" tick-off: the feed
+    decides which shops an item goes to, and only the extension's own report
+    says what happened. xlCount/xlAll stay defined for old deep links. */
+  CURRENT.xl = [];
   refreshTips();
 }
 function qualityBars(l){
@@ -3199,16 +3747,11 @@ function xlKit(l, shopId){
 function sizeLine(l){ return l.size ? ("Size "+l.size) : (l.sizeHint ? ("Size "+l.sizeHint) : ""); }
 
 async function crosspost(id){
- const picks = xlChecks().filter(c=>c.checked).map(c=>c.value);
- if (!picks.length) return toast("Select at least one marketplace first");
- const l = (S.listings||[]).find(x=>x.id===id) || {};
- const kits = {};
- picks.forEach(pid => { kits[pid] = xlKit(l, pid); });
- const allKit = picks.map(pid => kits[pid]).join("\n\n" + "\u2500".repeat(42) + "\n\n");
- let copied = false;
- try { await navigator.clipboard.writeText(allKit); copied = true; } catch(e){}
- try { await api(`/api/listings/${id}/crosspost`, { method:"POST", body: JSON.stringify({ platforms: picks }) }); } catch(e){}
- xlSheet(l, picks, copied, kits, allKit);
+ /* Used to build a paste kit per shop, copy it to the clipboard and open a
+    sheet where the seller ticked each one off by hand. All of that is gone:
+    one call queues the item to the seller's shops, and the chips on the item
+    screen show only what the queue actually reported back. */
+ return xlFeedItem(id);
 }
 
 
@@ -3775,56 +4318,30 @@ function xlTitleFor(m, title){
  return base.slice(0, max - 1).replace(/\s+\S*$/, "") + "\u2026";
 }
 function xlSheet(l, picks, copied, kits, allKit){
- kits = kits || {};
- const ebayConnected = xlConnectStatus("ebay") === "connected";
- const rows = picks.map(pid=>{
- const m=(S.markets||[]).find(x=>x.id===pid)||{};
- const rules = xlKitRules(pid);
- const label=platformName(pid);
- const t=xlKitTitle(rules, l);
- const kit = kits[pid] || xlKit(l, pid);
- const ebayBtn = (pid === "ebay" && ebayConnected)
-  ? `<button type="button" class="btn btn-accent btn-sm" onclick="xlEbayCreateListingFromId(${Number(l.id)||0})" data-tip="Uses your eBay OAuth cookie to create inventory + offer (sandbox/production per Connect).">Create on eBay</button>`
-  : (pid === "ebay"
-    ? `<button type="button" class="btn btn-soft btn-sm" onclick="xlShopOpenGuide('ebay')" data-tip="Connect eBay OAuth first for API create.">Connect for API</button>`
-    : "");
- return `<div class="xl-kit-block" data-shop="${escapeHtml(pid)}" data-handoff="${escapeHtml(pid)}">
- <div class="xl-kit-head"><b>${escapeHtml(label)}</b>
- <div style="display:flex;gap:6px;flex-wrap:wrap">
-  ${handoffChip(pid, Number(l.id)||0)}
-  <button class="btn btn-accent btn-sm" onclick="handoffOpen('${escapeHtml(pid)}', ${Number(l.id)||0})" data-tip="One tap: copies this shop's payload and opens their listing form.">Sell to ${escapeHtml(label)}</button>
-  <button class="btn btn-soft btn-sm" style="display:none" data-handoff-confirm onclick="handoffConfirm('${escapeHtml(pid)}', ${Number(l.id)||0})" data-tip="Confirms you published it on ${escapeHtml(label)}.">Published</button>
-  ${ebayBtn}
- </div></div>
- <p class="xl-kit-hint">${escapeHtml(rules.fieldHints||"")} · title ≤ ${rules.titleMax||"\u221e"} · fee ~${m.feePct!=null?m.feePct:(feeTableById(pid)||{}).feePct||"?"}%</p>
- <div class="xl-title">${escapeHtml(t)}</div>
- <pre class="xl-kit">${escapeHtml(kit)}</pre>
-</div>`;
+ /* The old per-shop confirm sheet: one card per marketplace with a
+    "Sell to <shop>" button that copied the words, opened their form, and a
+    hidden "Published" button the seller had to tick. Both are gone — nothing
+    routes here any more, and if anything ever did it may only REPORT. Status
+    comes from the queue's own report (xlItemChips); the action is one call on
+    the item screen. */
+ const rows = (picks || []).map(pid => {
+   const label = platformName(pid);
+   return `<div class="xl-mkt" data-shop="${escapeHtml(pid)}">
+     <div class="xl-mkt-name"><b>${escapeHtml(label)}</b><span class="mut">${xlShopState(pid).label}</span></div>
+   </div>`;
  }).join("");
-
- const gate = xlOneClickGate();
- const ebayBanner = picks.includes("ebay") ? (
-  EXT_LIVE
-   ? `<div class="xl-ebay-create"><p><b>eBay:</b> queued like every other shop — equal with every shop, no eBay API keys.</p></div>`
-   : (ebayConnected
-     ? `<div class="xl-ebay-create" id="xl-ebay-create-box"><p><b>eBay:</b> use your kit, or connect eBay's own API with</p><div id="xl-ebay-create-msg" class="mut" style="font-size:12px"></div></div>`
-     : `<div class="xl-ebay-create"><p><b>eBay:</b> use your kit, or connect eBay's own API with <button type="button" class="link" style="background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--accent);font-weight:700" onclick="xlShopOpenGuide('ebay')">Connect OAuth</button> + secrets — or paste the kit.</p></div>`)
- ) : "";
-
  openSheet(`
- <h3 style="margin:0 0 4px">Ready to post \u2014 ${picks.length} shop${picks.length===1?"":"s"}</h3>
- <p class="mut" style="margin-top:0">Each shop keeps its own title rules. Tick the shops you want, then <b>Sell everywhere</b>.</p>
- ${xlReadyStripHtml()}
- <div class="xl-note">Nothing is marked Posted until it really is, and we never take your shop password.</div>
- ${ebayBanner}
- <div style="max-height:48vh;overflow:auto;margin-top:10px">${rows}</div>
- <div class="xl-row" style="border-top:1px solid var(--line);margin-top:6px;padding-top:10px">
- <div class="mut" style="font-size:12px" id="xl-handoff-mode">${gate.ext?"Posts through your extension.":(gate.reason||"Each shop opens with its kit ready to paste.")}</div>
- <div style="display:flex;gap:8px;flex-wrap:wrap">
- <button class="btn btn-accent btn-sm" onclick="handoffSellAll(${Number(l.id)||0})" data-tip="${gate.ext?"Queues every selected shop to your extension — equal treatment, no API keys.":"Extension missing — will open paste kits / optional API. Set up extension for true one-click."}" ${gate.ext?"":'aria-describedby="xl-handoff-mode"'}>Sell everywhere</button>
- ${extConnectBtnHtml()}</div>
- <button class="btn btn-primary" style="width:100%" onclick="closeSheet()" data-tip="Closes this panel." title="Closes this panel.">Done</button>`);
+ <h3 style="margin:0 0 4px">${escapeHtml((l && l.title) || "This item")}</h3>
+ <p class="mut" style="margin-top:0">Nothing to paste and nothing to tick off. This item is queued by the feed; the chips below are whatever the queue has actually reported.</p>
+ ${xlItemChips(l && l.id)}
+ <div style="margin-top:10px">${rows}</div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+ <button type="button" class="btn btn-accent btn-sm" onclick="closeSheet(); xlFeedItem(${Number((l && l.id) || 0)})" data-tip="Queue this item to your shops." title="Queue this item to your shops.">Queue this item</button>
+ <button type="button" class="btn btn-soft btn-sm" onclick="closeSheet(); go('xl')" data-tip="Your shops and pairing." title="Your shops and pairing.">Shops</button>
+ <button type="button" class="btn btn-primary" style="width:100%" onclick="closeSheet()" data-tip="Closes this panel." title="Closes this panel.">Done</button>
+ </div>`);
 }
+
 function xlCopy(btn){ const t=btn&&btn.getAttribute("data-kit")||""; navigator.clipboard&&navigator.clipboard.writeText(t).then(()=>toast("Kit copied")).catch(()=>toast("Copy blocked by browser")); }
 
 function xlEbayCreateListingFromId(id){
@@ -4609,8 +5126,8 @@ const GUIDE_STEPS = [
  body:"No integrations, no developer tools. Pick a marketplace below to see exactly how to open your account, then tap 'Generate listing content' — it builds real JSON + CSV from your current listing for anything you'd rather list by hand.",
  action:null },
  { title:"Prepare the listing copy", emoji:"<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='#ff4e3a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-3px;margin-right:6px'><path d='M12 3.2 20 7.6v8.8L12 20.8 4 16.4V7.6z'/></svg>",
- body:"From any listing, tick the shops and tap Get ready to post — that opens per-shop kits (honest paste fallback). With the Crosslister installed, Sell everywhere queues real posts and shows queued → posting → posted only when the extension reports it. Without the extension, nothing is marked Posted automatically.",
- action:{ label:"Prepare Sell everywhere for this listing →", fn:()=>guideCrosspost() } },
+ body:"With auto-post on, every item you save is queued to your shops straight away — there is nothing to tick and nothing to paste. The item screen shows queued → posted only when the extension reports it, and a CAPTCHA or a category check is the only step we ask of you.",
+ action:{ label:"Queue this listing to your shops →", fn:()=>guideCrosspost() } },
  { title:"Mark sold & track profit", emoji:"<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='#ff4e3a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-3px;margin-right:6px'><path d='M12 3.2 20 7.6v8.8L12 20.8 4 16.4V7.6z'/></svg>",
  body:"When an item sells, write down what it sold for, the shop's cut, the postage and what it cost you — the profit screen works out what you kept automatically. One tap opens the real 'Mark it as sold' sheet on your current listing.",
  action:{ label:"Open 'Mark it as sold' →", fn:()=>guideMarkSold() } },
@@ -4739,8 +5256,7 @@ async function guideCrosspost(){
  closeGuide();
  try {
  if (!CURRENT.listing) await openListing(l.id);
- document.querySelectorAll("#xl-pick input").forEach(i=>i.checked=true);
- await crosspost(CURRENT.listing.id);
+ await crosspost(CURRENT.listing.id);   // now: one queue call, no tickers
  } catch(e){ toast(e.message); }
 }
 async function guideMarkSold(){
@@ -4953,8 +5469,8 @@ const HC_STEPS = [
  const d = await safeApi("/api/listings/" + l.id + "/platforms");
  const pstat = (d && d.platforms && d.platforms.length)
  ? d.platforms.map(p=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)"><b>${escapeHtml(platformName(p.platform))}</b><span class="tag ${escapeHtml((p.status||"draft")==="sold"?"sold":"active")}">${escapeHtml(p.status||"draft")}</span></div>`).join("")
- : `<p class="mut" style="margin:0">Once you've prepared it, each shop shows its status here. Nothing is posted automatically.</p>`;
- return `<p>One press of <b>Sell everywhere</b> posts to each shop you ticked and reports live status for each one:</p><div class="hc-live">${pstat}</div><div class="hc-live"><b style="display:block;margin-bottom:4px">Listing health</b>${qualityBars(l)}</div>`;
+ : `<p class="mut" style="margin:0">Each shop shows its real status here once the queue reports it. Nothing is marked posted before then.</p>`;
+ return `<p>Auto-post queues this to your shops by itself, and reports live status for each one:</p><div class="hc-live">${pstat}</div><div class="hc-live"><b style="display:block;margin-bottom:4px">Listing health</b>${qualityBars(l)}</div>`;
  }
   return `<p class="mut">List an item to see its draft status and health score here.</p>${hcAct("List an item","hcCam(true)")}`;
  } },
@@ -5069,7 +5585,7 @@ function hcListing(){
 }
 function hcCrossPost(){
  if (!HC_LID) return toast("List an item first — the panel appears on its detail screen");
- hcSuspend(); openListing(HC_LID); toast("Tick shops → Sell everywhere. With the extension: queued → posting → posted. Without it: paste kits open — nothing is marked Posted until you confirm or the extension reports it.");
+ hcSuspend(); openListing(HC_LID); toast("Auto-post queues this the moment you saved it — no ticking, no copy-paste. Chips here are only what the queue reported; a CAPTCHA is the only thing we ask of you.");
 }
 async function hcSold(){
  if (!HC_LID) return toast("Need a real listing first");

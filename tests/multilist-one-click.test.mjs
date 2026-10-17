@@ -104,7 +104,10 @@ test("ready strip stays one line — install jargon lives only in the install sh
   assert.match(html, /function xlReadyStripHtml\(/);
   assert.match(html, /One-click blocked/);
   assert.match(html, /Load unpacked/);
-  assert.match(html, /equal with every shop|treated equally|posts Depop, Poshmark/i);
+  // The equal-treatment promise may be worded several ways — the rule is that
+  // the strip keeps promising it (2026-10-17: "posts to every ticked shop
+  // equally" is the current copy after the set-once/feed compaction).
+  assert.match(html, /equal with every shop|treated equally|posts Depop, Poshmark|posts to every ticked shop equally/i);
   // The strip must not re-teach the dev install: no numbered steps, no zip,
   // no chrome:// or Developer mode in the strip markup.
   const strip = grab("xlReadyStripHtml");

@@ -20,7 +20,7 @@
 
 import { tick, onAlarm, enqueue, getResults, runSalesScanNow } from "./queue.js";
 import { SHOPS, SESSION_ONLY_SHOPS, normalizeShop } from "./config/selectors.js";
-import { apiPost, SESSIONS_PATH } from "./config/api.js";
+import { apiPost, SESSIONS_PATH, installId } from "./config/api.js";
 
 const POLL_ALARM = "fash-poll";
 const HEARTBEAT_ALARM = "fash-heartbeat";
@@ -185,7 +185,11 @@ export async function heartbeat() {
     await apiPost(SESSIONS_PATH, {
       sessions, // { poshmark: true, mercari: false, ... }  <- booleans, nothing else
       source: "extension",
-      probed_at: new Date().toISOString()
+      probed_at: new Date().toISOString(),
+      // Same value as the X-Install-Id header on this request. In the body too
+      // so the Worker can bind a session to a device pairing without relying on
+      // the header surviving every proxy in between.
+      install_id: await installId()
     });
   } catch (e) {
     // heartbeat is best-effort; never surface it as a job failure
@@ -258,7 +262,11 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
   }
   if (msg.type === "status") {
     heartbeat()
-      .then((sessions) => sendResponse({ ok: true, sessions }))
+      .then((sessions) =>
+        // install_id rides along so the Shops screen can name THIS browser in
+        // the pairing list without asking the seller to copy anything.
+        installId().then((install_id) => sendResponse({ ok: true, sessions, install_id }))
+      )
       .catch((e) => sendResponse({ ok: false, error: String(e && e.message) }));
     return true;
   }
